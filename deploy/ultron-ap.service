@@ -1,0 +1,22 @@
+[Unit]
+Description=Ultron Admin Panel
+After=network.target
+
+[Service]
+Type=simple
+User=ultron
+Group=ultron
+WorkingDirectory=/opt/ultron-ap
+ExecStart=/opt/ultron-ap/ultron-ap
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=-/etc/ultron-ap/ultron-ap.env
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ultron-ap
+
+[Install]
+WantedBy=multi-user.target

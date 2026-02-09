@@ -1,0 +1,38 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+*.env
+credentials.json
+
+# Database
+*.db
+*.db-wal
+*.db-shm
+
+# SDLC Studio (development artifacts)
+# sdlc-studio/
