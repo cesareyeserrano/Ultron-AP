@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
@@ -28,6 +30,11 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
+
+	// Bootstrap admin user on first run
+	if err := bootstrapAdmin(cfg, db); err != nil {
+		log.Fatalf("Failed to bootstrap admin user: %v", err)
+	}
 
 	// Create server
 	srv := server.New(cfg, db)
@@ -60,4 +67,30 @@ func main() {
 	}
 
 	log.Println("Server exited cleanly")
+}
+
+func bootstrapAdmin(cfg *config.Config, db *database.DB) error {
+	count, err := db.UserCount()
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+
+	if cfg.AdminPass == "" {
+		log.Fatal("ULTRON_ADMIN_PASS is required for initial admin setup")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(cfg.AdminPass), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	if err := db.CreateUser(cfg.AdminUser, string(hash)); err != nil {
+		return err
+	}
+
+	log.Printf("Admin user %q created", cfg.AdminUser)
+	return nil
 }

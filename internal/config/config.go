@@ -6,12 +6,16 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Config struct {
-	Port     int
-	DBPath   string
-	LogLevel string
+	Port       int
+	DBPath     string
+	LogLevel   string
+	AdminUser  string
+	AdminPass  string
+	SessionTTL time.Duration
 }
 
 var validLogLevels = map[string]bool{
@@ -23,9 +27,12 @@ var validLogLevels = map[string]bool{
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port:     8080,
-		DBPath:   "/var/lib/ultron-ap/ultron.db",
-		LogLevel: "info",
+		Port:       8080,
+		DBPath:     "/var/lib/ultron-ap/ultron.db",
+		LogLevel:   "info",
+		AdminUser:  "admin",
+		AdminPass:  "",
+		SessionTTL: 24 * time.Hour,
 	}
 
 	if v := os.Getenv("ULTRON_PORT"); v != "" {
@@ -50,6 +57,22 @@ func Load() (*Config, error) {
 			level = "info"
 		}
 		cfg.LogLevel = level
+	}
+
+	if v := os.Getenv("ULTRON_ADMIN_USER"); v != "" {
+		cfg.AdminUser = v
+	}
+
+	if v := os.Getenv("ULTRON_ADMIN_PASS"); v != "" {
+		cfg.AdminPass = v
+	}
+
+	if v := os.Getenv("ULTRON_SESSION_TTL"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid session TTL %q: %w", v, err)
+		}
+		cfg.SessionTTL = d
 	}
 
 	return cfg, nil

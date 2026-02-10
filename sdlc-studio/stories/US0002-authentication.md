@@ -1,6 +1,6 @@
 # US0002: User Authentication
 
-> **Status:** Draft
+> **Status:** Done
 > **Epic:** [EP0001: Foundation & Authentication](../epics/EP0001-foundation-and-auth.md)
 > **Owner:** TBD
 > **Reviewer:** TBD

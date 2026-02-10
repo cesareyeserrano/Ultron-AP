@@ -7,12 +7,12 @@
 
 | Status | Count |
 |--------|-------|
-| Draft | 14 |
+| Draft | 12 |
 | Ready | 0 |
 | Planned | 0 |
-| In Progress | 1 |
+| In Progress | 0 |
 | Review | 0 |
-| Done | 0 |
+| Done | 2 |
 | **Total** | **15** |
 
 ## Stories by Epic
@@ -21,8 +21,8 @@
 
 | ID | Title | Status | Points | Owner |
 |----|-------|--------|--------|-------|
-| [US0001](US0001-project-scaffolding.md) | Project Scaffolding & Go Server | In Progress | 5 | TBD |
-| [US0002](US0002-authentication.md) | User Authentication | Draft | 8 | TBD |
+| [US0001](US0001-project-scaffolding.md) | Project Scaffolding & Go Server | Done | 5 | TBD |
+| [US0002](US0002-authentication.md) | User Authentication | Done | 8 | TBD |
 | [US0003](US0003-dark-mode-layout.md) | Dark Mode UI Layout | Draft | 5 | TBD |
 
 ### [EP0002: System Monitoring](../epics/EP0002-system-monitoring.md)
@@ -56,7 +56,7 @@
 
 | ID | Title | Epic | Status | Points | Persona |
 |----|-------|------|--------|--------|---------|
-| [US0001](US0001-project-scaffolding.md) | Project Scaffolding & Go Server | [EP0001](../epics/EP0001-foundation-and-auth.md) | In Progress | 5 | Admin |
+| [US0001](US0001-project-scaffolding.md) | Project Scaffolding & Go Server | [EP0001](../epics/EP0001-foundation-and-auth.md) | Done | 5 | Admin |
 | [US0002](US0002-authentication.md) | User Authentication | [EP0001](../epics/EP0001-foundation-and-auth.md) | Draft | 8 | Admin |
 | [US0003](US0003-dark-mode-layout.md) | Dark Mode UI Layout | [EP0001](../epics/EP0001-foundation-and-auth.md) | Draft | 5 | Admin |
 | [US0004](US0004-system-metrics-collector.md) | System Metrics Collector | [EP0002](../epics/EP0002-system-monitoring.md) | Draft | 5 | Admin |
