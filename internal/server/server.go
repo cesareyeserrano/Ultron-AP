@@ -11,6 +11,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/auth"
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
+	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/web"
 )
 
@@ -19,11 +20,12 @@ type Server struct {
 	cfg        *config.Config
 	db         *database.DB
 	bruteForce *auth.BruteForceTracker
+	collector  *metrics.Collector
 	templates  fs.FS
 	startedAt  time.Time
 }
 
-func New(cfg *config.Config, db *database.DB) *Server {
+func New(cfg *config.Config, db *database.DB, collector *metrics.Collector) *Server {
 	mux := http.NewServeMux()
 
 	s := &Server{
@@ -37,6 +39,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 		cfg:        cfg,
 		db:         db,
 		bruteForce: auth.NewBruteForceTracker(),
+		collector:  collector,
 		templates:  web.Templates,
 		startedAt:  time.Now(),
 	}

@@ -1,6 +1,6 @@
 # US0003: Dark Mode UI Layout
 
-> **Status:** In Progress
+> **Status:** Done
 > **Epic:** [EP0001: Foundation & Authentication](../epics/EP0001-foundation-and-auth.md)
 > **Owner:** TBD
 > **Reviewer:** TBD

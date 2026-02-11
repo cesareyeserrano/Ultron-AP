@@ -10,12 +10,13 @@ import (
 )
 
 type Config struct {
-	Port       int
-	DBPath     string
-	LogLevel   string
-	AdminUser  string
-	AdminPass  string
-	SessionTTL time.Duration
+	Port            int
+	DBPath          string
+	LogLevel        string
+	AdminUser       string
+	AdminPass       string
+	SessionTTL      time.Duration
+	MetricsInterval time.Duration
 }
 
 var validLogLevels = map[string]bool{
@@ -27,12 +28,13 @@ var validLogLevels = map[string]bool{
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port:       8080,
-		DBPath:     "/var/lib/ultron-ap/ultron.db",
-		LogLevel:   "info",
-		AdminUser:  "admin",
-		AdminPass:  "",
-		SessionTTL: 24 * time.Hour,
+		Port:            8080,
+		DBPath:          "/var/lib/ultron-ap/ultron.db",
+		LogLevel:        "info",
+		AdminUser:       "admin",
+		AdminPass:       "",
+		SessionTTL:      24 * time.Hour,
+		MetricsInterval: 5 * time.Second,
 	}
 
 	if v := os.Getenv("ULTRON_PORT"); v != "" {
@@ -73,6 +75,17 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("invalid session TTL %q: %w", v, err)
 		}
 		cfg.SessionTTL = d
+	}
+
+	if v := os.Getenv("ULTRON_METRICS_INTERVAL"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid metrics interval %q: %w", v, err)
+		}
+		if d < 1*time.Second {
+			return nil, fmt.Errorf("invalid metrics interval: must be >= 1s, got %v", d)
+		}
+		cfg.MetricsInterval = d
 	}
 
 	return cfg, nil

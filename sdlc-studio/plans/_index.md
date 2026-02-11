@@ -6,10 +6,10 @@
 
 | Status | Count |
 |--------|-------|
-| Draft | 1 |
+| Draft | 2 |
 | In Progress | 0 |
 | Complete | 2 |
-| **Total** | **3** |
+| **Total** | **4** |
 
 ## Plans
 
@@ -17,7 +17,8 @@
 |----|-------|-------|--------|----------|---------|
 | [PL0001](PL0001-project-scaffolding.md) | [US0001](../stories/US0001-project-scaffolding.md) | Project Scaffolding & Go Server | Complete | Test-After | 2026-02-09 |
 | [PL0002](PL0002-authentication.md) | [US0002](../stories/US0002-authentication.md) | User Authentication | Complete | TDD | 2026-02-09 |
-| [PL0003](PL0003-dark-mode-layout.md) | [US0003](../stories/US0003-dark-mode-layout.md) | Dark Mode UI Layout | Draft | Test-After | 2026-02-09 |
+| [PL0003](PL0003-dark-mode-layout.md) | [US0003](../stories/US0003-dark-mode-layout.md) | Dark Mode UI Layout | Complete | Test-After | 2026-02-09 |
+| [PL0004](PL0004-system-metrics-collector.md) | [US0004](../stories/US0004-system-metrics-collector.md) | System Metrics Collector | Draft | TDD | 2026-02-11 |
 
 ## Notes
 

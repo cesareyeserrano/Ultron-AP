@@ -12,6 +12,7 @@ import (
 
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
+	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
 )
 
@@ -36,8 +37,14 @@ func main() {
 		log.Fatalf("Failed to bootstrap admin user: %v", err)
 	}
 
+	// Start metrics collector
+	reader := metrics.NewSystemReader()
+	collector := metrics.NewCollector(reader, cfg.MetricsInterval, 24*time.Hour)
+	collector.Start(context.Background())
+	defer collector.Stop()
+
 	// Create server
-	srv := server.New(cfg, db)
+	srv := server.New(cfg, db, collector)
 
 	// Start server in goroutine
 	errCh := make(chan error, 1)

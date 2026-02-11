@@ -11,7 +11,7 @@ import (
 
 func clearEnv(t *testing.T) {
 	t.Helper()
-	for _, key := range []string{"ULTRON_PORT", "ULTRON_DB_PATH", "ULTRON_LOG_LEVEL", "ULTRON_ADMIN_USER", "ULTRON_ADMIN_PASS", "ULTRON_SESSION_TTL"} {
+	for _, key := range []string{"ULTRON_PORT", "ULTRON_DB_PATH", "ULTRON_LOG_LEVEL", "ULTRON_ADMIN_USER", "ULTRON_ADMIN_PASS", "ULTRON_SESSION_TTL", "ULTRON_METRICS_INTERVAL"} {
 		t.Setenv(key, "")
 		os.Unsetenv(key)
 	}
@@ -29,6 +29,7 @@ func TestLoad_Defaults(t *testing.T) {
 	assert.Equal(t, "admin", cfg.AdminUser)
 	assert.Equal(t, "", cfg.AdminPass)
 	assert.Equal(t, 24*time.Hour, cfg.SessionTTL)
+	assert.Equal(t, 5*time.Second, cfg.MetricsInterval)
 }
 
 func TestLoad_CustomPort(t *testing.T) {
@@ -158,4 +159,31 @@ func TestLoad_InvalidSessionTTL(t *testing.T) {
 	_, err := Load()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid session TTL")
+}
+
+func TestLoad_CustomMetricsInterval(t *testing.T) {
+	clearEnv(t)
+	t.Setenv("ULTRON_METRICS_INTERVAL", "10s")
+
+	cfg, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, 10*time.Second, cfg.MetricsInterval)
+}
+
+func TestLoad_InvalidMetricsInterval(t *testing.T) {
+	clearEnv(t)
+	t.Setenv("ULTRON_METRICS_INTERVAL", "notaduration")
+
+	_, err := Load()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid metrics interval")
+}
+
+func TestLoad_MetricsIntervalTooLow(t *testing.T) {
+	clearEnv(t)
+	t.Setenv("ULTRON_METRICS_INTERVAL", "500ms")
+
+	_, err := Load()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "must be >= 1s")
 }
