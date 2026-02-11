@@ -12,6 +12,7 @@ import (
 
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
+	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
 )
@@ -43,8 +44,13 @@ func main() {
 	collector.Start(context.Background())
 	defer collector.Stop()
 
+	// Start Docker monitor
+	dockerMon := docker.NewMonitor()
+	dockerMon.Start(context.Background())
+	defer dockerMon.Stop()
+
 	// Create server
-	srv := server.New(cfg, db, collector)
+	srv := server.New(cfg, db, collector, dockerMon)
 
 	// Start server in goroutine
 	errCh := make(chan error, 1)

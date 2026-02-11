@@ -38,7 +38,7 @@ func setupAuthHandlerTest(t *testing.T) (*Server, *database.DB) {
 	require.NoError(t, err)
 	require.NoError(t, db.CreateUser("admin", string(hash)))
 
-	srv := New(cfg, db, nil)
+	srv := New(cfg, db, nil, nil)
 	return srv, db
 }
 

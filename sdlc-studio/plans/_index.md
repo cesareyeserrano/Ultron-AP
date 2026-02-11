@@ -6,10 +6,10 @@
 
 | Status | Count |
 |--------|-------|
-| Draft | 2 |
+| Draft | 1 |
 | In Progress | 0 |
-| Complete | 2 |
-| **Total** | **4** |
+| Complete | 4 |
+| **Total** | **5** |
 
 ## Plans
 
@@ -18,7 +18,8 @@
 | [PL0001](PL0001-project-scaffolding.md) | [US0001](../stories/US0001-project-scaffolding.md) | Project Scaffolding & Go Server | Complete | Test-After | 2026-02-09 |
 | [PL0002](PL0002-authentication.md) | [US0002](../stories/US0002-authentication.md) | User Authentication | Complete | TDD | 2026-02-09 |
 | [PL0003](PL0003-dark-mode-layout.md) | [US0003](../stories/US0003-dark-mode-layout.md) | Dark Mode UI Layout | Complete | Test-After | 2026-02-09 |
-| [PL0004](PL0004-system-metrics-collector.md) | [US0004](../stories/US0004-system-metrics-collector.md) | System Metrics Collector | Draft | TDD | 2026-02-11 |
+| [PL0004](PL0004-system-metrics-collector.md) | [US0004](../stories/US0004-system-metrics-collector.md) | System Metrics Collector | Complete | TDD | 2026-02-11 |
+| [PL0005](PL0005-docker-monitor.md) | [US0005](../stories/US0005-docker-monitor.md) | Docker Container Monitor | Draft | TDD | 2026-02-11 |
 
 ## Notes
 

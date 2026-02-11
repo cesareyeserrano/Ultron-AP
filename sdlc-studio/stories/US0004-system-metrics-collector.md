@@ -1,6 +1,6 @@
 # US0004: System Metrics Collector
 
-> **Status:** In Progress
+> **Status:** Done
 > **Epic:** [EP0002: System Monitoring](../epics/EP0002-system-monitoring.md)
 > **Owner:** TBD
 > **Reviewer:** TBD
