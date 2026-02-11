@@ -48,6 +48,21 @@ func (db *DB) GetUserByUsername(username string) (*User, error) {
 	return u, nil
 }
 
+func (db *DB) GetUserByID(id int64) (*User, error) {
+	u := &User{}
+	err := db.QueryRow(
+		"SELECT id, username, password_hash, created_at, updated_at FROM User WHERE id = ?",
+		id,
+	).Scan(&u.ID, &u.Username, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("cannot query user by id %d: %w", id, err)
+	}
+	return u, nil
+}
+
 func (db *DB) UserCount() (int, error) {
 	var count int
 	err := db.QueryRow("SELECT COUNT(*) FROM User").Scan(&count)

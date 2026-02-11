@@ -1,0 +1,89 @@
+{{define "sidebar"}}
+<aside id="sidebar" class="sidebar-hidden md:sidebar-expanded flex flex-col bg-surface border-r border-border w-64 min-h-screen fixed md:sticky top-0 z-40 transition-all duration-200 overflow-hidden
+  [&.sidebar-collapsed]:w-16
+  [&.sidebar-hidden]:-translate-x-full [&.sidebar-hidden]:absolute
+  md:[&.sidebar-hidden]:translate-x-0 md:[&.sidebar-hidden]:relative md:[&.sidebar-hidden]:w-64">
+
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-4 h-14 border-b border-border shrink-0">
+        <svg class="w-7 h-7 text-danger shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="4"/>
+            <line x1="21.17" y1="8" x2="12" y2="8"/>
+            <line x1="3.95" y1="6.06" x2="8.54" y2="14"/>
+            <line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
+        </svg>
+        <span class="font-bold text-text text-lg whitespace-nowrap sidebar-label">Ultron-AP</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 py-2 overflow-y-auto">
+        <ul class="space-y-1 px-2">
+            <li>
+                <a href="/" class="nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                    {{if eq .ActivePage "dashboard"}}bg-card text-accent{{else}}text-text-muted hover:bg-card hover:text-text{{end}}" hx-boost="true">
+                    <!-- Lucide: LayoutDashboard -->
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+                    </svg>
+                    <span class="whitespace-nowrap truncate sidebar-label">Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="/docker" class="nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                    {{if eq .ActivePage "docker"}}bg-card text-accent{{else}}text-text-muted hover:bg-card hover:text-text{{end}}" hx-boost="true">
+                    <!-- Lucide: Container -->
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="14" x="3" y="5" rx="2"/><path d="M7 5V3"/><path d="M17 5V3"/><path d="M3 12h18"/>
+                    </svg>
+                    <span class="whitespace-nowrap truncate sidebar-label">Docker</span>
+                </a>
+            </li>
+            <li>
+                <a href="/services" class="nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                    {{if eq .ActivePage "services"}}bg-card text-accent{{else}}text-text-muted hover:bg-card hover:text-text{{end}}" hx-boost="true">
+                    <!-- Lucide: Server -->
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/>
+                    </svg>
+                    <span class="whitespace-nowrap truncate sidebar-label">Services</span>
+                </a>
+            </li>
+            <li>
+                <a href="/alerts" class="nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                    {{if eq .ActivePage "alerts"}}bg-card text-accent{{else}}text-text-muted hover:bg-card hover:text-text{{end}}" hx-boost="true">
+                    <!-- Lucide: Bell -->
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                    </svg>
+                    <span class="whitespace-nowrap truncate sidebar-label">Alerts</span>
+                </a>
+            </li>
+            <li>
+                <a href="/settings" class="nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                    {{if eq .ActivePage "settings"}}bg-card text-accent{{else}}text-text-muted hover:bg-card hover:text-text{{end}}" hx-boost="true">
+                    <!-- Lucide: Settings -->
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span class="whitespace-nowrap truncate sidebar-label">Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Collapse toggle (hidden on mobile) -->
+    <div class="hidden md:flex items-center justify-center border-t border-border p-2">
+        <button id="sidebar-toggle" class="p-2 rounded-lg text-text-muted hover:bg-card hover:text-text transition-colors" title="Toggle sidebar">
+            <!-- Lucide: PanelLeftClose / PanelLeftOpen -->
+            <svg class="w-5 h-5 sidebar-expanded-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>
+            </svg>
+            <svg class="w-5 h-5 sidebar-collapsed-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/>
+            </svg>
+        </button>
+    </div>
+</aside>
+{{end}}

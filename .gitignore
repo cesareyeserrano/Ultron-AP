@@ -34,5 +34,8 @@ credentials.json
 *.db-wal
 *.db-shm
 
+# Tailwind CSS standalone CLI
+tailwindcss
+
 # SDLC Studio (development artifacts)
 # sdlc-studio/

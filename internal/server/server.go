@@ -20,6 +20,7 @@ type Server struct {
 	db         *database.DB
 	bruteForce *auth.BruteForceTracker
 	templates  fs.FS
+	startedAt  time.Time
 }
 
 func New(cfg *config.Config, db *database.DB) *Server {
@@ -37,6 +38,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 		db:         db,
 		bruteForce: auth.NewBruteForceTracker(),
 		templates:  web.Templates,
+		startedAt:  time.Now(),
 	}
 
 	s.registerRoutes(mux)
@@ -56,12 +58,11 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 
 	// Protected routes (require auth)
 	mux.Handle("POST /logout", s.requireAuth(http.HandlerFunc(s.handleLogout)))
-	mux.Handle("GET /", s.requireAuth(http.HandlerFunc(s.handleDashboardPlaceholder)))
-}
-
-func (s *Server) handleDashboardPlaceholder(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, `<!DOCTYPE html><html><head><title>Ultron-AP</title></head><body style="background:#1a1a2e;color:#e0e0e0;font-family:system-ui;padding:2rem;"><h1>Ultron-AP Dashboard</h1><p>Coming in US0003.</p><form method="POST" action="/logout"><button type="submit" style="padding:0.5rem 1rem;background:#e94560;color:#fff;border:none;border-radius:4px;cursor:pointer;">Logout</button></form></body></html>`)
+	mux.Handle("GET /", s.requireAuth(http.HandlerFunc(s.handleDashboard)))
+	mux.Handle("GET /docker", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Docker", "docker"))))
+	mux.Handle("GET /services", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Services", "services"))))
+	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Alerts", "alerts"))))
+	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Settings", "settings"))))
 }
 
 func (s *Server) Start() error {

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	MaxAttempts    = 5
+	MaxAttempts   = 5
 	LockoutWindow = 15 * time.Minute
 )
 

@@ -55,6 +55,25 @@ func TestGetUserByUsername_NotFound(t *testing.T) {
 	assert.Nil(t, user)
 }
 
+func TestGetUserByID_Exists(t *testing.T) {
+	db := setupTestDB(t)
+	require.NoError(t, db.CreateUser("admin", "$2a$10$testhash"))
+
+	userByName, _ := db.GetUserByUsername("admin")
+	user, err := db.GetUserByID(userByName.ID)
+	require.NoError(t, err)
+	require.NotNil(t, user)
+	assert.Equal(t, "admin", user.Username)
+}
+
+func TestGetUserByID_NotFound(t *testing.T) {
+	db := setupTestDB(t)
+
+	user, err := db.GetUserByID(9999)
+	assert.NoError(t, err)
+	assert.Nil(t, user)
+}
+
 func TestUserCount_Empty(t *testing.T) {
 	db := setupTestDB(t)
 

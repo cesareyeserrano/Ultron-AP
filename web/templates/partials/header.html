@@ -1,0 +1,41 @@
+{{define "header"}}
+<header class="flex items-center justify-between h-14 px-4 bg-surface border-b border-border shrink-0">
+    <!-- Left: hamburger (mobile) + page title -->
+    <div class="flex items-center gap-3">
+        <button id="hamburger-btn" class="md:hidden p-1.5 rounded-lg text-text-muted hover:bg-card hover:text-text transition-colors">
+            <!-- Lucide: Menu -->
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+            </svg>
+        </button>
+        <h1 class="text-lg font-semibold text-text">{{.Title}}</h1>
+    </div>
+
+    <!-- Right: uptime + user + logout -->
+    <div class="flex items-center gap-4">
+        <!-- Uptime indicator -->
+        <div class="hidden sm:flex items-center gap-1.5 text-xs text-text-muted" title="Server uptime">
+            <!-- Lucide: Clock -->
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span class="font-mono">{{.Uptime}}</span>
+        </div>
+
+        <!-- Username -->
+        <span class="hidden sm:block text-sm text-text-muted max-w-[120px] truncate">{{.Username}}</span>
+
+        <!-- Logout -->
+        <form method="POST" action="/logout">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg text-text-muted hover:bg-danger hover:text-white transition-colors" title="Logout">
+                <!-- Lucide: LogOut -->
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>
+                </svg>
+                <span class="hidden sm:inline">Logout</span>
+            </button>
+        </form>
+    </div>
+</header>
+{{end}}

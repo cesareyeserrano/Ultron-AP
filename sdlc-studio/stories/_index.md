@@ -7,9 +7,9 @@
 
 | Status | Count |
 |--------|-------|
-| Draft | 12 |
+| Draft | 11 |
 | Ready | 0 |
-| Planned | 0 |
+| Planned | 1 |
 | In Progress | 0 |
 | Review | 0 |
 | Done | 2 |
@@ -23,7 +23,7 @@
 |----|-------|--------|--------|-------|
 | [US0001](US0001-project-scaffolding.md) | Project Scaffolding & Go Server | Done | 5 | TBD |
 | [US0002](US0002-authentication.md) | User Authentication | Done | 8 | TBD |
-| [US0003](US0003-dark-mode-layout.md) | Dark Mode UI Layout | Draft | 5 | TBD |
+| [US0003](US0003-dark-mode-layout.md) | Dark Mode UI Layout | Planned | 5 | TBD |
 
 ### [EP0002: System Monitoring](../epics/EP0002-system-monitoring.md)
 
@@ -57,8 +57,8 @@
 | ID | Title | Epic | Status | Points | Persona |
 |----|-------|------|--------|--------|---------|
 | [US0001](US0001-project-scaffolding.md) | Project Scaffolding & Go Server | [EP0001](../epics/EP0001-foundation-and-auth.md) | Done | 5 | Admin |
-| [US0002](US0002-authentication.md) | User Authentication | [EP0001](../epics/EP0001-foundation-and-auth.md) | Draft | 8 | Admin |
-| [US0003](US0003-dark-mode-layout.md) | Dark Mode UI Layout | [EP0001](../epics/EP0001-foundation-and-auth.md) | Draft | 5 | Admin |
+| [US0002](US0002-authentication.md) | User Authentication | [EP0001](../epics/EP0001-foundation-and-auth.md) | Done | 8 | Admin |
+| [US0003](US0003-dark-mode-layout.md) | Dark Mode UI Layout | [EP0001](../epics/EP0001-foundation-and-auth.md) | Planned | 5 | Admin |
 | [US0004](US0004-system-metrics-collector.md) | System Metrics Collector | [EP0002](../epics/EP0002-system-monitoring.md) | Draft | 5 | Admin |
 | [US0005](US0005-docker-monitor.md) | Docker Container Monitor | [EP0002](../epics/EP0002-system-monitoring.md) | Draft | 5 | Admin |
 | [US0006](US0006-systemd-monitor.md) | Systemd Service Monitor | [EP0002](../epics/EP0002-system-monitoring.md) | Draft | 3 | Admin |
