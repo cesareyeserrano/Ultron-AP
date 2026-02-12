@@ -30,7 +30,7 @@ func setupAuthTestServer(t *testing.T) (*Server, *database.DB) {
 	require.NoError(t, err)
 	t.Cleanup(func() { db.Close() })
 
-	srv := New(cfg, db, nil, nil)
+	srv := New(cfg, db, nil, nil, nil)
 	return srv, db
 }
 

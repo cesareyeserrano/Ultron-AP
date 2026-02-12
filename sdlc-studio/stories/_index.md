@@ -7,12 +7,12 @@
 
 | Status | Count |
 |--------|-------|
-| Draft | 9 |
+| Draft | 7 |
 | Ready | 0 |
 | Planned | 1 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 4 |
+| Done | 6 |
 | **Total** | **15** |
 
 ## Stories by Epic
@@ -30,8 +30,8 @@
 | ID | Title | Status | Points | Owner |
 |----|-------|--------|--------|-------|
 | [US0004](US0004-system-metrics-collector.md) | System Metrics Collector | Done | 5 | TBD |
-| [US0005](US0005-docker-monitor.md) | Docker Container Monitor | Planned | 5 | TBD |
-| [US0006](US0006-systemd-monitor.md) | Systemd Service Monitor | Draft | 3 | TBD |
+| [US0005](US0005-docker-monitor.md) | Docker Container Monitor | Done | 5 | TBD |
+| [US0006](US0006-systemd-monitor.md) | Systemd Service Monitor | Planned | 3 | TBD |
 | [US0007](US0007-dashboard-view.md) | Dashboard View with SSE | Draft | 8 | TBD |
 
 ### [EP0003: Alerting & Notifications](../epics/EP0003-alerting-and-notifications.md)
@@ -60,8 +60,8 @@
 | [US0002](US0002-authentication.md) | User Authentication | [EP0001](../epics/EP0001-foundation-and-auth.md) | Done | 8 | Admin |
 | [US0003](US0003-dark-mode-layout.md) | Dark Mode UI Layout | [EP0001](../epics/EP0001-foundation-and-auth.md) | Done | 5 | Admin |
 | [US0004](US0004-system-metrics-collector.md) | System Metrics Collector | [EP0002](../epics/EP0002-system-monitoring.md) | Done | 5 | Admin |
-| [US0005](US0005-docker-monitor.md) | Docker Container Monitor | [EP0002](../epics/EP0002-system-monitoring.md) | Planned | 5 | Admin |
-| [US0006](US0006-systemd-monitor.md) | Systemd Service Monitor | [EP0002](../epics/EP0002-system-monitoring.md) | Draft | 3 | Admin |
+| [US0005](US0005-docker-monitor.md) | Docker Container Monitor | [EP0002](../epics/EP0002-system-monitoring.md) | Done | 5 | Admin |
+| [US0006](US0006-systemd-monitor.md) | Systemd Service Monitor | [EP0002](../epics/EP0002-system-monitoring.md) | Planned | 3 | Admin |
 | [US0007](US0007-dashboard-view.md) | Dashboard View with SSE | [EP0002](../epics/EP0002-system-monitoring.md) | Draft | 8 | Admin |
 | [US0008](US0008-alert-engine.md) | Alert Engine & Rule Evaluation | [EP0003](../epics/EP0003-alerting-and-notifications.md) | Draft | 5 | Admin |
 | [US0009](US0009-alert-configuration-ui.md) | Alert Configuration UI | [EP0003](../epics/EP0003-alerting-and-notifications.md) | Draft | 5 | Admin |

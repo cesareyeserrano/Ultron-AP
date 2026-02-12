@@ -15,6 +15,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
+	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 )
 
 func main() {
@@ -49,8 +50,13 @@ func main() {
 	dockerMon.Start(context.Background())
 	defer dockerMon.Stop()
 
+	// Start Systemd monitor
+	systemdMon := systemd.NewMonitor()
+	systemdMon.Start(context.Background())
+	defer systemdMon.Stop()
+
 	// Create server
-	srv := server.New(cfg, db, collector, dockerMon)
+	srv := server.New(cfg, db, collector, dockerMon, systemdMon)
 
 	// Start server in goroutine
 	errCh := make(chan error, 1)

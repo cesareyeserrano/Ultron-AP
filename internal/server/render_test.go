@@ -44,7 +44,7 @@ func setupTestServerWithSession(t *testing.T) (*Server, *database.Session) {
 	err = db.CreateSession(session)
 	require.NoError(t, err)
 
-	srv := New(cfg, db, nil, nil)
+	srv := New(cfg, db, nil, nil, nil)
 	return srv, session
 }
 
