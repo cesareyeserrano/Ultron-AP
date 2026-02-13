@@ -1,0 +1,41 @@
+{{define "partials/sse-docker.html"}}
+{{if not .DockerAvail}}<div class="bg-surface rounded-lg border border-border p-4">
+    <p class="text-text-muted text-sm">Docker not available</p>
+</div>
+{{else}}{{if not .Containers}}<div class="bg-surface rounded-lg border border-border p-4">
+    <p class="text-text-muted text-sm">No containers found</p>
+</div>
+{{else}}<div class="overflow-x-auto">
+<table class="w-full text-sm">
+    <thead>
+        <tr class="text-text-muted text-xs border-b border-border">
+            <th class="text-left py-2 px-3">Status</th>
+            <th class="text-left py-2 px-3">Name</th>
+            <th class="text-left py-2 px-3 hidden sm:table-cell">Image</th>
+            <th class="text-right py-2 px-3">CPU</th>
+            <th class="text-right py-2 px-3">Memory</th>
+            <th class="text-left py-2 px-3 hidden md:table-cell">Status</th>
+        </tr>
+    </thead>
+    <tbody>
+    {{range .Containers}}
+        <tr class="border-b border-border/50 hover:bg-card/50 cursor-pointer"
+            hx-get="/api/docker/{{.ID}}"
+            hx-target="#detail-{{shortID .ID}}"
+            hx-swap="innerHTML"
+            hx-trigger="click"
+            hx-boost="false">
+            <td class="py-2 px-3"><span class="inline-block w-2.5 h-2.5 rounded-full {{healthColor .Health}}"></span></td>
+            <td class="py-2 px-3 font-mono text-text">{{.Name}}</td>
+            <td class="py-2 px-3 text-text-muted hidden sm:table-cell">{{.Image}}</td>
+            <td class="py-2 px-3 text-right font-mono text-text">{{if eq .State "running"}}{{formatPercent .CPUPercent}}{{else}}--{{end}}</td>
+            <td class="py-2 px-3 text-right font-mono text-text">{{if eq .State "running"}}{{formatBytes .MemUsage}}{{else}}--{{end}}</td>
+            <td class="py-2 px-3 text-text-muted hidden md:table-cell">{{.Status}}</td>
+        </tr>
+        <tr><td colspan="6" id="detail-{{shortID .ID}}"></td></tr>
+    {{end}}
+    </tbody>
+</table>
+</div>
+{{end}}{{end}}
+{{end}}

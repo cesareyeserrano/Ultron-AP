@@ -1,0 +1,31 @@
+{{define "partials/sse-systemd.html"}}
+{{if not .SystemdAvail}}<div class="bg-surface rounded-lg border border-border p-4">
+    <p class="text-text-muted text-sm">Systemd not available</p>
+</div>
+{{else}}{{if not .Services}}<div class="bg-surface rounded-lg border border-border p-4">
+    <p class="text-text-muted text-sm">No services found</p>
+</div>
+{{else}}<div class="overflow-x-auto">
+<table class="w-full text-sm" id="systemd-table">
+    <thead>
+        <tr class="text-text-muted text-xs border-b border-border">
+            <th class="text-left py-2 px-3">Status</th>
+            <th class="text-left py-2 px-3">Service</th>
+            <th class="text-left py-2 px-3 hidden sm:table-cell">State</th>
+            <th class="text-left py-2 px-3 hidden md:table-cell">Description</th>
+        </tr>
+    </thead>
+    <tbody>
+    {{range .Services}}
+        <tr class="border-b border-border/50 svc-row" data-health="{{.Health}}">
+            <td class="py-2 px-3"><span class="inline-block w-2.5 h-2.5 rounded-full {{svcHealthColor .Health}}"></span></td>
+            <td class="py-2 px-3 font-mono text-text">{{.Name}}</td>
+            <td class="py-2 px-3 text-text-muted hidden sm:table-cell">{{.ActiveState}}/{{.SubState}}</td>
+            <td class="py-2 px-3 text-text-muted hidden md:table-cell truncate max-w-xs">{{.Description}}</td>
+        </tr>
+    {{end}}
+    </tbody>
+</table>
+</div>
+{{end}}{{end}}
+{{end}}

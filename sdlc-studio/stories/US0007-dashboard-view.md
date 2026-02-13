@@ -1,6 +1,6 @@
 # US0007: Dashboard View with SSE
 
-> **Status:** Draft
+> **Status:** Done
 > **Epic:** [EP0002: System Monitoring](../epics/EP0002-system-monitoring.md)
 > **Owner:** TBD
 > **Reviewer:** TBD

@@ -25,6 +25,7 @@ type Server struct {
 	collector  *metrics.Collector
 	docker     *docker.Monitor
 	systemd    *systemd.Monitor
+	sseBroker  *sseBroker
 	templates  fs.FS
 	startedAt  time.Time
 }
@@ -37,7 +38,7 @@ func New(cfg *config.Config, db *database.DB, collector *metrics.Collector, dock
 			Addr:         cfg.Addr(),
 			Handler:      mux,
 			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 10 * time.Second,
+			WriteTimeout: 0, // Disabled for SSE long-lived connections
 			IdleTimeout:  120 * time.Second,
 		},
 		cfg:        cfg,
@@ -46,11 +47,13 @@ func New(cfg *config.Config, db *database.DB, collector *metrics.Collector, dock
 		collector:  collector,
 		docker:     dockerMon,
 		systemd:    systemdMon,
+		sseBroker:  newSSEBroker(),
 		templates:  web.Templates,
 		startedAt:  time.Now(),
 	}
 
 	s.registerRoutes(mux)
+	s.startSSEBroadcast()
 
 	return s
 }
@@ -72,6 +75,10 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /services", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Services", "services"))))
 	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Alerts", "alerts"))))
 	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Settings", "settings"))))
+
+	// API routes (require auth)
+	mux.Handle("GET /api/sse/dashboard", s.requireAuth(http.HandlerFunc(s.handleSSE)))
+	mux.Handle("GET /api/docker/{id}", s.requireAuth(http.HandlerFunc(s.handleDockerDetail)))
 }
 
 func (s *Server) Start() error {

@@ -1,0 +1,12 @@
+{{define "partials/sse-charts.html"}}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <p class="text-xs text-text-muted mb-2">CPU History</p>
+        {{sparklineSVG .CPUHistory "cpu"}}
+    </div>
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <p class="text-xs text-text-muted mb-2">Memory History</p>
+        {{sparklineSVG .RAMHistory "ram"}}
+    </div>
+</div>
+{{end}}

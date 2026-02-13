@@ -1,0 +1,34 @@
+{{define "partials/sse-metrics.html"}}
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <p class="text-xs text-text-muted mb-1">CPU</p>
+        {{if .Metrics}}<p class="text-2xl font-mono font-bold text-accent">{{formatPercent .Metrics.CPU.TotalPercent}}</p>
+        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+    </div>
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <p class="text-xs text-text-muted mb-1">Memory</p>
+        {{if .Metrics}}<p class="text-2xl font-mono font-bold text-accent">{{formatPercent .Metrics.RAM.Percent}}</p>
+        <p class="text-xs text-text-muted">{{formatBytes .Metrics.RAM.Used}} / {{formatBytes .Metrics.RAM.Total}}</p>
+        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+    </div>
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <p class="text-xs text-text-muted mb-1">Disk</p>
+        {{if .Metrics}}{{if .Metrics.Disks}}<p class="text-2xl font-mono font-bold text-accent">{{formatPercent (index .Metrics.Disks 0).Percent}}</p>
+        <p class="text-xs text-text-muted">{{formatBytes (index .Metrics.Disks 0).Used}} / {{formatBytes (index .Metrics.Disks 0).Total}}</p>
+        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+    </div>
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <p class="text-xs text-text-muted mb-1">Network</p>
+        {{if .Metrics}}{{if .Metrics.Networks}}<p class="text-sm font-mono text-accent">&#8593; {{formatBytes (index .Metrics.Networks 0).BytesSentPS}}/s</p>
+        <p class="text-sm font-mono text-accent">&#8595; {{formatBytes (index .Metrics.Networks 0).BytesRecvPS}}/s</p>
+        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+    </div>
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <p class="text-xs text-text-muted mb-1">Temp</p>
+        {{if .Metrics}}<p class="text-2xl font-mono font-bold {{tempColor .Metrics.Temperature}}">{{formatTemp .Metrics.Temperature}}</p>
+        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+    </div>
+</div>
+{{end}}

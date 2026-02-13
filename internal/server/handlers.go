@@ -12,7 +12,26 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, "dashboard.html", "Dashboard", "dashboard", nil)
+	dd := s.gatherDashboardData()
+	s.render(w, r, "dashboard.html", "Dashboard", "dashboard", dd)
+}
+
+func (s *Server) handleDockerDetail(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" || s.docker == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
+	detail, err := s.docker.ContainerDetail(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Container not found", http.StatusNotFound)
+		return
+	}
+
+	html := s.renderPartial("partials/docker-detail.html", detail)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(html))
 }
 
 // handlePlaceholderPage returns a handler for future pages that shows a "coming soon" message.

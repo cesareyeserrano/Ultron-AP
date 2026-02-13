@@ -1,0 +1,16 @@
+{{define "partials/docker-detail.html"}}
+<div class="bg-card/30 p-3 text-xs space-y-2">
+    {{if .Ports}}<div>
+        <span class="text-text-muted font-semibold">Ports:</span>
+        {{range .Ports}}<span class="ml-2 font-mono text-text">{{.HostPort}}:{{.ContainerPort}}</span>{{end}}
+    </div>{{end}}
+    {{if .Volumes}}<div>
+        <span class="text-text-muted font-semibold">Volumes:</span>
+        {{range .Volumes}}<span class="ml-2 font-mono text-text">{{.Source}}:{{.Destination}}</span>{{end}}
+    </div>{{end}}
+    {{if .EnvVarNames}}<div>
+        <span class="text-text-muted font-semibold">Env:</span>
+        <span class="ml-2 font-mono text-text-muted">{{range $i, $v := .EnvVarNames}}{{if $i}}, {{end}}{{$v}}{{end}}</span>
+    </div>{{end}}
+</div>
+{{end}}
