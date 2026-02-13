@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/cesareyeserrano/ultron-ap/internal/alerts"
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
@@ -55,8 +56,18 @@ func main() {
 	systemdMon.Start(context.Background())
 	defer systemdMon.Stop()
 
+	// Seed default alert rules
+	if err := db.SeedDefaultAlertConfigs(); err != nil {
+		log.Fatalf("Failed to seed default alert configs: %v", err)
+	}
+
+	// Start alert engine
+	alertEng := alerts.NewEngine(db, collector, dockerMon, systemdMon, cfg.MetricsInterval)
+	alertEng.Start(context.Background())
+	defer alertEng.Stop()
+
 	// Create server
-	srv := server.New(cfg, db, collector, dockerMon, systemdMon)
+	srv := server.New(cfg, db, collector, dockerMon, systemdMon, alertEng)
 
 	// Start server in goroutine
 	errCh := make(chan error, 1)

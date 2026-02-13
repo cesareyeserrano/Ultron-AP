@@ -27,7 +27,7 @@ func setupTestServer(t *testing.T) *Server {
 	require.NoError(t, err)
 	t.Cleanup(func() { db.Close() })
 
-	return New(cfg, db, nil, nil, nil)
+	return New(cfg, db, nil, nil, nil, nil)
 }
 
 func TestHealthEndpoint_Returns200(t *testing.T) {
@@ -79,6 +79,6 @@ func TestNewServer_SetsAddr(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	srv := New(cfg, db, nil, nil, nil)
+	srv := New(cfg, db, nil, nil, nil, nil)
 	assert.Equal(t, ":9090", srv.httpServer.Addr)
 }
