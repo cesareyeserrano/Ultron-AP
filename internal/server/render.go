@@ -19,12 +19,18 @@ type PageData struct {
 }
 
 func (s *Server) render(w http.ResponseWriter, r *http.Request, page string, title string, activePage string, content interface{}) {
-	tmpl, err := template.ParseFS(s.templates,
+	patterns := []string{
 		"templates/base.html",
 		"templates/partials/sidebar.html",
 		"templates/partials/header.html",
 		fmt.Sprintf("templates/%s", page),
-	)
+	}
+	// Include extra partials needed by specific pages
+	if page == "settings.html" {
+		patterns = append(patterns, "templates/partials/alert-rules-table.html")
+	}
+
+	tmpl, err := template.ParseFS(s.templates, patterns...)
 	if err != nil {
 		log.Printf("Failed to parse templates for %s: %v", page, err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

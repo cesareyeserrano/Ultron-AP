@@ -1,6 +1,6 @@
 # US0009: Alert Configuration UI
 
-> **Status:** Draft
+> **Status:** Done
 > **Epic:** [EP0003: Alerting & Notifications](../epics/EP0003-alerting-and-notifications.md)
 > **Owner:** TBD
 > **Reviewer:** TBD

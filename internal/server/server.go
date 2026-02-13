@@ -77,11 +77,15 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /docker", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Docker", "docker"))))
 	mux.Handle("GET /services", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Services", "services"))))
 	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Alerts", "alerts"))))
-	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Settings", "settings"))))
+	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handleSettings)))
 
 	// API routes (require auth)
 	mux.Handle("GET /api/sse/dashboard", s.requireAuth(http.HandlerFunc(s.handleSSE)))
 	mux.Handle("GET /api/docker/{id}", s.requireAuth(http.HandlerFunc(s.handleDockerDetail)))
+	mux.Handle("POST /api/alerts/rules", s.requireAuth(http.HandlerFunc(s.handleAlertRuleCreate)))
+	mux.Handle("POST /api/alerts/rules/{id}/toggle", s.requireAuth(http.HandlerFunc(s.handleAlertRuleToggle)))
+	mux.Handle("DELETE /api/alerts/rules/{id}", s.requireAuth(http.HandlerFunc(s.handleAlertRuleDelete)))
+	mux.Handle("POST /api/notifications/{channel}", s.requireAuth(http.HandlerFunc(s.handleNotificationSave)))
 }
 
 func (s *Server) Start() error {

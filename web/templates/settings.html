@@ -1,0 +1,138 @@
+{{define "content"}}
+<div class="space-y-6">
+    <h1 class="text-lg font-semibold text-text">Settings</h1>
+
+    <!-- Alert Rules Section -->
+    <section>
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider">Alert Rules</h2>
+        </div>
+
+        <div id="rules-table">
+            {{template "alert-rules-table" .Content.Rules}}
+        </div>
+
+        <!-- Add Rule Form -->
+        <div class="mt-4 bg-surface rounded-lg border border-border p-4">
+            <h3 class="text-sm font-medium text-text mb-3">Add Rule</h3>
+            <form hx-post="/api/alerts/rules" hx-target="#rules-table" hx-swap="innerHTML" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <div>
+                    <label class="text-xs text-text-muted">Name</label>
+                    <input type="text" name="name" placeholder="e.g. High CPU" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                </div>
+                <div>
+                    <label class="text-xs text-text-muted">Metric</label>
+                    <select name="metric" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                        <option value="cpu">CPU</option>
+                        <option value="ram">RAM</option>
+                        <option value="disk">Disk</option>
+                        <option value="temp">Temperature</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-text-muted">Operator</label>
+                    <select name="operator" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                        <option value=">">&gt;</option>
+                        <option value=">=">&gt;=</option>
+                        <option value="<">&lt;</option>
+                        <option value="<=">&lt;=</option>
+                        <option value="==">==</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-text-muted">Threshold</label>
+                    <input type="number" name="threshold" step="0.1" min="0" required class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                </div>
+                <div>
+                    <label class="text-xs text-text-muted">Severity</label>
+                    <select name="severity" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                        <option value="critical">Critical</option>
+                        <option value="warning">Warning</option>
+                        <option value="info">Info</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-text-muted">Cooldown (min)</label>
+                    <input type="number" name="cooldown" value="15" min="0" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                </div>
+                <div class="flex items-end col-span-2 md:col-span-2">
+                    <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Add Rule</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Telegram Configuration -->
+    <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Telegram Notifications</h2>
+        <div class="bg-surface rounded-lg border border-border p-4">
+            <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-text-muted">Bot Token</label>
+                        <input type="password" name="bot_token" placeholder="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "bot_token"}}{{else}}Enter bot token{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted">Chat ID</label>
+                        <input type="text" name="chat_id" value="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "chat_id"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 text-sm text-text">
+                        <input type="checkbox" name="enabled" {{if and .Content.Telegram .Content.Telegram.Enabled}}checked{{end}} class="rounded border-border bg-base">
+                        Enabled
+                    </label>
+                    <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                </div>
+                <div id="telegram-status"></div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Email Configuration -->
+    <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Email Notifications</h2>
+        <div class="bg-surface rounded-lg border border-border p-4">
+            <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-xs text-text-muted">SMTP Host</label>
+                        <input type="text" name="smtp_host" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_host"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted">SMTP Port</label>
+                        <input type="text" name="smtp_port" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_port"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted">SMTP User</label>
+                        <input type="text" name="smtp_user" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_user"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted">SMTP Password</label>
+                        <input type="password" name="smtp_password" placeholder="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_password"}}{{else}}Enter password{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted">From</label>
+                        <input type="email" name="from" value="{{if .Content.Email}}{{index .Content.Email.Fields "from"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted">To</label>
+                        <input type="email" name="to" value="{{if .Content.Email}}{{index .Content.Email.Fields "to"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 text-sm text-text">
+                        <input type="checkbox" name="enabled" {{if and .Content.Email .Content.Email.Enabled}}checked{{end}} class="rounded border-border bg-base">
+                        Enabled
+                    </label>
+                    <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                </div>
+                <div id="email-status"></div>
+            </form>
+        </div>
+    </section>
+</div>
+{{end}}

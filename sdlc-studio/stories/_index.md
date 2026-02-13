@@ -7,12 +7,12 @@
 
 | Status | Count |
 |--------|-------|
-| Draft | 5 |
+| Draft | 4 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 9 |
+| Done | 10 |
 | **Total** | **15** |
 
 ## Stories by Epic
@@ -39,7 +39,7 @@
 | ID | Title | Status | Points | Owner |
 |----|-------|--------|--------|-------|
 | [US0008](US0008-alert-engine.md) | Alert Engine & Rule Evaluation | Done | 5 | TBD |
-| [US0009](US0009-alert-configuration-ui.md) | Alert Configuration UI | Draft | 5 | TBD |
+| [US0009](US0009-alert-configuration-ui.md) | Alert Configuration UI | Done | 5 | TBD |
 | [US0010](US0010-telegram-notifications.md) | Telegram Notifications | Draft | 3 | TBD |
 | [US0011](US0011-email-notifications.md) | Email Notifications | Draft | 3 | TBD |
 | [US0012](US0012-alert-dashboard-panel.md) | Alert Dashboard Panel | Draft | 5 | TBD |

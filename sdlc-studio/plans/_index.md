@@ -8,8 +8,8 @@
 |--------|-------|
 | Draft | 0 |
 | In Progress | 0 |
-| Complete | 8 |
-| **Total** | **8** |
+| Complete | 9 |
+| **Total** | **9** |
 
 ## Plans
 
@@ -23,6 +23,7 @@
 | [PL0006](PL0006-systemd-monitor.md) | [US0006](../stories/US0006-systemd-monitor.md) | Systemd Service Monitor | Complete | TDD | 2026-02-11 |
 | [PL0007](PL0007-dashboard-view.md) | [US0007](../stories/US0007-dashboard-view.md) | Dashboard View with SSE | Complete | Test-After | 2026-02-11 |
 | [PL0008](PL0008-alert-engine.md) | [US0008](../stories/US0008-alert-engine.md) | Alert Engine & Rule Evaluation | Complete | TDD | 2026-02-11 |
+| [PL0009](PL0009-alert-config-ui.md) | [US0009](../stories/US0009-alert-configuration-ui.md) | Alert Configuration UI | Complete | Test-After | 2026-02-11 |
 
 ## Notes
 

@@ -172,6 +172,43 @@ func (db *DB) GetAlertConfig(id int64) (*AlertConfig, error) {
 	return &ac, nil
 }
 
+// UpdateAlertConfig updates an existing alert rule.
+func (db *DB) UpdateAlertConfig(ac *AlertConfig) error {
+	enabled := 0
+	if ac.Enabled {
+		enabled = 1
+	}
+	_, err := db.Exec(
+		`UPDATE AlertConfig SET name=?, metric=?, operator=?, threshold=?, severity=?, enabled=?, cooldown_minutes=?, updated_at=CURRENT_TIMESTAMP
+		 WHERE id=?`,
+		ac.Name, ac.Metric, ac.Operator, ac.Threshold, ac.Severity, enabled, ac.CooldownMinutes, ac.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("cannot update alert config %d: %w", ac.ID, err)
+	}
+	return nil
+}
+
+// ToggleAlertConfig flips the enabled state of an alert config.
+func (db *DB) ToggleAlertConfig(id int64) error {
+	_, err := db.Exec(
+		`UPDATE AlertConfig SET enabled = CASE WHEN enabled = 1 THEN 0 ELSE 1 END, updated_at=CURRENT_TIMESTAMP WHERE id=?`, id,
+	)
+	if err != nil {
+		return fmt.Errorf("cannot toggle alert config %d: %w", id, err)
+	}
+	return nil
+}
+
+// DeleteAlertConfig removes an alert config by ID.
+func (db *DB) DeleteAlertConfig(id int64) error {
+	_, err := db.Exec("DELETE FROM AlertConfig WHERE id=?", id)
+	if err != nil {
+		return fmt.Errorf("cannot delete alert config %d: %w", id, err)
+	}
+	return nil
+}
+
 // SeedDefaultAlertConfigs inserts default alert rules if none exist.
 func (db *DB) SeedDefaultAlertConfigs() error {
 	count, err := db.AlertConfigCount()

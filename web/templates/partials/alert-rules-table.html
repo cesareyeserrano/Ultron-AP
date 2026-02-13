@@ -1,0 +1,52 @@
+{{define "alert-rules-table"}}
+{{if .}}
+<div class="overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-border text-text-muted text-xs uppercase">
+                <th class="text-left py-2 px-3">Name</th>
+                <th class="text-left py-2 px-3">Metric</th>
+                <th class="text-left py-2 px-3">Condition</th>
+                <th class="text-left py-2 px-3">Severity</th>
+                <th class="text-left py-2 px-3">Cooldown</th>
+                <th class="text-center py-2 px-3">Enabled</th>
+                <th class="text-right py-2 px-3">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .}}
+            <tr class="border-b border-border/50 hover:bg-card/50">
+                <td class="py-2 px-3 text-text">{{.Name}}</td>
+                <td class="py-2 px-3 text-text-muted uppercase text-xs">{{.Metric}}</td>
+                <td class="py-2 px-3 font-mono text-text">{{.Operator}} {{printf "%.1f" .Threshold}}</td>
+                <td class="py-2 px-3">
+                    <span class="text-xs px-1.5 py-0.5 rounded {{if eq .Severity "critical"}}bg-danger/20 text-danger{{else if eq .Severity "warning"}}bg-yellow-400/20 text-yellow-400{{else}}bg-accent/20 text-accent{{end}}">{{.Severity}}</span>
+                </td>
+                <td class="py-2 px-3 text-text-muted">{{.CooldownMinutes}}m</td>
+                <td class="text-center py-2 px-3">
+                    {{if .Enabled}}
+                    <span class="inline-block w-2 h-2 rounded-full bg-green-400"></span>
+                    {{else}}
+                    <span class="inline-block w-2 h-2 rounded-full bg-text-muted"></span>
+                    {{end}}
+                </td>
+                <td class="text-right py-2 px-3 space-x-1">
+                    <button hx-post="/api/alerts/rules/{{.ID}}/toggle" hx-target="#rules-table" hx-swap="innerHTML" hx-include="[name='csrf_token']"
+                        class="text-xs text-text-muted hover:text-text px-1.5 py-0.5 rounded hover:bg-card transition-colors">
+                        {{if .Enabled}}Disable{{else}}Enable{{end}}
+                    </button>
+                    <button hx-delete="/api/alerts/rules/{{.ID}}" hx-target="#rules-table" hx-swap="innerHTML" hx-include="[name='csrf_token']"
+                        hx-confirm="Delete this alert rule?"
+                        class="text-xs text-danger hover:text-danger/80 px-1.5 py-0.5 rounded hover:bg-card transition-colors">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{else}}
+<div class="p-4 text-text-muted text-sm">No alert rules configured.</div>
+{{end}}
+{{end}}
