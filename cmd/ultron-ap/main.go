@@ -15,6 +15,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
+	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 )
@@ -61,8 +62,14 @@ func main() {
 		log.Fatalf("Failed to seed default alert configs: %v", err)
 	}
 
+	// Start notification dispatcher
+	dispatcher := notify.NewDispatcher(db)
+	dispatcher.Start()
+	defer dispatcher.Stop()
+
 	// Start alert engine
 	alertEng := alerts.NewEngine(db, collector, dockerMon, systemdMon, cfg.MetricsInterval)
+	alertEng.SetAlertCallback(dispatcher.Dispatch)
 	alertEng.Start(context.Background())
 	defer alertEng.Stop()
 

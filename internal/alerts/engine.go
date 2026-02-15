@@ -13,6 +13,9 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 )
 
+// AlertCallback is called when a new alert is created.
+type AlertCallback func(alert *database.Alert)
+
 // Engine evaluates alert rules against current system state.
 type Engine struct {
 	db        *database.DB
@@ -20,6 +23,7 @@ type Engine struct {
 	docker    *docker.Monitor
 	systemd   *systemd.Monitor
 	interval  time.Duration
+	onAlert   AlertCallback
 
 	mu           sync.Mutex
 	cooldowns    map[string]time.Time // ruleKey -> last triggered
@@ -44,6 +48,11 @@ func NewEngine(db *database.DB, collector *metrics.Collector, dockerMon *docker.
 		prevDocker:  make(map[string]string),
 		prevSystemd: make(map[string]string),
 	}
+}
+
+// SetAlertCallback sets a callback invoked when an alert is created.
+func (e *Engine) SetAlertCallback(cb AlertCallback) {
+	e.onAlert = cb
 }
 
 // Start begins the evaluation loop.
@@ -167,6 +176,8 @@ func (e *Engine) evaluateMetricRule(cfg database.AlertConfig, snap *metrics.Snap
 	}
 	if err := e.db.CreateAlert(alert); err != nil {
 		log.Printf("alerts: failed to create alert: %v", err)
+	} else if e.onAlert != nil {
+		e.onAlert(alert)
 	}
 }
 
@@ -201,6 +212,8 @@ func (e *Engine) evaluateDockerChanges() {
 			}
 			if err := e.db.CreateAlert(alert); err != nil {
 				log.Printf("alerts: failed to create docker alert: %v", err)
+			} else if e.onAlert != nil {
+				e.onAlert(alert)
 			}
 		}
 	}
@@ -241,6 +254,8 @@ func (e *Engine) evaluateSystemdChanges() {
 			}
 			if err := e.db.CreateAlert(alert); err != nil {
 				log.Printf("alerts: failed to create systemd alert: %v", err)
+			} else if e.onAlert != nil {
+				e.onAlert(alert)
 			}
 		}
 	}

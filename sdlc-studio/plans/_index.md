@@ -8,8 +8,8 @@
 |--------|-------|
 | Draft | 0 |
 | In Progress | 0 |
-| Complete | 9 |
-| **Total** | **9** |
+| Complete | 10 |
+| **Total** | **10** |
 
 ## Plans
 
@@ -24,6 +24,7 @@
 | [PL0007](PL0007-dashboard-view.md) | [US0007](../stories/US0007-dashboard-view.md) | Dashboard View with SSE | Complete | Test-After | 2026-02-11 |
 | [PL0008](PL0008-alert-engine.md) | [US0008](../stories/US0008-alert-engine.md) | Alert Engine & Rule Evaluation | Complete | TDD | 2026-02-11 |
 | [PL0009](PL0009-alert-config-ui.md) | [US0009](../stories/US0009-alert-configuration-ui.md) | Alert Configuration UI | Complete | Test-After | 2026-02-11 |
+| [PL0010](PL0010-telegram-notifications.md) | [US0010](../stories/US0010-telegram-notifications.md) | Telegram Notifications | Complete | TDD | 2026-02-11 |
 
 ## Notes
 
