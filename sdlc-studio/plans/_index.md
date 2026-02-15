@@ -8,8 +8,8 @@
 |--------|-------|
 | Draft | 0 |
 | In Progress | 0 |
-| Complete | 10 |
-| **Total** | **10** |
+| Complete | 11 |
+| **Total** | **11** |
 
 ## Plans
 
@@ -25,6 +25,7 @@
 | [PL0008](PL0008-alert-engine.md) | [US0008](../stories/US0008-alert-engine.md) | Alert Engine & Rule Evaluation | Complete | TDD | 2026-02-11 |
 | [PL0009](PL0009-alert-config-ui.md) | [US0009](../stories/US0009-alert-configuration-ui.md) | Alert Configuration UI | Complete | Test-After | 2026-02-11 |
 | [PL0010](PL0010-telegram-notifications.md) | [US0010](../stories/US0010-telegram-notifications.md) | Telegram Notifications | Complete | TDD | 2026-02-11 |
+| [PL0011](PL0011-email-notifications.md) | [US0011](../stories/US0011-email-notifications.md) | Email Notifications | Complete | TDD | 2026-02-11 |
 
 ## Notes
 

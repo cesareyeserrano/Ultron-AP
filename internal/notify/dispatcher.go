@@ -90,5 +90,17 @@ func (d *Dispatcher) buildNotifiers() []Notifier {
 		}
 	}
 
+	// Email
+	if em, err := d.db.GetNotificationConfig("email"); err == nil && em != nil && em.Enabled {
+		var cfg map[string]string
+		if err := json.Unmarshal([]byte(em.Config), &cfg); err == nil {
+			notifiers = append(notifiers, NewEmailSender(
+				cfg["smtp_host"], cfg["smtp_port"],
+				cfg["smtp_user"], cfg["smtp_password"],
+				cfg["from"], cfg["to"],
+			))
+		}
+	}
+
 	return notifiers
 }
