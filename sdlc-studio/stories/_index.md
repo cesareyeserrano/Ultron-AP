@@ -7,12 +7,12 @@
 
 | Status | Count |
 |--------|-------|
-| Draft | 2 |
+| Draft | 1 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 13 |
+| Done | 14 |
 | **Total** | **15** |
 
 ## Stories by Epic
@@ -49,7 +49,7 @@
 | ID | Title | Status | Points | Owner |
 |----|-------|--------|--------|-------|
 | [US0013](US0013-docker-controls.md) | Docker Container Controls | Done | 5 | TBD |
-| [US0014](US0014-systemd-controls.md) | Systemd Service Controls | Draft | 3 | TBD |
+| [US0014](US0014-systemd-controls.md) | Systemd Service Controls | Done | 3 | TBD |
 | [US0015](US0015-action-history.md) | Action History & Audit Trail | Draft | 3 | TBD |
 
 ## All Stories
@@ -69,7 +69,7 @@
 | [US0011](US0011-email-notifications.md) | Email Notifications | [EP0003](../epics/EP0003-alerting-and-notifications.md) | Done | 3 | Admin |
 | [US0012](US0012-alert-dashboard-panel.md) | Alert Dashboard Panel | [EP0003](../epics/EP0003-alerting-and-notifications.md) | Done | 5 | Admin |
 | [US0013](US0013-docker-controls.md) | Docker Container Controls | [EP0004](../epics/EP0004-service-controls.md) | Done | 5 | Admin |
-| [US0014](US0014-systemd-controls.md) | Systemd Service Controls | [EP0004](../epics/EP0004-service-controls.md) | Draft | 3 | Admin |
+| [US0014](US0014-systemd-controls.md) | Systemd Service Controls | [EP0004](../epics/EP0004-service-controls.md) | Done | 3 | Admin |
 | [US0015](US0015-action-history.md) | Action History & Audit Trail | [EP0004](../epics/EP0004-service-controls.md) | Draft | 3 | Admin |
 
 ## Notes

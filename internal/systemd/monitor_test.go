@@ -156,7 +156,7 @@ func TestParseListUnits_HealthMapping(t *testing.T) {
 
 func TestMonitor_FailedFilter(t *testing.T) {
 	mock := &mockRunner{output: []byte(sampleOutput)}
-	m := newMonitorWithRunner(mock)
+	m := NewMonitorWithRunner(mock)
 	m.refresh(context.Background())
 
 	failed := m.Failed()
@@ -168,7 +168,7 @@ func TestMonitor_FailedFilter(t *testing.T) {
 func TestMonitor_FailedFilter_NoFailures(t *testing.T) {
 	output := "docker.service loaded active running Docker\nssh.service loaded active running SSH"
 	mock := &mockRunner{output: []byte(output)}
-	m := newMonitorWithRunner(mock)
+	m := NewMonitorWithRunner(mock)
 	m.refresh(context.Background())
 
 	failed := m.Failed()
@@ -179,7 +179,7 @@ func TestMonitor_FailedFilter_NoFailures(t *testing.T) {
 
 func TestMonitor_ListServices(t *testing.T) {
 	mock := &mockRunner{output: []byte(sampleOutput)}
-	m := newMonitorWithRunner(mock)
+	m := NewMonitorWithRunner(mock)
 	m.refresh(context.Background())
 
 	services := m.Services()
@@ -189,7 +189,7 @@ func TestMonitor_ListServices(t *testing.T) {
 
 func TestMonitor_ServicesReturnsCopy(t *testing.T) {
 	mock := &mockRunner{output: []byte(sampleOutput)}
-	m := newMonitorWithRunner(mock)
+	m := NewMonitorWithRunner(mock)
 	m.refresh(context.Background())
 
 	s1 := m.Services()
@@ -201,7 +201,7 @@ func TestMonitor_ServicesReturnsCopy(t *testing.T) {
 // --- Tests: Error Handling ---
 
 func TestMonitor_SystemctlNotAvailable(t *testing.T) {
-	m := newMonitorWithRunner(nil)
+	m := NewMonitorWithRunner(nil)
 	assert.False(t, m.Available())
 	assert.Empty(t, m.Services())
 	assert.Empty(t, m.Failed())
@@ -209,7 +209,7 @@ func TestMonitor_SystemctlNotAvailable(t *testing.T) {
 
 func TestMonitor_CommandError_SetsUnavailable(t *testing.T) {
 	mock := &mockRunner{err: fmt.Errorf("exec: systemctl: executable file not found in $PATH")}
-	m := newMonitorWithRunner(mock)
+	m := NewMonitorWithRunner(mock)
 	m.refresh(context.Background())
 
 	assert.False(t, m.Available())
@@ -220,7 +220,7 @@ func TestMonitor_CommandError_SetsUnavailable(t *testing.T) {
 
 func TestMonitor_StartStop(t *testing.T) {
 	mock := &mockRunner{output: []byte(sampleOutput)}
-	m := newMonitorWithRunner(mock)
+	m := NewMonitorWithRunner(mock)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -239,7 +239,7 @@ func TestMonitor_StartStop(t *testing.T) {
 
 func TestMonitor_ThreadSafety(t *testing.T) {
 	mock := &mockRunner{output: []byte(sampleOutput)}
-	m := newMonitorWithRunner(mock)
+	m := NewMonitorWithRunner(mock)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -272,7 +272,7 @@ func TestMonitor_ManyServices(t *testing.T) {
 	output := strings.Join(lines, "\n")
 
 	mock := &mockRunner{output: []byte(output)}
-	m := newMonitorWithRunner(mock)
+	m := NewMonitorWithRunner(mock)
 	m.refresh(context.Background())
 
 	services := m.Services()

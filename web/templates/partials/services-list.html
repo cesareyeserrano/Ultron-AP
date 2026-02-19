@@ -1,0 +1,90 @@
+{{define "partials/services-list.html"}}
+{{if .}}
+<div class="space-y-2">
+    {{range .}}
+    <div class="bg-card rounded-lg p-3 border border-border/50">
+        <div class="flex items-center gap-3">
+            <!-- Health indicator -->
+            <div class="shrink-0">
+                {{if eq .ActiveState "active"}}
+                <div class="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                {{else if eq .ActiveState "failed"}}
+                <div class="w-2.5 h-2.5 rounded-full bg-danger"></div>
+                {{else}}
+                <div class="w-2.5 h-2.5 rounded-full bg-text-muted"></div>
+                {{end}}
+            </div>
+
+            <!-- Service info -->
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-text truncate">{{.Name}}</span>
+                    <span class="text-xs px-1.5 py-0.5 rounded
+                        {{if eq .ActiveState "active"}}bg-green-400/20 text-green-400
+                        {{else if eq .ActiveState "failed"}}bg-danger/20 text-danger
+                        {{else}}bg-surface text-text-muted{{end}}">{{.ActiveState}}</span>
+                </div>
+                {{if .Description}}
+                <p class="text-xs text-text-muted truncate mt-0.5">{{.Description}}</p>
+                {{end}}
+            </div>
+
+            <!-- Control buttons (AC4: state-based disable) -->
+            <div class="flex items-center gap-1 shrink-0">
+                <!-- Start: enabled when inactive or failed -->
+                {{if eq .ActiveState "active"}}
+                <button disabled class="text-xs px-2 py-1 rounded border border-border/30 text-text-muted opacity-40 cursor-not-allowed">Start</button>
+                {{else}}
+                <button
+                    hx-post="/api/services/{{.Name}}/start"
+                    hx-target="#services-list"
+                    hx-swap="innerHTML"
+                    hx-include="[name='csrf_token']"
+                    class="text-xs px-2 py-1 rounded border border-green-400/50 text-green-400 hover:bg-green-400/10 transition-colors">
+                    Start
+                </button>
+                {{end}}
+
+                <!-- Stop: enabled only when active -->
+                {{if eq .ActiveState "active"}}
+                <button
+                    hx-post="/api/services/{{.Name}}/stop"
+                    hx-target="#services-list"
+                    hx-swap="innerHTML"
+                    hx-include="[name='csrf_token']"
+                    hx-confirm="Stop service {{.Name}}?"
+                    class="text-xs px-2 py-1 rounded border border-danger/50 text-danger hover:bg-danger/10 transition-colors">
+                    Stop
+                </button>
+                {{else}}
+                <button disabled class="text-xs px-2 py-1 rounded border border-border/30 text-text-muted opacity-40 cursor-not-allowed">Stop</button>
+                {{end}}
+
+                <!-- Restart: enabled when active or failed -->
+                {{if eq .ActiveState "inactive"}}
+                <button disabled class="text-xs px-2 py-1 rounded border border-border/30 text-text-muted opacity-40 cursor-not-allowed">Restart</button>
+                {{else}}
+                <button
+                    hx-post="/api/services/{{.Name}}/restart"
+                    hx-target="#services-list"
+                    hx-swap="innerHTML"
+                    hx-include="[name='csrf_token']"
+                    hx-confirm="Restart service {{.Name}}?"
+                    class="text-xs px-2 py-1 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">
+                    Restart
+                </button>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{else}}
+<div class="flex flex-col items-center justify-center py-12 text-text-muted">
+    <svg class="w-12 h-12 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/>
+    </svg>
+    <p class="text-sm">No services found</p>
+</div>
+{{end}}
+{{end}}

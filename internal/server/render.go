@@ -35,6 +35,9 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, page string, tit
 	if page == "docker.html" {
 		patterns = append(patterns, "templates/partials/docker-list.html")
 	}
+	if page == "services.html" {
+		patterns = append(patterns, "templates/partials/services-list.html")
+	}
 
 	tmpl, err := template.ParseFS(s.templates, patterns...)
 	if err != nil {

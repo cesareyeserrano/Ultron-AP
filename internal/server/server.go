@@ -75,7 +75,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /logout", s.requireAuth(http.HandlerFunc(s.handleLogout)))
 	mux.Handle("GET /", s.requireAuth(http.HandlerFunc(s.handleDashboard)))
 	mux.Handle("GET /docker", s.requireAuth(http.HandlerFunc(s.handleDockerPage)))
-	mux.Handle("GET /services", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Services", "services"))))
+	mux.Handle("GET /services", s.requireAuth(http.HandlerFunc(s.handleServicesPage)))
 	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handleAlertsPage)))
 	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handleSettings)))
 
@@ -90,6 +90,9 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("DELETE /api/alerts/rules/{id}", s.requireAuth(http.HandlerFunc(s.handleAlertRuleDelete)))
 	mux.Handle("POST /api/alerts/{id}/acknowledge", s.requireAuth(http.HandlerFunc(s.handleAlertAcknowledge)))
 	mux.Handle("POST /api/notifications/{channel}", s.requireAuth(http.HandlerFunc(s.handleNotificationSave)))
+	mux.Handle("POST /api/services/{name}/start", s.requireAuth(http.HandlerFunc(s.handleServiceStart)))
+	mux.Handle("POST /api/services/{name}/stop", s.requireAuth(http.HandlerFunc(s.handleServiceStop)))
+	mux.Handle("POST /api/services/{name}/restart", s.requireAuth(http.HandlerFunc(s.handleServiceRestart)))
 }
 
 func (s *Server) Start() error {

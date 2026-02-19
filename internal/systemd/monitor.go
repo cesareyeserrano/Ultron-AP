@@ -39,8 +39,8 @@ func NewMonitor() *Monitor {
 	return m
 }
 
-// newMonitorWithRunner creates a monitor with an injected runner (for testing).
-func newMonitorWithRunner(runner CommandRunner) *Monitor {
+// NewMonitorWithRunner creates a monitor with an injected runner (for testing).
+func NewMonitorWithRunner(runner CommandRunner) *Monitor {
 	return &Monitor{
 		runner:    runner,
 		available: runner != nil,
