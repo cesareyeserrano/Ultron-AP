@@ -1,0 +1,35 @@
+{{define "content"}}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-lg font-semibold text-text">Alerts</h1>
+        {{if .Content.UnackCount}}
+        <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">{{.Content.UnackCount}} unacknowledged</span>
+        {{end}}
+    </div>
+
+    <!-- Severity Filter -->
+    <div class="flex gap-2">
+        <a href="/alerts" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SeverityFilter ""}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+            All
+        </a>
+        <a href="/alerts?severity=critical" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SeverityFilter "critical"}}bg-danger text-white{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+            Critical
+        </a>
+        <a href="/alerts?severity=warning" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SeverityFilter "warning"}}bg-yellow-400 text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+            Warning
+        </a>
+        <a href="/alerts?severity=info" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SeverityFilter "info"}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+            Info
+        </a>
+    </div>
+
+    <!-- Alerts List -->
+    <div id="alerts-list">
+        {{template "partials/alerts-list.html" .Content.Alerts}}
+    </div>
+</div>
+{{end}}

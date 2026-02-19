@@ -8,8 +8,8 @@
 |--------|-------|
 | Draft | 0 |
 | In Progress | 0 |
-| Complete | 11 |
-| **Total** | **11** |
+| Complete | 12 |
+| **Total** | **12** |
 
 ## Plans
 
@@ -26,6 +26,7 @@
 | [PL0009](PL0009-alert-config-ui.md) | [US0009](../stories/US0009-alert-configuration-ui.md) | Alert Configuration UI | Complete | Test-After | 2026-02-11 |
 | [PL0010](PL0010-telegram-notifications.md) | [US0010](../stories/US0010-telegram-notifications.md) | Telegram Notifications | Complete | TDD | 2026-02-11 |
 | [PL0011](PL0011-email-notifications.md) | [US0011](../stories/US0011-email-notifications.md) | Email Notifications | Complete | TDD | 2026-02-11 |
+| [PL0012](PL0012-alert-dashboard-panel.md) | [US0012](../stories/US0012-alert-dashboard-panel.md) | Alert Dashboard Panel | Complete | Test-After | 2026-02-11 |
 
 ## Notes
 

@@ -1,0 +1,58 @@
+{{define "partials/alerts-list.html"}}
+{{if .}}
+<div class="space-y-2">
+    {{range .}}
+    <div class="bg-card rounded-lg p-3 flex items-start gap-3 border border-border/50
+        {{if .Acknowledged}}opacity-60{{end}}">
+        <!-- Severity icon -->
+        <div class="shrink-0 mt-0.5">
+            {{if eq .Severity "critical"}}
+            <div class="w-2.5 h-2.5 rounded-full bg-danger"></div>
+            {{else if eq .Severity "warning"}}
+            <div class="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+            {{else}}
+            <div class="w-2.5 h-2.5 rounded-full bg-accent"></div>
+            {{end}}
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-0.5">
+                <span class="text-xs px-1.5 py-0.5 rounded
+                    {{if eq .Severity "critical"}}bg-danger/20 text-danger
+                    {{else if eq .Severity "warning"}}bg-yellow-400/20 text-yellow-400
+                    {{else}}bg-accent/20 text-accent{{end}}">{{.Severity}}</span>
+                <span class="text-xs text-text-muted uppercase">{{.Source}}</span>
+                {{if .Acknowledged}}
+                <span class="text-xs text-text-muted">&check; ack</span>
+                {{end}}
+            </div>
+            <p class="text-sm text-text truncate">{{.Message}}</p>
+            <div class="flex items-center gap-3 mt-1">
+                {{with .Value}}
+                <span class="text-xs text-text-muted font-mono">{{printf "%.1f" .}}</span>
+                {{end}}
+                <span class="text-xs text-text-muted">{{.CreatedAt.Format "Jan 02 15:04"}}</span>
+            </div>
+        </div>
+
+        <!-- Acknowledge button -->
+        {{if not .Acknowledged}}
+        <button hx-post="/api/alerts/{{.ID}}/acknowledge" hx-target="#alerts-list" hx-swap="innerHTML" hx-include="[name='csrf_token']"
+            class="shrink-0 text-xs text-text-muted hover:text-text px-2 py-1 rounded hover:bg-surface transition-colors border border-border/50">
+            Ack
+        </button>
+        {{end}}
+    </div>
+    {{end}}
+</div>
+{{else}}
+<div class="flex flex-col items-center justify-center py-12 text-text-muted">
+    <svg class="w-12 h-12 mb-3 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+    <p class="text-sm">No alerts</p>
+</div>
+{{end}}
+{{end}}

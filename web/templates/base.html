@@ -23,5 +23,21 @@
     </div>
 
     <script src="/static/js/sidebar.js"></script>
+    <script>
+    (function() {
+        var badge = document.getElementById('alert-badge');
+        if (!badge) return;
+        var es = new EventSource('/api/sse/dashboard');
+        es.addEventListener('alert-count', function(e) {
+            var count = e.data.trim();
+            if (count && count !== '0') {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        });
+    })();
+    </script>
 </body>
 </html>

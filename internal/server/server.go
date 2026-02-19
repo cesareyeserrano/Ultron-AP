@@ -76,7 +76,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /", s.requireAuth(http.HandlerFunc(s.handleDashboard)))
 	mux.Handle("GET /docker", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Docker", "docker"))))
 	mux.Handle("GET /services", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Services", "services"))))
-	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handlePlaceholderPage("Alerts", "alerts"))))
+	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handleAlertsPage)))
 	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handleSettings)))
 
 	// API routes (require auth)
@@ -85,6 +85,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/alerts/rules", s.requireAuth(http.HandlerFunc(s.handleAlertRuleCreate)))
 	mux.Handle("POST /api/alerts/rules/{id}/toggle", s.requireAuth(http.HandlerFunc(s.handleAlertRuleToggle)))
 	mux.Handle("DELETE /api/alerts/rules/{id}", s.requireAuth(http.HandlerFunc(s.handleAlertRuleDelete)))
+	mux.Handle("POST /api/alerts/{id}/acknowledge", s.requireAuth(http.HandlerFunc(s.handleAlertAcknowledge)))
 	mux.Handle("POST /api/notifications/{channel}", s.requireAuth(http.HandlerFunc(s.handleNotificationSave)))
 }
 

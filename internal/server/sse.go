@@ -149,6 +149,16 @@ func (s *Server) buildSSEPayload() []byte {
 	chartsHTML := s.renderPartial("partials/sse-charts.html", dd)
 	writeSSEEvent(&buf, "charts", chartsHTML)
 
+	// Alert count event
+	if s.db != nil {
+		unackCount, _ := s.db.UnacknowledgedAlertCount()
+		if unackCount > 0 {
+			writeSSEEvent(&buf, "alert-count", fmt.Sprintf("%d", unackCount))
+		} else {
+			writeSSEEvent(&buf, "alert-count", "")
+		}
+	}
+
 	return buf.Bytes()
 }
 

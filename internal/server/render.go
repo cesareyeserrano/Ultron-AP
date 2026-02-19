@@ -29,6 +29,9 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, page string, tit
 	if page == "settings.html" {
 		patterns = append(patterns, "templates/partials/alert-rules-table.html")
 	}
+	if page == "alerts.html" {
+		patterns = append(patterns, "templates/partials/alerts-list.html")
+	}
 
 	tmpl, err := template.ParseFS(s.templates, patterns...)
 	if err != nil {

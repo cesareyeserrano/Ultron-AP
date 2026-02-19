@@ -209,6 +209,50 @@ func (db *DB) DeleteAlertConfig(id int64) error {
 	return nil
 }
 
+// AcknowledgeAlert marks an alert as acknowledged.
+func (db *DB) AcknowledgeAlert(id int64) error {
+	_, err := db.Exec("UPDATE Alert SET acknowledged = 1 WHERE id = ?", id)
+	if err != nil {
+		return fmt.Errorf("cannot acknowledge alert %d: %w", id, err)
+	}
+	return nil
+}
+
+// UnacknowledgedAlertCount returns the count of unacknowledged alerts.
+func (db *DB) UnacknowledgedAlertCount() (int, error) {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM Alert WHERE acknowledged = 0").Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("cannot count unacknowledged alerts: %w", err)
+	}
+	return count, nil
+}
+
+// ListAlertsBySeverity returns alerts filtered by severity.
+func (db *DB) ListAlertsBySeverity(severity string, limit int) ([]Alert, error) {
+	rows, err := db.Query(
+		`SELECT id, config_id, severity, message, source, value, acknowledged, created_at
+		 FROM Alert WHERE severity = ? ORDER BY created_at DESC LIMIT ?`, severity, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cannot list alerts by severity: %w", err)
+	}
+	defer rows.Close()
+
+	var alerts []Alert
+	for rows.Next() {
+		var a Alert
+		var ack int
+		if err := rows.Scan(&a.ID, &a.ConfigID, &a.Severity, &a.Message, &a.Source,
+			&a.Value, &ack, &a.CreatedAt); err != nil {
+			return nil, fmt.Errorf("cannot scan alert: %w", err)
+		}
+		a.Acknowledged = ack == 1
+		alerts = append(alerts, a)
+	}
+	return alerts, rows.Err()
+}
+
 // SeedDefaultAlertConfigs inserts default alert rules if none exist.
 func (db *DB) SeedDefaultAlertConfigs() error {
 	count, err := db.AlertConfigCount()
