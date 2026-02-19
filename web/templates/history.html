@@ -1,0 +1,87 @@
+{{define "content"}}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-lg font-semibold text-text">Action History</h1>
+        <span class="text-xs text-text-muted">Audit trail for all service control operations</span>
+    </div>
+
+    <!-- Source Filter -->
+    <div class="flex gap-2">
+        <a href="/history" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SourceFilter ""}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+            All
+        </a>
+        <a href="/history?source=docker" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SourceFilter "docker"}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+            Docker
+        </a>
+        <a href="/history?source=systemd" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SourceFilter "systemd"}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+            Systemd
+        </a>
+    </div>
+
+    <!-- Log Table -->
+    {{if .Content.Logs}}
+    <div class="space-y-2">
+        {{range .Content.Logs}}
+        <div class="bg-card rounded-lg p-3 border border-border/50">
+            <div class="flex items-start gap-3">
+                <!-- Result indicator -->
+                <div class="shrink-0 mt-0.5">
+                    {{if eq .Result "success"}}
+                    <svg class="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    {{else}}
+                    <svg class="w-4 h-4 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/>
+                    </svg>
+                    {{end}}
+                </div>
+
+                <!-- Main content -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <!-- Source badge -->
+                        <span class="text-xs px-1.5 py-0.5 rounded bg-surface text-text-muted uppercase font-mono">{{.Source}}</span>
+                        <!-- Action -->
+                        <span class="text-sm text-text font-medium">{{.Action}}</span>
+                        <!-- Target -->
+                        <span class="text-sm text-text-muted truncate">{{.Target}}</span>
+                    </div>
+                    {{if and (eq .Result "error") .Details}}
+                    <p class="text-xs text-danger mt-1 truncate" title="{{.Details}}">{{.Details}}</p>
+                    {{end}}
+                </div>
+
+                <!-- Timestamp -->
+                <span class="text-xs text-text-muted shrink-0 whitespace-nowrap">{{.CreatedAt.Format "Jan 02 15:04"}}</span>
+            </div>
+        </div>
+        {{end}}
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-between items-center text-xs text-text-muted">
+        {{if gt .Content.Page 0}}
+        <a href="/history?source={{.Content.SourceFilter}}&page={{sub .Content.Page 1}}" class="px-3 py-1.5 rounded bg-card hover:text-text transition-colors" hx-boost="true">← Newer</a>
+        {{else}}
+        <span></span>
+        {{end}}
+        {{if .Content.HasNext}}
+        <a href="/history?source={{.Content.SourceFilter}}&page={{add .Content.Page 1}}" class="px-3 py-1.5 rounded bg-card hover:text-text transition-colors" hx-boost="true">Older →</a>
+        {{end}}
+    </div>
+
+    {{else}}
+    <div class="flex flex-col items-center justify-center py-12 text-text-muted">
+        <svg class="w-12 h-12 mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+        </svg>
+        <p class="text-sm">No actions recorded yet</p>
+        <p class="text-xs mt-1">Actions appear here when you start, stop, or restart services</p>
+    </div>
+    {{end}}
+</div>
+{{end}}

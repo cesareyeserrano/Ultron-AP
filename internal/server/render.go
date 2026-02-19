@@ -39,7 +39,11 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, page string, tit
 		patterns = append(patterns, "templates/partials/services-list.html")
 	}
 
-	tmpl, err := template.ParseFS(s.templates, patterns...)
+	funcMap := template.FuncMap{
+		"add": func(a, b int) int { return a + b },
+		"sub": func(a, b int) int { return a - b },
+	}
+	tmpl, err := template.New("base.html").Funcs(funcMap).ParseFS(s.templates, patterns...)
 	if err != nil {
 		log.Printf("Failed to parse templates for %s: %v", page, err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

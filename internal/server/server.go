@@ -77,6 +77,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /docker", s.requireAuth(http.HandlerFunc(s.handleDockerPage)))
 	mux.Handle("GET /services", s.requireAuth(http.HandlerFunc(s.handleServicesPage)))
 	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handleAlertsPage)))
+	mux.Handle("GET /history", s.requireAuth(http.HandlerFunc(s.handleHistoryPage)))
 	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handleSettings)))
 
 	// API routes (require auth)

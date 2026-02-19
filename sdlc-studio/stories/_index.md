@@ -7,12 +7,12 @@
 
 | Status | Count |
 |--------|-------|
-| Draft | 1 |
+| Draft | 0 |
 | Ready | 0 |
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 14 |
+| Done | 15 |
 | **Total** | **15** |
 
 ## Stories by Epic
@@ -50,7 +50,7 @@
 |----|-------|--------|--------|-------|
 | [US0013](US0013-docker-controls.md) | Docker Container Controls | Done | 5 | TBD |
 | [US0014](US0014-systemd-controls.md) | Systemd Service Controls | Done | 3 | TBD |
-| [US0015](US0015-action-history.md) | Action History & Audit Trail | Draft | 3 | TBD |
+| [US0015](US0015-action-history.md) | Action History & Audit Trail | Done | 3 | TBD |
 
 ## All Stories
 

@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS NotificationConfig (
 CREATE TABLE IF NOT EXISTS ActionLog (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	user_id INTEGER,
+	source TEXT NOT NULL DEFAULT '',
 	action TEXT NOT NULL,
 	target TEXT NOT NULL,
 	result TEXT NOT NULL,
@@ -99,6 +100,9 @@ func New(dbPath string) (*DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("cannot initialize schema: %w", err)
 	}
+
+	// Add source column to ActionLog if not present (migration for existing DBs)
+	_, _ = db.Exec(`ALTER TABLE ActionLog ADD COLUMN source TEXT NOT NULL DEFAULT ''`)
 
 	// Integrity check
 	var result string

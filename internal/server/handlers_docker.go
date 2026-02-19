@@ -83,7 +83,7 @@ func (s *Server) logDockerAction(r *http.Request, result docker.ContainerAction)
 		userID = &uid
 	}
 
-	if err := s.db.LogAction(userID, result.Action, result.ContainerName, resultStr, result.Message); err != nil {
+	if err := s.db.LogAction(userID, "docker", result.Action, result.ContainerName, resultStr, result.Message); err != nil {
 		log.Printf("docker: failed to log action: %v", err)
 	}
 }

@@ -82,7 +82,7 @@ func (s *Server) logServiceAction(r *http.Request, result systemd.ServiceAction)
 		userID = &uid
 	}
 
-	if err := s.db.LogAction(userID, result.Action, result.ServiceName, resultStr, result.Message); err != nil {
+	if err := s.db.LogAction(userID, "systemd", result.Action, result.ServiceName, resultStr, result.Message); err != nil {
 		log.Printf("systemd: failed to log action: %v", err)
 	}
 }
