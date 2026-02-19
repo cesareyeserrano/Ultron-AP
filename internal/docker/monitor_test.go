@@ -26,6 +26,9 @@ type mockDockerClient struct {
 	inspectErr    error
 	statsErr      error
 	pingErr       error
+	startErr      error
+	stopErr       error
+	restartErr    error
 }
 
 func (m *mockDockerClient) Ping(_ context.Context) (types.Ping, error) {
@@ -48,6 +51,18 @@ func (m *mockDockerClient) ContainerStats(_ context.Context, _ string, _ bool) (
 
 func (m *mockDockerClient) ContainerInspect(_ context.Context, _ string) (types.ContainerJSON, error) {
 	return m.inspectResult, m.inspectErr
+}
+
+func (m *mockDockerClient) ContainerStart(_ context.Context, _ string, _ container.StartOptions) error {
+	return m.startErr
+}
+
+func (m *mockDockerClient) ContainerStop(_ context.Context, _ string, _ container.StopOptions) error {
+	return m.stopErr
+}
+
+func (m *mockDockerClient) ContainerRestart(_ context.Context, _ string, _ container.StopOptions) error {
+	return m.restartErr
 }
 
 func (m *mockDockerClient) Close() error {
@@ -146,7 +161,7 @@ func TestMonitor_ListContainers(t *testing.T) {
 		containers: sampleContainers(),
 		statsJSON:  sampleStats(),
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	m.refresh(context.Background())
 
 	containers := m.Containers()
@@ -183,7 +198,7 @@ func TestMonitor_ContainerNoName_UsesTruncatedID(t *testing.T) {
 		},
 		statsJSON: sampleStats(),
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	m.refresh(context.Background())
 
 	containers := m.Containers()
@@ -207,7 +222,7 @@ func TestMonitor_StatsForRunningContainer(t *testing.T) {
 		},
 		statsJSON: sampleStats(),
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	m.refresh(context.Background())
 
 	containers := m.Containers()
@@ -233,7 +248,7 @@ func TestMonitor_NoStatsForStoppedContainer(t *testing.T) {
 			},
 		},
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	m.refresh(context.Background())
 
 	containers := m.Containers()
@@ -260,7 +275,7 @@ func TestMonitor_ContainerDetail_Ports(t *testing.T) {
 			Config: &container.Config{},
 		},
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	detail, err := m.ContainerDetail(context.Background(), "abc123")
 	require.NoError(t, err)
 
@@ -285,7 +300,7 @@ func TestMonitor_ContainerDetail_Volumes(t *testing.T) {
 			Config: &container.Config{},
 		},
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	detail, err := m.ContainerDetail(context.Background(), "abc123")
 	require.NoError(t, err)
 
@@ -308,7 +323,7 @@ func TestMonitor_ContainerDetail_EnvVarNamesOnly(t *testing.T) {
 			},
 		},
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	detail, err := m.ContainerDetail(context.Background(), "abc123")
 	require.NoError(t, err)
 
@@ -321,13 +336,13 @@ func TestMonitor_ContainerDetail_EnvVarNamesOnly(t *testing.T) {
 // --- Tests: Error Handling ---
 
 func TestMonitor_DockerNotAvailable(t *testing.T) {
-	m := newMonitorWithClient(nil)
+	m := NewMonitorWithClient(nil)
 	assert.False(t, m.Available())
 	assert.Empty(t, m.Containers())
 }
 
 func TestMonitor_ContainerDetail_DockerNotAvailable(t *testing.T) {
-	m := newMonitorWithClient(nil)
+	m := NewMonitorWithClient(nil)
 	_, err := m.ContainerDetail(context.Background(), "abc123")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "docker not available")
@@ -337,7 +352,7 @@ func TestMonitor_ListError_SetsUnavailable(t *testing.T) {
 	mock := &mockDockerClient{
 		listErr: assert.AnError,
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	m.refresh(context.Background())
 
 	assert.False(t, m.Available())
@@ -358,7 +373,7 @@ func TestMonitor_StatsError_SkipsStats(t *testing.T) {
 		},
 		statsErr: assert.AnError,
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	m.refresh(context.Background())
 
 	containers := m.Containers()
@@ -421,7 +436,7 @@ func TestMonitor_StartStop(t *testing.T) {
 		containers: sampleContainers(),
 		statsJSON:  sampleStats(),
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -446,7 +461,7 @@ func TestMonitor_ThreadSafety(t *testing.T) {
 		containers: sampleContainers(),
 		statsJSON:  sampleStats(),
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -476,7 +491,7 @@ func TestMonitor_ContainersReturnsCopy(t *testing.T) {
 		containers: sampleContainers(),
 		statsJSON:  sampleStats(),
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	m.refresh(context.Background())
 
 	c1 := m.Containers()
@@ -506,7 +521,7 @@ func TestMonitor_ManyContainers(t *testing.T) {
 		containers: containers,
 		statsJSON:  sampleStats(),
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	m.refresh(context.Background())
 
 	result := m.Containers()
@@ -522,7 +537,7 @@ func TestMonitor_ContainerDetail_NilNetworkSettings(t *testing.T) {
 			Config:          &container.Config{},
 		},
 	}
-	m := newMonitorWithClient(mock)
+	m := NewMonitorWithClient(mock)
 	detail, err := m.ContainerDetail(context.Background(), "abc")
 	require.NoError(t, err)
 	assert.Empty(t, detail.Ports)

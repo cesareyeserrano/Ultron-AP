@@ -1,0 +1,18 @@
+{{define "content"}}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-lg font-semibold text-text">Docker Containers</h1>
+        {{if not .Content.Available}}
+        <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">Docker unavailable</span>
+        {{end}}
+    </div>
+
+    <!-- Hidden CSRF token for HTMX requests -->
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+    <!-- Container List -->
+    <div id="docker-list">
+        {{template "partials/docker-list.html" .Content.Containers}}
+    </div>
+</div>
+{{end}}

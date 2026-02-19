@@ -52,8 +52,8 @@ func NewMonitor() *Monitor {
 	return m
 }
 
-// newMonitorWithClient creates a monitor with an injected client (for testing).
-func newMonitorWithClient(client DockerClient) *Monitor {
+// NewMonitorWithClient creates a monitor with an injected client (for testing).
+func NewMonitorWithClient(client DockerClient) *Monitor {
 	return &Monitor{
 		client:    client,
 		available: client != nil,

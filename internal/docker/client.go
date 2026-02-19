@@ -13,5 +13,8 @@ type DockerClient interface {
 	ContainerList(ctx context.Context, options container.ListOptions) ([]types.Container, error)
 	ContainerStats(ctx context.Context, containerID string, stream bool) (container.StatsResponseReader, error)
 	ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error)
+	ContainerStart(ctx context.Context, containerID string, options container.StartOptions) error
+	ContainerStop(ctx context.Context, containerID string, options container.StopOptions) error
+	ContainerRestart(ctx context.Context, containerID string, options container.StopOptions) error
 	Close() error
 }

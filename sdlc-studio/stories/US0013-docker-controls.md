@@ -1,6 +1,6 @@
 # US0013: Docker Container Controls
 
-> **Status:** Draft
+> **Status:** Done
 > **Epic:** [EP0004: Service Controls](../epics/EP0004-service-controls.md)
 > **Owner:** TBD
 > **Reviewer:** TBD
