@@ -42,6 +42,7 @@ func (s *Server) parseTemplates() {
 		"partials/alerts-list.html",
 		"partials/alert-rules-table.html",
 		"partials/hardware-form.html",
+		"partials/tailscale-peers.html",
 	}
 
 	for _, name := range partials {
@@ -77,7 +78,7 @@ func (s *Server) parseTemplates() {
 	}
 
 	pages := []pageSpec{
-		{"dashboard.html", nil},
+		{"dashboard.html", []string{"templates/partials/tailscale-peers.html"}},
 		{"docker.html", []string{"templates/partials/docker-list.html"}},
 		{"services.html", []string{"templates/partials/services-list.html"}},
 		{"alerts.html", []string{"templates/partials/alerts-list.html"}},

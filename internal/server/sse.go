@@ -14,18 +14,37 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
+	"github.com/cesareyeserrano/ultron-ap/internal/tailscale"
 )
 
 // DashboardData holds all data for dashboard rendering.
 type DashboardData struct {
-	Metrics      *metrics.Snapshot
-	CPUHistory   []metrics.Snapshot
-	RAMHistory   []metrics.Snapshot
-	Containers   []docker.ContainerInfo
-	DockerAvail  bool
-	Services     []systemd.ServiceInfo
-	SystemdAvail bool
-	Uptime       string
+	Metrics          *metrics.Snapshot
+	CPUHistory       []metrics.Snapshot
+	RAMHistory       []metrics.Snapshot
+	Containers       []docker.ContainerInfo
+	DockerAvail      bool
+	Services         []systemd.ServiceInfo
+	SystemdAvail     bool
+	Uptime           string
+	Tailscale        TailscaleData
+}
+
+// TailscaleData is the data passed to the tailscale-peers partial.
+type TailscaleData struct {
+	Available bool
+	Status    *tailscale.Status
+}
+
+func gatherTailscaleData() TailscaleData {
+	if !tailscale.Available() {
+		return TailscaleData{Available: false}
+	}
+	status, err := tailscale.GetStatus()
+	if err != nil {
+		return TailscaleData{Available: true}
+	}
+	return TailscaleData{Available: true, Status: status}
 }
 
 // --- SSE Broker ---
@@ -195,6 +214,8 @@ func (s *Server) gatherDashboardData() DashboardData {
 		dd.SystemdAvail = s.systemd.Available()
 		dd.Services = s.systemd.Services()
 	}
+
+	dd.Tailscale = gatherTailscaleData()
 
 	return dd
 }

@@ -1,0 +1,38 @@
+{{define "partials/tailscale-peers.html"}}
+{{if not .Available}}
+<div class="px-4 py-6 text-center text-text-muted text-sm">
+    tailscale not installed
+</div>
+{{else if not .Status}}
+<div class="px-4 py-6 text-center text-text-muted text-sm">
+    Unable to read Tailscale status
+</div>
+{{else}}
+<!-- Self row -->
+<div class="flex items-center gap-3 px-4 py-3 border-b border-border">
+    <span class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
+    <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-text truncate">{{.Status.Self.Hostname}} <span class="text-xs text-text-muted font-normal">(this device)</span></p>
+        <p class="text-xs text-text-muted font-mono truncate">{{range .Status.Self.IPs}}{{.}} {{end}}</p>
+    </div>
+    <span class="text-xs text-text-muted shrink-0">{{.Status.Self.OS}}</span>
+</div>
+{{range .Status.Peers}}
+<div class="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0">
+    {{if .Online}}
+    <span class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
+    {{else}}
+    <span class="w-2 h-2 rounded-full bg-border shrink-0"></span>
+    {{end}}
+    <div class="flex-1 min-w-0">
+        <p class="text-sm text-text truncate">{{.Hostname}}</p>
+        <p class="text-xs text-text-muted font-mono truncate">{{range .IPs}}{{.}} {{end}}</p>
+    </div>
+    <span class="text-xs text-text-muted shrink-0">{{.OS}}</span>
+</div>
+{{end}}
+{{if not .Status.Peers}}
+<div class="px-4 py-4 text-center text-text-muted text-xs">No peers connected</div>
+{{end}}
+{{end}}
+{{end}}
