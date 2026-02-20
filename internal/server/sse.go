@@ -200,8 +200,8 @@ func (s *Server) gatherDashboardData() DashboardData {
 
 	if s.collector != nil {
 		dd.Metrics = s.collector.Latest()
-		// Last 60 min at 5s interval = 720 points
-		dd.CPUHistory = s.collector.History(720)
+		// Last 10 min at 5s interval = 120 points (sufficient for sparkline charts)
+		dd.CPUHistory = s.collector.History(120)
 		dd.RAMHistory = dd.CPUHistory // Same data, different field rendered
 	}
 
@@ -215,7 +215,8 @@ func (s *Server) gatherDashboardData() DashboardData {
 		dd.Services = s.systemd.Services()
 	}
 
-	dd.Tailscale = gatherTailscaleData()
+	// NOTE: Tailscale is NOT fetched here — it spawns an external process
+	// and is only loaded on page load / manual refresh.
 
 	return dd
 }

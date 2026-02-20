@@ -13,6 +13,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	dd := s.gatherDashboardData()
+	dd.Tailscale = gatherTailscaleData() // only on page load, not in SSE loop
 	s.render(w, r, "dashboard.html", "Dashboard", "dashboard", dd)
 }
 
