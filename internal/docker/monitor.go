@@ -194,17 +194,26 @@ func (m *Monitor) refresh(ctx context.Context) {
 		return
 	}
 
-	infos := make([]ContainerInfo, 0, len(containers))
-	for _, c := range containers {
-		info := containerToInfo(c)
-
-		// Fetch stats only for running containers
-		if c.State == "running" {
-			m.fetchStats(ctx, c.ID, &info)
-		}
-
-		infos = append(infos, info)
+	// Build base info slice (pre-sized so goroutines can write by index safely).
+	infos := make([]ContainerInfo, len(containers))
+	for i, c := range containers {
+		infos[i] = containerToInfo(c)
 	}
+
+	// Fetch stats for running containers in parallel.
+	// Each goroutine writes to a distinct index, so no mutex is needed.
+	var wg sync.WaitGroup
+	for i, c := range containers {
+		if c.State != "running" {
+			continue
+		}
+		wg.Add(1)
+		go func(idx int, id string) {
+			defer wg.Done()
+			m.fetchStats(ctx, id, &infos[idx])
+		}(i, c.ID)
+	}
+	wg.Wait()
 
 	m.mu.Lock()
 	m.containers = infos

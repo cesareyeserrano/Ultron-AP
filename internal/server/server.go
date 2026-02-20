@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
@@ -31,6 +32,7 @@ type Server struct {
 	alertEng    *alerts.Engine
 	sseBroker   *sseBroker
 	templates   fs.FS
+	tmplCache   map[string]*template.Template // pre-parsed at startup
 	startedAt   time.Time
 }
 
@@ -57,8 +59,10 @@ func New(cfg *config.Config, db *database.DB, collector *metrics.Collector, dock
 		startedAt:  time.Now(),
 	}
 
+	s.parseTemplates()
 	s.registerRoutes(mux)
 	s.startSSEBroadcast()
+	s.startRetentionJob()
 
 	return s
 }
@@ -96,6 +100,25 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/services/{name}/start", s.requireAuth(http.HandlerFunc(s.handleServiceStart)))
 	mux.Handle("POST /api/services/{name}/stop", s.requireAuth(http.HandlerFunc(s.handleServiceStop)))
 	mux.Handle("POST /api/services/{name}/restart", s.requireAuth(http.HandlerFunc(s.handleServiceRestart)))
+}
+
+// startRetentionJob runs a daily cleanup of old ActionLog and Alert records.
+func (s *Server) startRetentionJob() {
+	go func() {
+		// First run after 1 minute to avoid competing with startup I/O.
+		timer := time.NewTimer(1 * time.Minute)
+		defer timer.Stop()
+		for {
+			<-timer.C
+			n, err := s.db.PruneOldData(30)
+			if err != nil {
+				log.Printf("retention: prune failed: %v", err)
+			} else if n > 0 {
+				log.Printf("retention: pruned %d records older than 30 days", n)
+			}
+			timer.Reset(24 * time.Hour)
+		}
+	}()
 }
 
 func (s *Server) Start() error {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -220,9 +219,9 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 func (s *Server) renderRulesTable(w http.ResponseWriter) {
 	rules, _ := s.db.ListAlertConfigs()
 
-	tmpl, err := template.ParseFS(s.templates, "templates/partials/alert-rules-table.html")
-	if err != nil {
-		log.Printf("settings: parse error: %v", err)
+	tmpl, ok := s.tmplCache["partials/alert-rules-table.html"]
+	if !ok {
+		log.Printf("settings: alert-rules-table not in cache")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

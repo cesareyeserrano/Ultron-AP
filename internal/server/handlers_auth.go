@@ -3,7 +3,6 @@ package server
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"html/template"
 	"log"
 	"net"
 	"net/http"
@@ -136,9 +135,9 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) renderLogin(w http.ResponseWriter, data loginPageData) {
-	tmpl, err := template.ParseFS(s.templates, "templates/login.html")
-	if err != nil {
-		log.Printf("Failed to parse login template: %v", err)
+	tmpl, ok := s.tmplCache["login.html"]
+	if !ok {
+		log.Printf("render: login.html not in cache")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

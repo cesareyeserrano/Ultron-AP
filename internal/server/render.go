@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"time"
@@ -19,33 +18,9 @@ type PageData struct {
 }
 
 func (s *Server) render(w http.ResponseWriter, r *http.Request, page string, title string, activePage string, content interface{}) {
-	patterns := []string{
-		"templates/base.html",
-		"templates/partials/sidebar.html",
-		"templates/partials/header.html",
-		fmt.Sprintf("templates/%s", page),
-	}
-	// Include extra partials needed by specific pages
-	if page == "settings.html" {
-		patterns = append(patterns, "templates/partials/alert-rules-table.html")
-	}
-	if page == "alerts.html" {
-		patterns = append(patterns, "templates/partials/alerts-list.html")
-	}
-	if page == "docker.html" {
-		patterns = append(patterns, "templates/partials/docker-list.html")
-	}
-	if page == "services.html" {
-		patterns = append(patterns, "templates/partials/services-list.html")
-	}
-
-	funcMap := template.FuncMap{
-		"add": func(a, b int) int { return a + b },
-		"sub": func(a, b int) int { return a - b },
-	}
-	tmpl, err := template.New("base.html").Funcs(funcMap).ParseFS(s.templates, patterns...)
-	if err != nil {
-		log.Printf("Failed to parse templates for %s: %v", page, err)
+	tmpl, ok := s.tmplCache[page]
+	if !ok {
+		log.Printf("render: page template not in cache: %s", page)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

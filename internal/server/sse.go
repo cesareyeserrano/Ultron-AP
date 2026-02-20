@@ -200,24 +200,11 @@ func (s *Server) gatherDashboardData() DashboardData {
 }
 
 func (s *Server) renderPartial(name string, data interface{}) string {
-	funcMap := template.FuncMap{
-		"formatBytes":    formatBytes,
-		"formatPercent":  formatPercent,
-		"tempColor":      tempColor,
-		"healthColor":    healthColor,
-		"svcHealthColor": svcHealthColor,
-		"shortID":        shortID,
-		"sparklineSVG":   sparklineSVG,
-		"formatTemp":     formatTemp,
-		"deref":          derefFloat,
-	}
-
-	tmpl, err := template.New("").Funcs(funcMap).ParseFS(s.templates, "templates/"+name)
-	if err != nil {
-		log.Printf("sse: parse error for %s: %v", name, err)
+	tmpl, ok := s.tmplCache[name]
+	if !ok {
+		log.Printf("sse: template not in cache: %s", name)
 		return ""
 	}
-
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, name, data); err != nil {
 		log.Printf("sse: render error for %s: %v", name, err)
