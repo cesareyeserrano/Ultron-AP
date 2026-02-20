@@ -1,0 +1,124 @@
+{{define "partials/hardware-form.html"}}
+<div id="hardware-form">
+    <!-- RGB Section -->
+    <div class="bg-card rounded-xl border border-border p-5 mb-4">
+        <h2 class="text-sm font-semibold text-text mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"/><line x1="12" x2="12" y1="1" y2="3"/><line x1="12" x2="12" y1="21" y2="23"/><line x1="4.22" x2="5.64" y1="4.22" y2="5.64"/><line x1="18.36" x2="19.78" y1="18.36" y2="19.78"/><line x1="1" x2="3" y1="12" y2="12"/><line x1="21" x2="23" y1="12" y2="12"/><line x1="4.22" x2="5.64" y1="19.78" y2="18.36"/><line x1="18.36" x2="19.78" y1="5.64" y2="4.22"/>
+            </svg>
+            RGB LEDs
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Enable toggle -->
+            <div class="flex items-center justify-between sm:col-span-2 lg:col-span-3 bg-surface rounded-lg px-4 py-3">
+                <span class="text-sm text-text">Enable RGB</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="rgb_enable" value="1" class="sr-only peer" {{if .Config.RGBEnable}}checked{{end}}>
+                    <div class="w-10 h-6 bg-border rounded-full peer peer-checked:bg-accent peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                </label>
+            </div>
+            <!-- Color -->
+            <div>
+                <label class="block text-xs text-text-muted mb-1.5">Color</label>
+                <input type="color" name="rgb_color" value="#{{.Config.RGBColor}}"
+                    class="w-full h-10 rounded-lg border border-border bg-surface cursor-pointer">
+            </div>
+            <!-- Style -->
+            <div>
+                <label class="block text-xs text-text-muted mb-1.5">Style</label>
+                <select name="rgb_style" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-accent">
+                    {{range .RGBStyles}}
+                    <option value="{{.}}" {{if eq . $.Config.RGBStyle}}selected{{end}}>{{.}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <!-- Brightness -->
+            <div>
+                <label class="block text-xs text-text-muted mb-1.5">Brightness: <span id="rb-val">{{.Config.RGBBrightness}}</span>%</label>
+                <input type="range" name="rgb_brightness" min="0" max="100" value="{{.Config.RGBBrightness}}"
+                    oninput="document.getElementById('rb-val').textContent=this.value"
+                    class="w-full accent-[var(--color-accent)]">
+            </div>
+            <!-- Speed -->
+            <div>
+                <label class="block text-xs text-text-muted mb-1.5">Speed: <span id="rp-val">{{.Config.RGBSpeed}}</span>%</label>
+                <input type="range" name="rgb_speed" min="0" max="100" value="{{.Config.RGBSpeed}}"
+                    oninput="document.getElementById('rp-val').textContent=this.value"
+                    class="w-full accent-[var(--color-accent)]">
+            </div>
+        </div>
+    </div>
+
+    <!-- Fan Section -->
+    <div class="bg-card rounded-xl border border-border p-5 mb-4">
+        <h2 class="text-sm font-semibold text-text mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M12 7a5 5 0 0 1 5 5"/><path d="M12 3a9 9 0 0 1 9 9"/><path d="M12 17a5 5 0 0 1 -5 -5"/><path d="M12 21a9 9 0 0 1 -9 -9"/><path d="M7 12a5 5 0 0 1 5 -5"/><path d="M3 12a9 9 0 0 1 9 -9"/><path d="M17 12a5 5 0 0 1 -5 5"/><path d="M21 12a9 9 0 0 1 -9 9"/>
+            </svg>
+            Fan
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Fan mode -->
+            <div>
+                <label class="block text-xs text-text-muted mb-1.5">Mode</label>
+                <select name="fan_mode" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-accent">
+                    {{range $k, $v := .FanModes}}
+                    <option value="{{$k}}" {{if eq $k $.Config.FanMode}}selected{{end}}>{{$k}} — {{$v}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <!-- Fan LED -->
+            <div>
+                <label class="block text-xs text-text-muted mb-1.5">Fan LED</label>
+                <select name="fan_led" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-accent">
+                    <option value="on"     {{if eq .Config.FanLED "on"}}selected{{end}}>On</option>
+                    <option value="off"    {{if eq .Config.FanLED "off"}}selected{{end}}>Off</option>
+                    <option value="follow" {{if eq .Config.FanLED "follow"}}selected{{end}}>Follow fan</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- OLED Section -->
+    <div class="bg-card rounded-xl border border-border p-5 mb-6">
+        <h2 class="text-sm font-semibold text-text mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>
+            </svg>
+            OLED Display
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- Enable toggle -->
+            <div class="flex items-center justify-between sm:col-span-3 bg-surface rounded-lg px-4 py-3">
+                <span class="text-sm text-text">Enable OLED</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="oled_enable" value="1" class="sr-only peer" {{if .Config.OLEDEnable}}checked{{end}}>
+                    <div class="w-10 h-6 bg-border rounded-full peer peer-checked:bg-accent peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                </label>
+            </div>
+            <!-- Rotation -->
+            <div>
+                <label class="block text-xs text-text-muted mb-1.5">Rotation</label>
+                <select name="oled_rotation" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-accent">
+                    <option value="0"   {{if eq .Config.OLEDRotation 0}}selected{{end}}>0°</option>
+                    <option value="180" {{if eq .Config.OLEDRotation 180}}selected{{end}}>180°</option>
+                </select>
+            </div>
+            <!-- Sleep timeout -->
+            <div>
+                <label class="block text-xs text-text-muted mb-1.5">Sleep timeout (s)</label>
+                <input type="number" name="oled_sleep" min="0" max="3600" value="{{.Config.OLEDSleep}}"
+                    class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text focus:outline-none focus:border-accent">
+            </div>
+        </div>
+    </div>
+
+    <!-- Save button -->
+    <div class="flex justify-end">
+        <button type="submit"
+            class="px-5 py-2 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent/80 transition-colors">
+            Apply Settings
+        </button>
+    </div>
+</div>
+{{end}}

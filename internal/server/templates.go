@@ -41,6 +41,7 @@ func (s *Server) parseTemplates() {
 		"partials/docker-detail.html",
 		"partials/alerts-list.html",
 		"partials/alert-rules-table.html",
+		"partials/hardware-form.html",
 	}
 
 	for _, name := range partials {
@@ -82,6 +83,7 @@ func (s *Server) parseTemplates() {
 		{"alerts.html", []string{"templates/partials/alerts-list.html"}},
 		{"history.html", nil},
 		{"settings.html", []string{"templates/partials/alert-rules-table.html"}},
+		{"hardware.html", []string{"templates/partials/hardware-form.html"}},
 		{"placeholder.html", nil},
 	}
 

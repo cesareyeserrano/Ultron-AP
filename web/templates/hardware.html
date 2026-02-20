@@ -1,0 +1,48 @@
+{{define "content"}}
+<div class="max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-lg font-semibold text-text">Hardware</h1>
+            <p class="text-xs text-text-muted mt-0.5">Pironman 5 Max — RGB, Fan &amp; OLED controls</p>
+        </div>
+        {{if .Content.Available}}
+        <span class="text-xs px-2 py-1 rounded-full bg-green-400/15 text-green-400 border border-green-400/20">pironman5 active</span>
+        {{else}}
+        <span class="text-xs px-2 py-1 rounded-full bg-danger/15 text-danger border border-danger/20">pironman5 not found</span>
+        {{end}}
+    </div>
+
+    {{if not .Content.Available}}
+    <div class="rounded-lg bg-surface border border-border p-8 text-center text-text-muted">
+        <svg class="w-10 h-10 mx-auto mb-3 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01"/>
+        </svg>
+        <p class="text-sm">pironman5 is not installed or not in PATH</p>
+    </div>
+    {{else}}
+
+    <form hx-post="/api/hardware/apply"
+          hx-target="#hardware-content"
+          hx-swap="innerHTML">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div id="hardware-content">
+            {{template "partials/hardware-form.html" .Content}}
+        </div>
+    </form>
+
+    {{end}}
+</div>
+
+<script>
+htmx.on('htmx:afterSwap', function() {
+    document.querySelectorAll('input[type=range]').forEach(function(el) {
+        var valId = el.name === 'rgb_brightness' ? 'rb-val' : el.name === 'rgb_speed' ? 'rp-val' : null;
+        if (!valId) return;
+        el.addEventListener('input', function() {
+            var span = document.getElementById(valId);
+            if (span) span.textContent = el.value;
+        });
+    });
+});
+</script>
+{{end}}

@@ -85,6 +85,8 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handleAlertsPage)))
 	mux.Handle("GET /history", s.requireAuth(http.HandlerFunc(s.handleHistoryPage)))
 	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handleSettings)))
+	mux.Handle("GET /hardware", s.requireAuth(http.HandlerFunc(s.handleHardwarePage)))
+	mux.Handle("POST /api/hardware/apply", s.requireAuth(http.HandlerFunc(s.handleHardwareApply)))
 
 	// API routes (require auth)
 	mux.Handle("GET /api/sse/dashboard", s.requireAuth(http.HandlerFunc(s.handleSSE)))
