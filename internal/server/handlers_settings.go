@@ -16,6 +16,7 @@ type settingsData struct {
 	Rules    []database.AlertConfig
 	Telegram *notifDisplay
 	Email    *notifDisplay
+	Perf     database.PerformanceConfig
 	Flash    string
 }
 
@@ -38,6 +39,13 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if em, err := s.db.GetNotificationConfig("email"); err == nil && em != nil {
 		data.Email = maskNotifConfig(em, "email")
+	}
+
+	// Load performance config
+	if perf, err := s.db.GetPerformanceConfig(); err == nil {
+		data.Perf = perf
+	} else {
+		data.Perf = database.DefaultPerformanceConfig()
 	}
 
 	s.render(w, r, "settings.html", "Settings", "settings", data)
@@ -235,6 +243,38 @@ func (s *Server) renderRulesTable(w http.ResponseWriter) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(buf.Bytes())
+}
+
+// handlePerformanceSave handles POST /api/performance
+func (s *Server) handlePerformanceSave(w http.ResponseWriter, r *http.Request) {
+	if !s.validateCSRF(w, r) {
+		return
+	}
+
+	cfg := database.DefaultPerformanceConfig()
+	if v, err := strconv.Atoi(r.FormValue("sse_interval_sec")); err == nil && v >= 2 && v <= 60 {
+		cfg.SSEIntervalSec = v
+	}
+	if v, err := strconv.Atoi(r.FormValue("disk_interval_min")); err == nil && v >= 1 && v <= 1440 {
+		cfg.DiskIntervalMin = v
+	}
+	if v, err := strconv.Atoi(r.FormValue("docker_interval_sec")); err == nil && v >= 5 && v <= 300 {
+		cfg.DockerIntervalSec = v
+	}
+	if v, err := strconv.Atoi(r.FormValue("systemd_interval_sec")); err == nil && v >= 5 && v <= 300 {
+		cfg.SystemdIntervalSec = v
+	}
+
+	if err := s.db.SavePerformanceConfig(cfg); err != nil {
+		log.Printf("settings: failed to save performance config: %v", err)
+		http.Error(w, "Failed to save", http.StatusInternalServerError)
+		return
+	}
+
+	s.ApplyPerformanceConfig(cfg)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`<div class="text-sm text-green-400 py-2">Saved successfully</div>`))
 }
 
 func (s *Server) validateCSRF(w http.ResponseWriter, r *http.Request) bool {

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const refreshInterval = 30 * time.Second
+const defaultSystemdInterval = 30 * time.Second
 
 // Monitor periodically refreshes systemd service data.
 type Monitor struct {
@@ -17,12 +17,31 @@ type Monitor struct {
 	available bool
 	cancel    context.CancelFunc
 	wg        sync.WaitGroup
+
+	intervalMu sync.RWMutex
+	interval   time.Duration
 }
 
 // NewMonitor creates a systemd monitor. If systemctl is not available,
 // the monitor logs a warning and returns Available() == false.
+// SetInterval updates how often services are refreshed. Safe to call at any time.
+func (m *Monitor) SetInterval(d time.Duration) {
+	if d < time.Second {
+		d = time.Second
+	}
+	m.intervalMu.Lock()
+	m.interval = d
+	m.intervalMu.Unlock()
+}
+
+func (m *Monitor) getInterval() time.Duration {
+	m.intervalMu.RLock()
+	defer m.intervalMu.RUnlock()
+	return m.interval
+}
+
 func NewMonitor() *Monitor {
-	m := &Monitor{runner: &ExecRunner{}}
+	m := &Monitor{runner: &ExecRunner{}, interval: defaultSystemdInterval}
 
 	// Check if systemctl exists
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -44,6 +63,7 @@ func NewMonitorWithRunner(runner CommandRunner) *Monitor {
 	return &Monitor{
 		runner:    runner,
 		available: runner != nil,
+		interval:  defaultSystemdInterval,
 	}
 }
 
@@ -57,7 +77,7 @@ func (m *Monitor) Start(ctx context.Context) {
 		m.run(ctx)
 	}()
 
-	log.Printf("Systemd monitor started (interval=%v)", refreshInterval)
+	log.Printf("Systemd monitor started (interval=%v)", m.getInterval())
 }
 
 // Stop cancels the refresh loop and waits for it to exit.
@@ -101,7 +121,8 @@ func (m *Monitor) Failed() []ServiceInfo {
 func (m *Monitor) run(ctx context.Context) {
 	m.refresh(ctx)
 
-	ticker := time.NewTicker(refreshInterval)
+	current := m.getInterval()
+	ticker := time.NewTicker(current)
 	defer ticker.Stop()
 
 	for {
@@ -110,6 +131,11 @@ func (m *Monitor) run(ctx context.Context) {
 			return
 		case <-ticker.C:
 			m.refresh(ctx)
+			// Dynamically adjust ticker if interval was changed via SetInterval.
+			if next := m.getInterval(); next != current {
+				current = next
+				ticker.Reset(current)
+			}
 		}
 	}
 }

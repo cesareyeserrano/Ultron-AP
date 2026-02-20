@@ -67,7 +67,7 @@ func setupServiceTestServer(t *testing.T, runner *mockCommandRunner) (*Server, *
 	time.Sleep(100 * time.Millisecond)
 	t.Cleanup(func() { cancel(); systemdMon.Stop() })
 
-	srv := New(cfg, db, nil, nil, systemdMon, nil)
+	srv := New(cfg, db, nil, nil, nil, systemdMon, nil)
 	return srv, session
 }
 

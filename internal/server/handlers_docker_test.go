@@ -94,7 +94,7 @@ func setupDockerTestServer(t *testing.T, client *mockDockerClient) (*Server, *da
 	time.Sleep(100 * time.Millisecond)
 	t.Cleanup(func() { cancel(); dockerMon.Stop() })
 
-	srv := New(cfg, db, nil, dockerMon, nil, nil)
+	srv := New(cfg, db, nil, nil, dockerMon, nil, nil)
 	return srv, session
 }
 

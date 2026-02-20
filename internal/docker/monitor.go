@@ -14,7 +14,7 @@ import (
 	dclient "github.com/docker/docker/client"
 )
 
-const refreshInterval = 10 * time.Second
+const defaultDockerInterval = 10 * time.Second
 
 // Monitor periodically refreshes Docker container data.
 type Monitor struct {
@@ -24,12 +24,31 @@ type Monitor struct {
 	available  bool
 	cancel     context.CancelFunc
 	wg         sync.WaitGroup
+
+	intervalMu sync.RWMutex
+	interval   time.Duration
 }
 
 // NewMonitor creates a Docker monitor. If Docker is not reachable, it logs a
 // warning and returns a monitor that reports Available() == false.
+// SetInterval updates how often containers are refreshed. Safe to call at any time.
+func (m *Monitor) SetInterval(d time.Duration) {
+	if d < time.Second {
+		d = time.Second
+	}
+	m.intervalMu.Lock()
+	m.interval = d
+	m.intervalMu.Unlock()
+}
+
+func (m *Monitor) getInterval() time.Duration {
+	m.intervalMu.RLock()
+	defer m.intervalMu.RUnlock()
+	return m.interval
+}
+
 func NewMonitor() *Monitor {
-	m := &Monitor{}
+	m := &Monitor{interval: defaultDockerInterval}
 
 	cli, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
 	if err != nil {
@@ -57,6 +76,7 @@ func NewMonitorWithClient(client DockerClient) *Monitor {
 	return &Monitor{
 		client:    client,
 		available: client != nil,
+		interval:  defaultDockerInterval,
 	}
 }
 
@@ -70,7 +90,7 @@ func (m *Monitor) Start(ctx context.Context) {
 		m.run(ctx)
 	}()
 
-	log.Printf("Docker monitor started (interval=%v)", refreshInterval)
+	log.Printf("Docker monitor started (interval=%v)", m.getInterval())
 }
 
 // Stop cancels the refresh loop and waits for it to exit.
@@ -150,7 +170,8 @@ func (m *Monitor) ContainerDetail(ctx context.Context, id string) (*ContainerDet
 func (m *Monitor) run(ctx context.Context) {
 	m.refresh(ctx)
 
-	ticker := time.NewTicker(refreshInterval)
+	current := m.getInterval()
+	ticker := time.NewTicker(current)
 	defer ticker.Stop()
 
 	for {
@@ -159,6 +180,11 @@ func (m *Monitor) run(ctx context.Context) {
 			return
 		case <-ticker.C:
 			m.refresh(ctx)
+			// Dynamically adjust ticker if interval was changed via SetInterval.
+			if next := m.getInterval(); next != current {
+				current = next
+				ticker.Reset(current)
+			}
 		}
 	}
 }

@@ -33,13 +33,27 @@ type SystemReader struct {
 	prevNet      map[string]prevNetCounters
 	prevNetMu    sync.Mutex
 	tempWarnOnce sync.Once
+
+	// Disk caching: only read disk stats every diskInterval to avoid syscall spam.
+	diskMu       sync.Mutex
+	diskInterval time.Duration
+	lastDiskRead time.Time
+	lastDiskData []DiskPartition
 }
 
-// NewSystemReader creates a new system metrics reader.
+// NewSystemReader creates a new system metrics reader with a 30-minute disk interval.
 func NewSystemReader() *SystemReader {
 	return &SystemReader{
-		prevNet: make(map[string]prevNetCounters),
+		prevNet:      make(map[string]prevNetCounters),
+		diskInterval: 30 * time.Minute,
 	}
+}
+
+// SetDiskInterval updates how often disk partitions are actually re-read.
+func (r *SystemReader) SetDiskInterval(d time.Duration) {
+	r.diskMu.Lock()
+	r.diskInterval = d
+	r.diskMu.Unlock()
 }
 
 // Read collects all system metrics. Individual metric failures don't stop collection.
@@ -56,24 +70,23 @@ func (r *SystemReader) Read(ctx context.Context) (*Snapshot, error) {
 	return s, nil
 }
 
+// readCPU uses a single per-core call and computes the total as the mean.
+// Two back-to-back calls with interval=0 would make the second return ~0%
+// because gopsutil's internal /proc/stat cache was just refreshed.
 func (r *SystemReader) readCPU(ctx context.Context, s *Snapshot) {
-	// Total CPU percent (all cores combined)
-	totals, err := cpu.PercentWithContext(ctx, 0, false)
-	if err != nil {
-		log.Printf("metrics: failed to read CPU total: %v", err)
-		return
-	}
-	if len(totals) > 0 {
-		s.CPU.TotalPercent = totals[0]
-	}
-
-	// Per-core
 	perCore, err := cpu.PercentWithContext(ctx, 0, true)
 	if err != nil {
-		log.Printf("metrics: failed to read CPU per-core: %v", err)
+		log.Printf("metrics: failed to read CPU: %v", err)
 		return
 	}
 	s.CPU.PerCore = perCore
+	if len(perCore) > 0 {
+		var sum float64
+		for _, v := range perCore {
+			sum += v
+		}
+		s.CPU.TotalPercent = sum / float64(len(perCore))
+	}
 }
 
 func (r *SystemReader) readRAM(ctx context.Context, s *Snapshot) {
@@ -90,7 +103,18 @@ func (r *SystemReader) readRAM(ctx context.Context, s *Snapshot) {
 	}
 }
 
+// readDisks reads disk partition stats, returning cached data until diskInterval
+// elapses. Default interval is 30 minutes — disk usage changes on a minute scale.
 func (r *SystemReader) readDisks(ctx context.Context, s *Snapshot) {
+	r.diskMu.Lock()
+	interval := r.diskInterval
+	if interval > 0 && !r.lastDiskRead.IsZero() && time.Since(r.lastDiskRead) < interval {
+		s.Disks = r.lastDiskData
+		r.diskMu.Unlock()
+		return
+	}
+	r.diskMu.Unlock()
+
 	partitions, err := disk.PartitionsWithContext(ctx, false)
 	if err != nil {
 		log.Printf("metrics: failed to read disk partitions: %v", err)
@@ -111,6 +135,11 @@ func (r *SystemReader) readDisks(ctx context.Context, s *Snapshot) {
 			Percent: usage.UsedPercent,
 		})
 	}
+
+	r.diskMu.Lock()
+	r.lastDiskRead = time.Now()
+	r.lastDiskData = s.Disks
+	r.diskMu.Unlock()
 }
 
 func (r *SystemReader) readNetwork(ctx context.Context, s *Snapshot, now time.Time) {
@@ -133,7 +162,6 @@ func (r *SystemReader) readNetwork(ctx context.Context, s *Snapshot, now time.Ti
 				iface.BytesRecvPS = uint64(float64(c.BytesRecv-prev.bytesRecv) / elapsed)
 			}
 		}
-		// First reading: rates stay 0
 
 		r.prevNet[c.Name] = prevNetCounters{
 			bytesSent: c.BytesSent,

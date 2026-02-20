@@ -133,8 +133,8 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 // startSSEBroadcast starts a goroutine that broadcasts dashboard data to SSE clients.
 func (s *Server) startSSEBroadcast() {
 	go func() {
-		// Use the metrics interval (5s) for SSE updates
-		ticker := time.NewTicker(5 * time.Second)
+		current := s.sseInterval()
+		ticker := time.NewTicker(current)
 		defer ticker.Stop()
 		for range ticker.C {
 			s.sseBroker.mu.RLock()
@@ -145,6 +145,11 @@ func (s *Server) startSSEBroadcast() {
 			}
 			data := s.buildSSEPayload()
 			s.sseBroker.broadcast(data)
+			// Dynamically adjust ticker if interval was changed.
+			if next := s.sseInterval(); next != current {
+				current = next
+				ticker.Reset(current)
+			}
 		}
 	}()
 }
@@ -169,9 +174,9 @@ func (s *Server) buildSSEPayload() []byte {
 	chartsHTML := s.renderPartial("partials/sse-charts.html", dd)
 	writeSSEEvent(&buf, "charts", chartsHTML)
 
-	// Alert count event
+	// Alert count event — uses a 30s TTL cache to avoid a DB query on every tick.
 	if s.db != nil {
-		unackCount, _ := s.db.UnacknowledgedAlertCount()
+		unackCount := s.cachedAlertCount()
 		if unackCount > 0 {
 			writeSSEEvent(&buf, "alert-count", fmt.Sprintf("%d", unackCount))
 		} else {
@@ -358,12 +363,12 @@ func derefFloat(f *float64) float64 {
 }
 
 func joinPoints(pts []string) string {
-	result := ""
+	var b strings.Builder
 	for i, p := range pts {
 		if i > 0 {
-			result += " "
+			b.WriteByte(' ')
 		}
-		result += p
+		b.WriteString(p)
 	}
-	return result
+	return b.String()
 }

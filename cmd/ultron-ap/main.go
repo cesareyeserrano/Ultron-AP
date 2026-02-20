@@ -41,19 +41,32 @@ func main() {
 		log.Fatalf("Failed to bootstrap admin user: %v", err)
 	}
 
-	// Start metrics collector
+	// Load performance config early so intervals can be applied before monitors start.
+	perf, err := db.GetPerformanceConfig()
+	if err != nil {
+		log.Printf("performance config unavailable, using defaults: %v", err)
+		perf = database.DefaultPerformanceConfig()
+	}
+
+	// Start metrics collector.
+	// Ring buffer: 30 minutes at the default 5s interval = 360 snapshots (~300 KB).
+	// The sparkline charts only consume 120 points (10 min), so 30 min is a
+	// generous headroom without the old 24h / 17 280 snapshot overhead.
 	reader := metrics.NewSystemReader()
-	collector := metrics.NewCollector(reader, cfg.MetricsInterval, 24*time.Hour)
+	reader.SetDiskInterval(time.Duration(perf.DiskIntervalMin) * time.Minute)
+	collector := metrics.NewCollector(reader, cfg.MetricsInterval, 30*time.Minute)
 	collector.Start(context.Background())
 	defer collector.Stop()
 
 	// Start Docker monitor
 	dockerMon := docker.NewMonitor()
+	dockerMon.SetInterval(time.Duration(perf.DockerIntervalSec) * time.Second)
 	dockerMon.Start(context.Background())
 	defer dockerMon.Stop()
 
 	// Start Systemd monitor
 	systemdMon := systemd.NewMonitor()
+	systemdMon.SetInterval(time.Duration(perf.SystemdIntervalSec) * time.Second)
 	systemdMon.Start(context.Background())
 	defer systemdMon.Stop()
 
@@ -73,8 +86,10 @@ func main() {
 	alertEng.Start(context.Background())
 	defer alertEng.Stop()
 
-	// Create server
-	srv := server.New(cfg, db, collector, dockerMon, systemdMon, alertEng)
+	// Create server and apply the persisted performance config (SSE interval + any
+	// remaining fields not yet applied above).
+	srv := server.New(cfg, db, reader, collector, dockerMon, systemdMon, alertEng)
+	srv.ApplyPerformanceConfig(perf)
 
 	// Start server in goroutine
 	errCh := make(chan error, 1)

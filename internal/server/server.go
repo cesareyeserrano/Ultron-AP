@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/alerts"
@@ -27,6 +28,7 @@ type Server struct {
 	bruteForce  *auth.BruteForceTracker
 	loginTokens sync.Map // token(string) -> expiry(time.Time), for login CSRF
 	collector   *metrics.Collector
+	reader      *metrics.SystemReader
 	docker      *docker.Monitor
 	systemd     *systemd.Monitor
 	alertEng    *alerts.Engine
@@ -34,9 +36,17 @@ type Server struct {
 	templates   fs.FS
 	tmplCache   map[string]*template.Template // pre-parsed at startup
 	startedAt   time.Time
+
+	// sseIntervalNs holds the SSE broadcast interval as nanoseconds (atomic).
+	sseIntervalNs atomic.Int64
+
+	// Alert count TTL cache — avoids a DB query on every SSE tick.
+	alertCountMu     sync.Mutex
+	alertCountCached int
+	alertCountExpiry time.Time
 }
 
-func New(cfg *config.Config, db *database.DB, collector *metrics.Collector, dockerMon *docker.Monitor, systemdMon *systemd.Monitor, alertEng *alerts.Engine) *Server {
+func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, collector *metrics.Collector, dockerMon *docker.Monitor, systemdMon *systemd.Monitor, alertEng *alerts.Engine) *Server {
 	mux := http.NewServeMux()
 
 	s := &Server{
@@ -50,6 +60,7 @@ func New(cfg *config.Config, db *database.DB, collector *metrics.Collector, dock
 		cfg:        cfg,
 		db:         db,
 		bruteForce: auth.NewBruteForceTracker(),
+		reader:     reader,
 		collector:  collector,
 		docker:     dockerMon,
 		systemd:    systemdMon,
@@ -58,6 +69,7 @@ func New(cfg *config.Config, db *database.DB, collector *metrics.Collector, dock
 		templates:  web.Templates,
 		startedAt:  time.Now(),
 	}
+	s.sseIntervalNs.Store(int64(5 * time.Second))
 
 	s.parseTemplates()
 	s.registerRoutes(mux)
@@ -65,6 +77,53 @@ func New(cfg *config.Config, db *database.DB, collector *metrics.Collector, dock
 	s.startRetentionJob()
 
 	return s
+}
+
+// ApplyPerformanceConfig applies all configurable intervals at once.
+// Safe to call from main at startup and from the settings save handler.
+func (s *Server) ApplyPerformanceConfig(cfg database.PerformanceConfig) {
+	if cfg.SSEIntervalSec >= 2 {
+		s.sseIntervalNs.Store(int64(time.Duration(cfg.SSEIntervalSec) * time.Second))
+	}
+	if s.reader != nil && cfg.DiskIntervalMin >= 1 {
+		s.reader.SetDiskInterval(time.Duration(cfg.DiskIntervalMin) * time.Minute)
+	}
+	if s.docker != nil && cfg.DockerIntervalSec >= 5 {
+		s.docker.SetInterval(time.Duration(cfg.DockerIntervalSec) * time.Second)
+	}
+	if s.systemd != nil && cfg.SystemdIntervalSec >= 5 {
+		s.systemd.SetInterval(time.Duration(cfg.SystemdIntervalSec) * time.Second)
+	}
+}
+
+// sseInterval returns the current SSE broadcast interval.
+func (s *Server) sseInterval() time.Duration {
+	v := s.sseIntervalNs.Load()
+	if v <= 0 {
+		return 5 * time.Second
+	}
+	return time.Duration(v)
+}
+
+// cachedAlertCount returns the unacknowledged alert count, refreshing at most
+// once per 30 seconds to avoid a DB query on every SSE tick.
+func (s *Server) cachedAlertCount() int {
+	s.alertCountMu.Lock()
+	defer s.alertCountMu.Unlock()
+	if time.Now().Before(s.alertCountExpiry) {
+		return s.alertCountCached
+	}
+	count, _ := s.db.UnacknowledgedAlertCount()
+	s.alertCountCached = count
+	s.alertCountExpiry = time.Now().Add(30 * time.Second)
+	return s.alertCountCached
+}
+
+// invalidateAlertCount forces the next cachedAlertCount call to hit the DB.
+func (s *Server) invalidateAlertCount() {
+	s.alertCountMu.Lock()
+	s.alertCountExpiry = time.Time{}
+	s.alertCountMu.Unlock()
 }
 
 func (s *Server) registerRoutes(mux *http.ServeMux) {
@@ -99,6 +158,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("DELETE /api/alerts/rules/{id}", s.requireAuth(http.HandlerFunc(s.handleAlertRuleDelete)))
 	mux.Handle("POST /api/alerts/{id}/acknowledge", s.requireAuth(http.HandlerFunc(s.handleAlertAcknowledge)))
 	mux.Handle("POST /api/notifications/{channel}", s.requireAuth(http.HandlerFunc(s.handleNotificationSave)))
+	mux.Handle("POST /api/performance", s.requireAuth(http.HandlerFunc(s.handlePerformanceSave)))
 	mux.Handle("POST /api/services/{name}/start", s.requireAuth(http.HandlerFunc(s.handleServiceStart)))
 	mux.Handle("POST /api/services/{name}/stop", s.requireAuth(http.HandlerFunc(s.handleServiceStop)))
 	mux.Handle("POST /api/services/{name}/restart", s.requireAuth(http.HandlerFunc(s.handleServiceRestart)))
