@@ -42,6 +42,21 @@ func setupAuthHandlerTest(t *testing.T) (*Server, *database.DB) {
 	return srv, db
 }
 
+// extractCSRFToken extracts the CSRF token from the login form HTML body.
+func extractCSRFToken(body string) string {
+	const marker = `name="csrf_token" value="`
+	idx := strings.Index(body, marker)
+	if idx == -1 {
+		return ""
+	}
+	rest := body[idx+len(marker):]
+	end := strings.Index(rest, `"`)
+	if end == -1 {
+		return ""
+	}
+	return rest[:end]
+}
+
 func TestLoginPage_Renders(t *testing.T) {
 	srv, _ := setupAuthHandlerTest(t)
 
@@ -60,21 +75,12 @@ func TestLoginPage_Renders(t *testing.T) {
 func TestLogin_Success(t *testing.T) {
 	srv, _ := setupAuthHandlerTest(t)
 
-	// First GET /login to get the CSRF token cookie
+	// GET /login to get CSRF token embedded in HTML
 	getReq := httptest.NewRequest(http.MethodGet, "/login", nil)
 	getRec := httptest.NewRecorder()
 	srv.httpServer.Handler.ServeHTTP(getRec, getReq)
-
-	// Extract CSRF cookie and token from response
-	var csrfToken string
-	var csrfCookie *http.Cookie
-	for _, c := range getRec.Result().Cookies() {
-		if c.Name == "csrf_login" {
-			csrfCookie = c
-			csrfToken = c.Value
-		}
-	}
-	require.NotNil(t, csrfCookie, "should set csrf_login cookie")
+	csrfToken := extractCSRFToken(getRec.Body.String())
+	require.NotEmpty(t, csrfToken, "should embed csrf_token in login form")
 
 	// POST /login with correct credentials
 	form := url.Values{}
@@ -84,7 +90,6 @@ func TestLogin_Success(t *testing.T) {
 
 	postReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
 	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	postReq.AddCookie(csrfCookie)
 	postRec := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(postRec, postReq)
@@ -101,25 +106,17 @@ func TestLogin_Success(t *testing.T) {
 	}
 	require.NotNil(t, sessionCookie, "should set session cookie")
 	assert.True(t, sessionCookie.HttpOnly, "session cookie must be HttpOnly")
-	assert.Equal(t, http.SameSiteStrictMode, sessionCookie.SameSite, "session cookie must be SameSite=Strict")
+	assert.Equal(t, http.SameSiteLaxMode, sessionCookie.SameSite, "session cookie must be SameSite=Lax")
 }
 
 func TestLogin_FailedWrongPassword(t *testing.T) {
 	srv, _ := setupAuthHandlerTest(t)
 
-	// Get CSRF token
 	getReq := httptest.NewRequest(http.MethodGet, "/login", nil)
 	getRec := httptest.NewRecorder()
 	srv.httpServer.Handler.ServeHTTP(getRec, getReq)
-
-	var csrfToken string
-	var csrfCookie *http.Cookie
-	for _, c := range getRec.Result().Cookies() {
-		if c.Name == "csrf_login" {
-			csrfCookie = c
-			csrfToken = c.Value
-		}
-	}
+	csrfToken := extractCSRFToken(getRec.Body.String())
+	require.NotEmpty(t, csrfToken)
 
 	form := url.Values{}
 	form.Set("username", "admin")
@@ -128,7 +125,6 @@ func TestLogin_FailedWrongPassword(t *testing.T) {
 
 	postReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
 	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	postReq.AddCookie(csrfCookie)
 	postRec := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(postRec, postReq)
@@ -149,15 +145,8 @@ func TestLogin_FailedWrongUsername(t *testing.T) {
 	getReq := httptest.NewRequest(http.MethodGet, "/login", nil)
 	getRec := httptest.NewRecorder()
 	srv.httpServer.Handler.ServeHTTP(getRec, getReq)
-
-	var csrfToken string
-	var csrfCookie *http.Cookie
-	for _, c := range getRec.Result().Cookies() {
-		if c.Name == "csrf_login" {
-			csrfCookie = c
-			csrfToken = c.Value
-		}
-	}
+	csrfToken := extractCSRFToken(getRec.Body.String())
+	require.NotEmpty(t, csrfToken)
 
 	form := url.Values{}
 	form.Set("username", "nonexistent")
@@ -166,7 +155,6 @@ func TestLogin_FailedWrongUsername(t *testing.T) {
 
 	postReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
 	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	postReq.AddCookie(csrfCookie)
 	postRec := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(postRec, postReq)
@@ -195,25 +183,13 @@ func TestLogin_CSRFMissing(t *testing.T) {
 func TestLogin_CSRFInvalid(t *testing.T) {
 	srv, _ := setupAuthHandlerTest(t)
 
-	getReq := httptest.NewRequest(http.MethodGet, "/login", nil)
-	getRec := httptest.NewRecorder()
-	srv.httpServer.Handler.ServeHTTP(getRec, getReq)
-
-	var csrfCookie *http.Cookie
-	for _, c := range getRec.Result().Cookies() {
-		if c.Name == "csrf_login" {
-			csrfCookie = c
-		}
-	}
-
 	form := url.Values{}
 	form.Set("username", "admin")
 	form.Set("password", "secret")
-	form.Set("csrf_token", "invalid-token")
+	form.Set("csrf_token", "invalid-token-not-in-store")
 
 	req := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.AddCookie(csrfCookie)
 	rec := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(rec, req)
@@ -228,15 +204,8 @@ func TestLogin_BruteForce_LocksAfter5Failures(t *testing.T) {
 		getReq := httptest.NewRequest(http.MethodGet, "/login", nil)
 		getRec := httptest.NewRecorder()
 		srv.httpServer.Handler.ServeHTTP(getRec, getReq)
-
-		var csrfToken string
-		var csrfCookie *http.Cookie
-		for _, c := range getRec.Result().Cookies() {
-			if c.Name == "csrf_login" {
-				csrfCookie = c
-				csrfToken = c.Value
-			}
-		}
+		csrfToken := extractCSRFToken(getRec.Body.String())
+		require.NotEmpty(t, csrfToken)
 
 		form := url.Values{}
 		form.Set("username", "admin")
@@ -245,7 +214,6 @@ func TestLogin_BruteForce_LocksAfter5Failures(t *testing.T) {
 
 		postReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
 		postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		postReq.AddCookie(csrfCookie)
 		postRec := httptest.NewRecorder()
 
 		srv.httpServer.Handler.ServeHTTP(postRec, postReq)
@@ -255,15 +223,8 @@ func TestLogin_BruteForce_LocksAfter5Failures(t *testing.T) {
 	getReq := httptest.NewRequest(http.MethodGet, "/login", nil)
 	getRec := httptest.NewRecorder()
 	srv.httpServer.Handler.ServeHTTP(getRec, getReq)
-
-	var csrfToken string
-	var csrfCookie *http.Cookie
-	for _, c := range getRec.Result().Cookies() {
-		if c.Name == "csrf_login" {
-			csrfCookie = c
-			csrfToken = c.Value
-		}
-	}
+	csrfToken := extractCSRFToken(getRec.Body.String())
+	require.NotEmpty(t, csrfToken)
 
 	form := url.Values{}
 	form.Set("username", "admin")
@@ -272,7 +233,6 @@ func TestLogin_BruteForce_LocksAfter5Failures(t *testing.T) {
 
 	postReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
 	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	postReq.AddCookie(csrfCookie)
 	postRec := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(postRec, postReq)

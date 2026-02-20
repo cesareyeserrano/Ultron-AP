@@ -208,7 +208,9 @@ func TestServiceStart_InvalidNameRejected(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	// Errors return 200 with an inline error banner (HTMX swaps normally)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Contains(t, rec.Body.String(), "Invalid service name")
 
 	logs, _ := srv.db.ListActionLogs(10)
 	require.NotEmpty(t, logs)
@@ -229,7 +231,9 @@ func TestServiceStart_ErrorLogged(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	// Errors return 200 with an inline error banner (HTMX swaps normally)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Contains(t, rec.Body.String(), "Failed to start")
 
 	logs, _ := srv.db.ListActionLogs(10)
 	require.NotEmpty(t, logs)

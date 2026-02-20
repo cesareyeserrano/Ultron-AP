@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -163,8 +164,14 @@ func (s *Server) buildSSEPayload() []byte {
 }
 
 func writeSSEEvent(buf *bytes.Buffer, event string, data string) {
-	buf.WriteString(fmt.Sprintf("event: %s\n", event))
-	buf.WriteString(fmt.Sprintf("data: %s\n\n", data))
+	buf.WriteString("event: " + event + "\n")
+	// SSE protocol requires each data line to be prefixed with "data: ".
+	// Multi-line HTML must be encoded this way, otherwise blank lines
+	// in the HTML prematurely terminate the SSE event.
+	for _, line := range strings.Split(strings.TrimSpace(data), "\n") {
+		buf.WriteString("data: " + line + "\n")
+	}
+	buf.WriteString("\n")
 }
 
 func (s *Server) gatherDashboardData() DashboardData {

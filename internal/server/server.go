@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/alerts"
@@ -19,17 +20,18 @@ import (
 )
 
 type Server struct {
-	httpServer *http.Server
-	cfg        *config.Config
-	db         *database.DB
-	bruteForce *auth.BruteForceTracker
-	collector  *metrics.Collector
-	docker     *docker.Monitor
-	systemd    *systemd.Monitor
-	alertEng   *alerts.Engine
-	sseBroker  *sseBroker
-	templates  fs.FS
-	startedAt  time.Time
+	httpServer  *http.Server
+	cfg         *config.Config
+	db          *database.DB
+	bruteForce  *auth.BruteForceTracker
+	loginTokens sync.Map // token(string) -> expiry(time.Time), for login CSRF
+	collector   *metrics.Collector
+	docker      *docker.Monitor
+	systemd     *systemd.Monitor
+	alertEng    *alerts.Engine
+	sseBroker   *sseBroker
+	templates   fs.FS
+	startedAt   time.Time
 }
 
 func New(cfg *config.Config, db *database.DB, collector *metrics.Collector, dockerMon *docker.Monitor, systemdMon *systemd.Monitor, alertEng *alerts.Engine) *Server {

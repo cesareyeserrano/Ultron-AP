@@ -52,11 +52,12 @@ func (m *Monitor) runControl(ctx context.Context, action, name string) ServiceAc
 	ctlCtx, cancel := context.WithTimeout(ctx, controlTimeout)
 	defer cancel()
 
-	out, err := m.runner.Run(ctlCtx, "systemctl", action, name)
+	out, err := m.runner.Run(ctlCtx, "sudo", "-n", "systemctl", action, name)
 	if err != nil {
 		stderr := strings.TrimSpace(string(out))
-		if strings.Contains(stderr, "Permission denied") || strings.Contains(stderr, "Interactive authentication") {
-			result.Message = fmt.Sprintf("Permission denied: cannot %s %s", action, name)
+		if strings.Contains(stderr, "Permission denied") || strings.Contains(stderr, "Interactive authentication") ||
+			strings.Contains(stderr, "password is required") || strings.Contains(stderr, "sudo:") {
+			result.Message = fmt.Sprintf("Permission denied: cannot %s %s (sudo not configured)", action, name)
 		} else if strings.Contains(stderr, "not found") || strings.Contains(stderr, "No such") {
 			result.Message = fmt.Sprintf("Service not found: %s", name)
 		} else if ctlCtx.Err() != nil {

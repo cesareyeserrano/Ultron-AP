@@ -26,14 +26,9 @@ func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Store CSRF token in a temporary cookie for the login form
-	http.SetCookie(w, &http.Cookie{
-		Name:     "csrf_login",
-		Value:    csrfToken,
-		Path:     "/login",
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	// Store CSRF token server-side (avoids SameSite cookie issues on local
+	// IP addresses in Chrome and other strict browsers). Token expires in 10min.
+	s.loginTokens.Store(csrfToken, time.Now().Add(10*time.Minute))
 
 	s.renderLogin(w, loginPageData{CSRFToken: csrfToken})
 }
@@ -48,9 +43,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate CSRF token from cookie
-	csrfCookie, err := r.Cookie("csrf_login")
-	if err != nil || !auth.ValidateToken(csrfCookie.Value, r.FormValue("csrf_token")) {
+	// Validate CSRF token from server-side store (one-time use, avoids cookie SameSite issues)
+	submitted := r.FormValue("csrf_token")
+	expiry, ok := s.loginTokens.LoadAndDelete(submitted)
+	if !ok || submitted == "" || time.Now().After(expiry.(time.Time)) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
@@ -115,15 +111,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionToken,
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
-
-	// Clear the login CSRF cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:   "csrf_login",
-		Value:  "",
-		Path:   "/login",
-		MaxAge: -1,
+		SameSite: http.SameSiteLaxMode,
 	})
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -141,7 +129,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -160,13 +148,7 @@ func (s *Server) renderLogin(w http.ResponseWriter, data loginPageData) {
 
 func (s *Server) renderLoginWithError(w http.ResponseWriter, msg string) {
 	csrfToken, _ := auth.GenerateToken()
-	http.SetCookie(w, &http.Cookie{
-		Name:     "csrf_login",
-		Value:    csrfToken,
-		Path:     "/login",
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	s.loginTokens.Store(csrfToken, time.Now().Add(10*time.Minute))
 	s.renderLogin(w, loginPageData{Error: msg, CSRFToken: csrfToken})
 }
 
