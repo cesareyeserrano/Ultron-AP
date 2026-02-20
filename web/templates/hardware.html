@@ -23,7 +23,8 @@
 
     <form hx-post="/api/hardware/apply"
           hx-target="#hardware-content"
-          hx-swap="innerHTML">
+          hx-swap="innerHTML"
+          hx-trigger="change">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div id="hardware-content">
             {{template "partials/hardware-form.html" .Content}}

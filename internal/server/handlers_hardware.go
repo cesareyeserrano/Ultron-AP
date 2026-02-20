@@ -75,9 +75,6 @@ func (s *Server) handleHardwareApply(w http.ResponseWriter, r *http.Request) {
 		applied = &cfg
 	}
 
-	fmt.Fprint(w,
-		`<div class="rounded-lg bg-green-400/10 border border-green-400/30 p-3 mb-4 text-sm text-green-400">Settings applied successfully.</div>`,
-	)
 	fmt.Fprint(w, s.renderHardwareContent(applied))
 }
 
