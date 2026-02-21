@@ -1,5 +1,6 @@
 {{define "alert-rules-table"}}
-{{if .}}
+{{$csrf := .CSRFToken}}
+{{if .Rules}}
 <div class="overflow-x-auto">
     <table class="w-full text-sm">
         <thead>
@@ -14,7 +15,7 @@
             </tr>
         </thead>
         <tbody>
-            {{range .}}
+            {{range .Rules}}
             <tr class="border-b border-border/50 hover:bg-card/50">
                 <td class="py-2 px-3 text-text">{{.Name}}</td>
                 <td class="py-2 px-3 text-text-muted uppercase text-xs">{{.Metric}}</td>
@@ -31,11 +32,11 @@
                     {{end}}
                 </td>
                 <td class="text-right py-2 px-3 space-x-1">
-                    <button hx-post="/api/alerts/rules/{{.ID}}/toggle" hx-target="#rules-table" hx-swap="innerHTML" hx-include="[name='csrf_token']"
+                    <button hx-post="/api/alerts/rules/{{.ID}}/toggle" hx-target="#rules-table" hx-swap="innerHTML" hx-vals='{"csrf_token": "{{$csrf}}"}'
                         class="text-xs text-text-muted hover:text-text px-1.5 py-0.5 rounded hover:bg-card transition-colors">
                         {{if .Enabled}}Disable{{else}}Enable{{end}}
                     </button>
-                    <button hx-delete="/api/alerts/rules/{{.ID}}" hx-target="#rules-table" hx-swap="innerHTML" hx-include="[name='csrf_token']"
+                    <button hx-delete="/api/alerts/rules/{{.ID}}" hx-target="#rules-table" hx-swap="innerHTML" hx-vals='{"csrf_token": "{{$csrf}}"}'
                         hx-confirm="Delete this alert rule?"
                         class="text-xs text-danger hover:text-danger/80 px-1.5 py-0.5 rounded hover:bg-card transition-colors">
                         Delete

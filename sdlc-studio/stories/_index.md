@@ -57,7 +57,7 @@
 | ID | Title | Status | Points | Owner |
 |----|-------|--------|--------|-------|
 | [US0016](US0016-18-refinement.md) | Database Backup Export | Backlog | 2 | TBD |
-| [US0017](US0016-18-refinement.md) | Container Log Viewer | Backlog | 3 | TBD |
+| [US0017](US0016-18-refinement.md) | Container Log Viewer | Done | 3 | TBD |
 | [US0018](US0016-18-refinement.md) | HTTPS Deployment Guide | Backlog | 1 | TBD |
 
 ## All Stories

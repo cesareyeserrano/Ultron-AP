@@ -102,14 +102,15 @@ func (db *DB) ListEnabledAlertConfigs() ([]AlertConfig, error) {
 
 // CreateAlert inserts a triggered alert.
 func (db *DB) CreateAlert(a *Alert) error {
+	a.CreatedAt = time.Now()
 	ack := 0
 	if a.Acknowledged {
 		ack = 1
 	}
 	result, err := db.Exec(
-		`INSERT INTO Alert (config_id, severity, message, source, value, acknowledged)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
-		a.ConfigID, a.Severity, a.Message, a.Source, a.Value, ack,
+		`INSERT INTO Alert (config_id, severity, message, source, value, acknowledged, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		a.ConfigID, a.Severity, a.Message, a.Source, a.Value, ack, a.CreatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("cannot create alert: %w", err)

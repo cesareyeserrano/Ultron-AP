@@ -65,6 +65,10 @@ func (m *mockDockerClient) ContainerRestart(_ context.Context, _ string, _ conta
 	return m.restartErr
 }
 
+func (m *mockDockerClient) ContainerLogs(_ context.Context, _ string, _ container.LogsOptions) (io.ReadCloser, error) {
+	return io.NopCloser(strings.NewReader("")), nil
+}
+
 func (m *mockDockerClient) Close() error {
 	return nil
 }

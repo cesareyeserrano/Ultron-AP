@@ -13,10 +13,10 @@ RestartSec=5
 EnvironmentFile=-/etc/ultron-ap/ultron-ap.env
 
 # Security hardening
-NoNewPrivileges=true
-ProtectSystem=strict
+NoNewPrivileges=false
+ProtectSystem=full
 ProtectHome=true
-ReadWritePaths=/var/lib/ultron-ap
+ReadWritePaths=/var/lib/ultron-ap /tmp
 
 [Install]
 WantedBy=multi-user.target

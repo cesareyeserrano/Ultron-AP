@@ -58,6 +58,10 @@ func (m *mockDockerClient) ContainerRestart(_ context.Context, _ string, _ conta
 	return m.restartErr
 }
 
+func (m *mockDockerClient) ContainerLogs(_ context.Context, _ string, _ container.LogsOptions) (io.ReadCloser, error) {
+	return io.NopCloser(strings.NewReader("sample logs")), nil
+}
+
 func (m *mockDockerClient) Close() error { return nil }
 
 // setupDockerTestServer creates a test server with a mock Docker monitor seeded with containers.

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
-	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 )
 
@@ -91,32 +90,16 @@ func derefFloat(f *float64) float64 {
 
 // --- SVG & UI Helpers ---
 
-func sparklineSVG(snapshots []metrics.Snapshot, field string) template.HTML {
-	if len(snapshots) == 0 {
+func sparklineSVG(values []float64) template.HTML {
+	if len(values) == 0 {
 		return ""
 	}
 
 	w, h := 300, 60
-	maxPoints := 120
-	data := snapshots
-	if len(data) > maxPoints {
-		data = data[len(data)-maxPoints:]
-	}
-
-	values := make([]float64, len(data))
-	for i, s := range data {
-		switch field {
-		case "cpu":
-			values[i] = s.CPU.TotalPercent
-		case "ram":
-			values[i] = s.RAM.Percent
-		}
-	}
-
 	minV, maxV := 0.0, 100.0
 	points := make([]string, len(values))
 	for i, v := range values {
-		x := float64(i) / float64(len(values)-1) * float64(w)
+		x := float64(i) / float64(math.Max(1, float64(len(values)-1))) * float64(w)
 		y := float64(h) - ((v - minV) / (maxV - minV) * float64(h))
 		y = math.Max(1, math.Min(float64(h-1), y))
 		points[i] = fmt.Sprintf("%.1f,%.1f", x, y)

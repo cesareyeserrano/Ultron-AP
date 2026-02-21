@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
@@ -77,16 +78,17 @@ func (t *TelegramSender) sendMessageTo(url string, text string) error {
 // FormatAlertMessage formats an alert into a Telegram message.
 func FormatAlertMessage(alert *database.Alert) string {
 	emoji := severityEmoji(alert.Severity)
-	severity := alert.Severity
+	severity := strings.ToUpper(alert.Severity)
 
-	msg := fmt.Sprintf("%s *%s*: %s", emoji, severity, alert.Message)
+	msg := fmt.Sprintf("%s *%s ALERT*\n\n", emoji, severity)
+	msg += fmt.Sprintf("*Message:* %s\n", alert.Message)
+	msg += fmt.Sprintf("*Source:* `%s`\n", alert.Source)
 
 	if alert.Value != nil {
-		msg += fmt.Sprintf("\nValue: %.1f", *alert.Value)
+		msg += fmt.Sprintf("*Current Value:* `%.1f`\n", *alert.Value)
 	}
 
-	msg += fmt.Sprintf("\nSource: %s", alert.Source)
-	msg += fmt.Sprintf("\nTime: %s", alert.CreatedAt.Format("2006-01-02 15:04:05"))
+	msg += fmt.Sprintf("\n*Time:* %s", alert.CreatedAt.Format("2006-01-02 15:04:05"))
 
 	return msg
 }

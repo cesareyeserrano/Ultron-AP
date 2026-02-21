@@ -9,7 +9,7 @@
         </div>
 
         <div id="rules-table">
-            {{template "alert-rules-table" .Content.Rules}}
+            {{template "alert-rules-table" dict "Rules" .Content.Rules "CSRFToken" .CSRFToken}}
         </div>
 
         <!-- Add Rule Form -->
@@ -81,12 +81,17 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <label class="flex items-center gap-2 text-sm text-text">
-                        <input type="checkbox" name="enabled" {{if and .Content.Telegram .Content.Telegram.Enabled}}checked{{end}} class="rounded border-border bg-base">
+                        <input type="checkbox" name="enabled" {{if and .Content.Telegram .Content.Telegram.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
                         Enabled
                     </label>
                     <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                    <button type="button" 
+                        hx-post="/api/notifications/telegram/test" 
+                        hx-target="#telegram-status" 
+                        hx-include="[name='csrf_token']"
+                        class="px-4 py-1.5 text-sm border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
                 </div>
-                <div id="telegram-status"></div>
+                <div id="telegram-status" class="min-h-[2.5rem]"></div>
             </form>
         </div>
     </section>
@@ -125,12 +130,17 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <label class="flex items-center gap-2 text-sm text-text">
-                        <input type="checkbox" name="enabled" {{if and .Content.Email .Content.Email.Enabled}}checked{{end}} class="rounded border-border bg-base">
+                        <input type="checkbox" name="enabled" {{if and .Content.Email .Content.Email.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
                         Enabled
                     </label>
                     <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                    <button type="button" 
+                        hx-post="/api/notifications/email/test" 
+                        hx-target="#email-status" 
+                        hx-include="[name='csrf_token']"
+                        class="px-4 py-1.5 text-sm border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
                 </div>
-                <div id="email-status"></div>
+                <div id="email-status" class="min-h-[2.5rem]"></div>
             </form>
         </div>
     </section>

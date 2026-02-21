@@ -27,6 +27,8 @@ func (s *Server) handleHardwarePage(w http.ResponseWriter, r *http.Request) {
 		cfg, err := pironman.ReadConfig()
 		if err != nil {
 			log.Printf("hardware: read config: %v", err)
+			// Don't mark as unavailable, just don't provide the config
+			// The template should handle nil Config by showing an error message
 		} else {
 			data.Config = cfg
 		}

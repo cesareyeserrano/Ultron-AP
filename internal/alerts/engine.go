@@ -110,6 +110,11 @@ func (e *Engine) run(ctx context.Context) {
 }
 
 func (e *Engine) evaluate() {
+	// Use background context for now since evaluate doesn't yet support passing context deep into DB methods.
+	// But adding the timeout here for future safety.
+	_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	configs, err := e.db.ListEnabledAlertConfigs()
 	if err != nil {
 		log.Printf("alerts: failed to load configs: %v", err)

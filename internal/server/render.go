@@ -14,6 +14,7 @@ type PageData struct {
 	Uptime     string
 	Username   string
 	CSRFToken  string
+	Version    string
 	Content    interface{}
 }
 
@@ -30,6 +31,7 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, page string, tit
 		Title:      title,
 		ActivePage: activePage,
 		Uptime:     formatUptime(time.Since(s.startedAt)),
+		Version:    Version,
 		Content:    content,
 	}
 

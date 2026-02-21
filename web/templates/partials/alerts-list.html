@@ -1,7 +1,9 @@
 {{define "partials/alerts-list.html"}}
-{{if .}}
+{{$csrf := .CSRFToken}}
+<input type="hidden" name="csrf_token" value="{{$csrf}}">
+{{if .Alerts}}
 <div class="space-y-2">
-    {{range .}}
+    {{range .Alerts}}
     <div class="bg-card rounded-lg p-3 flex items-start gap-3 border border-border/50
         {{if .Acknowledged}}opacity-60{{end}}">
         <!-- Severity icon -->
@@ -38,7 +40,7 @@
 
         <!-- Acknowledge button -->
         {{if not .Acknowledged}}
-        <button hx-post="/api/alerts/{{.ID}}/acknowledge" hx-target="#alerts-list" hx-swap="innerHTML" hx-include="[name='csrf_token']"
+        <button hx-post="/api/alerts/{{.ID}}/acknowledge" hx-target="#alerts-list" hx-swap="innerHTML" hx-vals='{"csrf_token": "{{$csrf}}"}'
             class="shrink-0 text-xs text-text-muted hover:text-text px-2 py-1 rounded hover:bg-surface transition-colors border border-border/50">
             Ack
         </button>

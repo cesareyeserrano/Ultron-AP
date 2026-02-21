@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
+	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 )
 
 type settingsData struct {
@@ -134,7 +137,7 @@ func (s *Server) handleAlertRuleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.renderRulesTable(w)
+	s.renderRulesTable(w, r)
 }
 
 // handleAlertRuleToggle handles POST /api/alerts/rules/{id}/toggle
@@ -155,7 +158,7 @@ func (s *Server) handleAlertRuleToggle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.renderRulesTable(w)
+	s.renderRulesTable(w, r)
 }
 
 // handleAlertRuleDelete handles DELETE /api/alerts/rules/{id}
@@ -176,7 +179,7 @@ func (s *Server) handleAlertRuleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.renderRulesTable(w)
+	s.renderRulesTable(w, r)
 }
 
 // handleNotificationSave handles POST /api/notifications/{channel}
@@ -191,17 +194,28 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Load existing config to avoid overwriting sensitive fields with empty values
+	existing, err := s.db.GetNotificationConfig(channel)
 	config := make(map[string]string)
+	if err == nil && existing != nil {
+		json.Unmarshal([]byte(existing.Config), &config)
+	}
 
 	switch channel {
 	case "telegram":
-		config["bot_token"] = r.FormValue("bot_token")
-		config["chat_id"] = r.FormValue("chat_id")
+		if v := r.FormValue("bot_token"); v != "" {
+			config["bot_token"] = v
+		}
+		if v := r.FormValue("chat_id"); v != "" {
+			config["chat_id"] = v
+		}
 	case "email":
 		config["smtp_host"] = r.FormValue("smtp_host")
 		config["smtp_port"] = r.FormValue("smtp_port")
 		config["smtp_user"] = r.FormValue("smtp_user")
-		config["smtp_password"] = r.FormValue("smtp_password")
+		if v := r.FormValue("smtp_password"); v != "" {
+			config["smtp_password"] = v
+		}
 		config["from"] = r.FormValue("from")
 		config["to"] = r.FormValue("to")
 	}
@@ -221,11 +235,66 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(`<div class="text-sm text-green-400 py-2">Saved successfully</div>`))
+	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
+		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>` +
+		`Saved successfully</div>`))
 }
 
-func (s *Server) renderRulesTable(w http.ResponseWriter) {
+// handleNotificationTest handles POST /api/notifications/{channel}/test
+func (s *Server) handleNotificationTest(w http.ResponseWriter, r *http.Request) {
+	if !s.validateCSRF(w, r) {
+		return
+	}
+
+	channel := r.PathValue("channel")
+	nc, err := s.db.GetNotificationConfig(channel)
+	if err != nil || nc == nil {
+		http.Error(w, "Config not found. Save settings first.", http.StatusNotFound)
+		return
+	}
+
+	var cfg map[string]string
+	json.Unmarshal([]byte(nc.Config), &cfg)
+
+	alert := &database.Alert{
+		Severity:  "info",
+		Message:   "This is a test notification from Ultron-AP.",
+		Source:    "test",
+		CreatedAt: time.Now(),
+	}
+
+	var testErr error
+	switch channel {
+	case "telegram":
+		sender := notify.NewTelegramSender(cfg["bot_token"], cfg["chat_id"])
+		testErr = sender.Send(alert)
+	case "email":
+		sender := notify.NewEmailSender(
+			cfg["smtp_host"], cfg["smtp_port"],
+			cfg["smtp_user"], cfg["smtp_password"],
+			cfg["from"], cfg["to"],
+		)
+		testErr = sender.Send(alert)
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if testErr != nil {
+		fmt.Fprintf(w, `<div class="text-sm text-danger py-2">Test failed: %s</div>`, html.EscapeString(testErr.Error()))
+	} else {
+		w.Write([]byte(`<div class="text-sm text-green-400 py-2">Test message sent! Check your client.</div>`))
+	}
+}
+
+func (s *Server) renderRulesTable(w http.ResponseWriter, r *http.Request) {
 	rules, _ := s.db.ListAlertConfigs()
+
+	csrfToken := ""
+	if cookie, err := r.Cookie("session"); err == nil {
+		session, _ := s.db.GetSession(cookie.Value)
+		if session != nil {
+			csrfToken = session.CSRFToken
+		}
+	}
 
 	tmpl, ok := s.tmplCache["partials/alert-rules-table.html"]
 	if !ok {
@@ -234,8 +303,13 @@ func (s *Server) renderRulesTable(w http.ResponseWriter) {
 		return
 	}
 
+	data := map[string]interface{}{
+		"Rules":     rules,
+		"CSRFToken": csrfToken,
+	}
+
 	var buf bytes.Buffer
-	if err := tmpl.ExecuteTemplate(&buf, "alert-rules-table", rules); err != nil {
+	if err := tmpl.ExecuteTemplate(&buf, "alert-rules-table", data); err != nil {
 		log.Printf("settings: render error: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return

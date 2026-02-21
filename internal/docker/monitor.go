@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	dclient "github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 )
 
 const defaultDockerInterval = 10 * time.Second
@@ -165,6 +167,33 @@ func (m *Monitor) ContainerDetail(ctx context.Context, id string) (*ContainerDet
 	}
 
 	return detail, nil
+}
+
+// ContainerLogs fetches the last n lines of logs from a container.
+func (m *Monitor) FetchLogs(ctx context.Context, id string, lines int) (string, error) {
+	if m.client == nil {
+		return "", fmt.Errorf("docker not available")
+	}
+
+	options := container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Tail:       fmt.Sprintf("%d", lines),
+	}
+
+	reader, err := m.client.ContainerLogs(ctx, id, options)
+	if err != nil {
+		return "", fmt.Errorf("fetch logs: %w", err)
+	}
+	defer reader.Close()
+
+	var stdout, stderr bytes.Buffer
+	_, err = stdcopy.StdCopy(&stdout, &stderr, reader)
+	if err != nil {
+		return "", fmt.Errorf("read logs: %w", err)
+	}
+
+	return stdout.String() + stderr.String(), nil
 }
 
 func (m *Monitor) run(ctx context.Context) {

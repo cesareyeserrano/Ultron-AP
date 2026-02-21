@@ -17,15 +17,16 @@ import (
 
 // DashboardData holds all data for dashboard rendering.
 type DashboardData struct {
-	Metrics          *metrics.Snapshot
-	CPUHistory       []metrics.Snapshot
-	RAMHistory       []metrics.Snapshot
-	Containers       []docker.ContainerInfo
-	DockerAvail      bool
-	Services         []systemd.ServiceInfo
-	SystemdAvail     bool
-	Uptime           string
-	Tailscale        TailscaleData
+	Metrics      *metrics.Snapshot
+	CPUValues    []float64 // Only what's needed for sparklines
+	RAMValues    []float64
+	Containers   []docker.ContainerInfo
+	DockerAvail  bool
+	Services     []systemd.ServiceInfo
+	SystemdAvail bool
+	Uptime       string
+	Tailscale    TailscaleData
+	Version      string
 }
 
 // TailscaleData is the data passed to the tailscale-peers partial.
@@ -198,14 +199,20 @@ func writeSSEEvent(buf *bytes.Buffer, event string, data string) {
 
 func (s *Server) gatherDashboardData() DashboardData {
 	dd := DashboardData{
-		Uptime: formatUptime(time.Since(s.startedAt)),
+		Uptime:  formatUptime(time.Since(s.startedAt)),
+		Version: Version,
 	}
 
 	if s.collector != nil {
 		dd.Metrics = s.collector.Latest()
-		// Last 10 min at 5s interval = 120 points (sufficient for sparkline charts)
-		dd.CPUHistory = s.collector.History(120)
-		dd.RAMHistory = dd.CPUHistory // Same data, different field rendered
+		// Only fetch the necessary numbers for sparklines (last 5 min = 60 points)
+		history := s.collector.History(60)
+		dd.CPUValues = make([]float64, len(history))
+		dd.RAMValues = make([]float64, len(history))
+		for i, snap := range history {
+			dd.CPUValues[i] = snap.CPU.TotalPercent
+			dd.RAMValues[i] = snap.RAM.Percent
+		}
 	}
 
 	if s.docker != nil {

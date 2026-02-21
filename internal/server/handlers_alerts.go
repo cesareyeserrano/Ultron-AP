@@ -72,7 +72,20 @@ func (s *Server) renderAlertsList(w http.ResponseWriter, r *http.Request) {
 		alerts, _ = s.db.ListAlerts(100)
 	}
 
-	html := s.renderPartial("partials/alerts-list.html", alerts)
+	csrfToken := ""
+	if cookie, err := r.Cookie("session"); err == nil {
+		session, _ := s.db.GetSession(cookie.Value)
+		if session != nil {
+			csrfToken = session.CSRFToken
+		}
+	}
+
+	data := map[string]interface{}{
+		"Alerts":    alerts,
+		"CSRFToken": csrfToken,
+	}
+
+	html := s.renderPartial("partials/alerts-list.html", data)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(html))
 }

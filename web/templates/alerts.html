@@ -29,7 +29,8 @@
 
     <!-- Alerts List -->
     <div id="alerts-list">
-        {{template "partials/alerts-list.html" .Content.Alerts}}
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        {{template "partials/alerts-list.html" dict "Alerts" .Content.Alerts "CSRFToken" .CSRFToken}}
     </div>
 </div>
 {{end}}

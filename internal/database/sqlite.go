@@ -95,6 +95,12 @@ func New(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("cannot enable WAL mode: %w", err)
 	}
 
+	// Set busy timeout to prevent "database is locked" errors during spikes
+	if _, err := db.Exec("PRAGMA busy_timeout=5000"); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("cannot set busy timeout: %w", err)
+	}
+
 	// Run schema migration
 	if _, err := db.Exec(schema); err != nil {
 		db.Close()

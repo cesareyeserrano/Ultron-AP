@@ -17,7 +17,16 @@
         <svg class="w-10 h-10 mx-auto mb-3 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01"/>
         </svg>
-        <p class="text-sm">pironman5 is not installed or not in PATH</p>
+        <p class="text-sm">pironman5 is not installed in /usr/local/bin</p>
+    </div>
+    {{else if not .Content.Config}}
+    <div class="rounded-lg bg-danger/5 border border-danger/20 p-8 text-center">
+        <svg class="w-10 h-10 mx-auto mb-3 text-danger opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>
+        </svg>
+        <p class="text-sm text-text font-medium">Failed to read pironman5 configuration</p>
+        <p class="text-xs text-text-muted mt-1">Please ensure sudo permissions are correctly configured for the 'ultron' user.</p>
+        <button onclick="window.location.reload()" class="mt-4 px-4 py-1.5 text-xs bg-surface border border-border rounded hover:bg-card transition-colors">Retry</button>
     </div>
     {{else}}
 

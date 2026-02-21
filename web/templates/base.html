@@ -9,7 +9,7 @@
     <script src="/static/js/htmx.min.js"></script>
     <script src="/static/js/sse.js"></script>
 </head>
-<body class="bg-base text-text font-sans min-h-screen flex" hx-boost="true">
+<body class="bg-base text-text font-sans min-h-screen flex" hx-boost="true" hx-ext="sse" sse-connect="/api/sse/dashboard">
     <!-- Mobile overlay -->
     <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden"></div>
 
@@ -28,14 +28,17 @@
     (function() {
         var badge = document.getElementById('alert-badge');
         if (!badge) return;
-        var es = new EventSource('/api/sse/dashboard');
-        es.addEventListener('alert-count', function(e) {
-            var count = e.data.trim();
-            if (count && count !== '0') {
-                badge.textContent = count;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
+        
+        // Listen for alert-count events from the global SSE connection managed by HTMX
+        document.body.addEventListener('htmx:sseMessage', function(e) {
+            if (e.detail.type === 'alert-count') {
+                var count = e.detail.data.trim();
+                if (count && count !== '0') {
+                    badge.textContent = count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
             }
         });
     })();

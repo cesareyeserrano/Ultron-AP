@@ -64,6 +64,23 @@ func (s *Server) handleDockerRestart(w http.ResponseWriter, r *http.Request) {
 	s.renderDockerList(w, r)
 }
 
+func (s *Server) handleDockerLogs(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" || s.docker == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+
+	logs, err := s.docker.FetchLogs(r.Context(), id, 100)
+	if err != nil {
+		http.Error(w, "Failed to fetch logs: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte(logs))
+}
+
 func (s *Server) renderDockerList(w http.ResponseWriter, r *http.Request) {
 	containers := s.docker.Containers()
 	html := s.renderPartial("partials/docker-list.html", containers)

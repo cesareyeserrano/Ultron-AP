@@ -19,7 +19,7 @@
 
 # US0017: Container Log Viewer
 
-> **Status:** Backlog
+> **Status:** Done
 > **Epic:** [EP0004: Service Controls](../epics/EP0004-service-controls.md)
 > **Created:** 2026-02-21
 
@@ -29,10 +29,10 @@
 **So that** I can troubleshoot failures without SSH access
 
 ## Acceptance Criteria
-- [ ] Add a "View Logs" link in the Docker container detail view
-- [ ] Display logs in a scrollable, monospace modal or section
-- [ ] Limit output to the most recent 100 lines to preserve memory
-- [ ] Handle ANSI color codes if possible (or strip them for plain text)
+- [x] Add a "View Logs" link in the Docker container detail view
+- [x] Display logs in a scrollable, monospace modal or section
+- [x] Limit output to the most recent 100 lines to preserve memory
+- [x] Handle ANSI color codes if possible (or strip them for plain text)
 
 ---
 

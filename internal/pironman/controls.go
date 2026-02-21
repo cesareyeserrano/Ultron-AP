@@ -56,9 +56,9 @@ type rawConfig struct {
 	} `json:"system"`
 }
 
-// ReadConfig runs `sudo -n pironman5 -c` and returns the parsed configuration.
+// ReadConfig runs `sudo -n /usr/local/bin/pironman5 -c` and returns the parsed configuration.
 func ReadConfig() (*Config, error) {
-	out, err := exec.Command("sudo", "-n", "pironman5", "-c").Output()
+	out, err := exec.Command("sudo", "-n", "/usr/local/bin/pironman5", "-c").Output()
 	if err != nil {
 		return nil, fmt.Errorf("pironman5 -c: %w", err)
 	}
@@ -109,7 +109,7 @@ func ApplyConfig(cfg Config) error {
 		"-os", strconv.Itoa(cfg.OLEDSleep),
 	}
 
-	sudoArgs := append([]string{"-n", "pironman5"}, args...)
+	sudoArgs := append([]string{"-n", "/usr/local/bin/pironman5"}, args...)
 	out, err := exec.Command("sudo", sudoArgs...).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("pironman5 restart: %s: %w", strings.TrimSpace(string(out)), err)
@@ -119,6 +119,6 @@ func ApplyConfig(cfg Config) error {
 
 // Available reports whether pironman5 is installed on the system.
 func Available() bool {
-	_, err := exec.LookPath("pironman5")
+	_, err := exec.LookPath("/usr/local/bin/pironman5")
 	return err == nil
 }
