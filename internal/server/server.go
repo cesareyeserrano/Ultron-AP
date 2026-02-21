@@ -21,7 +21,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/web"
 )
 
-const Version = "v2.0.0-stable"
+const Version = "v1.0.0"
 
 type Server struct {
 	httpServer  *http.Server
@@ -145,6 +145,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /services", s.requireAuth(http.HandlerFunc(s.handleServicesPage)))
 	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handleAlertsPage)))
 	mux.Handle("GET /history", s.requireAuth(http.HandlerFunc(s.handleHistoryPage)))
+	mux.Handle("GET /logs", s.requireAuth(http.HandlerFunc(s.handleLogsPage)))
 	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handleSettings)))
 	mux.Handle("GET /hardware", s.requireAuth(http.HandlerFunc(s.handleHardwarePage)))
 	mux.Handle("POST /api/hardware/apply", s.requireAuth(http.HandlerFunc(s.handleHardwareApply)))
@@ -167,6 +168,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/services/{name}/stop", s.requireAuth(http.HandlerFunc(s.handleServiceStop)))
 	mux.Handle("POST /api/services/{name}/restart", s.requireAuth(http.HandlerFunc(s.handleServiceRestart)))
 	mux.Handle("GET /api/tailscale/status", s.requireAuth(http.HandlerFunc(s.handleTailscaleStatus)))
+	mux.Handle("GET /api/system/logs", s.requireAuth(http.HandlerFunc(s.handleFetchSystemLogs)))
 	mux.Handle("POST /api/system/restart", s.requireAuth(http.HandlerFunc(s.handleSystemRestart)))
 	mux.Handle("POST /api/system/shutdown", s.requireAuth(http.HandlerFunc(s.handleSystemShutdown)))
 }

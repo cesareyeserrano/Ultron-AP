@@ -24,7 +24,7 @@ func TestFormatAlertMessage_Critical(t *testing.T) {
 	}
 
 	msg := FormatAlertMessage(alert)
-	assert.Contains(t, msg, "critical")
+	assert.Contains(t, msg, "CRITICAL")
 	assert.Contains(t, msg, "High CPU")
 	assert.Contains(t, msg, "95.0")
 	assert.Contains(t, msg, "cpu")
@@ -40,7 +40,7 @@ func TestFormatAlertMessage_Warning(t *testing.T) {
 	}
 
 	msg := FormatAlertMessage(alert)
-	assert.Contains(t, msg, "warning")
+	assert.Contains(t, msg, "WARNING")
 	assert.Contains(t, msg, "nginx")
 	assert.NotContains(t, msg, "Value:") // No value for docker alerts
 }
@@ -54,7 +54,7 @@ func TestFormatAlertMessage_Info(t *testing.T) {
 	}
 
 	msg := FormatAlertMessage(alert)
-	assert.Contains(t, msg, "info")
+	assert.Contains(t, msg, "INFO")
 }
 
 func TestSeverityEmoji(t *testing.T) {

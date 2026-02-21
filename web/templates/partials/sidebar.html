@@ -71,6 +71,16 @@
                 </a>
             </li>
             <li>
+                <a href="/logs" class="nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                    {{if eq .ActivePage "logs"}}bg-card text-accent{{else}}text-text-muted hover:bg-card hover:text-text{{end}}" hx-boost="true">
+                    <!-- Lucide: Terminal -->
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+                    </svg>
+                    <span class="whitespace-nowrap truncate sidebar-label">Logs</span>
+                </a>
+            </li>
+            <li>
                 <a href="/hardware" class="nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
                     {{if eq .ActivePage "hardware"}}bg-card text-accent{{else}}text-text-muted hover:bg-card hover:text-text{{end}}" hx-boost="true">
                     <!-- Lucide: Cpu -->

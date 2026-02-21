@@ -14,7 +14,6 @@ import (
 
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
-	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 )
 
 func setupSSETestServer(t *testing.T) (*Server, *database.Session) {
@@ -97,16 +96,13 @@ func TestShortID(t *testing.T) {
 }
 
 func TestSparklineSVG_Empty(t *testing.T) {
-	result := sparklineSVG(nil, "cpu")
+	result := sparklineSVG(nil)
 	assert.Empty(t, string(result))
 }
 
 func TestSparklineSVG_WithData(t *testing.T) {
-	snapshots := make([]metrics.Snapshot, 10)
-	for i := range snapshots {
-		snapshots[i].CPU.TotalPercent = float64(i * 10)
-	}
-	result := sparklineSVG(snapshots, "cpu")
+	values := []float64{10, 20, 30, 40, 50}
+	result := sparklineSVG(values)
 	assert.Contains(t, string(result), "<svg")
 	assert.Contains(t, string(result), "polyline")
 }

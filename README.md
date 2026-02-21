@@ -1,136 +1,76 @@
 # Ultron-AP
 
-Lightweight admin panel for Raspberry Pi. Monitor Docker containers, Systemd services, and system metrics from a single dashboard — no SSH needed.
+> **v1.0.0-stable** | Lightweight Raspberry Pi Admin Panel
 
-Built with **Go**, **HTMX**, **Tailwind CSS**, and **SQLite**. Runs as a single binary under 15MB, consuming less than 30MB of RAM.
+Ultron-AP is a professional, high-performance monitoring and management dashboard designed specifically for the Raspberry Pi. It provides real-time visibility into system health, Docker containers, and Systemd services through a sleek, resource-efficient interface.
 
-## Features
+Built with a **zero-runtime-dependency** philosophy using Go, HTMX, and Tailwind CSS.
 
-- **System Metrics** — CPU, RAM, disk, network, temperature in real time via SSE
-- **Docker Monitoring** — Container status, resource usage, health checks
-- **Systemd Monitoring** — Service status, start/stop/restart controls
-- **Alert System** — Configurable thresholds with Telegram and email notifications
-- **Service Controls** — Start, stop, restart containers and services from the dashboard
-- **Dark Mode UI** — Minimal, responsive interface optimized for low-resource devices
-- **Single Binary** — No runtime dependencies, embed everything, deploy anywhere
+---
 
-## Quick Start
+## ✨ Key Features
 
-### Prerequisites
+- **Real-Time Monitoring:** Instant visibility into CPU, RAM, Disk, Network, and CPU Temperature via Server-Sent Events (SSE).
+- **Service Controls:** Start, Stop, and Restart Docker containers and Systemd services directly from the web.
+- **On-Demand Logs:** View the last 100 lines of logs for any Docker container or core system service without SSH.
+- **Smart Alerting:** Configurable threshold-based rules with real-time notifications via **Telegram** and Email.
+- **Hardware Integration:** Native support for **Pironman 5** (RGB, Fan modes, and OLED configuration).
+- **Security First:** Built-in CSRF protection, secure sessions (bcrypt), brute-force protection, and a full action audit trail.
+- **Resource Optimized:** Consumes ~15MB RAM and minimal CPU, making it ideal for background operation on any Pi model.
 
-- Go 1.22+
+---
 
-### Build & Run
+## 🚀 Quick Start
 
+### Build from source
 ```bash
-# Clone
-git clone https://github.com/Cesareyeserrano/Ultron-AP.git
-cd Ultron-AP
-
-# Build
 make build
-
-# Run with defaults (port 8080, SQLite at /var/lib/ultron-ap/ultron.db)
 ./bin/ultron-ap
-
-# Or configure via environment variables
-ULTRON_PORT=9090 ULTRON_DB_PATH=./ultron.db ULTRON_LOG_LEVEL=debug ./bin/ultron-ap
 ```
 
-### Cross-compile for Raspberry Pi
+### Deploy to Raspberry Pi (ARM64)
+1. **Cross-compile:**
+   ```bash
+   make build-arm
+   ```
+2. **Transfer:** Copy `bin/ultron-ap-linux-arm64` to your Pi.
+3. **Configure:** Set the following environment variables:
+   - `ULTRON_ADMIN_PASS`: Initial admin password (required on first run).
+   - `ULTRON_PORT`: Default is `8080`.
+   - `ULTRON_DB_PATH`: Path to SQLite database.
 
-```bash
-make build-arm
-# Output: bin/ultron-ap-linux-arm64
-```
+---
 
-Copy the binary to your Pi and run it. That's it.
+## 🛠️ Tech Stack
 
-### Deploy as a Service
+- **Backend:** Go 1.25+ (Standard library + minimal dependencies)
+- **Frontend:** HTMX (Interactivity), Tailwind CSS (Styling)
+- **Real-time:** SSE (Server-Sent Events)
+- **Storage:** SQLite (WAL mode enabled for high concurrency)
+- **Integration:** Docker SDK, Systemd D-Bus/CLI, Pironman5 CLI
 
-```bash
-# Copy binary
-sudo cp bin/ultron-ap-linux-arm64 /opt/ultron-ap/ultron-ap
+---
 
-# Copy and enable service
-sudo cp deploy/ultron-ap.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now ultron-ap
-```
+## 📁 Project Structure
 
-Create an environment file at `/etc/ultron-ap/ultron-ap.env`:
-
-```env
-ULTRON_PORT=8080
-ULTRON_DB_PATH=/var/lib/ultron-ap/ultron.db
-ULTRON_LOG_LEVEL=info
-```
-
-## Configuration
-
-All configuration is via environment variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ULTRON_PORT` | `8080` | HTTP server port |
-| `ULTRON_DB_PATH` | `/var/lib/ultron-ap/ultron.db` | SQLite database path |
-| `ULTRON_LOG_LEVEL` | `info` | Log level: debug, info, warn, error |
-
-## API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check — returns `{"status": "ok"}` |
-
-More endpoints coming as features are implemented.
-
-## Project Structure
-
-```
-cmd/ultron-ap/          # Application entry point
+```text
+cmd/ultron-ap/          # Entry point
 internal/
-  alerts/               # Alert engine and evaluation rules
-  auth/                 # Authentication, sessions, and brute-force protection
-  config/               # Configuration loading
-  database/             # SQLite storage and audit logging
-  docker/               # Docker Engine integration and controls
-  metrics/              # System resource collection (CPU, RAM, etc.)
-  notify/               # Telegram and Email notification dispatching
-  pironman/             # Hardware controls (Pironman5)
-  server/               # HTTP server, handlers, and SSE broker
-  systemd/              # OS service monitoring and controls
-  tailscale/            # VPN status integration
+  alerts/               # Alert engine & rule evaluation
+  auth/                 # Security, sessions & brute-force
+  database/             # SQLite schema & persistence
+  docker/               # Container management
+  metrics/              # System resource collectors
+  notify/               # Telegram & Email dispatch
+  server/               # HTTP core & SSE broker
+  systemd/              # OS service controls
 web/
-  templates/            # Go HTML templates (HTMX)
-  static/               # CSS, JS, and compiled Tailwind assets
+  templates/            # HTMX-powered HTML templates
+  static/               # Optimized assets (CSS/JS)
 ```
 
-## Development
+---
 
-```bash
-make test       # Run all tests
-make fmt        # Format code
-make vet        # Run go vet
-make run        # Build and run locally
-```
+## 📜 License
 
-## Roadmap
-
-- [x] Project scaffolding & health endpoint
-- [x] User authentication (bcrypt + sessions)
-- [x] Dark mode UI layout (HTMX + Tailwind)
-- [x] System metrics collector (CPU, RAM, disk, temp)
-- [x] Docker container monitoring
-- [x] Systemd service monitoring
-- [x] Real-time dashboard with SSE
-- [x] Alert engine with configurable thresholds
-- [x] Telegram notifications
-- [x] Email notifications
-- [x] Service controls (start/stop/restart)
-- [x] Action audit trail
-- [x] Hardware integration (Pironman5)
-- [x] Performance tuning (configurable intervals)
-
-## License
-
-MIT
+MIT License. Developed by [Cesar Reyes Serrano](https://github.com/cesareyeserrano).

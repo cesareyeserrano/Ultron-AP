@@ -1,0 +1,70 @@
+{{define "content"}}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-lg font-semibold text-text">System Logs</h1>
+        <p class="text-xs text-text-muted mt-0.5">On-demand log retrieval from system services.</p>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex flex-wrap items-center gap-3 bg-surface border border-border p-4 rounded-lg">
+        <div class="flex flex-col gap-1">
+            <label class="text-[10px] uppercase tracking-wider text-text-muted font-bold">Source</label>
+            <select id="log-source" class="px-3 py-1.5 text-sm bg-base border border-border rounded text-text min-w-[160px] focus:ring-accent focus:border-accent">
+                <option value="ultron-ap">Ultron-AP Service</option>
+                <option value="docker">Docker Daemon</option>
+                <option value="kernel">Kernel (dmesg)</option>
+            </select>
+        </div>
+        
+        <div class="flex items-end h-full mt-4">
+            <button 
+                onclick="fetchLogs()"
+                class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Fetch Logs
+            </button>
+        </div>
+    </div>
+
+    <!-- Log Viewer Area -->
+    <div class="relative bg-black rounded-lg border border-border shadow-2xl overflow-hidden flex flex-col min-h-[500px]">
+        <div class="flex items-center justify-between px-4 py-2 border-b border-border/20 bg-card/30">
+            <div class="flex gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-danger/50"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-yellow-400/50"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-green-400/50"></div>
+            </div>
+            <span id="log-status" class="text-[10px] uppercase font-mono text-text-muted">Idle</span>
+        </div>
+        <div id="log-output" class="flex-1 p-4 font-mono text-[11px] md:text-xs text-green-400/90 overflow-auto whitespace-pre-wrap selection:bg-accent selection:text-base">
+            <span class="text-text-muted">Select a source and click "Fetch Logs" to begin troubleshooting...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+async function fetchLogs() {
+    const source = document.getElementById('log-source').value;
+    const output = document.getElementById('log-output');
+    const status = document.getElementById('log-status');
+    
+    status.textContent = 'Fetching...';
+    output.classList.add('opacity-50');
+    
+    try {
+        const response = await fetch(`/api/system/logs?source=${source}`);
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        
+        const text = await response.text();
+        output.textContent = text || 'Log source returned no data.';
+        status.textContent = `Success - ${source}`;
+    } catch (err) {
+        output.innerHTML = `<span class="text-danger">Error: ${err.message}</span>`;
+        status.textContent = 'Failed';
+    } finally {
+        output.classList.remove('opacity-50');
+        output.scrollTop = output.scrollHeight;
+    }
+}
+</script>
+{{end}}

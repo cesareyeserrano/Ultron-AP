@@ -59,6 +59,7 @@
 | [US0016](US0016-18-refinement.md) | Database Backup Export | Backlog | 2 | TBD |
 | [US0017](US0016-18-refinement.md) | Container Log Viewer | Done | 3 | TBD |
 | [US0018](US0016-18-refinement.md) | HTTPS Deployment Guide | Backlog | 1 | TBD |
+| [US0019](US0019-system-logs.md) | System Log Viewer | Done | 3 | TBD |
 
 ## All Stories
 
