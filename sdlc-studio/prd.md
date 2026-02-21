@@ -47,15 +47,15 @@ La Raspberry Pi tiene recursos limitados (tipicamente 1-4GB RAM, CPU ARM). El ad
 
 | Feature | Description | Status | Priority | Phase |
 |---------|-------------|--------|----------|-------|
-| FT-001: System Metrics Dashboard | Metricas en tiempo real de CPU, RAM, Disco, Red, Temperatura | Not Started | Must-have | 1 |
-| FT-002: Docker Container Monitor | Estado, metricas y salud de todos los contenedores Docker | Not Started | Must-have | 1 |
-| FT-003: Systemd Service Monitor | Estado de todos los servicios Systemd activos | Not Started | Must-have | 1 |
-| FT-004: Alert System | Sistema de alertas con umbrales configurables | Not Started | Must-have | 1 |
-| FT-005: Telegram Notifications | Envio de alertas criticas via Telegram Bot | Not Started | Must-have | 1 |
-| FT-006: Email Notifications | Envio de alertas por email (SMTP configurable) | Not Started | Should-have | 1 |
-| FT-007: Authentication | Login simple con usuario/password | Not Started | Must-have | 1 |
-| FT-008: Service Controls | Start, Stop, Restart de servicios Docker y Systemd | Not Started | Must-have | 2 |
-| FT-009: Dark Mode UI | Interfaz dark mode minimalista estilo Grafana/Portainer | Not Started | Must-have | 1 |
+| FT-001: System Metrics Dashboard | Metricas en tiempo real de CPU, RAM, Disco, Red, Temperatura | Complete | Must-have | 1 |
+| FT-002: Docker Container Monitor | Estado, metricas y salud de todos los contenedores Docker | Complete | Must-have | 1 |
+| FT-003: Systemd Service Monitor | Estado de todos los servicios Systemd activos | Complete | Must-have | 1 |
+| FT-004: Alert System | Sistema de alertas con umbrales configurables | Complete | Must-have | 1 |
+| FT-005: Telegram Notifications | Envio de alertas criticas via Telegram Bot | Complete | Must-have | 1 |
+| FT-006: Email Notifications | Envio de alertas por email (SMTP configurable) | Complete | Should-have | 1 |
+| FT-007: Authentication | Login simple con usuario/password | Complete | Must-have | 1 |
+| FT-008: Service Controls | Start, Stop, Restart de servicios Docker y Systemd | Complete | Must-have | 2 |
+| FT-009: Dark Mode UI | Interfaz dark mode minimalista estilo Grafana/Portainer | Complete | Must-have | 1 |
 
 ### Feature Details
 

@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"html"
-	"log"
 	"net/http"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
@@ -27,9 +26,9 @@ func (s *Server) handleServiceStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := r.PathValue("name")
-	result := s.systemd.StartService(r.Context(), name)
-	s.logServiceAction(r, result)
-	s.renderServicesResult(w, r, result)
+	res := s.systemd.StartService(r.Context(), name)
+	s.auditLog(r, "systemd", res.Action, res.ServiceName, res.Message, res.Success)
+	s.renderServicesResult(w, r, res)
 }
 
 func (s *Server) handleServiceStop(w http.ResponseWriter, r *http.Request) {
@@ -37,9 +36,9 @@ func (s *Server) handleServiceStop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := r.PathValue("name")
-	result := s.systemd.StopService(r.Context(), name)
-	s.logServiceAction(r, result)
-	s.renderServicesResult(w, r, result)
+	res := s.systemd.StopService(r.Context(), name)
+	s.auditLog(r, "systemd", res.Action, res.ServiceName, res.Message, res.Success)
+	s.renderServicesResult(w, r, res)
 }
 
 func (s *Server) handleServiceRestart(w http.ResponseWriter, r *http.Request) {
@@ -47,9 +46,9 @@ func (s *Server) handleServiceRestart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := r.PathValue("name")
-	result := s.systemd.RestartService(r.Context(), name)
-	s.logServiceAction(r, result)
-	s.renderServicesResult(w, r, result)
+	res := s.systemd.RestartService(r.Context(), name)
+	s.auditLog(r, "systemd", res.Action, res.ServiceName, res.Message, res.Success)
+	s.renderServicesResult(w, r, res)
 }
 
 // renderServicesResult renders the services list with an optional error banner.
@@ -69,18 +68,3 @@ func (s *Server) renderServicesResult(w http.ResponseWriter, r *http.Request, re
 	w.Write([]byte(listHTML))
 }
 
-func (s *Server) logServiceAction(r *http.Request, result systemd.ServiceAction) {
-	resultStr := "success"
-	if !result.Success {
-		resultStr = "error"
-	}
-
-	var userID *int64
-	if uid, ok := UserIDFromContext(r.Context()); ok {
-		userID = &uid
-	}
-
-	if err := s.db.LogAction(userID, "systemd", result.Action, result.ServiceName, resultStr, result.Message); err != nil {
-		log.Printf("systemd: failed to log action: %v", err)
-	}
-}

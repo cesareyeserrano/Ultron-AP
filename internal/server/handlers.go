@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -35,9 +36,20 @@ func (s *Server) handleDockerDetail(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(html))
 }
 
-// handlePlaceholderPage returns a handler for future pages that shows a "coming soon" message.
-func (s *Server) handlePlaceholderPage(title, activePage string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		s.render(w, r, "placeholder.html", title, activePage, nil)
+// auditLog records an action in the database.
+func (s *Server) auditLog(r *http.Request, source, action, target, message string, success bool) {
+	result := "success"
+	if !success {
+		result = "error"
+	}
+
+	var userID *int64
+	if uid, ok := UserIDFromContext(r.Context()); ok {
+		userID = &uid
+	}
+
+	if err := s.db.LogAction(userID, source, action, target, result, message); err != nil {
+		log.Printf("%s: failed to log action: %v", source, err)
 	}
 }
+

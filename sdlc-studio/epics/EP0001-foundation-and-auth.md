@@ -1,6 +1,6 @@
 # EP0001: Foundation & Authentication
 
-> **Status:** Draft
+> **Status:** Done
 > **Owner:** TBD
 > **Reviewer:** TBD
 > **Created:** 2026-02-09
@@ -71,19 +71,19 @@ Proporciona la base segura y profesional sobre la que se construye todo el panel
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] El binario Go compila para ARM (linux/arm64) y arranca en < 2s
-- [ ] El servidor escucha en el puerto configurado (default 8080)
-- [ ] /health responde 200 OK sin autenticacion
-- [ ] /login muestra formulario de login con UI dark mode profesional
-- [ ] Login exitoso redirige al dashboard (vacio por ahora)
-- [ ] Login fallido muestra error y no revela si el usuario existe o no
-- [ ] Despues de 5 intentos fallidos, el login se bloquea por 15 minutos
-- [ ] Todas las rutas excepto /login y /health requieren autenticacion
-- [ ] El logout destruye la sesion y redirige a /login
-- [ ] La sesion expira despues del TTL configurado (default 24h)
-- [ ] SQLite se inicializa automaticamente en el primer arranque
-- [ ] El layout tiene sidebar colapsable y es responsive (mobile/tablet/desktop)
-- [ ] Consumo de RAM idle < 10MB
+- [x] El binario Go compila para ARM (linux/arm64) y arranca en < 2s
+- [x] El servidor escucha en el puerto configurado (default 8080)
+- [x] /health responde 200 OK sin autenticacion
+- [x] /login muestra formulario de login con UI dark mode profesional
+- [x] Login exitoso redirige al dashboard (vacio por ahora)
+- [x] Login fallido muestra error y no revela si el usuario existe o no
+- [x] Despues de 5 intentos fallidos, el login se bloquea por 15 minutos
+- [x] Todas las rutas excepto /login y /health requieren autenticacion
+- [x] El logout destruye la sesion y redirige a /login
+- [x] La sesion expira despues del TTL configurado (default 24h)
+- [x] SQLite se inicializa automaticamente en el primer arranque
+- [x] El layout tiene sidebar colapsable y es responsive (mobile/tablet/desktop)
+- [x] Consumo de RAM idle < 10MB
 
 ---
 
@@ -151,9 +151,9 @@ Define la estructura base del proyecto que todos los epics usaran. Decisiones de
 
 ## Story Breakdown
 
-- [ ] [US0001: Project Scaffolding & Go Server](../stories/US0001-project-scaffolding.md) (5 pts)
-- [ ] [US0002: User Authentication](../stories/US0002-authentication.md) (8 pts)
-- [ ] [US0003: Dark Mode UI Layout](../stories/US0003-dark-mode-layout.md) (5 pts)
+- [x] [US0001: Project Scaffolding & Go Server](../stories/US0001-project-scaffolding.md) (5 pts)
+- [x] [US0002: User Authentication](../stories/US0002-authentication.md) (8 pts)
+- [x] [US0003: Dark Mode UI Layout](../stories/US0003-dark-mode-layout.md) (5 pts)
 
 ---
 
@@ -165,8 +165,8 @@ Define la estructura base del proyecto que todos los epics usaran. Decisiones de
 
 ## Open Questions
 
-- [ ] Usar `embed.FS` de Go para embeber templates y CSS en el binario? - Owner: Dev
-- [ ] Primer setup de admin: env vars vs web wizard vs CLI? (hereda de PRD open question) - Owner: Product
+- [x] Usar `embed.FS` de Go para embeber templates y CSS en el binario? - Owner: Dev
+- [x] Primer setup de admin: env vars vs web wizard vs CLI? (hereda de PRD open question) - Owner: Product
 
 ---
 

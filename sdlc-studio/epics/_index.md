@@ -7,21 +7,21 @@
 
 | Status | Count |
 |--------|-------|
-| Draft | 4 |
+| Draft | 0 |
 | Ready | 0 |
 | Approved | 0 |
 | In Progress | 0 |
-| Done | 0 |
+| Done | 4 |
 | **Total** | **4** |
 
 ## Epics
 
 | ID | Title | Status | Owner | Features | Phase | Dependencies |
 |----|-------|--------|-------|----------|-------|--------------|
-| [EP0001](EP0001-foundation-and-auth.md) | Foundation & Authentication | Draft | TBD | FT-007, FT-009 | 1 | None |
-| [EP0002](EP0002-system-monitoring.md) | System Monitoring | Draft | TBD | FT-001, FT-002, FT-003 | 1 | EP0001 |
-| [EP0003](EP0003-alerting-and-notifications.md) | Alerting & Notifications | Draft | TBD | FT-004, FT-005, FT-006 | 1 | EP0001, EP0002 |
-| [EP0004](EP0004-service-controls.md) | Service Controls | Draft | TBD | FT-008 | 2 | EP0001, EP0002 |
+| [EP0001](EP0001-foundation-and-auth.md) | Foundation & Authentication | Done | TBD | FT-007, FT-009 | 1 | None |
+| [EP0002](EP0002-system-monitoring.md) | System Monitoring | Done | TBD | FT-001, FT-002, FT-003 | 1 | EP0001 |
+| [EP0003](EP0003-alerting-and-notifications.md) | Alerting & Notifications | Done | TBD | FT-004, FT-005, FT-006 | 1 | EP0001, EP0002 |
+| [EP0004](EP0004-service-controls.md) | Service Controls | Done | TBD | FT-008 | 2 | EP0001, EP0002 |
 
 ## Dependency Graph
 

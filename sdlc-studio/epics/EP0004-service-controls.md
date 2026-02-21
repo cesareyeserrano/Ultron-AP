@@ -1,6 +1,6 @@
 # EP0004: Service Controls
 
-> **Status:** Draft
+> **Status:** Done
 > **Owner:** TBD
 > **Reviewer:** TBD
 > **Created:** 2026-02-09
@@ -67,15 +67,15 @@ Accion inmediata desde el dashboard. Ver un problema y resolverlo en la misma pa
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] Cada contenedor Docker tiene botones Start, Stop, Restart visibles
-- [ ] Cada servicio Systemd tiene botones Start, Stop, Restart visibles
-- [ ] Stop y Restart muestran modal de confirmacion antes de ejecutar
-- [ ] Start no requiere confirmacion (accion segura)
-- [ ] La accion se ejecuta de forma asincrona y muestra spinner mientras se procesa
-- [ ] El resultado (success/error) se muestra como toast/notificacion inline
-- [ ] Todas las acciones se registran en SQLite con: usuario, accion, target, resultado, timestamp
-- [ ] El admin puede ver el historial de acciones ejecutadas
-- [ ] Los botones se deshabilitan apropiadamente segun el estado (ej. no Start si ya esta running)
+- [x] Cada contenedor Docker tiene botones Start, Stop, Restart visibles
+- [x] Cada servicio Systemd tiene botones Start, Stop, Restart visibles
+- [x] Stop y Restart muestran modal de confirmacion antes de ejecutar
+- [x] Start no requiere confirmacion (accion segura)
+- [x] La accion se ejecuta de forma asincrona y muestra spinner mientras se procesa
+- [x] El resultado (success/error) se muestra como toast/notificacion inline
+- [x] Todas las acciones se registran en SQLite con: usuario, accion, target, resultado, timestamp
+- [x] El admin puede ver el historial de acciones ejecutadas
+- [x] Los botones se deshabilitan apropiadamente segun el estado (ej. no Start si ya esta running)
 
 ---
 
@@ -85,8 +85,8 @@ Accion inmediata desde el dashboard. Ver un problema y resolverlo en la misma pa
 
 | Dependency | Type | Status | Owner |
 |------------|------|--------|-------|
-| EP0001: Foundation & Auth | Epic | Draft | TBD |
-| EP0002: System Monitoring | Epic | Draft | TBD |
+| EP0001: Foundation & Auth | Epic | Done | TBD |
+| EP0002: System Monitoring | Epic | Done | TBD |
 
 ### Blocking
 
@@ -144,9 +144,9 @@ Accion inmediata desde el dashboard. Ver un problema y resolverlo en la misma pa
 
 ## Story Breakdown
 
-- [ ] [US0013: Docker Container Controls](../stories/US0013-docker-controls.md) (5 pts)
-- [ ] [US0014: Systemd Service Controls](../stories/US0014-systemd-controls.md) (3 pts)
-- [ ] [US0015: Action History & Audit Trail](../stories/US0015-action-history.md) (3 pts)
+- [x] [US0013: Docker Container Controls](../stories/US0013-docker-controls.md) (5 pts)
+- [x] [US0014: Systemd Service Controls](../stories/US0014-systemd-controls.md) (3 pts)
+- [x] [US0015: Action History & Audit Trail](../stories/US0015-action-history.md) (3 pts)
 
 ---
 
@@ -158,9 +158,9 @@ Accion inmediata desde el dashboard. Ver un problema y resolverlo en la misma pa
 
 ## Open Questions
 
-- [ ] Deberia haber un rol "read-only" que no pueda ejecutar controles? - Owner: Product
-- [ ] Timeout para docker stop: usar el default (10s) o hacerlo configurable? - Owner: Dev
-- [ ] Mostrar historial de acciones en pagina separada o en sidebar? - Owner: Design
+- [x] Deberia haber un rol "read-only" que no pueda ejecutar controles? - Owner: Product
+- [x] Timeout para docker stop: usar el default (10s) o hacerlo configurable? - Owner: Dev
+- [x] Mostrar historial de acciones en pagina separada o en sidebar? - Owner: Design
 
 ---
 

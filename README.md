@@ -89,13 +89,20 @@ More endpoints coming as features are implemented.
 ```
 cmd/ultron-ap/          # Application entry point
 internal/
-  config/               # Configuration loading and validation
-  database/             # SQLite initialization and schema
-  server/               # HTTP server, routing, handlers
+  alerts/               # Alert engine and evaluation rules
+  auth/                 # Authentication, sessions, and brute-force protection
+  config/               # Configuration loading
+  database/             # SQLite storage and audit logging
+  docker/               # Docker Engine integration and controls
+  metrics/              # System resource collection (CPU, RAM, etc.)
+  notify/               # Telegram and Email notification dispatching
+  pironman/             # Hardware controls (Pironman5)
+  server/               # HTTP server, handlers, and SSE broker
+  systemd/              # OS service monitoring and controls
+  tailscale/            # VPN status integration
 web/
   templates/            # Go HTML templates (HTMX)
-  static/               # CSS, JS, static assets
-deploy/                 # Systemd unit file
+  static/               # CSS, JS, and compiled Tailwind assets
 ```
 
 ## Development
@@ -110,17 +117,19 @@ make run        # Build and run locally
 ## Roadmap
 
 - [x] Project scaffolding & health endpoint
-- [ ] User authentication (bcrypt + sessions)
-- [ ] Dark mode UI layout (HTMX + Tailwind)
-- [ ] System metrics collector (CPU, RAM, disk, temp)
-- [ ] Docker container monitoring
-- [ ] Systemd service monitoring
-- [ ] Real-time dashboard with SSE
-- [ ] Alert engine with configurable thresholds
-- [ ] Telegram notifications
-- [ ] Email notifications
-- [ ] Service controls (start/stop/restart)
-- [ ] Action audit trail
+- [x] User authentication (bcrypt + sessions)
+- [x] Dark mode UI layout (HTMX + Tailwind)
+- [x] System metrics collector (CPU, RAM, disk, temp)
+- [x] Docker container monitoring
+- [x] Systemd service monitoring
+- [x] Real-time dashboard with SSE
+- [x] Alert engine with configurable thresholds
+- [x] Telegram notifications
+- [x] Email notifications
+- [x] Service controls (start/stop/restart)
+- [x] Action audit trail
+- [x] Hardware integration (Pironman5)
+- [x] Performance tuning (configurable intervals)
 
 ## License
 

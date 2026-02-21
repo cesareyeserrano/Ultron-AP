@@ -1,6 +1,6 @@
 # EP0002: System Monitoring
 
-> **Status:** Draft
+> **Status:** Done
 > **Owner:** TBD
 > **Reviewer:** TBD
 > **Created:** 2026-02-09
@@ -71,16 +71,16 @@ Un solo dashboard que responde la pregunta "esta todo bien?" en menos de 5 segun
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] Dashboard principal muestra CPU%, RAM%, Disco%, Red, y Temperatura en tiempo real
-- [ ] Graficas historicas de CPU y RAM muestran los ultimos 60 minutos
-- [ ] Temperatura del CPU tiene indicador de color (verde < 60C, amarillo 60-75C, rojo > 75C)
-- [ ] Seccion Docker lista todos los contenedores con estado y metricas basicas
-- [ ] Click en contenedor expande detalles (ports, volumes, environment)
-- [ ] Seccion Systemd lista servicios activos/habilitados con estado
-- [ ] Filtro funcional para mostrar solo servicios con errores
-- [ ] Todas las metricas se actualizan via SSE sin recargar la pagina
-- [ ] La recoleccion de metricas consume < 2% CPU sostenido
-- [ ] Funciona correctamente con 50+ contenedores Docker
+- [x] Dashboard principal muestra CPU%, RAM%, Disco%, Red, y Temperatura en tiempo real
+- [x] Graficas historicas de CPU y RAM muestran los ultimos 60 minutos
+- [x] Temperatura del CPU tiene indicador de color (verde < 60C, amarillo 60-75C, rojo > 75C)
+- [x] Seccion Docker lista todos los contenedores con estado y metricas basicas
+- [x] Click en contenedor expande detalles (ports, volumes, environment)
+- [x] Seccion Systemd lista servicios activos/habilitados con estado
+- [x] Filtro funcional para mostrar solo servicios con errores
+- [x] Todas las metricas se actualizan via SSE sin recargar la pagina
+- [x] La recoleccion de metricas consume < 2% CPU sostenido
+- [x] Funciona correctamente con 50+ contenedores Docker
 
 ---
 
@@ -90,7 +90,7 @@ Un solo dashboard que responde la pregunta "esta todo bien?" en menos de 5 segun
 
 | Dependency | Type | Status | Owner |
 |------------|------|--------|-------|
-| EP0001: Foundation & Auth | Epic | Draft | TBD |
+| EP0001: Foundation & Auth | Epic | Done | TBD |
 
 ### Blocking
 
@@ -131,7 +131,7 @@ Un solo dashboard que responde la pregunta "esta todo bien?" en menos de 5 segun
 - Docker Engine via unix socket + Docker SDK for Go
 - Systemd via D-Bus o subprocess `systemctl`
 - gopsutil para metricas de sistema
-- SSE endpoint consumido por HTMX en el frontend
+- SSE endpoint consumido por HTMX in frontend
 
 ---
 
@@ -152,10 +152,10 @@ Un solo dashboard que responde la pregunta "esta todo bien?" en menos de 5 segun
 
 ## Story Breakdown
 
-- [ ] [US0004: System Metrics Collector](../stories/US0004-system-metrics-collector.md) (5 pts)
-- [ ] [US0005: Docker Container Monitor](../stories/US0005-docker-monitor.md) (5 pts)
-- [ ] [US0006: Systemd Service Monitor](../stories/US0006-systemd-monitor.md) (3 pts)
-- [ ] [US0007: Dashboard View with SSE](../stories/US0007-dashboard-view.md) (8 pts)
+- [x] [US0004: System Metrics Collector](../stories/US0004-system-metrics-collector.md) (5 pts)
+- [x] [US0005: Docker Container Monitor](../stories/US0005-docker-monitor.md) (5 pts)
+- [x] [US0006: Systemd Service Monitor](../stories/US0006-systemd-monitor.md) (3 pts)
+- [x] [US0007: Dashboard View with SSE](../stories/US0007-dashboard-view.md) (8 pts)
 
 ---
 
@@ -167,9 +167,9 @@ Un solo dashboard que responde la pregunta "esta todo bien?" en menos de 5 segun
 
 ## Open Questions
 
-- [ ] Usar Chart.js (ligero) o uPlot (ultra-ligero) para graficas? - Owner: Dev
-- [ ] Retencion de metricas: 24h suficiente o necesitamos mas? (hereda de PRD) - Owner: Product
-- [ ] Fallback si Docker no esta instalado: mostrar seccion vacia o esconderla? - Owner: Dev
+- [x] Usar Chart.js (ligero) o uPlot (ultra-ligero) para graficas? - Owner: Dev
+- [x] Retencion de metricas: 24h suficiente o necesitamos mas? (hereda de PRD) - Owner: Product
+- [x] Fallback si Docker no esta instalado: mostrar seccion vacia o esconderla? - Owner: Dev
 
 ---
 

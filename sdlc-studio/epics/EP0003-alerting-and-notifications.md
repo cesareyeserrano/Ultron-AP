@@ -1,6 +1,6 @@
 # EP0003: Alerting & Notifications
 
-> **Status:** Draft
+> **Status:** Done
 > **Owner:** TBD
 > **Reviewer:** TBD
 > **Created:** 2026-02-09
@@ -71,18 +71,18 @@ Tranquilidad. El admin no necesita vigilar el dashboard constantemente — Ultro
 
 ## Acceptance Criteria (Epic Level)
 
-- [ ] El admin puede crear reglas de alerta con metrica, operador, umbral y severidad
-- [ ] Las alertas se evaluan automaticamente con cada ciclo de metricas
-- [ ] Cuando se cruza un umbral, se crea un registro de alerta en SQLite
-- [ ] La alerta aparece en el panel de alertas del dashboard en tiempo real (SSE)
-- [ ] El cooldown previene alertas duplicadas dentro de la ventana configurada
-- [ ] Las alertas critical y warning se envian a Telegram si esta configurado
-- [ ] Las alertas critical se envian por email si SMTP esta configurado
-- [ ] El admin puede configurar Telegram (token + chat ID) desde el panel
-- [ ] El admin puede configurar SMTP desde el panel
-- [ ] Existe boton de test para Telegram y para Email
-- [ ] El admin puede silenciar notificaciones temporalmente (1h, 4h, 24h)
-- [ ] El historial de alertas tiene filtros por severidad y tipo
+- [x] El admin puede crear reglas de alerta con metrica, operador, umbral y severidad
+- [x] Las alertas se evaluan automaticamente con cada ciclo de metricas
+- [x] Cuando se cruza un umbral, se crea un registro de alerta en SQLite
+- [x] La alerta aparece en el panel de alertas del dashboard en tiempo real (SSE)
+- [x] El cooldown previene alertas duplicadas dentro de la ventana configurada
+- [x] Las alertas critical y warning se envian a Telegram si esta configurado
+- [x] Las alertas critical se envian por email si SMTP esta configurado
+- [x] El admin puede configurar Telegram (token + chat ID) desde el panel
+- [x] El admin puede configurar SMTP desde el panel
+- [x] Existe boton de test para Telegram y para Email
+- [x] El admin puede silenciar notificaciones temporalmente (1h, 4h, 24h)
+- [x] El historial de alertas tiene filtros por severidad y tipo
 
 ---
 
@@ -92,8 +92,8 @@ Tranquilidad. El admin no necesita vigilar el dashboard constantemente — Ultro
 
 | Dependency | Type | Status | Owner |
 |------------|------|--------|-------|
-| EP0001: Foundation & Auth | Epic | Draft | TBD |
-| EP0002: System Monitoring | Epic | Draft | TBD |
+| EP0001: Foundation & Auth | Epic | Done | TBD |
+| EP0002: System Monitoring | Epic | Done | TBD |
 
 ### Blocking
 
@@ -154,11 +154,11 @@ Tranquilidad. El admin no necesita vigilar el dashboard constantemente — Ultro
 
 ## Story Breakdown
 
-- [ ] [US0008: Alert Engine & Rule Evaluation](../stories/US0008-alert-engine.md) (5 pts)
-- [ ] [US0009: Alert Configuration UI](../stories/US0009-alert-configuration-ui.md) (5 pts)
-- [ ] [US0010: Telegram Notifications](../stories/US0010-telegram-notifications.md) (3 pts)
-- [ ] [US0011: Email Notifications](../stories/US0011-email-notifications.md) (3 pts)
-- [ ] [US0012: Alert Dashboard Panel](../stories/US0012-alert-dashboard-panel.md) (5 pts)
+- [x] [US0008: Alert Engine & Rule Evaluation](../stories/US0008-alert-engine.md) (5 pts)
+- [x] [US0009: Alert Configuration UI](../stories/US0009-alert-configuration-ui.md) (5 pts)
+- [x] [US0010: Telegram Notifications](../stories/US0010-telegram-notifications.md) (3 pts)
+- [x] [US0011: Email Notifications](../stories/US0011-email-notifications.md) (3 pts)
+- [x] [US0012: Alert Dashboard Panel](../stories/US0012-alert-dashboard-panel.md) (5 pts)
 
 ---
 
@@ -170,9 +170,9 @@ Tranquilidad. El admin no necesita vigilar el dashboard constantemente — Ultro
 
 ## Open Questions
 
-- [ ] El digest diario a que hora se envia? Configurable o fijo (ej. 08:00)? - Owner: Product
-- [ ] Acknowledging de alertas: solo visual o tambien detiene notificaciones? - Owner: Product
-- [ ] Limite de historial de alertas: purgar despues de 30 dias? Configurable? - Owner: Dev
+- [x] El digest diario a que hora se envia? Configurable o fijo (ej. 08:00)? - Owner: Product
+- [x] Acknowledging de alertas: solo visual o tambien detiene notificaciones? - Owner: Product
+- [x] Limite de historial de alertas: purgar despues de 30 dias? Configurable? - Owner: Dev
 
 ---
 

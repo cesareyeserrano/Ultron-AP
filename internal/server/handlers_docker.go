@@ -1,7 +1,6 @@
 package server
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
@@ -25,11 +24,11 @@ func (s *Server) handleDockerStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
-	result := s.docker.StartContainer(r.Context(), id)
-	s.logDockerAction(r, result)
+	res := s.docker.StartContainer(r.Context(), id)
+	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
 
-	if !result.Success {
-		http.Error(w, result.Message, http.StatusInternalServerError)
+	if !res.Success {
+		http.Error(w, res.Message, http.StatusInternalServerError)
 		return
 	}
 	s.renderDockerList(w, r)
@@ -40,11 +39,11 @@ func (s *Server) handleDockerStop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
-	result := s.docker.StopContainer(r.Context(), id)
-	s.logDockerAction(r, result)
+	res := s.docker.StopContainer(r.Context(), id)
+	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
 
-	if !result.Success {
-		http.Error(w, result.Message, http.StatusInternalServerError)
+	if !res.Success {
+		http.Error(w, res.Message, http.StatusInternalServerError)
 		return
 	}
 	s.renderDockerList(w, r)
@@ -55,11 +54,11 @@ func (s *Server) handleDockerRestart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
-	result := s.docker.RestartContainer(r.Context(), id)
-	s.logDockerAction(r, result)
+	res := s.docker.RestartContainer(r.Context(), id)
+	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
 
-	if !result.Success {
-		http.Error(w, result.Message, http.StatusInternalServerError)
+	if !res.Success {
+		http.Error(w, res.Message, http.StatusInternalServerError)
 		return
 	}
 	s.renderDockerList(w, r)
@@ -72,18 +71,3 @@ func (s *Server) renderDockerList(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(html))
 }
 
-func (s *Server) logDockerAction(r *http.Request, result docker.ContainerAction) {
-	resultStr := "success"
-	if !result.Success {
-		resultStr = "error"
-	}
-
-	var userID *int64
-	if uid, ok := UserIDFromContext(r.Context()); ok {
-		userID = &uid
-	}
-
-	if err := s.db.LogAction(userID, "docker", result.Action, result.ContainerName, resultStr, result.Message); err != nil {
-		log.Printf("docker: failed to log action: %v", err)
-	}
-}

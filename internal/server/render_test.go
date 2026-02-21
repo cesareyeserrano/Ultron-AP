@@ -141,22 +141,6 @@ func TestDashboard_HighlightsActivePage(t *testing.T) {
 	assert.Contains(t, body, "text-accent")
 }
 
-func TestPlaceholderPage_Returns200(t *testing.T) {
-	srv, session := setupTestServerWithSession(t)
-
-	handler := srv.handlePlaceholderPage("Docker", "docker")
-	req := httptest.NewRequest(http.MethodGet, "/docker", nil)
-	req = addSessionContext(req, session)
-	rec := httptest.NewRecorder()
-
-	handler(rec, req)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-	body := rec.Body.String()
-	assert.Contains(t, body, "Coming Soon")
-	assert.Contains(t, body, "Docker")
-}
-
 func TestFormatUptime_Minutes(t *testing.T) {
 	result := formatUptime(30 * time.Minute)
 	assert.Equal(t, "30m", result)
