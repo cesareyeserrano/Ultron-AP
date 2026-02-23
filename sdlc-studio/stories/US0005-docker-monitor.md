@@ -1,6 +1,6 @@
 # US0005: Docker Container Monitor
 
-> **Status:** Planned
+> **Status:** Done
 > **Epic:** [EP0002: System Monitoring](../epics/EP0002-system-monitoring.md)
 > **Owner:** TBD
 > **Reviewer:** TBD

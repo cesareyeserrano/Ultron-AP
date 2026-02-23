@@ -1,6 +1,6 @@
 # Story Registry
 
-**Last Updated:** 2026-02-19
+**Last Updated:** 2026-02-23
 **Personas Reference:** [User Personas](../personas.md)
 
 ## Summary
@@ -12,8 +12,8 @@
 | Planned | 0 |
 | In Progress | 0 |
 | Review | 0 |
-| Done | 15 |
-| **Total** | **15** |
+| Done | 20 |
+| **Total** | **20** |
 
 ## Stories by Epic
 
@@ -21,45 +21,41 @@
 
 | ID | Title | Status | Points | Owner |
 |----|-------|--------|--------|-------|
-| [US0001](US0001-project-scaffolding.md) | Project Scaffolding & Go Server | Done | 5 | TBD |
-| [US0002](US0002-authentication.md) | User Authentication | Done | 8 | TBD |
-| [US0003](US0003-dark-mode-layout.md) | Dark Mode UI Layout | Done | 5 | TBD |
+| [US0001](US0001-project-scaffolding.md) | Project Scaffolding & Go Server | Done | 5 | Admin |
+| [US0002](US0002-authentication.md) | User Authentication | Done | 8 | Admin |
+| [US0003](US0003-dark-mode-layout.md) | Dark Mode UI Layout | Done | 5 | Admin |
+| [US0016](US0016-18-refinement.md) | Database Backup Export | Done | 2 | Admin |
+| [US0018](US0016-18-refinement.md) | HTTPS Deployment Guide | Done | 1 | Admin |
 
 ### [EP0002: System Monitoring](../epics/EP0002-system-monitoring.md)
 
 | ID | Title | Status | Points | Owner |
 |----|-------|--------|--------|-------|
-| [US0004](US0004-system-metrics-collector.md) | System Metrics Collector | Done | 5 | TBD |
-| [US0005](US0005-docker-monitor.md) | Docker Container Monitor | Done | 5 | TBD |
-| [US0006](US0006-systemd-monitor.md) | Systemd Service Monitor | Done | 3 | TBD |
-| [US0007](US0007-dashboard-view.md) | Dashboard View with SSE | Done | 8 | TBD |
+| [US0004](US0004-system-metrics-collector.md) | System Metrics Collector | Done | 5 | Admin |
+| [US0005](US0005-docker-monitor.md) | Docker Container Monitor | Done | 5 | Admin |
+| [US0006](US0006-systemd-monitor.md) | Systemd Service Monitor | Done | 3 | Admin |
+| [US0007](US0007-dashboard-view.md) | Dashboard View with SSE | Done | 8 | Admin |
+| [US0019](US0019-system-logs.md) | System Log Viewer | Done | 3 | Admin |
 
 ### [EP0003: Alerting & Notifications](../epics/EP0003-alerting-and-notifications.md)
 
 | ID | Title | Status | Points | Owner |
 |----|-------|--------|--------|-------|
-| [US0008](US0008-alert-engine.md) | Alert Engine & Rule Evaluation | Done | 5 | TBD |
-| [US0009](US0009-alert-configuration-ui.md) | Alert Configuration UI | Done | 5 | TBD |
-| [US0010](US0010-telegram-notifications.md) | Telegram Notifications | Done | 3 | TBD |
-| [US0011](US0011-email-notifications.md) | Email Notifications | Done | 3 | TBD |
-| [US0012](US0012-alert-dashboard-panel.md) | Alert Dashboard Panel | Done | 5 | TBD |
+| [US0008](US0008-alert-engine.md) | Alert Engine & Rule Evaluation | Done | 5 | Admin |
+| [US0009](US0009-alert-configuration-ui.md) | Alert Configuration UI | Done | 5 | Admin |
+| [US0010](US0010-telegram-notifications.md) | Telegram Notifications | Done | 3 | Admin |
+| [US0011](US0011-email-notifications.md) | Email Notifications | Done | 3 | Admin |
+| [US0012](US0012-alert-dashboard-panel.md) | Alert Dashboard Panel | Done | 5 | Admin |
 
 ### [EP0004: Service Controls](../epics/EP0004-service-controls.md)
 
 | ID | Title | Status | Points | Owner |
 |----|-------|--------|--------|-------|
-| [US0013](US0013-docker-controls.md) | Docker Container Controls | Done | 5 | TBD |
-| [US0014](US0014-systemd-controls.md) | Systemd Service Controls | Done | 3 | TBD |
-| [US0015](US0015-action-history.md) | Action History & Audit Trail | Done | 3 | TBD |
-
-### Refinement & Future
-
-| ID | Title | Status | Points | Owner |
-|----|-------|--------|--------|-------|
-| [US0016](US0016-18-refinement.md) | Database Backup Export | Backlog | 2 | TBD |
-| [US0017](US0016-18-refinement.md) | Container Log Viewer | Done | 3 | TBD |
-| [US0018](US0016-18-refinement.md) | HTTPS Deployment Guide | Backlog | 1 | TBD |
-| [US0019](US0019-system-logs.md) | System Log Viewer | Done | 3 | TBD |
+| [US0013](US0013-docker-controls.md) | Docker Container Controls | Done | 5 | Admin |
+| [US0014](US0014-systemd-controls.md) | Systemd Service Controls | Done | 3 | Admin |
+| [US0015](US0015-action-history.md) | Action History & Audit Trail | Done | 3 | Admin |
+| [US0017](US0016-18-refinement.md) | Container Log Viewer | Done | 3 | Admin |
+| [US0020](US0020-bug-fixes.md) | Stabilization and Bug Fixes | Done | 3 | Admin |
 
 ## All Stories
 
@@ -80,9 +76,13 @@
 | [US0013](US0013-docker-controls.md) | Docker Container Controls | [EP0004](../epics/EP0004-service-controls.md) | Done | 5 | Admin |
 | [US0014](US0014-systemd-controls.md) | Systemd Service Controls | [EP0004](../epics/EP0004-service-controls.md) | Done | 3 | Admin |
 | [US0015](US0015-action-history.md) | Action History & Audit Trail | [EP0004](../epics/EP0004-service-controls.md) | Done | 3 | Admin |
+| [US0016](US0016-18-refinement.md) | Database Backup Export | [EP0001](../epics/EP0001-foundation-and-auth.md) | Done | 2 | Admin |
+| [US0017](US0016-18-refinement.md) | Container Log Viewer | [EP0004](../epics/EP0004-service-controls.md) | Done | 3 | Admin |
+| [US0018](US0016-18-refinement.md) | HTTPS Deployment Guide | [EP0001](../epics/EP0001-foundation-and-auth.md) | Done | 1 | Admin |
+| [US0019](US0019-system-logs.md) | System Log Viewer | [EP0002](../epics/EP0002-system-monitoring.md) | Done | 3 | Admin |
+| [US0020](US0020-bug-fixes.md) | Stabilization and Bug Fixes | [EP0004](../epics/EP0004-service-controls.md) | Done | 3 | Admin |
 
 ## Notes
 
 - Stories are numbered globally (US0001, US0002, etc.)
-- Story points should be assigned during team refinement
-- Total story points: 71
+- Total story points: 83
