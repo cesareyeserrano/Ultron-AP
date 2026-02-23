@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+	"html"
 	"net/http"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
@@ -28,9 +30,11 @@ func (s *Server) handleDockerStart(w http.ResponseWriter, r *http.Request) {
 	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
 
 	if !res.Success {
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(res.Message)))
 		http.Error(w, res.Message, http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Started container: %s", "type": "success"}}`, res.ContainerName))
 	s.renderDockerList(w, r)
 }
 
@@ -43,9 +47,11 @@ func (s *Server) handleDockerStop(w http.ResponseWriter, r *http.Request) {
 	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
 
 	if !res.Success {
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(res.Message)))
 		http.Error(w, res.Message, http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Stopped container: %s", "type": "success"}}`, res.ContainerName))
 	s.renderDockerList(w, r)
 }
 
@@ -58,9 +64,11 @@ func (s *Server) handleDockerRestart(w http.ResponseWriter, r *http.Request) {
 	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
 
 	if !res.Success {
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(res.Message)))
 		http.Error(w, res.Message, http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Restarted container: %s", "type": "success"}}`, res.ContainerName))
 	s.renderDockerList(w, r)
 }
 

@@ -56,6 +56,7 @@ func (s *Server) handleServiceRestart(w http.ResponseWriter, r *http.Request) {
 func (s *Server) renderServicesResult(w http.ResponseWriter, r *http.Request, result systemd.ServiceAction) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if !result.Success {
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(result.Message)))
 		fmt.Fprintf(w,
 			`<div class="rounded-lg bg-danger/10 border border-danger/30 p-3 mb-3 text-sm text-danger flex items-center gap-2">`+
 				`<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">`+
@@ -63,6 +64,14 @@ func (s *Server) renderServicesResult(w http.ResponseWriter, r *http.Request, re
 				`</svg>%s</div>`,
 			html.EscapeString(result.Message),
 		)
+	} else {
+		actionPast := "Started"
+		if result.Action == "stop" {
+			actionPast = "Stopped"
+		} else if result.Action == "restart" {
+			actionPast = "Restarted"
+		}
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "%s service: %s", "type": "success"}}`, actionPast, result.ServiceName))
 	}
 	listHTML := s.renderPartial("partials/services-list.html", s.systemd.Services())
 	w.Write([]byte(listHTML))

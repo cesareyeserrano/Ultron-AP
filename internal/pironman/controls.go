@@ -86,13 +86,13 @@ func ReadConfig() (*Config, error) {
 
 // ApplyConfig applies settings by running `pironman5 restart <flags>`.
 func ApplyConfig(cfg Config) error {
-	rgbEnable := "false"
+	rgbEnable := "off"
 	if cfg.RGBEnable {
-		rgbEnable = "true"
+		rgbEnable = "on"
 	}
-	oledEnable := "false"
+	oledEnable := "off"
 	if cfg.OLEDEnable {
-		oledEnable = "true"
+		oledEnable = "on"
 	}
 
 	args := []string{

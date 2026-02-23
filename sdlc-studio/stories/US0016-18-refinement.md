@@ -1,6 +1,6 @@
 # US0016: Database Backup Export
 
-> **Status:** Backlog
+> **Status:** Done
 > **Epic:** [EP0001: Foundation & Auth](../epics/EP0001-foundation-and-auth.md)
 > **Created:** 2026-02-21
 
@@ -10,10 +10,10 @@
 **So that** I can backup my settings, alerts, and logs before a system wipe
 
 ## Acceptance Criteria
-- [ ] Add a "Download Backup" button in the Settings page
-- [ ] Clicking the button triggers a download of the `ultron.db` file
-- [ ] Ensure the file is not corrupted during download (use WAL safe copy if possible)
-- [ ] Require Admin authentication to access the export endpoint
+- [x] Add a "Download Backup" button in the Settings page
+- [x] Clicking the button triggers a download of the `ultron.db` file
+- [x] Ensure the file is not corrupted during download (use WAL safe copy if possible)
+- [x] Require Admin authentication to access the export endpoint
 
 ---
 
@@ -38,7 +38,7 @@
 
 # US0018: HTTPS Reverse Proxy Documentation
 
-> **Status:** Backlog
+> **Status:** Done
 > **Epic:** [EP0001: Foundation & Auth](../epics/EP0001-foundation-and-auth.md)
 > **Created:** 2026-02-21
 
@@ -48,7 +48,7 @@
 **So that** I can access the panel securely over the internet
 
 ## Acceptance Criteria
-- [ ] Create a `DEPLOY.md` file (or add to README)
-- [ ] Include a Caddyfile example for reverse proxying Ultron-AP
-- [ ] Document Tailscale HTTPS integration for private VPN access
-- [ ] Add security best practices for public exposure (WAF, Geo-blocking)
+- [x] Create a `DEPLOY.md` file (or add to README)
+- [x] Include a Caddyfile example for reverse proxying Ultron-AP
+- [x] Document Tailscale HTTPS integration for private VPN access
+- [x] Add security best practices for public exposure (WAF, Geo-blocking)

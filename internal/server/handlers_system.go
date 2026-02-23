@@ -80,7 +80,11 @@ func (s *Server) handleFetchSystemLogs(w http.ResponseWriter, r *http.Request) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("system: failed to fetch logs for %s: %v", source, err)
-		http.Error(w, "Failed to fetch logs: "+err.Error(), http.StatusInternalServerError)
+		errMsg := string(out)
+		if errMsg == "" {
+			errMsg = err.Error()
+		}
+		http.Error(w, "Failed to fetch logs: "+errMsg, http.StatusInternalServerError)
 		return
 	}
 

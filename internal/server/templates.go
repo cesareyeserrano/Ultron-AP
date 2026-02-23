@@ -111,6 +111,7 @@ func (s *Server) parseTemplates() {
 		{"services.html", []string{"templates/partials/services-list.html"}},
 		{"alerts.html", []string{"templates/partials/alerts-list.html"}},
 		{"history.html", nil},
+		{"logs.html", nil},
 		{"settings.html", []string{"templates/partials/alert-rules-table.html"}},
 		{"hardware.html", []string{"templates/partials/hardware-form.html"}},
 		{"placeholder.html", nil},

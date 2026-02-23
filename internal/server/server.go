@@ -2,11 +2,14 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,6 +20,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
+	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 	"github.com/cesareyeserrano/ultron-ap/web"
 )
@@ -41,6 +45,9 @@ type Server struct {
 
 	// sseIntervalNs holds the SSE broadcast interval as nanoseconds (atomic).
 	sseIntervalNs atomic.Int64
+
+	// backupIntervalHours holds the automated backup interval in hours (atomic).
+	backupIntervalHours atomic.Int64
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -72,11 +79,13 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 		startedAt:  time.Now(),
 	}
 	s.sseIntervalNs.Store(int64(5 * time.Second))
+	s.backupIntervalHours.Store(24) // Default 24h
 
 	s.parseTemplates()
 	s.registerRoutes(mux)
 	s.startSSEBroadcast()
 	s.startRetentionJob()
+	s.startBackupJob()
 
 	return s
 }
@@ -87,6 +96,9 @@ func (s *Server) ApplyPerformanceConfig(cfg database.PerformanceConfig) {
 	if cfg.SSEIntervalSec >= 2 {
 		s.sseIntervalNs.Store(int64(time.Duration(cfg.SSEIntervalSec) * time.Second))
 	}
+	if cfg.BackupIntervalHours >= 1 {
+		s.backupIntervalHours.Store(int64(cfg.BackupIntervalHours))
+	}
 	if s.reader != nil && cfg.DiskIntervalMin >= 1 {
 		s.reader.SetDiskInterval(time.Duration(cfg.DiskIntervalMin) * time.Minute)
 	}
@@ -96,6 +108,84 @@ func (s *Server) ApplyPerformanceConfig(cfg database.PerformanceConfig) {
 	if s.systemd != nil && cfg.SystemdIntervalSec >= 5 {
 		s.systemd.SetInterval(time.Duration(cfg.SystemdIntervalSec) * time.Second)
 	}
+}
+
+// startBackupJob runs automated backups at the configured interval.
+func (s *Server) startBackupJob() {
+	go func() {
+		// First run after 5 minutes to avoid competing with startup I/O.
+		timer := time.NewTimer(5 * time.Minute)
+		defer timer.Stop()
+		for {
+			<-timer.C
+			s.performAutomatedBackup()
+			
+			interval := time.Duration(s.backupIntervalHours.Load()) * time.Hour
+			if interval < 1*time.Hour {
+				interval = 24 * time.Hour
+			}
+			timer.Reset(interval)
+		}
+	}()
+}
+
+func (s *Server) performAutomatedBackup() error {
+	log.Println("backup: starting automated backup job...")
+	
+	// 1. Create local backup file
+	backupDir := filepath.Join(filepath.Dir(s.cfg.DBPath), "backups")
+	if err := os.MkdirAll(backupDir, 0755); err != nil {
+		log.Printf("backup: failed to create backup dir: %v", err)
+		return fmt.Errorf("failed to create backup directory: %w", err)
+	}
+
+	timestamp := time.Now().Format("20060102-150405")
+	backupPath := filepath.Join(backupDir, fmt.Sprintf("ultron-%s.db", timestamp))
+	
+	if err := s.db.Backup(backupPath); err != nil {
+		log.Printf("backup: failed to create local backup: %v", err)
+		return fmt.Errorf("failed to create local backup: %w", err)
+	}
+	log.Printf("backup: local backup created at %s", backupPath)
+
+	// 2. Send to Telegram if configured
+	nc, err := s.db.GetNotificationConfig("telegram")
+	if err != nil || nc == nil || !nc.Enabled {
+		return fmt.Errorf("telegram notifications are not enabled or configured")
+	}
+
+	var configMap map[string]string
+	if err := json.Unmarshal([]byte(nc.Config), &configMap); err != nil {
+		return fmt.Errorf("failed to parse telegram configuration: %w", err)
+	}
+
+	botToken := configMap["bot_token"]
+	chatID := configMap["chat_id"]
+	if botToken == "" || chatID == "" {
+		return fmt.Errorf("telegram bot token or chat ID is missing")
+	}
+
+	sender := notify.NewTelegramSender(botToken, chatID)
+	hostname, _ := os.Hostname()
+	caption := fmt.Sprintf("\xf0\x9f\x92\xbe *Ultron-AP Automated Backup*\n\nTimestamp: `%s` \nVersion: `%s` \nDevice: `%s` \nStatus: `Success`", 
+		time.Now().Format("2006-01-02 15:04:05"), Version, hostname)
+	
+	if err := sender.SendFile(backupPath, caption); err != nil {
+		log.Printf("backup: failed to send telegram backup: %v", err)
+		return fmt.Errorf("failed to send file to telegram: %w", err)
+	}
+	
+	log.Println("backup: telegram backup sent successfully")
+
+	// 3. Retention: keep only the last 7 local backups
+	files, err := os.ReadDir(backupDir)
+	if err == nil && len(files) > 7 {
+		for i := 0; i < len(files)-7; i++ {
+			os.Remove(filepath.Join(backupDir, files[i].Name()))
+		}
+	}
+
+	return nil
 }
 
 // sseInterval returns the current SSE broadcast interval.
@@ -161,6 +251,8 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/alerts/rules/{id}/toggle", s.requireAuth(http.HandlerFunc(s.handleAlertRuleToggle)))
 	mux.Handle("DELETE /api/alerts/rules/{id}", s.requireAuth(http.HandlerFunc(s.handleAlertRuleDelete)))
 	mux.Handle("POST /api/alerts/{id}/acknowledge", s.requireAuth(http.HandlerFunc(s.handleAlertAcknowledge)))
+	mux.Handle("GET /api/settings/backup", s.requireAuth(http.HandlerFunc(s.handleSettingsBackup)))
+	mux.Handle("POST /api/settings/backup/run", s.requireAuth(http.HandlerFunc(s.handleSettingsBackupRun)))
 	mux.Handle("POST /api/notifications/{channel}", s.requireAuth(http.HandlerFunc(s.handleNotificationSave)))
 	mux.Handle("POST /api/notifications/{channel}/test", s.requireAuth(http.HandlerFunc(s.handleNotificationTest)))
 	mux.Handle("POST /api/performance", s.requireAuth(http.HandlerFunc(s.handlePerformanceSave)))

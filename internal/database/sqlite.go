@@ -3,8 +3,10 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -54,7 +56,7 @@ CREATE TABLE IF NOT EXISTS AlertConfig (
 
 CREATE TABLE IF NOT EXISTS NotificationConfig (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	channel TEXT NOT NULL UNIQUE CHECK(channel IN ('telegram', 'email')),
+	channel TEXT NOT NULL UNIQUE,
 	enabled INTEGER DEFAULT 0,
 	config TEXT NOT NULL DEFAULT '{}',
 	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -107,6 +109,59 @@ func New(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("cannot initialize schema: %w", err)
 	}
 
+	// Migration: Remove restricted CHECK constraint from NotificationConfig if present
+	var ncSQL string
+	if err := db.QueryRow("SELECT sql FROM sqlite_master WHERE type='table' AND name='NotificationConfig'").Scan(&ncSQL); err == nil {
+		// If the SQL contains the old CHECK constraint (which only allowed telegram/email), we migrate.
+		if strings.Contains(ncSQL, "CHECK") && !strings.Contains(ncSQL, "performance") {
+			log.Println("database: migrating NotificationConfig table to remove restricted CHECK constraint...")
+			tx, err := db.Begin()
+			if err != nil {
+				db.Close()
+				return nil, fmt.Errorf("migration tx failed: %w", err)
+			}
+
+			if _, err := tx.Exec("ALTER TABLE NotificationConfig RENAME TO NotificationConfig_old"); err != nil {
+				tx.Rollback()
+				db.Close()
+				return nil, fmt.Errorf("migration rename failed: %w", err)
+			}
+
+			// Create new table without the restricted CHECK constraint
+			if _, err := tx.Exec(`CREATE TABLE NotificationConfig (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				channel TEXT NOT NULL UNIQUE,
+				enabled INTEGER DEFAULT 0,
+				config TEXT NOT NULL DEFAULT '{}',
+				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+			)`); err != nil {
+				tx.Rollback()
+				db.Close()
+				return nil, fmt.Errorf("migration create failed: %w", err)
+			}
+
+			// Copy data
+			if _, err := tx.Exec("INSERT INTO NotificationConfig (id, channel, enabled, config, created_at, updated_at) SELECT id, channel, enabled, config, created_at, updated_at FROM NotificationConfig_old"); err != nil {
+				tx.Rollback()
+				db.Close()
+				return nil, fmt.Errorf("migration copy failed: %w", err)
+			}
+
+			if _, err := tx.Exec("DROP TABLE NotificationConfig_old"); err != nil {
+				tx.Rollback()
+				db.Close()
+				return nil, fmt.Errorf("migration drop failed: %w", err)
+			}
+
+			if err := tx.Commit(); err != nil {
+				db.Close()
+				return nil, fmt.Errorf("migration commit failed: %w", err)
+			}
+			log.Println("database: NotificationConfig migration completed successfully")
+		}
+	}
+
 	// Add source column to ActionLog if not present (migration for existing DBs)
 	_, _ = db.Exec(`ALTER TABLE ActionLog ADD COLUMN source TEXT NOT NULL DEFAULT ''`)
 
@@ -122,4 +177,17 @@ func New(dbPath string) (*DB, error) {
 	}
 
 	return &DB{db}, nil
+}
+
+// Backup creates a consistent copy of the database at the destination path
+// using SQLite's VACUUM INTO command. This is safe even with WAL mode active.
+func (db *DB) Backup(dstPath string) error {
+	// Ensure the destination doesn't exist (VACUUM INTO fails if it does)
+	_ = os.Remove(dstPath)
+
+	_, err := db.Exec(fmt.Sprintf("VACUUM INTO '%s'", dstPath))
+	if err != nil {
+		return fmt.Errorf("database backup failed: %w", err)
+	}
+	return nil
 }

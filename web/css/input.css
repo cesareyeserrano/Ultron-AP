@@ -46,3 +46,14 @@
     background: var(--color-border);
   }
 }
+
+/* HTMX styles */
+.htmx-indicator {
+  display: none;
+}
+.htmx-request .htmx-indicator {
+  display: inline;
+}
+.htmx-request.htmx-indicator {
+  display: inline;
+}

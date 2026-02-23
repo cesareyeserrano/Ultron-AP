@@ -11,15 +11,17 @@ type PerformanceConfig struct {
 	DiskIntervalMin    int // disk usage re-read interval: 1–1440min, default 30
 	DockerIntervalSec  int // docker container refresh: 5–300s, default 10
 	SystemdIntervalSec int // systemd service refresh: 5–300s, default 30
+	BackupIntervalHours int // automated backup interval: 1–720h, default 24
 }
 
 // DefaultPerformanceConfig returns factory defaults.
 func DefaultPerformanceConfig() PerformanceConfig {
 	return PerformanceConfig{
-		SSEIntervalSec:     5,
-		DiskIntervalMin:    30,
-		DockerIntervalSec:  10,
-		SystemdIntervalSec: 30,
+		SSEIntervalSec:      5,
+		DiskIntervalMin:     30,
+		DockerIntervalSec:   10,
+		SystemdIntervalSec:  30,
+		BackupIntervalHours: 24,
 	}
 }
 

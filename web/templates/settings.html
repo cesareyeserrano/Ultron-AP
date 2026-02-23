@@ -189,12 +189,52 @@
                         </div>
                         <p class="text-xs text-text-muted mt-1">5 – 300</p>
                     </div>
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Auto Backup</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="backup_interval_hours" value="{{.Content.Perf.BackupIntervalHours}}" min="1" max="720"
+                                class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <span class="text-xs text-text-muted shrink-0">hrs</span>
+                        </div>
+                        <p class="text-xs text-text-muted mt-1">1 – 720 (30d)</p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
                 </div>
                 <div id="perf-status"></div>
             </form>
+        </div>
+    </section>
+
+    <!-- System Maintenance -->
+    <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">System Maintenance</h2>
+        <div class="bg-surface rounded-lg border border-border p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-text">Database Backup</h3>
+                    <p class="text-xs text-text-muted mt-1">Download a consistent copy of the Ultron-AP database (SQLite).</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    <a href="/api/settings/backup" class="px-4 py-1.5 text-sm bg-surface border border-border text-text rounded hover:bg-card transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download .db
+                    </a>
+                    <button hx-post="/api/settings/backup/run" 
+                            hx-swap="none" 
+                            hx-include="next [name='csrf_token'], previous [name='csrf_token'], [name='csrf_token']"
+                            hx-indicator="#backup-spinner"
+                            class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50">
+                        <svg id="backup-spinner" class="w-4 h-4 animate-spin htmx-indicator" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                        </svg>
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                        Backup & Send
+                    </button>
+                </div>
+            </div>
         </div>
     </section>
 </div>

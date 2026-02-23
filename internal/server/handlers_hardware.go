@@ -63,6 +63,7 @@ func (s *Server) handleHardwareApply(w http.ResponseWriter, r *http.Request) {
 
 	if err := pironman.ApplyConfig(cfg); err != nil {
 		log.Printf("hardware: apply config: %v", err)
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(err.Error())))
 		fmt.Fprintf(w,
 			`<div class="rounded-lg bg-danger/10 border border-danger/30 p-3 mb-4 text-sm text-danger">%s</div>`,
 			html.EscapeString(err.Error()),
@@ -71,6 +72,7 @@ func (s *Server) handleHardwareApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("HX-Trigger", `{"showToast": {"message": "Hardware settings applied", "type": "success"}}`)
 	// Re-read config from pironman5 to confirm applied values.
 	applied, err := pironman.ReadConfig()
 	if err != nil {
