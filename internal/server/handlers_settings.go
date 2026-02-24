@@ -7,6 +7,7 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -416,6 +417,48 @@ func (s *Server) validateCSRF(w http.ResponseWriter, r *http.Request) bool {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return false
 	}
+
+	// Defense-in-depth: enforce same-origin when Origin/Referer are provided.
+	if !isSameOriginRequest(r) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return false
+	}
+	return true
+}
+
+func isSameOriginRequest(r *http.Request) bool {
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	referer := strings.TrimSpace(r.Header.Get("Referer"))
+	if origin == "" && referer == "" {
+		return true
+	}
+
+	expectedScheme := "http"
+	if isHTTPSRequest(r) {
+		expectedScheme = "https"
+	}
+	expectedHost := r.Host
+
+	if origin != "" {
+		u, err := url.Parse(origin)
+		if err != nil || u.Scheme == "" || u.Host == "" {
+			return false
+		}
+		if !strings.EqualFold(u.Scheme, expectedScheme) || !strings.EqualFold(u.Host, expectedHost) {
+			return false
+		}
+	}
+
+	if referer != "" {
+		u, err := url.Parse(referer)
+		if err != nil || u.Scheme == "" || u.Host == "" {
+			return false
+		}
+		if !strings.EqualFold(u.Scheme, expectedScheme) || !strings.EqualFold(u.Host, expectedHost) {
+			return false
+		}
+	}
+
 	return true
 }
 

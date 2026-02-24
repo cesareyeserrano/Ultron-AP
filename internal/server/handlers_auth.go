@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/auth"
@@ -19,6 +20,9 @@ type loginPageData struct {
 }
 
 func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
+	s.cleanupExpiredBruteForceAttempts()
+	s.cleanupExpiredLoginTokens()
+
 	csrfToken, err := auth.GenerateToken()
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -110,7 +114,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionToken,
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   isHTTPSRequest(r),
 		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int(s.cfg.SessionTTL.Seconds()),
+		Expires:  session.ExpiresAt,
 	})
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -128,7 +135,9 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
+		Secure:   isHTTPSRequest(r),
 		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Unix(0, 0),
 	})
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -146,9 +155,46 @@ func (s *Server) renderLogin(w http.ResponseWriter, data loginPageData) {
 }
 
 func (s *Server) renderLoginWithError(w http.ResponseWriter, msg string) {
+	s.cleanupExpiredBruteForceAttempts()
+	s.cleanupExpiredLoginTokens()
+
 	csrfToken, _ := auth.GenerateToken()
 	s.loginTokens.Store(csrfToken, time.Now().Add(10*time.Minute))
 	s.renderLogin(w, loginPageData{Error: msg, CSRFToken: csrfToken})
+}
+
+func (s *Server) cleanupExpiredLoginTokens() {
+	now := time.Now()
+	nowUnix := now.Unix()
+	last := s.loginTokenSweepNs.Load()
+	if nowUnix-last < 60 {
+		return
+	}
+	if !s.loginTokenSweepNs.CompareAndSwap(last, nowUnix) {
+		return
+	}
+
+	s.loginTokens.Range(func(key, value any) bool {
+		expiry, ok := value.(time.Time)
+		if !ok || now.After(expiry) {
+			s.loginTokens.Delete(key)
+		}
+		return true
+	})
+}
+
+func (s *Server) cleanupExpiredBruteForceAttempts() {
+	nowUnix := time.Now().Unix()
+	last := s.bruteForceSweepNs.Load()
+	if nowUnix-last < 60 {
+		return
+	}
+	if !s.bruteForceSweepNs.CompareAndSwap(last, nowUnix) {
+		return
+	}
+	if s.bruteForce != nil {
+		s.bruteForce.CleanupExpired()
+	}
 }
 
 func generateSessionToken() (string, error) {
@@ -165,4 +211,11 @@ func clientIP(r *http.Request) string {
 		return r.RemoteAddr
 	}
 	return host
+}
+
+func isHTTPSRequest(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 }

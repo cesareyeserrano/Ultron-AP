@@ -5,8 +5,9 @@ import { fr_5_the_system_must_add_targeted_automated_tests_ } from "../../../src
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("tc_7_validate_tc_7_behavior", () => {
+test("tc_7_validate_tc_7_behavior", async () => {
   // TODO: Validate these acceptance criteria:
   // AC-4: Given stabilization changes merged, when the full and targeted test suites execute, then all legacy tests remain green and all new stabilization tests pass.
-  assert.fail("Not implemented: TC-7 — Validate tc-7 behavior");
+  const result = await fr_5_the_system_must_add_targeted_automated_tests_({});
+  assert.equal(result.ok, true);
 });

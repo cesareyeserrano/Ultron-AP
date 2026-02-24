@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aitri Insight</title>
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 0; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: #f3f4f6; color: #0f172a; }
+    .wrap { max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .title { font-size: 24px; margin: 0 0 6px 0; }
+    .muted { color: #475569; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .metric { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; background: #f8fafc; }
+    .metric h3 { margin: 0; font-size: 12px; color: #334155; text-transform: uppercase; letter-spacing: 0.04em; }
+    .metric p { margin: 6px 0 0 0; font-size: 18px; font-weight: 700; }
+    .pill { display: inline-block; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; background: #e2e8f0; color: #0f172a; }
+    .next { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: #111827; color: #f9fafb; padding: 10px; border-radius: 8px; }
+    ul { margin: 8px 0 0 18px; padding: 0; }
+    code { background: #f1f5f9; border-radius: 6px; padding: 2px 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <h1 class="title">Aitri Insight</h1>
+      <p class="muted">Generated: 2026-02-24T02:11:48.883Z | Root: <code>/Users/cesareyeserrano/Documents/PROJECTS/Ultron</code></p>
+      <p class="pill" style="background:#0f766e20;color:#0f766e;border:1px solid #0f766e;">Confidence 100% (high)</p>
+    </section>
+    <section class="card">
+      <div class="grid">
+        <div class="metric"><h3>Structure</h3><p>ok</p></div>
+        <div class="metric"><h3>Approved Spec</h3><p>total-stabilization</p></div>
+        <div class="metric"><h3>Validation</h3><p>passed</p></div>
+        <div class="metric"><h3>Verification</h3><p>passed</p></div>
+        <div class="metric"><h3>Release Ready</h3><p>no</p></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2 class="title" style="font-size:18px;">Next Action</h2>
+      <p class="muted">Delivery gate is complete with a SHIP decision. Optional: review local dashboard output.</p>
+      <div class="next">aitri feedback</div>
+    </section>
+    <section class="card">
+      <h2 class="title" style="font-size:18px;">Confidence Breakdown</h2>
+      <ul>
+        <li>Spec integrity: 100%</li>
+        <li>Runtime verification: 100%</li>
+        <li>Weights: spec 0.4, runtime 0.6</li>
+      </ul>
+      <p class="muted">Spec reason: Artifacts and traceability validation are consistent.</p>
+      <p class="muted">Runtime reason: Runtime verification passed with current evidence.</p>
+      <ul><li>No scope-reduction notes for runtime verification.</li></ul>
+    </section>
+    <section class="card">
+      <h2 class="title" style="font-size:18px;">Validation Issues</h2>
+      <ul><li>No validation issues detected.</li></ul>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -275,4 +276,70 @@ func TestLogout_ClearsSessionAndRedirects(t *testing.T) {
 	// Session should be deleted from DB
 	session, _ := db.GetSession("logout-test-token")
 	assert.Nil(t, session)
+}
+
+func TestLogin_SetsSecureCookie_WhenForwardedProtoHTTPS(t *testing.T) {
+	srv, _ := setupAuthHandlerTest(t)
+
+	getReq := httptest.NewRequest(http.MethodGet, "/login", nil)
+	getRec := httptest.NewRecorder()
+	srv.httpServer.Handler.ServeHTTP(getRec, getReq)
+	csrfToken := extractCSRFToken(getRec.Body.String())
+	require.NotEmpty(t, csrfToken)
+
+	form := url.Values{}
+	form.Set("username", "admin")
+	form.Set("password", "secret")
+	form.Set("csrf_token", csrfToken)
+
+	postReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
+	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	postReq.Header.Set("X-Forwarded-Proto", "https")
+	postRec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(postRec, postReq)
+	assert.Equal(t, http.StatusSeeOther, postRec.Code)
+
+	var sessionCookie *http.Cookie
+	for _, c := range postRec.Result().Cookies() {
+		if c.Name == "session" {
+			sessionCookie = c
+			break
+		}
+	}
+	require.NotNil(t, sessionCookie)
+	assert.True(t, sessionCookie.Secure)
+}
+
+func TestLogin_SetsSecureCookie_WhenTLS(t *testing.T) {
+	srv, _ := setupAuthHandlerTest(t)
+
+	getReq := httptest.NewRequest(http.MethodGet, "/login", nil)
+	getRec := httptest.NewRecorder()
+	srv.httpServer.Handler.ServeHTTP(getRec, getReq)
+	csrfToken := extractCSRFToken(getRec.Body.String())
+	require.NotEmpty(t, csrfToken)
+
+	form := url.Values{}
+	form.Set("username", "admin")
+	form.Set("password", "secret")
+	form.Set("csrf_token", csrfToken)
+
+	postReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
+	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	postReq.TLS = &tls.ConnectionState{}
+	postRec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(postRec, postReq)
+	assert.Equal(t, http.StatusSeeOther, postRec.Code)
+
+	var sessionCookie *http.Cookie
+	for _, c := range postRec.Result().Cookies() {
+		if c.Name == "session" {
+			sessionCookie = c
+			break
+		}
+	}
+	require.NotNil(t, sessionCookie)
+	assert.True(t, sessionCookie.Secure)
 }

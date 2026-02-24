@@ -51,10 +51,10 @@ func (s *Server) handleHardwareApply(w http.ResponseWriter, r *http.Request) {
 		RGBBrightness: clampInt(formInt(r, "rgb_brightness"), 0, 100),
 		RGBStyle:      sanitizeStyle(r.FormValue("rgb_style")),
 		RGBSpeed:      clampInt(formInt(r, "rgb_speed"), 0, 100),
-		RGBEnable:     r.FormValue("rgb_enable") == "1",
+		RGBEnable:     r.FormValue("rgb_enable") == "on",
 		FanMode:       clampInt(formInt(r, "fan_mode"), 0, 4),
 		FanLED:        sanitizeFanLED(r.FormValue("fan_led")),
-		OLEDEnable:    r.FormValue("oled_enable") == "1",
+		OLEDEnable:    r.FormValue("oled_enable") == "on",
 		OLEDRotation:  sanitizeRotation(formInt(r, "oled_rotation")),
 		OLEDSleep:     clampInt(formInt(r, "oled_sleep"), 0, 3600),
 	}
@@ -82,7 +82,6 @@ func (s *Server) handleHardwareApply(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, s.renderHardwareContent(applied))
 }
 
-// renderHardwareContent renders the inner form partial for use after a save.
 func (s *Server) renderHardwareContent(cfg *pironman.Config) string {
 	return s.renderPartial("partials/hardware-form.html", hardwarePageData{
 		Available: true,

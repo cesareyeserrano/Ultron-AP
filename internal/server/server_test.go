@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -81,4 +82,19 @@ func TestNewServer_SetsAddr(t *testing.T) {
 
 	srv := New(cfg, db, nil, nil, nil, nil, nil)
 	assert.Equal(t, ":9090", srv.httpServer.Addr)
+}
+
+func TestRecordBackupOutcome_LogsAction(t *testing.T) {
+	srv := setupTestServer(t)
+
+	srv.recordBackupOutcome(errors.New("telegram send failed"))
+	srv.recordBackupOutcome(nil)
+
+	logs, err := srv.db.ListActionLogs(10)
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, len(logs), 2)
+
+	assert.Equal(t, "backup", logs[0].Source)
+	assert.Equal(t, "automated", logs[0].Action)
+	assert.Contains(t, []string{"success", "error"}, logs[0].Result)
 }

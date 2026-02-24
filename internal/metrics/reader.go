@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -143,7 +144,7 @@ func (r *SystemReader) readDisks(ctx context.Context, s *Snapshot) {
 }
 
 func (r *SystemReader) readNetwork(ctx context.Context, s *Snapshot, now time.Time) {
-	counters, err := net.IOCountersWithContext(ctx, true)
+	counters, err := safeIOCounters(ctx)
 	if err != nil {
 		log.Printf("metrics: failed to read network: %v", err)
 		return
@@ -171,6 +172,15 @@ func (r *SystemReader) readNetwork(ctx context.Context, s *Snapshot, now time.Ti
 
 		s.Networks = append(s.Networks, iface)
 	}
+}
+
+func safeIOCounters(ctx context.Context) (counters []net.IOCountersStat, err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = fmt.Errorf("panic while reading network counters: %v", rec)
+		}
+	}()
+	return net.IOCountersWithContext(ctx, true)
 }
 
 func (r *SystemReader) readTemperature(_ context.Context, s *Snapshot) {

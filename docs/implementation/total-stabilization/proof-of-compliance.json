@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "total-stabilization",
+  "provenAt": "2026-02-24T02:11:48.763Z",
+  "summary": {
+    "total": 5,
+    "proven": 5,
+    "unproven": 0
+  },
+  "frProof": {
+    "FR-1": {
+      "proven": true,
+      "via": [
+        "TC-11",
+        "TC-12",
+        "TC-13",
+        "TC-14"
+      ],
+      "tracingTcs": [
+        "TC-11",
+        "TC-12",
+        "TC-13",
+        "TC-14"
+      ],
+      "evidence": [
+        "tests/total-stabilization/generated/tc-11-validate-tc-11-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-12-validate-tc-12-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-13-validate-tc-13-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-14-validate-tc-14-behavior.test.mjs"
+      ]
+    },
+    "FR-2": {
+      "proven": true,
+      "via": [
+        "TC-1",
+        "TC-16"
+      ],
+      "tracingTcs": [
+        "TC-1",
+        "TC-16"
+      ],
+      "evidence": [
+        "tests/total-stabilization/generated/tc-1-validate-tc-1-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-16-validate-tc-16-behavior.test.mjs"
+      ]
+    },
+    "FR-3": {
+      "proven": true,
+      "via": [
+        "TC-2"
+      ],
+      "tracingTcs": [
+        "TC-2"
+      ],
+      "evidence": [
+        "tests/total-stabilization/generated/tc-2-validate-tc-2-behavior.test.mjs"
+      ]
+    },
+    "FR-4": {
+      "proven": true,
+      "via": [
+        "TC-3",
+        "TC-4",
+        "TC-5",
+        "TC-6",
+        "TC-15"
+      ],
+      "tracingTcs": [
+        "TC-3",
+        "TC-4",
+        "TC-5",
+        "TC-6",
+        "TC-15"
+      ],
+      "evidence": [
+        "tests/total-stabilization/generated/tc-3-validate-tc-3-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-4-validate-tc-4-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-5-validate-tc-5-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-6-validate-tc-6-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-15-validate-tc-15-behavior.test.mjs"
+      ]
+    },
+    "FR-5": {
+      "proven": true,
+      "via": [
+        "TC-7",
+        "TC-8",
+        "TC-9",
+        "TC-10"
+      ],
+      "tracingTcs": [
+        "TC-7",
+        "TC-8",
+        "TC-9",
+        "TC-10"
+      ],
+      "evidence": [
+        "tests/total-stabilization/generated/tc-7-validate-tc-7-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-8-validate-tc-8-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-9-validate-tc-9-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-10-validate-tc-10-behavior.test.mjs"
+      ]
+    }
+  },
+  "tcResults": {
+    "TC-1": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-1-validate-tc-1-behavior.test.mjs"
+    },
+    "TC-2": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-2-validate-tc-2-behavior.test.mjs"
+    },
+    "TC-3": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-3-validate-tc-3-behavior.test.mjs"
+    },
+    "TC-4": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-4-validate-tc-4-behavior.test.mjs"
+    },
+    "TC-5": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-5-validate-tc-5-behavior.test.mjs"
+    },
+    "TC-6": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-6-validate-tc-6-behavior.test.mjs"
+    },
+    "TC-7": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-7-validate-tc-7-behavior.test.mjs"
+    },
+    "TC-8": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-8-validate-tc-8-behavior.test.mjs"
+    },
+    "TC-9": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-9-validate-tc-9-behavior.test.mjs"
+    },
+    "TC-10": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-10-validate-tc-10-behavior.test.mjs"
+    },
+    "TC-11": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-11-validate-tc-11-behavior.test.mjs"
+    },
+    "TC-12": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-12-validate-tc-12-behavior.test.mjs"
+    },
+    "TC-13": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-13-validate-tc-13-behavior.test.mjs"
+    },
+    "TC-14": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-14-validate-tc-14-behavior.test.mjs"
+    },
+    "TC-15": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-15-validate-tc-15-behavior.test.mjs"
+    },
+    "TC-16": {
+      "passed": true,
+      "file": "tests/total-stabilization/generated/tc-16-validate-tc-16-behavior.test.mjs"
+    }
+  }
+}

@@ -28,20 +28,24 @@ import (
 const Version = "v1.0.0"
 
 type Server struct {
-	httpServer  *http.Server
-	cfg         *config.Config
-	db          *database.DB
-	bruteForce  *auth.BruteForceTracker
-	loginTokens sync.Map // token(string) -> expiry(time.Time), for login CSRF
-	collector   *metrics.Collector
-	reader      *metrics.SystemReader
-	docker      *docker.Monitor
-	systemd     *systemd.Monitor
-	alertEng    *alerts.Engine
-	sseBroker   *sseBroker
-	templates   fs.FS
-	tmplCache   map[string]*template.Template // pre-parsed at startup
-	startedAt   time.Time
+	httpServer *http.Server
+	cfg        *config.Config
+	db         *database.DB
+	bruteForce *auth.BruteForceTracker
+	// bruteForceSweepNs throttles stale brute-force attempt cleanup cadence.
+	bruteForceSweepNs atomic.Int64
+	loginTokens       sync.Map // token(string) -> expiry(time.Time), for login CSRF
+	// loginTokenSweepNs throttles expired login-token cleanup cadence.
+	loginTokenSweepNs atomic.Int64
+	collector         *metrics.Collector
+	reader            *metrics.SystemReader
+	docker            *docker.Monitor
+	systemd           *systemd.Monitor
+	alertEng          *alerts.Engine
+	sseBroker         *sseBroker
+	templates         fs.FS
+	tmplCache         map[string]*template.Template // pre-parsed at startup
+	startedAt         time.Time
 
 	// sseIntervalNs holds the SSE broadcast interval as nanoseconds (atomic).
 	sseIntervalNs atomic.Int64
@@ -113,25 +117,41 @@ func (s *Server) ApplyPerformanceConfig(cfg database.PerformanceConfig) {
 // startBackupJob runs automated backups at the configured interval.
 func (s *Server) startBackupJob() {
 	go func() {
-		// First run after 5 minutes to avoid competing with startup I/O.
-		timer := time.NewTimer(5 * time.Minute)
+		// First run after 15 minutes to avoid competing with startup I/O.
+		timer := time.NewTimer(15 * time.Minute)
 		defer timer.Stop()
 		for {
 			<-timer.C
-			s.performAutomatedBackup()
-			
-			interval := time.Duration(s.backupIntervalHours.Load()) * time.Hour
-			if interval < 1*time.Hour {
-				interval = 24 * time.Hour
+
+			// Always get fresh interval
+			intervalHours := s.backupIntervalHours.Load()
+			if intervalHours < 1 {
+				intervalHours = 24
 			}
-			timer.Reset(interval)
+
+			log.Printf("backup: running automated backup (interval=%dh)", intervalHours)
+			err := s.performAutomatedBackup()
+			s.recordBackupOutcome(err)
+
+			// Schedule next run
+			log.Printf("backup: next automated backup scheduled in %dh", intervalHours)
+			timer.Reset(time.Duration(intervalHours) * time.Hour)
 		}
 	}()
 }
 
+func (s *Server) recordBackupOutcome(err error) {
+	if err != nil {
+		log.Printf("backup: automated backup failed: %v", err)
+		_ = s.db.LogAction(nil, "backup", "automated", "database", "error", err.Error())
+		return
+	}
+	_ = s.db.LogAction(nil, "backup", "automated", "database", "success", "automated backup completed")
+}
+
 func (s *Server) performAutomatedBackup() error {
 	log.Println("backup: starting automated backup job...")
-	
+
 	// 1. Create local backup file
 	backupDir := filepath.Join(filepath.Dir(s.cfg.DBPath), "backups")
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
@@ -141,12 +161,30 @@ func (s *Server) performAutomatedBackup() error {
 
 	timestamp := time.Now().Format("20060102-150405")
 	backupPath := filepath.Join(backupDir, fmt.Sprintf("ultron-%s.db", timestamp))
-	
+
 	if err := s.db.Backup(backupPath); err != nil {
 		log.Printf("backup: failed to create local backup: %v", err)
 		return fmt.Errorf("failed to create local backup: %w", err)
 	}
 	log.Printf("backup: local backup created at %s", backupPath)
+
+	// Always enforce local retention after creating a backup, even if remote upload fails.
+	defer func() {
+		files, err := os.ReadDir(backupDir)
+		if err != nil {
+			log.Printf("backup: retention read failed: %v", err)
+			return
+		}
+		if len(files) <= 7 {
+			return
+		}
+		for i := 0; i < len(files)-7; i++ {
+			path := filepath.Join(backupDir, files[i].Name())
+			if err := os.Remove(path); err != nil {
+				log.Printf("backup: retention remove failed for %s: %v", path, err)
+			}
+		}
+	}()
 
 	// 2. Send to Telegram if configured
 	nc, err := s.db.GetNotificationConfig("telegram")
@@ -167,23 +205,15 @@ func (s *Server) performAutomatedBackup() error {
 
 	sender := notify.NewTelegramSender(botToken, chatID)
 	hostname, _ := os.Hostname()
-	caption := fmt.Sprintf("\xf0\x9f\x92\xbe *Ultron-AP Automated Backup*\n\nTimestamp: `%s` \nVersion: `%s` \nDevice: `%s` \nStatus: `Success`", 
+	caption := fmt.Sprintf("\xf0\x9f\x92\xbe *Ultron-AP Automated Backup*\n\nTimestamp: `%s` \nVersion: `%s` \nDevice: `%s` \nStatus: `Success`",
 		time.Now().Format("2006-01-02 15:04:05"), Version, hostname)
-	
+
 	if err := sender.SendFile(backupPath, caption); err != nil {
 		log.Printf("backup: failed to send telegram backup: %v", err)
 		return fmt.Errorf("failed to send file to telegram: %w", err)
 	}
-	
-	log.Println("backup: telegram backup sent successfully")
 
-	// 3. Retention: keep only the last 7 local backups
-	files, err := os.ReadDir(backupDir)
-	if err == nil && len(files) > 7 {
-		for i := 0; i < len(files)-7; i++ {
-			os.Remove(filepath.Join(backupDir, files[i].Name()))
-		}
-	}
+	log.Println("backup: telegram backup sent successfully")
 
 	return nil
 }
@@ -278,6 +308,12 @@ func (s *Server) startRetentionJob() {
 				log.Printf("retention: prune failed: %v", err)
 			} else if n > 0 {
 				log.Printf("retention: pruned %d records older than 30 days", n)
+			}
+			deleted, err := s.db.DeleteExpiredSessions()
+			if err != nil {
+				log.Printf("retention: session cleanup failed: %v", err)
+			} else if deleted > 0 {
+				log.Printf("retention: deleted %d expired sessions", deleted)
 			}
 			timer.Reset(24 * time.Hour)
 		}

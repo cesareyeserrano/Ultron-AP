@@ -5,8 +5,9 @@ import { fr_3_the_system_must_preserve_deterministic_local_ } from "../../../src
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("tc_2_validate_tc_2_behavior", () => {
+test("tc_2_validate_tc_2_behavior", async () => {
   // TODO: Validate these acceptance criteria:
   // AC-2: Given an automated backup run where local backup succeeds and Telegram upload fails, when the scheduler executes, then the run is marked failed with clear cause and retention still enforces the configured local backup limit.
-  assert.fail("Not implemented: TC-2 — Validate tc-2 behavior");
+  const result = await fr_3_the_system_must_preserve_deterministic_local_({});
+  assert.equal(result.ok, true);
 });

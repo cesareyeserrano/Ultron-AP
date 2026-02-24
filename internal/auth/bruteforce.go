@@ -60,3 +60,17 @@ func (t *BruteForceTracker) Reset(ip string) {
 	defer t.mu.Unlock()
 	delete(t.attempts, ip)
 }
+
+// CleanupExpired removes attempts older than the lockout window.
+// This bounds tracker growth for IPs that never retry.
+func (t *BruteForceTracker) CleanupExpired() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	now := time.Now()
+	for ip, a := range t.attempts {
+		if now.Sub(a.firstAt) > LockoutWindow {
+			delete(t.attempts, ip)
+		}
+	}
+}

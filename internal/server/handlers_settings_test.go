@@ -232,3 +232,31 @@ func TestValidation_Helpers(t *testing.T) {
 	assert.True(t, isValidSeverity("info"))
 	assert.False(t, isValidSeverity("high"))
 }
+
+func TestIsSameOriginRequest_AllowsWhenHeadersMissing(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/api/performance", nil)
+	req.Host = "example.local"
+	assert.True(t, isSameOriginRequest(req))
+}
+
+func TestIsSameOriginRequest_AllowsMatchingOrigin(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/api/performance", nil)
+	req.Host = "example.local"
+	req.Header.Set("Origin", "http://example.local")
+	assert.True(t, isSameOriginRequest(req))
+}
+
+func TestIsSameOriginRequest_RejectsMismatchedOrigin(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/api/performance", nil)
+	req.Host = "example.local"
+	req.Header.Set("Origin", "http://evil.local")
+	assert.False(t, isSameOriginRequest(req))
+}
+
+func TestIsSameOriginRequest_AllowsProxyHTTPSOrigin(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/api/performance", nil)
+	req.Host = "example.local"
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("Origin", "https://example.local")
+	assert.True(t, isSameOriginRequest(req))
+}

@@ -2,8 +2,9 @@ package notify
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
-	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,6 +13,20 @@ import (
 
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 )
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func makeJSONResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
+	}
+}
 
 func TestFormatAlertMessage_Critical(t *testing.T) {
 	value := 95.0
@@ -70,39 +85,34 @@ func TestSeverityEmoji(t *testing.T) {
 func TestTelegramSender_Send_Success(t *testing.T) {
 	var receivedBody map[string]string
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewDecoder(r.Body).Decode(&receivedBody)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"ok":true}`))
-	}))
-	defer srv.Close()
-
 	sender := &TelegramSender{
 		botToken: "test-token",
 		chatID:   "12345",
-		client:   srv.Client(),
+		client: &http.Client{
+			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				require.NoError(t, json.NewDecoder(req.Body).Decode(&receivedBody))
+				return makeJSONResponse(http.StatusOK, `{"ok":true}`), nil
+			}),
+		},
 	}
-	// Override the API URL by using a custom sendMessage
-	// We need to test the actual flow, so let's use the test server
-	// Instead, test via the sendMessage method directly
-	err := sender.sendMessageTo(srv.URL, "Test message")
+
+	err := sender.sendMessageTo("https://example.test/sendMessage", "Test message")
 	require.NoError(t, err)
 	assert.Equal(t, "12345", receivedBody["chat_id"])
 	assert.Equal(t, "Test message", receivedBody["text"])
 }
 
 func TestTelegramSender_Send_APIError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusUnauthorized)
-	}))
-	defer srv.Close()
-
 	sender := &TelegramSender{
 		botToken: "bad-token",
 		chatID:   "12345",
-		client:   srv.Client(),
+		client: &http.Client{
+			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				return makeJSONResponse(http.StatusUnauthorized, ""), nil
+			}),
+		},
 	}
-	err := sender.sendMessageTo(srv.URL, "Test")
+	err := sender.sendMessageTo("https://example.test/sendMessage", "Test")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "401")
 }
@@ -116,18 +126,17 @@ func TestTelegramSender_Send_NotConfigured(t *testing.T) {
 }
 
 func TestTelegramSender_MessageTruncation(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body map[string]string
-		json.NewDecoder(r.Body).Decode(&body)
-		assert.LessOrEqual(t, len(body["text"]), 4096)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer srv.Close()
-
 	sender := &TelegramSender{
 		botToken: "token",
 		chatID:   "123",
-		client:   srv.Client(),
+		client: &http.Client{
+			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				var body map[string]string
+				require.NoError(t, json.NewDecoder(req.Body).Decode(&body))
+				assert.LessOrEqual(t, len(body["text"]), 4096)
+				return makeJSONResponse(http.StatusOK, ""), nil
+			}),
+		},
 	}
 
 	// Create a message longer than 4096 chars
@@ -135,7 +144,7 @@ func TestTelegramSender_MessageTruncation(t *testing.T) {
 	for i := range longMsg {
 		longMsg[i] = 'A'
 	}
-	err := sender.sendMessageTo(srv.URL, string(longMsg))
+	err := sender.sendMessageTo("https://example.test/sendMessage", string(longMsg))
 	require.NoError(t, err)
 }
 

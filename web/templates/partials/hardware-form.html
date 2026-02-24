@@ -13,7 +13,7 @@
             <div class="flex items-center justify-between sm:col-span-2 lg:col-span-3 bg-surface rounded-lg px-4 py-3">
                 <span class="text-sm text-text">Enable RGB</span>
                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="rgb_enable" value="1" class="sr-only peer" {{if .Config.RGBEnable}}checked{{end}}>
+                    <input type="checkbox" name="rgb_enable" value="on" class="sr-only peer" {{if .Config.RGBEnable}}checked{{end}}>
                     <div class="w-10 h-6 bg-border rounded-full peer peer-checked:bg-accent peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                 </label>
             </div>
@@ -92,7 +92,7 @@
             <div class="flex items-center justify-between sm:col-span-3 bg-surface rounded-lg px-4 py-3">
                 <span class="text-sm text-text">Enable OLED</span>
                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="oled_enable" value="1" class="sr-only peer" {{if .Config.OLEDEnable}}checked{{end}}>
+                    <input type="checkbox" name="oled_enable" value="on" class="sr-only peer" {{if .Config.OLEDEnable}}checked{{end}}>
                     <div class="w-10 h-6 bg-border rounded-full peer peer-checked:bg-accent peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                 </label>
             </div>

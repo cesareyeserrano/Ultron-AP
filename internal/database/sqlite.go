@@ -185,7 +185,8 @@ func (db *DB) Backup(dstPath string) error {
 	// Ensure the destination doesn't exist (VACUUM INTO fails if it does)
 	_ = os.Remove(dstPath)
 
-	_, err := db.Exec(fmt.Sprintf("VACUUM INTO '%s'", dstPath))
+	escapedPath := strings.ReplaceAll(dstPath, "'", "''")
+	_, err := db.Exec(fmt.Sprintf("VACUUM INTO '%s'", escapedPath))
 	if err != nil {
 		return fmt.Errorf("database backup failed: %w", err)
 	}

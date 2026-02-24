@@ -43,17 +43,33 @@ type Config struct {
 // rawConfig mirrors the JSON returned by `pironman5 -c`.
 type rawConfig struct {
 	System struct {
-		RGBColor      string `json:"rgb_color"`
-		RGBBrightness int    `json:"rgb_brightness"`
-		RGBStyle      string `json:"rgb_style"`
-		RGBSpeed      int    `json:"rgb_speed"`
-		RGBEnable     bool   `json:"rgb_enable"`
-		FanMode       int    `json:"gpio_fan_mode"`
-		FanLED        string `json:"gpio_fan_led"`
-		OLEDEnable    bool   `json:"oled_enable"`
-		OLEDRotation  int    `json:"oled_rotation"`
-		OLEDSleep     int    `json:"oled_sleep_timeout"`
+		RGBColor      string          `json:"rgb_color"`
+		RGBBrightness int             `json:"rgb_brightness"`
+		RGBStyle      string          `json:"rgb_style"`
+		RGBSpeed      int             `json:"rgb_speed"`
+		RGBEnable     json.RawMessage `json:"rgb_enable"`
+		FanMode       int             `json:"gpio_fan_mode"`
+		FanLED        string          `json:"gpio_fan_led"`
+		OLEDEnable    json.RawMessage `json:"oled_enable"`
+		OLEDRotation  int             `json:"oled_rotation"`
+		OLEDSleep     int             `json:"oled_sleep_timeout"`
 	} `json:"system"`
+}
+
+// parseBoolOrString handles cases where pironman5 returns a bool (true/false)
+// or a string ("on"/"off").
+func parseBoolOrString(raw json.RawMessage) bool {
+	s := string(raw)
+	// If it's a JSON boolean
+	if s == "true" {
+		return true
+	}
+	if s == "false" {
+		return false
+	}
+	// If it's a JSON string, it will be wrapped in quotes
+	s = strings.Trim(s, "\"")
+	return s == "on" || s == "1" || s == "true"
 }
 
 // ReadConfig runs `sudo -n /usr/local/bin/pironman5 -c` and returns the parsed configuration.
@@ -75,10 +91,10 @@ func ReadConfig() (*Config, error) {
 		RGBBrightness: raw.System.RGBBrightness,
 		RGBStyle:      raw.System.RGBStyle,
 		RGBSpeed:      raw.System.RGBSpeed,
-		RGBEnable:     raw.System.RGBEnable,
+		RGBEnable:     parseBoolOrString(raw.System.RGBEnable),
 		FanMode:       raw.System.FanMode,
 		FanLED:        raw.System.FanLED,
-		OLEDEnable:    raw.System.OLEDEnable,
+		OLEDEnable:    parseBoolOrString(raw.System.OLEDEnable),
 		OLEDRotation:  raw.System.OLEDRotation,
 		OLEDSleep:     raw.System.OLEDSleep,
 	}, nil
@@ -112,7 +128,7 @@ func ApplyConfig(cfg Config) error {
 	sudoArgs := append([]string{"-n", "/usr/local/bin/pironman5"}, args...)
 	out, err := exec.Command("sudo", sudoArgs...).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("pironman5 restart: %s: %w", strings.TrimSpace(string(out)), err)
+		return fmt.Errorf("pironman5 apply: %s: %w", strings.TrimSpace(string(out)), err)
 	}
 	return nil
 }

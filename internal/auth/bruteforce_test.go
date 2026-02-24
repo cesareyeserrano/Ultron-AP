@@ -84,3 +84,27 @@ func TestBruteForce_NewWindowAfterExpiry(t *testing.T) {
 	tracker.RecordFailure("192.168.1.1")
 	assert.False(t, tracker.IsLocked("192.168.1.1"))
 }
+
+func TestBruteForce_CleanupExpired(t *testing.T) {
+	tracker := NewBruteForceTracker()
+
+	tracker.mu.Lock()
+	tracker.attempts["stale"] = &attempt{
+		count:   MaxAttempts,
+		firstAt: time.Now().Add(-LockoutWindow - time.Second),
+	}
+	tracker.attempts["fresh"] = &attempt{
+		count:   1,
+		firstAt: time.Now(),
+	}
+	tracker.mu.Unlock()
+
+	tracker.CleanupExpired()
+
+	tracker.mu.Lock()
+	defer tracker.mu.Unlock()
+	_, staleExists := tracker.attempts["stale"]
+	_, freshExists := tracker.attempts["fresh"]
+	assert.False(t, staleExists)
+	assert.True(t, freshExists)
+}

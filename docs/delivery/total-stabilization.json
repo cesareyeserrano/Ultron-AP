@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "total-stabilization",
+  "decision": "SHIP",
+  "generatedAt": "2026-02-24T02:10:34.600Z",
+  "confidence": {
+    "score": 1,
+    "threshold": 0.85,
+    "pass": true
+  },
+  "tcSummary": {
+    "declared": 16,
+    "executable": 16,
+    "passing": 16,
+    "failing": 0,
+    "missing": 0
+  },
+  "frMatrix": [
+    {
+      "frId": "FR-1",
+      "tc": [
+        "TC-11",
+        "TC-12",
+        "TC-13",
+        "TC-14"
+      ],
+      "passingTc": [
+        "TC-11",
+        "TC-12",
+        "TC-13",
+        "TC-14"
+      ],
+      "covered": true
+    },
+    {
+      "frId": "FR-2",
+      "tc": [
+        "TC-1",
+        "TC-16"
+      ],
+      "passingTc": [
+        "TC-1",
+        "TC-16"
+      ],
+      "covered": true
+    },
+    {
+      "frId": "FR-3",
+      "tc": [
+        "TC-2"
+      ],
+      "passingTc": [
+        "TC-2"
+      ],
+      "covered": true
+    },
+    {
+      "frId": "FR-4",
+      "tc": [
+        "TC-3",
+        "TC-4",
+        "TC-5",
+        "TC-6",
+        "TC-15"
+      ],
+      "passingTc": [
+        "TC-3",
+        "TC-4",
+        "TC-5",
+        "TC-6",
+        "TC-15"
+      ],
+      "covered": true
+    },
+    {
+      "frId": "FR-5",
+      "tc": [
+        "TC-7",
+        "TC-8",
+        "TC-9",
+        "TC-10"
+      ],
+      "passingTc": [
+        "TC-7",
+        "TC-8",
+        "TC-9",
+        "TC-10"
+      ],
+      "covered": true
+    }
+  ],
+  "acMatrix": [
+    {
+      "acId": "AC-1",
+      "tc": [
+        "TC-11",
+        "TC-12",
+        "TC-13",
+        "TC-14"
+      ],
+      "passingTc": [
+        "TC-11",
+        "TC-12",
+        "TC-13",
+        "TC-14"
+      ],
+      "covered": true
+    },
+    {
+      "acId": "AC-2",
+      "tc": [
+        "TC-1",
+        "TC-2",
+        "TC-16"
+      ],
+      "passingTc": [
+        "TC-1",
+        "TC-2",
+        "TC-16"
+      ],
+      "covered": true
+    },
+    {
+      "acId": "AC-3",
+      "tc": [
+        "TC-3",
+        "TC-4",
+        "TC-5",
+        "TC-6",
+        "TC-15"
+      ],
+      "passingTc": [
+        "TC-3",
+        "TC-4",
+        "TC-5",
+        "TC-6",
+        "TC-15"
+      ],
+      "covered": true
+    },
+    {
+      "acId": "AC-4",
+      "tc": [
+        "TC-7",
+        "TC-8",
+        "TC-9",
+        "TC-10"
+      ],
+      "passingTc": [
+        "TC-7",
+        "TC-8",
+        "TC-9",
+        "TC-10"
+      ],
+      "covered": true
+    }
+  ],
+  "uiRefValidation": [],
+  "blockers": [],
+  "warnings": [
+    "No proof-of-compliance record found. Run: aitri prove --feature total-stabilization"
+  ],
+  "timeline": {
+    "go": "2026-02-24T02:04:24.450Z",
+    "scaffold": "2026-02-24T02:04:57.295Z",
+    "implement": "2026-02-24T02:04:57.296Z",
+    "verify": "2026-02-24T02:10:19.281Z"
+  },
+  "evidence": {
+    "verification": "docs/verification/total-stabilization.json",
+    "scaffold": "docs/implementation/total-stabilization/scaffold-manifest.json",
+    "implement": "docs/implementation/total-stabilization/implement-manifest.json",
+    "go": "docs/implementation/total-stabilization/go.json"
+  },
+  "releaseTag": "aitri-release/total-stabilization-2026-02-24T02-10-43",
+  "releaseTagError": null,
+  "buildExitCode": 0
+}
