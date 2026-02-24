@@ -11,6 +11,17 @@
       "severity": "high",
       "resolution": null,
       "resolvedAt": null
+    },
+    {
+      "id": "FB-2",
+      "addedAt": "2026-02-24T18:15:19.049Z",
+      "source": "user-testing",
+      "linkedRef": "FR-2",
+      "category": "bug",
+      "description": "Definitive root cause identified: helper used CLI restart/read path that did not represent live Pironman state reliably under this firmware, causing apparent non-application and stale readback. Remediation switched helper to official Pironman API v1.0 endpoints for granular set/get with queued apply orchestration preserved; verified live on Pi via helper socket apply+read showing consistent persisted values.",
+      "severity": "critical",
+      "resolution": null,
+      "resolvedAt": null
     }
   ]
 }
