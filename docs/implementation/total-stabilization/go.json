@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "total-stabilization",
+  "decidedAt": "2026-02-24T02:04:24.450Z",
+  "policyEvidence": "docs/policy/total-stabilization.json",
+  "verificationEvidence": "docs/verification/total-stabilization.json"
+}

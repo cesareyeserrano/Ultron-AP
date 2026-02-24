@@ -3,187 +3,153 @@
 STATUS: DRAFT
 
 ## 1. Intent (from approved spec)
-- Retrieval mode: section-level
+- Deliver a deep stabilization and optimization pass for Ultron-AP without scope creep.
+- Cover runtime reliability, security hardening, automated test expansion, and documentation hygiene.
+- Keep existing architecture (Go monolith + HTMX + SQLite) and avoid feature redesign.
 
-### Context snapshot
-- A deep total stabilization and optimization pass for Ultron-AP covering runtime reliability, security hardening, automated test expansion, and documentation hygiene optimization.
-- Primary actor: Admin (single Raspberry Pi owner/operator) and maintainers who evolve the codebase.
-- Expected outcome: The system remains stable under backup and operational failures with observable error reporting, critical security/session paths are strongly validated, all core tests pass, and project documentation is reduced to a clear, non-duplicated, maintained set with controlled file lengths.
+### Actors
+- Primary: Admin (single Raspberry Pi owner/operator).
+- Secondary: Maintainers/contributors.
 
-### Actors snapshot
-- Admin (single Raspberry Pi owner/operator) and maintainers who evolve the codebase.
+### Functional Rules in Scope
+- FR-1: Documentation asset strategy (local repository sources only; all references must resolve).
+- FR-2: Backup failures must be observable and not silently ignored.
+- FR-3: Local retention must remain deterministic even when Telegram delivery fails/disabled.
+- FR-4: Enforce CSRF + same-origin protections with proxy-aware session cookie security.
+- FR-5: Add targeted tests for high-risk reliability/security paths with zero regression.
 
-### Functional rules snapshot
-- The system must enforce a documentation asset strategy where only repository markdown and source files are used; no external media assets are introduced during stabilization and every referenced document path must resolve locally.
-- The system must surface automated backup failures with explicit, actionable outcomes (logs and/or persisted evidence) and never silently ignore failed backup runs.
-- The system must preserve deterministic local backup retention even when Telegram delivery is disabled or fails.
-- The system must strengthen security posture by enforcing CSRF token checks plus same-origin protections for state-changing endpoints, with proxy-aware session-cookie security behavior.
-- The system must add targeted automated tests for high-risk reliability/security paths (backup failures, retention branches, hardware apply toggles/CSRF, session cookie flags, Pironman compatibility parsing) without regressing existing behavior.
+### Acceptance Criteria in Scope
+- AC-1: Full markdown classification + link integrity + file-length governance.
+- AC-2: Backup failure remains observable while retention still enforced.
+- AC-3: Invalid CSRF/origin requests are denied and audited.
+- AC-4: Full legacy suite green + all new stabilization tests green.
 
-### Acceptance criteria snapshot
-- Given the markdown inventory and reference scan, when documentation hygiene runs, then every markdown file is classified as keep/consolidate/archive/delete with justification, no broken internal links remain, and files above the defined max length are split or reduced.
-- Given an automated backup run where local backup succeeds and Telegram upload fails, when the scheduler executes, then the run is marked failed with clear cause and retention still enforces the configured local backup limit.
-- Given a state-changing request without valid CSRF and/or invalid origin context, when the endpoint is called, then the request is denied deterministically and audited as a rejected action.
-- Given stabilization changes merged, when the full and targeted test suites execute, then all legacy tests remain green and all new stabilization tests pass.
-
-### Security snapshot
-- State-changing endpoints must enforce CSRF token checks plus same-origin protections (Origin/Referer policy), and session cookies must remain secure under direct TLS and trusted proxy TLS termination.
-
-### Out-of-scope snapshot
-- No visual redesign, no new end-user features, no migration away from Go/HTMX/SQLite, and no infrastructure platform change.
-
-### Retrieval metadata
-- Retrieval mode: section-level
-- Retrieved sections: 1. Context, 2. Actors, 3. Functional Rules, 7. Security Considerations, 8. Out of Scope, 9. Acceptance Criteria
-- Summary:
--
-- Success looks like:
--
-
-## 2. Discovery Review (Discovery Persona)
+## 2. Discovery Review
 ### Problem framing
-- Current pain is medium-high: some reliability and security paths had limited observability or test coverage, and documentation can drift with overlapping artifacts. Frequency is recurring during maintenance and release cycles.
-- Core rule to preserve: The system must enforce a documentation asset strategy where only repository markdown and source files are used; no external media assets are introduced during stabilization and every referenced document path must resolve locally.
+- Reliability/security hardening exists but has residual gaps in observability and focused regression coverage.
+- Documentation has potential overlap/residual risk and no formal keep/consolidate/archive/delete matrix.
 
-### Constraints and dependencies
-- Constraints: Must keep existing Go monolith architecture and behavior, no new product features, no UI redesign, no infrastructure migration, and keep performance/resource footprint suitable for Raspberry Pi.
-- Dependencies: Dependencies include SQLite storage, Docker daemon/socket, systemd CLI integration, Pironman5 CLI integration, and Telegram API integration for backup delivery.
+### Constraints
+- No architecture rewrite.
+- No UX redesign or new product capabilities.
+- Maintain Raspberry Pi-appropriate runtime profile.
+
+### Dependencies
+- SQLite persistence.
+- Docker daemon/socket.
+- systemd integration.
+- Pironman5 CLI.
+- Telegram integration for backup delivery.
 
 ### Success metrics
-- go test ./... remains green; zero open P0 stabilization items; backup failure outcomes are explicitly logged/persisted; all targeted new reliability/security tests pass; 100% markdown files classified as keep/consolidate/archive/delete with rationale; zero broken internal markdown links.; Baseline: Current baseline: go test ./... is green; stabilization backlog BL0001 remains open with pending P0/P1/P2 actions; documentation classification (keep/consolidate/archive/delete) is not yet complete.
-
-### Key assumptions
-- Assume documentation cleanup can be done without breaking SDLC workflow references; assume backup observability changes will not increase operational noise excessively; assume CSRF origin checks can be implemented without blocking valid proxied requests.; Why now: Recent hardening work surfaced residual quality debt; closing it now reduces regression risk before further feature evolution and keeps maintenance cost low.
-
-### Discovery rigor profile
-- Discovery interview mode: deep
-- Planning policy: Plan for full decomposition (explicit risks, constraints, and dependency handling).
-- Follow-up gate: No extra discovery depth required before implementation unless scope changes.
+- `go test ./...` green.
+- Zero open P0 stabilization items.
+- Backup failure outcomes explicitly reported.
+- 100% markdown files classified with rationale/owner.
+- Zero broken internal markdown links.
 
 ## 3. Scope
 ### In scope
--
+- Backup scheduler failure observability and outcome propagation.
+- Backup retention behavior verification under Telegram failure/disabled paths.
+- CSRF origin/referer hardening for state-changing endpoints.
+- Session cookie policy validation under TLS and proxied TLS.
+- Brute-force tracker cleanup strategy.
+- Pironman compatibility parser tests.
+- Hardware apply endpoint tests (checkbox-off semantics and CSRF).
+- Documentation inventory, classification, dedupe/consolidation decisions, link cleanup, and file-length optimization.
 
 ### Out of scope
--
+- New user-facing features.
+- UI visual redesign.
+- Database/infra platform migration.
 
 ## 4. Product Review (Product Persona)
 ### Business value
-- Address user pain by enforcing: The system must enforce a documentation asset strategy where only repository markdown and source files are used; no external media assets are introduced during stabilization and every referenced document path must resolve locally.
-- Secondary value from supporting rule: The system must surface automated backup failures with explicit, actionable outcomes (logs and/or persisted evidence) and never silently ignore failed backup runs.
+- Reduces operational risk and maintenance burden.
+- Improves auditability and incident diagnosis.
+- Increases confidence for future feature delivery.
 
 ### Success metric
-- Primary KPI: go test ./... remains green; zero open P0 stabilization items; backup failure outcomes are explicitly logged/persisted; all targeted new reliability/security tests pass; 100% markdown files classified as keep/consolidate/archive/delete with rationale; zero broken internal markdown links.; Baseline: Current baseline: go test ./... is green; stabilization backlog BL0001 remains open with pending P0/P1/P2 actions; documentation classification (keep/consolidate/archive/delete) is not yet complete.
-- Ship only if metric has baseline and target.
+- Primary KPI bundle:
+  - `go test ./...` passes.
+  - Zero open P0 stabilization items.
+  - Backup failure outcomes are explicitly surfaced.
+  - 100% markdown files classified with rationale/owner.
+  - Zero broken internal markdown links.
+- Release target:
+  - AC-1 through AC-4 fully satisfied.
 
 ### Assumptions to validate
-- Assume documentation cleanup can be done without breaking SDLC workflow references; assume backup observability changes will not increase operational noise excessively; assume CSRF origin checks can be implemented without blocking valid proxied requests.; Why now: Recent hardening work surfaced residual quality debt; closing it now reduces regression risk before further feature evolution and keeps maintenance cost low.
-- Validate dependency and constraint impact before implementation start.
-- Discovery rigor policy: No extra discovery depth required before implementation unless scope changes.
+- Proxy-aware origin policy can be enforced without blocking valid admin traffic behind trusted reverse proxy.
+- Backup failure reporting can be made explicit without creating noisy duplicate logs.
+- Documentation cleanup can be completed without removing files still required by SDLC workflow references.
+
+### Release quality bar
+- Do not ship unless AC-1..AC-4 are satisfied.
 
 ## 5. Architecture (Architect Persona)
 ### Components
-- CLI command parser
-- Command handler service
-- Module: total-stabilization-service
-- Module: auth-service
+- `internal/server/server.go` (backup scheduler behavior).
+- `internal/server/handlers_settings.go` and security middleware/validators.
+- `internal/auth/*` and session/cookie handling.
+- `internal/metrics/*`, `internal/notify/*`, `internal/pironman/*` tests and reliability guards.
+- Documentation tree: `README.md`, `DEPLOY.md`, `sdlc-studio/**`, `specs/**`, `backlog/**`, `docs/**`.
 
 ### Data flow
-- Operator executes command with validated inputs.
-- Service layer enforces FR logic and delegates to adapters.
-- Result is persisted/emitted with deterministic status and error text.
+1. Scheduler triggers automated backup run.
+2. Backup result produces explicit success/failure outcome with actionable cause.
+3. Retention enforcement executes regardless of Telegram delivery outcome.
+4. Security middleware/handlers validate CSRF + origin context before unsafe actions.
+5. Test suite and documentation hygiene tooling validate gates prior to release.
 
 ### Key decisions
-- Keep FR to implementation traceability explicit by preserving story and TC identifiers.
-- Use Node.js CLI modules aligned with detected stack (Node.js CLI).
-- Favor deterministic error paths over silent fallback behavior.
+- Favor explicit failure surfaces over silent fallback.
+- Keep test coverage close to failure-prone boundaries.
+- Documentation cleanup must be reference-safe: never delete referenced artifacts without migration.
 
 ### Risks & mitigations
-- Spec-to-code drift risk: enforce FR/US/TC traces in generated artifacts.
-- Integration fragility risk: isolate external calls behind adapters with clear contracts.
-- Scope drift risk: block changes not linked to approved FR/AC entries.
+- Risk: accidental doc deletion of referenced files.
+  - Mitigation: reference scan gate before delete/archive.
+- Risk: stricter CSRF origin checks break valid proxied traffic.
+  - Mitigation: proxy-aware allowlist logic + tests.
+- Risk: over-logging from backup failures.
+  - Mitigation: structured, bounded severity and deduplicated messages.
 
 ### Observability (logs/metrics/tracing)
-- Structured command logs with feature and story IDs.
-- Metrics for command success/failure and runtime duration.
-- Trace markers for dependency boundaries.
+- Log backup scheduler outcomes with structured status and error cause.
+- Log rejection reasons for denied unsafe requests (without leaking sensitive token values).
+- Track stabilization gate status via test execution results and documentation hygiene reports.
 
-### Domain quality profile
-- Domain: CLI/Automation (cli)
-- Stack constraint: Use structured command modules and formatted terminal output (for example chalk/ora or equivalent patterns).
-- Forbidden defaults: Unstructured raw console output as final UX baseline.
-
-## 6. Security (Security Persona)
-### Threats
-- FR-4: The system must strengthen security posture by enforcing CSRF token checks plus same-origin protections for state-changing endpoints, with proxy-aware session-cookie security behavior.
-- FR-5: The system must add targeted automated tests for high-risk reliability/security paths (backup failures, retention branches, hardware apply toggles/CSRF, session cookie flags, Pironman compatibility parsing) without regressing existing behavior.
-- Derived from spec security section: - State-changing endpoints must enforce CSRF token checks plus same-origin protections (Origin/Referer policy), and session cookies must remain secure under direct TLS and trusted proxy TLS termination.
+## 6. Security Review
+### Threats addressed
+- CSRF bypass on state-changing endpoints.
+- Origin spoofing/incorrect same-site assumptions behind reverse proxy.
+- Session cookie misconfiguration under TLS termination.
 
 ### Required controls
-- - State-changing endpoints must enforce CSRF token checks plus same-origin protections (Origin/Referer policy), and session cookies must remain secure under direct TLS and trusted proxy TLS termination.
-
-### Validation rules
-- Security controls must be verified before delivery gate.
+- Enforce CSRF token and origin policy for unsafe methods.
+- Maintain secure cookie semantics under TLS/proxy.
+- Ensure denied requests are auditable.
 
 ## 7. UX/UI Review (UX/UI Persona, if user-facing)
-### Primary user flow
-- Flow must include complete state coverage and fallback paths.
+- No redesign required.
+- Maintain existing operational UX behavior for admin controls.
+- Any security/reliability messaging must be concise and actionable.
 
-### Key states (empty/loading/error/success)
-- Define deterministic behavior for empty/loading/error/success states.
+## 8. Backlog decomposition
+- See [backlog/total-stabilization/backlog.md](../../backlog/total-stabilization/backlog.md).
 
-### Accessibility baseline
-- Keyboard and screen-reader baseline for user-facing interactions.
+## 9. Test decomposition
+- See [tests/total-stabilization/tests.md](../../tests/total-stabilization/tests.md).
 
-### Asset and placeholder strategy
-- Define output templates/examples and fallback text for non-interactive logs.
-- Avoid default primitive-only output when domain requires visual fidelity.
+## 10. Implementation Notes
+### Suggested sequence
+1. Backup observability and retention regression paths (FR-2, FR-3, AC-2).
+2. Security hardening + cookie/origin validation (FR-4, AC-3).
+3. Focused reliability/security test expansion (FR-5, AC-4).
+4. Documentation hygiene and optimization pass (FR-1, AC-1).
 
-## 8. Backlog
-> Create as many epics/stories as needed. Do not impose artificial limits.
-
-### Epics
-- Epic 1:
-  - Outcome:
-  - Notes:
-- Epic 2:
-  - Outcome:
-  - Notes:
-
-### User Stories
-For each story include clear Acceptance Criteria (Given/When/Then).
-
-#### Story:
-- As a <actor>, I want <capability>, so that <benefit>.
-- Acceptance Criteria:
-  - Given ..., when ..., then ...
-  - Given ..., when ..., then ...
-
-(repeat as needed)
-
-## 9. Test Cases (QA Persona)
-> Create as many test cases as needed. Include negative and edge cases.
-
-### Functional
-1.
-2.
-
-### Negative / Abuse
-1.
-2.
-
-### Security
-1.
-2.
-
-### Edge cases
-1.
-2.
-
-## 10. Implementation Notes (Developer Persona)
-- Suggested sequence:
--
-- Dependencies:
--
-- Rollout / fallback:
--
+### Rollout / fallback
+- Roll changes in small slices, keep full suite green between slices.
+- For doc cleanup, prefer `archive` before permanent delete when uncertainty exists.

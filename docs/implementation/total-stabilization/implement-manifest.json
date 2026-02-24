@@ -1,0 +1,87 @@
+{
+  "feature": "total-stabilization",
+  "generatedAt": "2026-02-24T02:04:57.296Z",
+  "stories": [
+    {
+      "id": "US-3",
+      "order": 1,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/total-stabilization/US-3.md",
+      "testCases": [
+        "TC-3",
+        "TC-4",
+        "TC-15"
+      ]
+    },
+    {
+      "id": "US-5",
+      "order": 2,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/total-stabilization/US-5.md",
+      "testCases": [
+        "TC-7",
+        "TC-8",
+        "TC-10"
+      ]
+    },
+    {
+      "id": "US-1",
+      "order": 3,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/total-stabilization/US-1.md",
+      "testCases": [
+        "TC-1",
+        "TC-16"
+      ]
+    },
+    {
+      "id": "US-4",
+      "order": 4,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/total-stabilization/US-4.md",
+      "testCases": [
+        "TC-5",
+        "TC-6"
+      ]
+    },
+    {
+      "id": "US-7",
+      "order": 5,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/total-stabilization/US-7.md",
+      "testCases": [
+        "TC-11",
+        "TC-12"
+      ]
+    },
+    {
+      "id": "US-8",
+      "order": 6,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/total-stabilization/US-8.md",
+      "testCases": [
+        "TC-13",
+        "TC-14"
+      ]
+    },
+    {
+      "id": "US-2",
+      "order": 7,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/total-stabilization/US-2.md",
+      "testCases": [
+        "TC-2"
+      ]
+    },
+    {
+      "id": "US-6",
+      "order": 8,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/total-stabilization/US-6.md",
+      "testCases": [
+        "TC-9"
+      ]
+    }
+  ],
+  "orderFile": "docs/implementation/total-stabilization/IMPLEMENTATION_ORDER.md"
+}

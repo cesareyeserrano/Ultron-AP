@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "feature": "total-stabilization",
+  "generatedAt": "2026-02-24T02:04:57.296Z",
+  "completedStories": [],
+  "pendingStories": [
+    "US-3",
+    "US-5",
+    "US-1",
+    "US-4",
+    "US-7",
+    "US-8",
+    "US-2",
+    "US-6"
+  ],
+  "stories": [
+    {
+      "id": "US-3",
+      "brief": "docs/implementation/total-stabilization/US-3.md",
+      "scaffoldFiles": [
+        "tests/total-stabilization/generated/tc-3-validate-tc-3-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-4-validate-tc-4-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-15-validate-tc-15-behavior.test.mjs",
+        "src/contracts/fr-4-the-system-must-strengthen-secur.js"
+      ],
+      "verified": false
+    },
+    {
+      "id": "US-5",
+      "brief": "docs/implementation/total-stabilization/US-5.md",
+      "scaffoldFiles": [
+        "tests/total-stabilization/generated/tc-7-validate-tc-7-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-8-validate-tc-8-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-10-validate-tc-10-behavior.test.mjs",
+        "src/contracts/fr-5-the-system-must-add-targeted-aut.js"
+      ],
+      "verified": false
+    },
+    {
+      "id": "US-1",
+      "brief": "docs/implementation/total-stabilization/US-1.md",
+      "scaffoldFiles": [
+        "tests/total-stabilization/generated/tc-1-validate-tc-1-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-16-validate-tc-16-behavior.test.mjs",
+        "src/contracts/fr-2-the-system-must-surface-automate.js"
+      ],
+      "verified": false
+    },
+    {
+      "id": "US-4",
+      "brief": "docs/implementation/total-stabilization/US-4.md",
+      "scaffoldFiles": [
+        "tests/total-stabilization/generated/tc-5-validate-tc-5-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-6-validate-tc-6-behavior.test.mjs",
+        "src/contracts/fr-4-the-system-must-strengthen-secur.js"
+      ],
+      "verified": false
+    },
+    {
+      "id": "US-7",
+      "brief": "docs/implementation/total-stabilization/US-7.md",
+      "scaffoldFiles": [
+        "tests/total-stabilization/generated/tc-11-validate-tc-11-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-12-validate-tc-12-behavior.test.mjs",
+        "src/contracts/fr-1-the-system-must-enforce-a-docume.js"
+      ],
+      "verified": false
+    },
+    {
+      "id": "US-8",
+      "brief": "docs/implementation/total-stabilization/US-8.md",
+      "scaffoldFiles": [
+        "tests/total-stabilization/generated/tc-13-validate-tc-13-behavior.test.mjs",
+        "tests/total-stabilization/generated/tc-14-validate-tc-14-behavior.test.mjs",
+        "src/contracts/fr-1-the-system-must-enforce-a-docume.js"
+      ],
+      "verified": false
+    },
+    {
+      "id": "US-2",
+      "brief": "docs/implementation/total-stabilization/US-2.md",
+      "scaffoldFiles": [
+        "tests/total-stabilization/generated/tc-2-validate-tc-2-behavior.test.mjs",
+        "src/contracts/fr-3-the-system-must-preserve-determi.js"
+      ],
+      "verified": false
+    },
+    {
+      "id": "US-6",
+      "brief": "docs/implementation/total-stabilization/US-6.md",
+      "scaffoldFiles": [
+        "tests/total-stabilization/generated/tc-9-validate-tc-9-behavior.test.mjs",
+        "src/contracts/fr-5-the-system-must-add-targeted-aut.js"
+      ],
+      "verified": false
+    }
+  ]
+}
