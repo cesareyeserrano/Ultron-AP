@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
   "feature": "hardware-stability-refactor",
-  "generatedAt": "2026-02-24T16:20:39.125Z",
+  "generatedAt": "2026-02-24T16:21:14.837Z",
   "completedStories": [
     "US-2",
-    "US-3"
+    "US-3",
+    "US-4"
   ],
   "pendingStories": [
     "US-1",
-    "US-4",
     "US-5",
     "US-6",
     "US-7"
   ],
   "stories": [
     {
-      "id": "US-3",
-      "brief": "docs/implementation/hardware-stability-refactor/US-3.md",
+      "id": "US-4",
+      "brief": "docs/implementation/hardware-stability-refactor/US-4.md",
       "scaffoldFiles": [
-        "tests/hardware-stability-refactor/generated/tc-3-validate-us-3-primary-behavior.test.mjs",
-        "src/contracts/fr-3-integration-with-pironman-must-p.js"
+        "tests/hardware-stability-refactor/generated/tc-4-validate-us-4-primary-behavior.test.mjs",
+        "src/contracts/fr-4-privileged-execution-must-stay-o.js"
       ],
       "verified": true
     }
