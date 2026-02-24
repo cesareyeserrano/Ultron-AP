@@ -358,15 +358,10 @@ func readPironmanConfig(ctx context.Context) ([]byte, error) {
 	apiCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	data, err := pironmanAPICall(apiCtx, http.MethodGet, "get-config", nil)
-	if err == nil {
-		return []byte(strings.TrimSpace(string(data))), nil
+	if err != nil {
+		return nil, err
 	}
-	// Fallback only if dashboard API is unavailable.
-	out, cliErr := run(ctx, 8*time.Second, "/usr/local/bin/pironman5", "-c")
-	if cliErr != nil {
-		return nil, fmt.Errorf("api failed: %v; cli failed: %v", err, cliErr)
-	}
-	return out, nil
+	return []byte(strings.TrimSpace(string(data))), nil
 }
 
 func pironmanAPICall(ctx context.Context, method, endpoint string, payload any) (json.RawMessage, error) {

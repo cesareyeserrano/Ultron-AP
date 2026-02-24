@@ -159,10 +159,8 @@ func ApplyConfig(cfg Config) error {
 	return nil
 }
 
-// Available reports whether pironman5 is installed on the system.
+// Available reports whether pironman runtime is currently reachable via helper.
 func Available() bool {
-	cli := privileged.NewClientFromEnv()
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	return cli.Ping(ctx) == nil
+	_, err := ReadConfig()
+	return err == nil
 }
