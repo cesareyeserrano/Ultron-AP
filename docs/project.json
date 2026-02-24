@@ -1,0 +1,9 @@
+{
+  "name": "Ultron",
+  "initializedAt": "2026-02-24T01:28:13.158Z",
+  "root": "Ultron",
+  "detectedStack": [
+    "go"
+  ],
+  "aitriVersion": "0.6.0"
+}
