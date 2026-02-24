@@ -11,8 +11,11 @@
 
 ## Epics
 - EP-1: Enforce A Documentation Asset Strategy Where Only Repository Markdown And Source Files Are Used; No External Media Assets Are Introduced During Stabilization And Every Referenced Document Path Must Resolve Locally with verified coverage
-  - Notes: Covers 1 story slice(s) with explicit acceptance traces.
-  - Trace: FR-1
+  - Notes: Covers 3 story slice(s) with explicit acceptance traces.
+  - Trace: FR-1, FR-2, FR-3
+- EP-2: Strengthen Security Posture By Enforcing CSRF Token Checks Plus Same-origin Protections For State-changing Endpoints, With Proxy-aware Session-cookie Security Behavior with verified coverage
+  - Notes: Covers 2 story slice(s) with explicit acceptance traces.
+  - Trace: FR-4, FR-5
 
 ## User Stories
 
@@ -21,3 +24,27 @@
 - Trace: FR-1, AC-1
 - Acceptance Criteria:
   - Given the markdown inventory and reference scan, when documentation hygiene runs, then every markdown file is classified as keep/consolidate/archive/delete with justification, no broken internal links remain, and files above the defined max length are split or reduced.
+
+### US-2
+- As a Admin (single Raspberry Pi owner/operator) and maintainers who evolve the codebase., I want surface automated backup failures with explicit, actionable outcomes (logs and/or persisted evidence) and never silently ignore failed backup runs, so that the workflow remains reliable and traceable.
+- Trace: FR-2, AC-2
+- Acceptance Criteria:
+  - Given an automated backup run where local backup succeeds and Telegram upload fails, when the scheduler executes, then the run is marked failed with clear cause and retention still enforces the configured local backup limit.
+
+### US-3
+- As a Admin (single Raspberry Pi owner/operator) and maintainers who evolve the codebase., I want preserve deterministic local backup retention even when Telegram delivery is disabled or fails, so that the workflow remains reliable and traceable.
+- Trace: FR-3, AC-2
+- Acceptance Criteria:
+  - Given an automated backup run where local backup succeeds and Telegram upload fails, when the scheduler executes, then the run is marked failed with clear cause and retention still enforces the configured local backup limit.
+
+### US-4
+- As a Admin (single Raspberry Pi owner/operator) and maintainers who evolve the codebase., I want strengthen security posture by enforcing CSRF token checks plus same-origin protections for state-changing endpoints, with proxy-aware session-cookie security behavior, so that admin (single raspberry pi owner/operator) and maintainers who evolve the codebase.s can access the right capabilities safely.
+- Trace: FR-4, AC-3
+- Acceptance Criteria:
+  - Given a state-changing request without valid CSRF and/or invalid origin context, when the endpoint is called, then the request is denied deterministically and audited as a rejected action.
+
+### US-5
+- As a Admin (single Raspberry Pi owner/operator) and maintainers who evolve the codebase., I want add targeted automated tests for high-risk reliability/security paths (backup failures, retention branches, hardware apply toggles/CSRF, session cookie flags, Pironman compatibility parsing) without regressing existing behavior, so that admin (single raspberry pi owner/operator) and maintainers who evolve the codebase.s can access the right capabilities safely.
+- Trace: FR-5, AC-2
+- Acceptance Criteria:
+  - Given an automated backup run where local backup succeeds and Telegram upload fails, when the scheduler executes, then the run is marked failed with clear cause and retention still enforces the configured local backup limit.

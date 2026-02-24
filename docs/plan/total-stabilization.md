@@ -15,9 +15,16 @@ STATUS: DRAFT
 
 ### Functional rules snapshot
 - The system must enforce a documentation asset strategy where only repository markdown and source files are used; no external media assets are introduced during stabilization and every referenced document path must resolve locally.
+- The system must surface automated backup failures with explicit, actionable outcomes (logs and/or persisted evidence) and never silently ignore failed backup runs.
+- The system must preserve deterministic local backup retention even when Telegram delivery is disabled or fails.
+- The system must strengthen security posture by enforcing CSRF token checks plus same-origin protections for state-changing endpoints, with proxy-aware session-cookie security behavior.
+- The system must add targeted automated tests for high-risk reliability/security paths (backup failures, retention branches, hardware apply toggles/CSRF, session cookie flags, Pironman compatibility parsing) without regressing existing behavior.
 
 ### Acceptance criteria snapshot
 - Given the markdown inventory and reference scan, when documentation hygiene runs, then every markdown file is classified as keep/consolidate/archive/delete with justification, no broken internal links remain, and files above the defined max length are split or reduced.
+- Given an automated backup run where local backup succeeds and Telegram upload fails, when the scheduler executes, then the run is marked failed with clear cause and retention still enforces the configured local backup limit.
+- Given a state-changing request without valid CSRF and/or invalid origin context, when the endpoint is called, then the request is denied deterministically and audited as a rejected action.
+- Given stabilization changes merged, when the full and targeted test suites execute, then all legacy tests remain green and all new stabilization tests pass.
 
 ### Security snapshot
 - State-changing endpoints must enforce CSRF token checks plus same-origin protections (Origin/Referer policy), and session cookies must remain secure under direct TLS and trusted proxy TLS termination.
@@ -63,7 +70,7 @@ STATUS: DRAFT
 ## 4. Product Review (Product Persona)
 ### Business value
 - Address user pain by enforcing: The system must enforce a documentation asset strategy where only repository markdown and source files are used; no external media assets are introduced during stabilization and every referenced document path must resolve locally.
-- Secondary value from supporting rule: The system must enforce a documentation asset strategy where only repository markdown and source files are used; no external media assets are introduced during stabilization and every referenced document path must resolve locally.
+- Secondary value from supporting rule: The system must surface automated backup failures with explicit, actionable outcomes (logs and/or persisted evidence) and never silently ignore failed backup runs.
 
 ### Success metric
 - Primary KPI: go test ./... remains green; zero open P0 stabilization items; backup failure outcomes are explicitly logged/persisted; all targeted new reliability/security tests pass; 100% markdown files classified as keep/consolidate/archive/delete with rationale; zero broken internal markdown links.; Baseline: Current baseline: go test ./... is green; stabilization backlog BL0001 remains open with pending P0/P1/P2 actions; documentation classification (keep/consolidate/archive/delete) is not yet complete.
@@ -79,6 +86,7 @@ STATUS: DRAFT
 - CLI command parser
 - Command handler service
 - Module: total-stabilization-service
+- Module: auth-service
 
 ### Data flow
 - Operator executes command with validated inputs.
@@ -107,7 +115,8 @@ STATUS: DRAFT
 
 ## 6. Security (Security Persona)
 ### Threats
-- Review spec for domain-specific threat model.
+- FR-4: The system must strengthen security posture by enforcing CSRF token checks plus same-origin protections for state-changing endpoints, with proxy-aware session-cookie security behavior.
+- FR-5: The system must add targeted automated tests for high-risk reliability/security paths (backup failures, retention branches, hardware apply toggles/CSRF, session cookie flags, Pironman compatibility parsing) without regressing existing behavior.
 - Derived from spec security section: - State-changing endpoints must enforce CSRF token checks plus same-origin protections (Origin/Referer policy), and session cookies must remain secure under direct TLS and trusted proxy TLS termination.
 
 ### Required controls

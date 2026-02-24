@@ -16,9 +16,41 @@
   2) When documentation hygiene runs
   3) Then every markdown file is classified as keep/consolidate/archive/delete with justification, no broken internal links remain, and files above the defined max length are split or reduced
 
+### TC-2
+- Title: Validate us-2 primary behavior.
+- Trace: US-2, FR-2, AC-2
+- Steps:
+  1) Given an automated backup run where local backup succeeds and Telegram upload fails
+  2) When the scheduler executes
+  3) Then the run is marked failed with clear cause and retention still enforces the configured local backup limit
+
+### TC-3
+- Title: Validate us-3 primary behavior.
+- Trace: US-3, FR-3, AC-2
+- Steps:
+  1) Given an automated backup run where local backup succeeds and Telegram upload fails
+  2) When the scheduler executes
+  3) Then the run is marked failed with clear cause and retention still enforces the configured local backup limit
+
+### TC-4
+- Title: Validate us-4 primary behavior.
+- Trace: US-4, FR-4, AC-3
+- Steps:
+  1) Given a state-changing request without valid CSRF and/or invalid origin context
+  2) When the endpoint is called
+  3) Then the request is denied deterministically and audited as a rejected action
+
+### TC-5
+- Title: Validate us-5 primary behavior.
+- Trace: US-5, FR-5, AC-2
+- Steps:
+  1) Given an automated backup run where local backup succeeds and Telegram upload fails
+  2) When the scheduler executes
+  3) Then the run is marked failed with clear cause and retention still enforces the configured local backup limit
+
 ## Negative / Abuse
 
-### TC-2
+### TC-6
 - Title: Handle edge behavior - A markdown document appears redundant by title or section overlap but is still referenced by automation/spec workflows; cleanup must detect these references before deletion and preserve traceability.
 - Trace: US-1, FR-1
 - Steps:
@@ -28,7 +60,7 @@
 
 ## Security
 
-### TC-3
+### TC-7
 - Title: Enforce security control - State-changing endpoints must enforce CSRF token checks plus same-origin protections (Origin/Referer policy), and session cookies must remain secure under direct TLS and trusted proxy TLS termination.
 - Trace: US-1, FR-1
 - Steps:

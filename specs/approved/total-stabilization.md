@@ -16,6 +16,10 @@ Requirement source: Provided explicitly by user in guided draft.
 
 ## 3. Functional Rules (traceable)
 - FR-1: The system must enforce a documentation asset strategy where only repository markdown and source files are used; no external media assets are introduced during stabilization and every referenced document path must resolve locally.
+- FR-2: The system must surface automated backup failures with explicit, actionable outcomes (logs and/or persisted evidence) and never silently ignore failed backup runs.
+- FR-3: The system must preserve deterministic local backup retention even when Telegram delivery is disabled or fails.
+- FR-4: The system must strengthen security posture by enforcing CSRF token checks plus same-origin protections for state-changing endpoints, with proxy-aware session-cookie security behavior.
+- FR-5: The system must add targeted automated tests for high-risk reliability/security paths (backup failures, retention branches, hardware apply toggles/CSRF, session cookie flags, Pironman compatibility parsing) without regressing existing behavior.
 
 ## 4. Edge Cases
 - A markdown document appears redundant by title or section overlap but is still referenced by automation/spec workflows; cleanup must detect these references before deletion and preserve traceability.
@@ -39,6 +43,9 @@ Requirement source: Provided explicitly by user in guided draft.
 
 ## 9. Acceptance Criteria
 - AC-1: Given the markdown inventory and reference scan, when documentation hygiene runs, then every markdown file is classified as keep/consolidate/archive/delete with justification, no broken internal links remain, and files above the defined max length are split or reduced.
+- AC-2: Given an automated backup run where local backup succeeds and Telegram upload fails, when the scheduler executes, then the run is marked failed with clear cause and retention still enforces the configured local backup limit.
+- AC-3: Given a state-changing request without valid CSRF and/or invalid origin context, when the endpoint is called, then the request is denied deterministically and audited as a rejected action.
+- AC-4: Given stabilization changes merged, when the full and targeted test suites execute, then all legacy tests remain green and all new stabilization tests pass.
 
 ## 10. Requirement Source Statement
 - All requirements in this draft were provided explicitly by the user.
