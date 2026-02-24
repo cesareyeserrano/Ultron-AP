@@ -1,25 +1,24 @@
 {
   "schemaVersion": 1,
   "feature": "hardware-stability-refactor",
-  "generatedAt": "2026-02-24T16:22:39.611Z",
+  "generatedAt": "2026-02-24T16:23:28.110Z",
   "completedStories": [
     "US-2",
     "US-3",
     "US-4",
     "US-5",
-    "US-6"
+    "US-6",
+    "US-7"
   ],
   "pendingStories": [
-    "US-1",
-    "US-7"
+    "US-1"
   ],
   "stories": [
     {
-      "id": "US-6",
-      "brief": "docs/implementation/hardware-stability-refactor/US-6.md",
+      "id": "US-7",
+      "brief": "docs/implementation/hardware-stability-refactor/US-7.md",
       "scaffoldFiles": [
-        "tests/hardware-stability-refactor/generated/tc-10-validate-timeout-cancel-cleanup-unlo.test.mjs",
-        "src/contracts/fr-2-the-hardware-apply-pipeline-must.js",
+        "tests/hardware-stability-refactor/generated/tc-11-validate-pi5-lightweight-resource-pr.test.mjs",
         "src/contracts/fr-3-integration-with-pironman-must-p.js"
       ],
       "verified": true

@@ -5,21 +5,21 @@
   "command": "node --test tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
   "commandSource": "node:test:file",
   "exitCode": 0,
-  "durationMs": 90,
+  "durationMs": 89,
   "timeoutMs": 120000,
-  "startedAt": "2026-02-24T16:22:31.710Z",
-  "finishedAt": "2026-02-24T16:22:31.803Z",
-  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.582667ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 52.91925",
+  "startedAt": "2026-02-24T16:23:23.741Z",
+  "finishedAt": "2026-02-24T16:23:23.832Z",
+  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.518208ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 43.915167",
   "stderrTail": "",
   "reason": "passed",
   "tcCoverage": {
     "available": true,
     "mode": "scaffold",
     "declared": 11,
-    "executable": 9,
-    "passing": 9,
+    "executable": 10,
+    "passing": 10,
     "failing": 0,
-    "missing": 2,
+    "missing": 1,
     "mapped": {
       "TC-1": {
         "found": true,
@@ -58,8 +58,8 @@
         "file": "tests/hardware-stability-refactor/generated/tc-9-enforce-security-control-enforce-par.test.mjs"
       },
       "TC-10": {
-        "found": false,
-        "file": null
+        "found": true,
+        "file": "tests/hardware-stability-refactor/generated/tc-10-validate-timeout-cancel-cleanup-unlo.test.mjs"
       },
       "TC-11": {
         "found": false,
@@ -83,17 +83,17 @@
       "US-2",
       "US-3",
       "US-4",
-      "US-5"
+      "US-5",
+      "US-6"
     ],
     "partial": [],
     "unverified": [
-      "US-6",
       "US-7"
     ]
   },
   "coverageConfidence": {
-    "score": 82,
-    "ratio": 0.8181818181818182,
+    "score": 91,
+    "ratio": 0.9090909090909091,
     "mode": "scaffold"
   },
   "evidenceFile": "docs/verification/hardware-stability-refactor.json"
