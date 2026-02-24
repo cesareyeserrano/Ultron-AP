@@ -7,9 +7,9 @@
   "exitCode": 0,
   "durationMs": 51,
   "timeoutMs": 120000,
-  "startedAt": "2026-02-24T02:10:19.230Z",
-  "finishedAt": "2026-02-24T02:10:19.281Z",
-  "stdoutTail": "✔ tc_1_validate_tc_1_behavior (0.351625ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 30.798958",
+  "startedAt": "2026-02-24T02:19:34.089Z",
+  "finishedAt": "2026-02-24T02:19:34.141Z",
+  "stdoutTail": "✔ tc_1_validate_tc_1_behavior (0.240375ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 30.424792",
   "stderrTail": "",
   "reason": "passed",
   "tcCoverage": {

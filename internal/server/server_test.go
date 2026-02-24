@@ -3,9 +3,12 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -97,4 +100,23 @@ func TestRecordBackupOutcome_LogsAction(t *testing.T) {
 	assert.Equal(t, "backup", logs[0].Source)
 	assert.Equal(t, "automated", logs[0].Action)
 	assert.Contains(t, []string{"success", "error"}, logs[0].Result)
+}
+
+func TestPerformAutomatedBackup_RetentionRunsOnTelegramError(t *testing.T) {
+	srv := setupTestServer(t)
+
+	backupDir := filepath.Join(filepath.Dir(srv.cfg.DBPath), "backups")
+	require.NoError(t, os.MkdirAll(backupDir, 0o755))
+	for i := 0; i < 10; i++ {
+		p := filepath.Join(backupDir, fmt.Sprintf("ultron-20000101-0000%02d.db", i))
+		require.NoError(t, os.WriteFile(p, []byte("old"), 0o644))
+	}
+
+	err := srv.performAutomatedBackup()
+	require.Error(t, err)
+	assert.True(t, strings.Contains(err.Error(), "telegram"))
+
+	files, readErr := os.ReadDir(backupDir)
+	require.NoError(t, readErr)
+	assert.LessOrEqual(t, len(files), 7)
 }

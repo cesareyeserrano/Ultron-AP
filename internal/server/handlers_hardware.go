@@ -46,18 +46,7 @@ func (s *Server) handleHardwareApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cfg := pironman.Config{
-		RGBColor:      sanitizeHex(r.FormValue("rgb_color")),
-		RGBBrightness: clampInt(formInt(r, "rgb_brightness"), 0, 100),
-		RGBStyle:      sanitizeStyle(r.FormValue("rgb_style")),
-		RGBSpeed:      clampInt(formInt(r, "rgb_speed"), 0, 100),
-		RGBEnable:     r.FormValue("rgb_enable") == "on",
-		FanMode:       clampInt(formInt(r, "fan_mode"), 0, 4),
-		FanLED:        sanitizeFanLED(r.FormValue("fan_led")),
-		OLEDEnable:    r.FormValue("oled_enable") == "on",
-		OLEDRotation:  sanitizeRotation(formInt(r, "oled_rotation")),
-		OLEDSleep:     clampInt(formInt(r, "oled_sleep"), 0, 3600),
-	}
+	cfg := parseHardwareConfig(r)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -89,6 +78,21 @@ func (s *Server) renderHardwareContent(cfg *pironman.Config) string {
 		RGBStyles: pironman.RGBStyles,
 		FanModes:  pironman.FanModes,
 	})
+}
+
+func parseHardwareConfig(r *http.Request) pironman.Config {
+	return pironman.Config{
+		RGBColor:      sanitizeHex(r.FormValue("rgb_color")),
+		RGBBrightness: clampInt(formInt(r, "rgb_brightness"), 0, 100),
+		RGBStyle:      sanitizeStyle(r.FormValue("rgb_style")),
+		RGBSpeed:      clampInt(formInt(r, "rgb_speed"), 0, 100),
+		RGBEnable:     r.FormValue("rgb_enable") == "on",
+		FanMode:       clampInt(formInt(r, "fan_mode"), 0, 4),
+		FanLED:        sanitizeFanLED(r.FormValue("fan_led")),
+		OLEDEnable:    r.FormValue("oled_enable") == "on",
+		OLEDRotation:  sanitizeRotation(formInt(r, "oled_rotation")),
+		OLEDSleep:     clampInt(formInt(r, "oled_sleep"), 0, 3600),
+	}
 }
 
 // --- Input sanitization helpers ---

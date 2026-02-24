@@ -202,6 +202,23 @@ func TestNotificationSave_RequiresCSRF(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 }
 
+func TestNotificationSave_RejectsOriginMismatch(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+
+	form := url.Values{
+		"csrf_token": {session.CSRFToken},
+		"bot_token":  {"token"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/notifications/telegram", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "http://evil.local")
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
 func TestMaskNotifConfig_MasksSensitiveFields(t *testing.T) {
 	nc := &database.NotificationConfig{
 		Channel: "telegram",
