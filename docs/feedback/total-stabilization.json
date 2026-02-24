@@ -33,6 +33,17 @@
       "severity": "high",
       "resolution": null,
       "resolvedAt": null
+    },
+    {
+      "id": "FB-4",
+      "addedAt": "2026-02-24T02:58:34.179Z",
+      "source": "internal",
+      "linkedRef": "FR-4,FR-5",
+      "category": "improvement",
+      "description": "Production-readiness execution completed on Pi host 192.168.1.29: base performance and backup-restore integrity passed, auth/CSRF baseline passed, but browser security headers and least-privilege host hardening remain open. Supply-chain CVE verification could not be completed due environment limits (no govulncheck/network access) and must run in CI-connected security stage.",
+      "severity": "high",
+      "resolution": null,
+      "resolvedAt": null
     }
   ]
 }
