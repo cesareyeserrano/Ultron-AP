@@ -33,6 +33,17 @@
       "severity": "medium",
       "resolution": null,
       "resolvedAt": null
+    },
+    {
+      "id": "FB-4",
+      "addedAt": "2026-02-24T20:12:00.237Z",
+      "source": "user-testing",
+      "linkedRef": "FR-4",
+      "category": "improvement",
+      "description": "Non-intrusive policy hardening: removed helper fallback to pironman CLI read path and changed hardware availability check to require real Pironman runtime reachability. This prevents Ultron from implying hardware availability when Pironman stack is down and avoids host-side side effects from fallback execution.",
+      "severity": "high",
+      "resolution": null,
+      "resolvedAt": null
     }
   ]
 }
