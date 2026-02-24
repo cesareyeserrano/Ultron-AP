@@ -234,8 +234,24 @@ func TestDashboard_RendersWithContent(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	body := rec.Body.String()
 	assert.Contains(t, body, "sse-connect")
+	assert.Contains(t, body, "/static/js/sse.js")
 	assert.Contains(t, body, "Docker Containers")
 	assert.Contains(t, body, "Services")
+}
+
+func TestSettings_DoesNotEnableSSE(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/settings", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	body := rec.Body.String()
+	assert.NotContains(t, body, "sse-connect")
+	assert.NotContains(t, body, "/static/js/sse.js")
 }
 
 // --- GatherDashboardData Tests ---

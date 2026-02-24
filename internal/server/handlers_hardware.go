@@ -10,16 +10,18 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/pironman"
 )
 
-type hardwarePageData struct {
+type hardwareViewData struct {
 	Available bool
+	CSRFToken string
 	Config    *pironman.Config
 	RGBStyles []string
 	FanModes  map[int]string
 }
 
 func (s *Server) handleHardwarePage(w http.ResponseWriter, r *http.Request) {
-	data := hardwarePageData{
+	data := hardwareViewData{
 		Available: pironman.Available(),
+		CSRFToken: s.sessionCSRFToken(r),
 		RGBStyles: pironman.RGBStyles,
 		FanModes:  pironman.FanModes,
 	}
@@ -57,7 +59,7 @@ func (s *Server) handleHardwareApply(w http.ResponseWriter, r *http.Request) {
 			`<div class="rounded-lg bg-danger/10 border border-danger/30 p-3 mb-4 text-sm text-danger">%s</div>`,
 			html.EscapeString(err.Error()),
 		)
-		fmt.Fprint(w, s.renderHardwareContent(&cfg))
+		fmt.Fprint(w, s.renderHardwareContent(&cfg, s.sessionCSRFToken(r)))
 		return
 	}
 
@@ -68,12 +70,13 @@ func (s *Server) handleHardwareApply(w http.ResponseWriter, r *http.Request) {
 		applied = &cfg
 	}
 
-	fmt.Fprint(w, s.renderHardwareContent(applied))
+	fmt.Fprint(w, s.renderHardwareContent(applied, s.sessionCSRFToken(r)))
 }
 
-func (s *Server) renderHardwareContent(cfg *pironman.Config) string {
-	return s.renderPartial("partials/hardware-form.html", hardwarePageData{
+func (s *Server) renderHardwareContent(cfg *pironman.Config, csrfToken string) string {
+	return s.renderPartial("partials/hardware-form.html", hardwareViewData{
 		Available: true,
+		CSRFToken: csrfToken,
 		Config:    cfg,
 		RGBStyles: pironman.RGBStyles,
 		FanModes:  pironman.FanModes,

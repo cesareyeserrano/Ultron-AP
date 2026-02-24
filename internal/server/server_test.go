@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -61,6 +61,19 @@ func TestHealthEndpoint_ReturnsJSON(t *testing.T) {
 	assert.Equal(t, "ok", body["status"])
 }
 
+func TestHealthEndpoint_SetsSecurityHeaders(t *testing.T) {
+	srv := setupTestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rec := httptest.NewRecorder()
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, "nosniff", rec.Header().Get("X-Content-Type-Options"))
+	assert.Equal(t, "DENY", rec.Header().Get("X-Frame-Options"))
+	assert.Equal(t, "no-referrer", rec.Header().Get("Referrer-Policy"))
+	assert.NotEmpty(t, rec.Header().Get("Content-Security-Policy-Report-Only"))
+}
+
 func TestHealthEndpoint_PostNotAllowed(t *testing.T) {
 	srv := setupTestServer(t)
 
@@ -104,6 +117,12 @@ func TestRecordBackupOutcome_LogsAction(t *testing.T) {
 
 func TestPerformAutomatedBackup_RetentionRunsOnTelegramError(t *testing.T) {
 	srv := setupTestServer(t)
+	srv.ApplyBackupConfig(database.BackupConfig{
+		Enabled:         true,
+		IntervalHours:   24,
+		RetentionCount:  7,
+		DestinationMode: "local_plus_telegram",
+	})
 
 	backupDir := filepath.Join(filepath.Dir(srv.cfg.DBPath), "backups")
 	require.NoError(t, os.MkdirAll(backupDir, 0o755))

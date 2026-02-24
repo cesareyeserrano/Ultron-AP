@@ -100,6 +100,8 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
 		return
 	}
+	rc := http.NewResponseController(w)
+	_ = rc.SetWriteDeadline(time.Time{})
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -123,6 +125,7 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				return
 			}
+			_ = rc.SetWriteDeadline(time.Time{})
 			w.Write(data)
 			flusher.Flush()
 		}
@@ -244,4 +247,3 @@ func (s *Server) renderPartial(name string, data interface{}) string {
 	}
 	return buf.String()
 }
-

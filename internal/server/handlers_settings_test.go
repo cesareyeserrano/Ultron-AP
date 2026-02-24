@@ -277,3 +277,54 @@ func TestIsSameOriginRequest_AllowsProxyHTTPSOrigin(t *testing.T) {
 	req.Header.Set("Origin", "https://example.local")
 	assert.True(t, isSameOriginRequest(req))
 }
+
+func TestBackupConfigSave_RequiresCSRF(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+
+	form := url.Values{
+		"csrf_token": {"wrong-token"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/backup/config", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestBackupConfigSave_PersistsAndApplies(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+
+	form := url.Values{
+		"csrf_token":         {session.CSRFToken},
+		"enabled":            {"on"},
+		"interval_hours":     {"12"},
+		"retention_count":    {"9"},
+		"destination_mode":   {"local_plus_telegram"},
+		"local_path":         {"/tmp/ultron-backups"},
+		"encrypt_enabled":    {"on"},
+		"encryption_key_ref": {"env:ULTRON_BACKUP_KEY"},
+		"upload_timeout_sec": {"45"},
+		"max_upload_size_mb": {"80"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/backup/config", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	cfg, err := srv.db.GetBackupConfig()
+	require.NoError(t, err)
+	assert.True(t, cfg.Enabled)
+	assert.Equal(t, 12, cfg.IntervalHours)
+	assert.Equal(t, 9, cfg.RetentionCount)
+	assert.Equal(t, "local_plus_telegram", cfg.DestinationMode)
+	assert.Equal(t, "/tmp/ultron-backups", cfg.LocalPath)
+	assert.True(t, cfg.EncryptEnabled)
+	assert.Equal(t, "env:ULTRON_BACKUP_KEY", cfg.EncryptionKeyRef)
+	assert.Equal(t, 45, cfg.UploadTimeoutSec)
+	assert.Equal(t, 80, cfg.MaxUploadSizeMB)
+}

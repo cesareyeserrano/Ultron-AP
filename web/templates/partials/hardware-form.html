@@ -1,5 +1,6 @@
 {{define "partials/hardware-form.html"}}
 <div id="hardware-form">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
     <!-- RGB Section -->
     <div class="bg-card rounded-xl border border-border p-5 mb-4">
         <h2 class="text-sm font-semibold text-text mb-4 flex items-center gap-2">

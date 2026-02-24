@@ -43,18 +43,24 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, page string, tit
 		}
 	}
 
-	// Get CSRF token from session
-	if cookie, err := r.Cookie("session"); err == nil {
-		session, err := s.db.GetSession(cookie.Value)
-		if err == nil && session != nil {
-			data.CSRFToken = session.CSRFToken
-		}
-	}
+	data.CSRFToken = s.sessionCSRFToken(r)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := tmpl.Execute(w, data); err != nil {
 		log.Printf("Failed to execute template %s: %v", page, err)
 	}
+}
+
+func (s *Server) sessionCSRFToken(r *http.Request) string {
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		return ""
+	}
+	session, err := s.db.GetSession(cookie.Value)
+	if err != nil || session == nil {
+		return ""
+	}
+	return session.CSRFToken
 }
 
 // formatUptime formats a duration into a human-readable string like "2d 5h 30m" or "45m".

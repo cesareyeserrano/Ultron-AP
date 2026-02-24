@@ -189,20 +189,83 @@
                         </div>
                         <p class="text-xs text-text-muted mt-1">5 – 300</p>
                     </div>
-                    <div>
-                        <label class="text-xs text-text-muted block mb-1">Auto Backup</label>
-                        <div class="flex items-center gap-2">
-                            <input type="number" name="backup_interval_hours" value="{{.Content.Perf.BackupIntervalHours}}" min="1" max="720"
-                                class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                            <span class="text-xs text-text-muted shrink-0">hrs</span>
-                        </div>
-                        <p class="text-xs text-text-muted mt-1">1 – 720 (30d)</p>
-                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
                 </div>
                 <div id="perf-status"></div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Backup Configuration -->
+    <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Backup Module</h2>
+        <div class="bg-surface rounded-lg border border-border p-4">
+            <p class="text-xs text-text-muted mb-4">Backup scheduler and destination pipeline settings. Changes apply immediately without restart.</p>
+            <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <label class="flex items-center gap-2 text-sm text-text">
+                        <input type="checkbox" name="enabled" {{if .Content.Backup.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
+                        Backup enabled
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-text">
+                        <input type="checkbox" name="encrypt_enabled" {{if .Content.Backup.EncryptEnabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
+                        Encrypt artifact
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Interval</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="interval_hours" value="{{.Content.Backup.IntervalHours}}" min="1" max="720" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <span class="text-xs text-text-muted shrink-0">hrs</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Retention</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="retention_count" value="{{.Content.Backup.RetentionCount}}" min="1" max="200" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <span class="text-xs text-text-muted shrink-0">files</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Upload timeout</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="upload_timeout_sec" value="{{.Content.Backup.UploadTimeoutSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <span class="text-xs text-text-muted shrink-0">sec</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Max upload size</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="max_upload_size_mb" value="{{.Content.Backup.MaxUploadSizeMB}}" min="1" max="1024" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <span class="text-xs text-text-muted shrink-0">MB</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Destination mode</label>
+                        <select name="destination_mode" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <option value="local_only" {{if eq .Content.Backup.DestinationMode "local_only"}}selected{{end}}>Local only</option>
+                            <option value="local_plus_telegram" {{if eq .Content.Backup.DestinationMode "local_plus_telegram"}}selected{{end}}>Local + Telegram</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Local backup path (optional)</label>
+                        <input type="text" name="local_path" value="{{.Content.Backup.LocalPath}}" placeholder="/var/lib/ultron-ap/backups" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-xs text-text-muted block mb-1">Encryption key reference (optional)</label>
+                        <input type="text" name="encryption_key_ref" value="{{.Content.Backup.EncryptionKeyRef}}" placeholder="env:ULTRON_BACKUP_KEY or kms://..." class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save Backup Settings</button>
+                </div>
+                <div id="backup-config-status"></div>
             </form>
         </div>
     </section>

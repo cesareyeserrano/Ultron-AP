@@ -23,6 +23,7 @@ type settingsData struct {
 	Telegram *notifDisplay
 	Email    *notifDisplay
 	Perf     database.PerformanceConfig
+	Backup   database.BackupConfig
 	Flash    string
 }
 
@@ -52,6 +53,11 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		data.Perf = perf
 	} else {
 		data.Perf = database.DefaultPerformanceConfig()
+	}
+	if backupCfg, err := s.db.GetBackupConfig(); err == nil {
+		data.Backup = backupCfg
+	} else {
+		data.Backup = database.DefaultBackupConfig()
 	}
 
 	s.render(w, r, "settings.html", "Settings", "settings", data)
@@ -343,9 +349,6 @@ func (s *Server) handlePerformanceSave(w http.ResponseWriter, r *http.Request) {
 	if v, err := strconv.Atoi(r.FormValue("systemd_interval_sec")); err == nil && v >= 5 && v <= 300 {
 		cfg.SystemdIntervalSec = v
 	}
-	if v, err := strconv.Atoi(r.FormValue("backup_interval_hours")); err == nil && v >= 1 && v <= 720 {
-		cfg.BackupIntervalHours = v
-	}
 
 	log.Printf("settings: saving performance config: SSE=%ds, Disk=%dm, Docker=%ds, Systemd=%ds, Backup=%dh",
 		cfg.SSEIntervalSec, cfg.DiskIntervalMin, cfg.DockerIntervalSec, cfg.SystemdIntervalSec, cfg.BackupIntervalHours)
@@ -363,6 +366,47 @@ func (s *Server) handlePerformanceSave(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
 		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>` +
 		`Settings applied</div>`))
+}
+
+func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) {
+	if !s.validateCSRF(w, r) {
+		return
+	}
+
+	cfg := database.DefaultBackupConfig()
+	cfg.Enabled = r.FormValue("enabled") == "on"
+	if v, err := strconv.Atoi(r.FormValue("interval_hours")); err == nil {
+		cfg.IntervalHours = v
+	}
+	if v, err := strconv.Atoi(r.FormValue("retention_count")); err == nil {
+		cfg.RetentionCount = v
+	}
+	mode := strings.TrimSpace(r.FormValue("destination_mode"))
+	if mode != "" {
+		cfg.DestinationMode = mode
+	}
+	cfg.LocalPath = strings.TrimSpace(r.FormValue("local_path"))
+	cfg.EncryptEnabled = r.FormValue("encrypt_enabled") == "on"
+	cfg.EncryptionKeyRef = strings.TrimSpace(r.FormValue("encryption_key_ref"))
+	if v, err := strconv.Atoi(r.FormValue("upload_timeout_sec")); err == nil {
+		cfg.UploadTimeoutSec = v
+	}
+	if v, err := strconv.Atoi(r.FormValue("max_upload_size_mb")); err == nil {
+		cfg.MaxUploadSizeMB = v
+	}
+
+	if err := s.db.SaveBackupConfig(cfg); err != nil {
+		log.Printf("settings: failed to save backup config: %v", err)
+		http.Error(w, "Failed to save backup settings", http.StatusInternalServerError)
+		return
+	}
+	s.ApplyBackupConfig(cfg)
+
+	w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup settings updated", "type": "success"}}`)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
+		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>` +
+		`Backup settings applied</div>`))
 }
 
 func (s *Server) handleSettingsBackup(w http.ResponseWriter, r *http.Request) {

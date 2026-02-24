@@ -48,3 +48,19 @@ func (s *Server) redirectOrUnauthorized(w http.ResponseWriter, r *http.Request) 
 	}
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
+
+func (s *Server) securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "no-referrer")
+		h.Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+		// Enforce-ready CSP can break inline templates/scripts; run in report-only first.
+		h.Set("Content-Security-Policy-Report-Only", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+		if isHTTPSRequest(r) {
+			h.Set("Strict-Transport-Security", "max-age=15552000; includeSubDomains")
+		}
+		next.ServeHTTP(w, r)
+	})
+}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cesareyeserrano/ultron-ap/internal/pironman"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -73,4 +74,10 @@ func TestHardwareApply_AcceptsValidCSRFThenChecksAvailability(t *testing.T) {
 	srv.httpServer.Handler.ServeHTTP(rec, req)
 	// If CSRF passes, next gate in this environment is pironman availability.
 	assert.Equal(t, http.StatusServiceUnavailable, rec.Code)
+}
+
+func TestRenderHardwareContent_IncludesCSRFToken(t *testing.T) {
+	srv := setupTestServer(t)
+	html := srv.renderHardwareContent(&pironman.Config{RGBColor: "00ff00"}, "csrf-123")
+	assert.Contains(t, html, `name="csrf_token" value="csrf-123"`)
 }

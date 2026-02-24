@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -52,6 +53,10 @@ type Server struct {
 
 	// backupIntervalHours holds the automated backup interval in hours (atomic).
 	backupIntervalHours atomic.Int64
+	backupEnabled       atomic.Int64
+	backupRetention     atomic.Int64
+	backupDestination   atomic.Value // string
+	backupLocalPath     atomic.Value // string
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -65,9 +70,9 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 	s := &Server{
 		httpServer: &http.Server{
 			Addr:         cfg.Addr(),
-			Handler:      mux,
+			Handler:      nil,
 			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 0, // Disabled for SSE long-lived connections
+			WriteTimeout: 15 * time.Second,
 			IdleTimeout:  120 * time.Second,
 		},
 		cfg:        cfg,
@@ -84,9 +89,14 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 	}
 	s.sseIntervalNs.Store(int64(5 * time.Second))
 	s.backupIntervalHours.Store(24) // Default 24h
+	s.backupEnabled.Store(1)
+	s.backupRetention.Store(7)
+	s.backupDestination.Store("local_only")
+	s.backupLocalPath.Store("")
 
 	s.parseTemplates()
 	s.registerRoutes(mux)
+	s.httpServer.Handler = s.securityHeaders(mux)
 	s.startSSEBroadcast()
 	s.startRetentionJob()
 	s.startBackupJob()
@@ -100,9 +110,6 @@ func (s *Server) ApplyPerformanceConfig(cfg database.PerformanceConfig) {
 	if cfg.SSEIntervalSec >= 2 {
 		s.sseIntervalNs.Store(int64(time.Duration(cfg.SSEIntervalSec) * time.Second))
 	}
-	if cfg.BackupIntervalHours >= 1 {
-		s.backupIntervalHours.Store(int64(cfg.BackupIntervalHours))
-	}
 	if s.reader != nil && cfg.DiskIntervalMin >= 1 {
 		s.reader.SetDiskInterval(time.Duration(cfg.DiskIntervalMin) * time.Minute)
 	}
@@ -112,6 +119,22 @@ func (s *Server) ApplyPerformanceConfig(cfg database.PerformanceConfig) {
 	if s.systemd != nil && cfg.SystemdIntervalSec >= 5 {
 		s.systemd.SetInterval(time.Duration(cfg.SystemdIntervalSec) * time.Second)
 	}
+}
+
+func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
+	if cfg.Enabled {
+		s.backupEnabled.Store(1)
+	} else {
+		s.backupEnabled.Store(0)
+	}
+	if cfg.IntervalHours >= 1 {
+		s.backupIntervalHours.Store(int64(cfg.IntervalHours))
+	}
+	if cfg.RetentionCount >= 1 {
+		s.backupRetention.Store(int64(cfg.RetentionCount))
+	}
+	s.backupDestination.Store(cfg.DestinationMode)
+	s.backupLocalPath.Store(cfg.LocalPath)
 }
 
 // startBackupJob runs automated backups at the configured interval.
@@ -127,6 +150,11 @@ func (s *Server) startBackupJob() {
 			intervalHours := s.backupIntervalHours.Load()
 			if intervalHours < 1 {
 				intervalHours = 24
+			}
+			if s.backupEnabled.Load() == 0 {
+				log.Printf("backup: disabled, rechecking in 1h")
+				timer.Reset(1 * time.Hour)
+				continue
 			}
 
 			log.Printf("backup: running automated backup (interval=%dh)", intervalHours)
@@ -152,8 +180,21 @@ func (s *Server) recordBackupOutcome(err error) {
 func (s *Server) performAutomatedBackup() error {
 	log.Println("backup: starting automated backup job...")
 
+	retentionCount := int(s.backupRetention.Load())
+	if retentionCount < 1 {
+		retentionCount = 7
+	}
+	destinationMode, _ := s.backupDestination.Load().(string)
+	if destinationMode == "" {
+		destinationMode = "local_only"
+	}
+	backupPathOverride, _ := s.backupLocalPath.Load().(string)
+
 	// 1. Create local backup file
 	backupDir := filepath.Join(filepath.Dir(s.cfg.DBPath), "backups")
+	if strings.TrimSpace(backupPathOverride) != "" {
+		backupDir = filepath.Clean(backupPathOverride)
+	}
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
 		log.Printf("backup: failed to create backup dir: %v", err)
 		return fmt.Errorf("failed to create backup directory: %w", err)
@@ -175,16 +216,21 @@ func (s *Server) performAutomatedBackup() error {
 			log.Printf("backup: retention read failed: %v", err)
 			return
 		}
-		if len(files) <= 7 {
+		if len(files) <= retentionCount {
 			return
 		}
-		for i := 0; i < len(files)-7; i++ {
+		for i := 0; i < len(files)-retentionCount; i++ {
 			path := filepath.Join(backupDir, files[i].Name())
 			if err := os.Remove(path); err != nil {
 				log.Printf("backup: retention remove failed for %s: %v", path, err)
 			}
 		}
 	}()
+
+	if destinationMode == "local_only" {
+		log.Printf("backup: destination=%s, skipping remote upload", destinationMode)
+		return nil
+	}
 
 	// 2. Send to Telegram if configured
 	nc, err := s.db.GetNotificationConfig("telegram")
@@ -286,6 +332,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/notifications/{channel}", s.requireAuth(http.HandlerFunc(s.handleNotificationSave)))
 	mux.Handle("POST /api/notifications/{channel}/test", s.requireAuth(http.HandlerFunc(s.handleNotificationTest)))
 	mux.Handle("POST /api/performance", s.requireAuth(http.HandlerFunc(s.handlePerformanceSave)))
+	mux.Handle("POST /api/backup/config", s.requireAuth(http.HandlerFunc(s.handleBackupConfigSave)))
 	mux.Handle("POST /api/services/{name}/start", s.requireAuth(http.HandlerFunc(s.handleServiceStart)))
 	mux.Handle("POST /api/services/{name}/stop", s.requireAuth(http.HandlerFunc(s.handleServiceStop)))
 	mux.Handle("POST /api/services/{name}/restart", s.requireAuth(http.HandlerFunc(s.handleServiceRestart)))

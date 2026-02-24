@@ -90,6 +90,12 @@ func main() {
 	// remaining fields not yet applied above).
 	srv := server.New(cfg, db, reader, collector, dockerMon, systemdMon, alertEng)
 	srv.ApplyPerformanceConfig(perf)
+	backupCfg, err := db.GetBackupConfig()
+	if err != nil {
+		log.Printf("backup config unavailable, using defaults: %v", err)
+		backupCfg = database.DefaultBackupConfig()
+	}
+	srv.ApplyBackupConfig(backupCfg)
 
 	// Start server in goroutine
 	errCh := make(chan error, 1)
