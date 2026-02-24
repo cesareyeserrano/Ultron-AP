@@ -1,0 +1,16 @@
+{
+  "feature": "total-stabilization",
+  "entries": [
+    {
+      "id": "FB-1",
+      "addedAt": "2026-02-24T02:43:48.857Z",
+      "source": "internal",
+      "linkedRef": "FR-4,FR-5",
+      "category": "improvement",
+      "description": "Pi5 E2E audit identified resource and security hardening gaps: SSE currently runs globally and should be dashboard-only with adaptive polling by active clients; add baseline security headers; harden systemd unit and sudo scope; split SSE/non-SSE write timeout behavior; encrypt notification secrets and backup artifacts; and add trusted-proxy IP handling plus DB indexes for alert/action/session hot paths.",
+      "severity": "high",
+      "resolution": null,
+      "resolvedAt": null
+    }
+  ]
+}
