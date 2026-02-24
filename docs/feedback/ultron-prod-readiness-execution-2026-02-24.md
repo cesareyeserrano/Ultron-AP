@@ -113,6 +113,7 @@ Interpretation:
 - `FB-1`: improvement (Pi5 efficiency + security hardening roadmap)
 - `FB-2`: high bug (hardware page CSRFToken template failure in production)
 - `FB-3`: requirement-gap (backup module must be fully parameterizable from settings)
+- `FB-4`: improvement (production-readiness execution summary and pending hardening closures)
 
 ## Decision Snapshot
 
