@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "feature": "hardware-stability-refactor",
+  "generatedAt": "2026-02-24T16:17:08.177Z",
+  "completedStories": [],
+  "pendingStories": [
+    "US-1",
+    "US-2",
+    "US-3",
+    "US-4",
+    "US-5",
+    "US-6",
+    "US-7"
+  ],
+  "stories": [
+    {
+      "id": "US-1",
+      "brief": "docs/implementation/hardware-stability-refactor/US-1.md",
+      "scaffoldFiles": [
+        "tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+        "tests/hardware-stability-refactor/generated/tc-6-handle-edge-behavior-user-modifies-m.test.mjs",
+        "tests/hardware-stability-refactor/generated/tc-7-handle-edge-behavior-user-sends-repe.test.mjs",
+        "tests/hardware-stability-refactor/generated/tc-8-enforce-security-control-keep-privil.test.mjs",
+        "tests/hardware-stability-refactor/generated/tc-9-enforce-security-control-enforce-par.test.mjs",
+        "src/contracts/fr-1-hardware-settings-updates-must-b.js"
+      ],
+      "verified": false
+    }
+  ]
+}

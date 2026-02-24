@@ -84,6 +84,22 @@
   2) When an invalid or abusive action is attempted
   3) Then access is blocked and evidence is logged
 
+### TC-10
+- Title: Validate timeout/cancel cleanup unlock behavior.
+- Trace: US-6, FR-2, FR-3, AC-2, AC-3
+- Steps:
+  1) Given one apply operation exceeds timeout
+  2) When cancellation/cleanup executes
+  3) Then execution lock is released and next apply can run normally
+
+### TC-11
+- Title: Validate Pi5 lightweight resource profile under repeated applies.
+- Trace: US-7, FR-3, AC-4
+- Steps:
+  1) Given repeated hardware apply operations on Pi5
+  2) When resource metrics are observed
+  3) Then no sustained abnormal CPU/RAM/IO overhead is introduced
+
 ## Edge Cases
 
 1. User modifies many controls quickly before pressing apply.

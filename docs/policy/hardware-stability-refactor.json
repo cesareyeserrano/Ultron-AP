@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "limited": false,
+  "feature": "hardware-stability-refactor",
+  "evaluatedAt": "2026-02-24T16:16:58.320Z",
+  "policy": {
+    "allowDependencyChanges": false,
+    "blockedImports": [],
+    "blockedPaths": []
+  },
+  "files": {
+    "changed": [
+      "backlog/hardware-stability-refactor/backlog.md",
+      "cmd/ultron-helper/main.go",
+      "docs/plan/hardware-stability-refactor.md",
+      "internal/pironman/controls.go",
+      "tests/hardware-stability-refactor/tests.md",
+      "web/templates/hardware.html",
+      "web/templates/partials/hardware-form.html"
+    ],
+    "dependencyChanged": []
+  },
+  "gaps": {
+    "dependency_drift": [],
+    "forbidden_path": [],
+    "forbidden_import": []
+  },
+  "gapSummary": {
+    "dependency_drift": 0,
+    "forbidden_path": 0,
+    "forbidden_import": 0
+  },
+  "issues": [],
+  "warnings": [],
+  "evidenceFile": "docs/policy/hardware-stability-refactor.json"
+}

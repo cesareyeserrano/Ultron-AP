@@ -1,0 +1,16 @@
+{
+  "testFiles": [
+    "tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+    "tests/hardware-stability-refactor/generated/tc-6-handle-edge-behavior-user-modifies-m.test.mjs",
+    "tests/hardware-stability-refactor/generated/tc-7-handle-edge-behavior-user-sends-repe.test.mjs",
+    "tests/hardware-stability-refactor/generated/tc-8-enforce-security-control-keep-privil.test.mjs",
+    "tests/hardware-stability-refactor/generated/tc-9-enforce-security-control-enforce-par.test.mjs"
+  ],
+  "interfaceFiles": [
+    "src/contracts/fr-1-hardware-settings-updates-must-b.js"
+  ],
+  "baseConfigs": [],
+  "feature": "hardware-stability-refactor",
+  "stackFamily": "node",
+  "generatedAt": "2026-02-24T16:17:08.177Z"
+}

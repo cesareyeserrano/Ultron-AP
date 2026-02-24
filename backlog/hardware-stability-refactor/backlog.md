@@ -17,6 +17,11 @@
   - Notes: Covers 2 story slice(s) with explicit acceptance traces.
   - Trace: FR-4, FR-5
 
+## Guardrails (Non-Negotiable)
+- Pi5 efficiency: keep runtime overhead almost imperceptible (no busy loops, no uncontrolled retries, no unnecessary process fan-out).
+- Security: maintain least-privilege (`NoNewPrivileges=true` for web process) and execute privileged hardware actions only through local helper boundary.
+- Determinism: no stuck `busy` state is acceptable after timeout/error/cancel paths.
+
 ## User Stories
 
 ### US-1
@@ -49,3 +54,17 @@
 - Trace: FR-5, AC-1
 - Acceptance Criteria:
   - Given an authenticated admin on hardware page, when fields are edited, then no apply request is sent until explicit apply action is triggered.
+
+### US-6
+- As a Platform maintainer, I want timeout/cancel paths to always release execution locks and child processes, so that the next apply request can run without browser restart.
+- Trace: FR-2, FR-3, AC-2, AC-3
+- Acceptance Criteria:
+  - Given an apply timeout, when cancellation is triggered, then lock state is released and helper is ready for next request.
+  - Given a timed-out apply, when a new apply is submitted, then system processes it normally without stale busy state.
+
+### US-7
+- As a Product owner, I want hardware refactor to preserve lightweight Pi5 behavior, so that Ultron remains low-resource in production.
+- Trace: FR-3, AC-4
+- Acceptance Criteria:
+  - Given repeated hardware applies, when resource metrics are sampled, then no sustained abnormal CPU/RAM/IO increase is introduced by refactor.
+  - Given idle hardware screen, when no apply is running, then background workload remains minimal.

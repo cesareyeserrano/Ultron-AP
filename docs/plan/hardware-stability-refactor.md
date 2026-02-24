@@ -1,6 +1,6 @@
 # Plan: hardware-stability-refactor
 
-STATUS: DRAFT
+STATUS: READY
 
 ## 1. Intent (from approved spec)
 - Retrieval mode: section-level
@@ -42,10 +42,8 @@ STATUS: DRAFT
 ### Retrieval metadata
 - Retrieval mode: section-level
 - Retrieved sections: 1. Context, 2. Actors, 3. Functional Rules, 7. Security Considerations, 8. Out of Scope, 9. Acceptance Criteria
-- Summary:
--
-- Success looks like:
--
+- Summary: Refactor de estabilidad del modulo hardware con prioridad en control determinista de operaciones, bajo consumo en Pi5 y seguridad por boundary privilegiado.
+- Success looks like: sin `busy` atascado, sin auto-apply, sin privilegios directos en web process, y evidencia trazable por cada apply.
 
 ## 2. Discovery Review (Discovery Persona)
 ### Problem framing
@@ -53,14 +51,21 @@ STATUS: DRAFT
 - Core rule to preserve: Hardware settings updates must be explicitly user-triggered (no auto-apply on field change), and only one apply operation can execute at a time.
 
 ### Constraints and dependencies
-- Constraints: Constraints identified in approved spec
-- Dependencies: Dependencies identified in approved spec
+- Constraints:
+- Mantener Ultron liviano en Pi5: evitar loops de polling agresivo, evitar spawning redundante de procesos, y minimizar IO.
+- Mantener arquitectura segura: `NoNewPrivileges=true` en web process, helper privilegiado único con allowlist/validación.
+- Dependencias:
+- Ultron helper (`/run/ultron-helper.sock`), Pironman runtime local, endpoints web hardware con CSRF.
 
 ### Success metrics
-- Acceptance criteria defined in approved spec
+- 0 incidentes de `pironman apply busy` atascado en pruebas repetidas.
+- 0 uso de `sudo` directo en código del web process.
+- Flujo UX determinista: editar -> apply -> estado final (success/fail) sin bloqueo de UI.
+- Huella de recursos estable durante operaciones repetidas de hardware en Pi5.
 
 ### Key assumptions
-- Assumptions embedded in approved spec scope
+- Pironman puede presentar latencia variable, por lo que el contrato debe desacoplar request HTTP de operación hardware prolongada.
+- El operador acepta un flujo explícito de apply en lugar de auto-apply por campo.
 
 ### Discovery rigor profile
 - Discovery interview mode: quick
@@ -69,10 +74,15 @@ STATUS: DRAFT
 
 ## 3. Scope
 ### In scope
--
+- Refactor del pipeline hardware apply (backend + helper + UX de formulario).
+- Control de concurrencia determinista y estado de operación.
+- Observabilidad de hardware apply (request id, duración, resultado, error).
+- Endurecimiento de boundary privilegiado y validación de parámetros.
 
 ### Out of scope
--
+- Rediseño visual integral del panel.
+- Cambios funcionales fuera del módulo hardware.
+- Migraciones tecnológicas amplias no requeridas por estabilidad/seguridad.
 
 ## 4. Product Review (Product Persona)
 ### Business value
@@ -80,26 +90,30 @@ STATUS: DRAFT
 - Secondary value from supporting rule: The hardware apply pipeline must expose deterministic operation state (`idle|applying|failed|applied`) so UI and logs never leave ambiguous "busy" behavior.
 
 ### Success metric
-- Primary KPI: Acceptance criteria defined in approved spec
-- Ship only if metric has baseline and target.
+- Primary KPI: operación hardware estable bajo ráfaga de cambios sin atascos ni degradación de UX.
+- Gate de salida: pruebas funcionales + seguridad + rendimiento en Pi5 aprobadas.
 
 ### Assumptions to validate
-- Assumptions embedded in approved spec scope
-- Validate dependency and constraint impact before implementation start.
-- Discovery rigor policy: Before broad implementation, re-run discovery in standard/deep mode if assumptions remain unresolved.
+- Validar si Pironman API local está disponible de forma consistente para reducir dependencia de CLI.
+- Validar latencia media/p95 de apply con carga normal de operación.
+- Confirmar que no existe regresión de consumo en módulos no hardware.
 
 ## 5. Architecture (Architect Persona)
 ### Components
-- CLI command parser
-- Command handler service
-- Module: hardware-stability-refactor-service
-- Module: auth-service
-- Module: account-repository
+- Hardware form UI (explicit apply action).
+- Hardware apply handler (request contract + CSRF + sync semantics).
+- Privileged helper client (IPC over Unix socket).
+- Privileged helper server (serialized hardware execution + timeout/cancel cleanup).
+- Pironman adapter (preferred stable path + fallback policy).
+- Audit/telemetry layer for hardware operations.
 
 ### Data flow
-- Operator executes command with validated inputs.
-- Service layer enforces FR logic and delegates to adapters.
-- Result is persisted/emitted with deterministic status and error text.
+- Operator edita parámetros localmente en UI.
+- Operator dispara `Apply` explícito (1 request).
+- Handler valida sesión/CSRF y crea `request_id`.
+- Handler envía comando al helper por socket local.
+- Helper valida payload, ejecuta apply controlado y retorna estado.
+- Handler responde con resultado y estado consistente; logs/auditoría quedan registrados.
 
 ### Key decisions
 - Keep FR to implementation traceability explicit by preserving story and TC identifiers.
@@ -112,14 +126,14 @@ STATUS: DRAFT
 - Scope drift risk: block changes not linked to approved FR/AC entries.
 
 ### Observability (logs/metrics/tracing)
-- Structured command logs with feature and story IDs.
-- Metrics for command success/failure and runtime duration.
-- Trace markers for dependency boundaries.
+- Log estructurado por apply: `request_id`, `duration_ms`, `result`, `error`.
+- Métrica de tasa de éxito/fallo y latencia p50/p95.
+- Señales explícitas de timeout/cancel y estado final del lock de ejecución.
 
 ### Domain quality profile
-- Domain: Web/SaaS (web)
-- Stack constraint: Use a component-based UI stack (for example React + Tailwind/shadcn or equivalent). Avoid raw static HTML/CSS-only scaffolds.
-- Forbidden defaults: Raw HTML tables, default browser typography, and layout-only placeholders as final UI baseline.
+- Domain: Raspberry Pi Admin Panel (HTMX + Go server-side rendering).
+- Constraint: minimizar coste runtime; evitar complejidad frontend innecesaria.
+- Forbidden defaults: auto-apply por cambios de campo y flujos no deterministas.
 
 ## 6. Security (Security Persona)
 ### Threats
@@ -136,63 +150,103 @@ STATUS: DRAFT
 
 ## 7. UX/UI Review (UX/UI Persona, if user-facing)
 ### Primary user flow
-- Flow must be explicit and testable.
+- Editar configuración -> presionar Apply -> ver estado `applying` -> resultado `applied` o `failed` con mensaje accionable.
 
 ### Key states (empty/loading/error/success)
-- Define deterministic behavior for empty/loading/error/success states.
+- `idle`: formulario editable.
+- `applying`: botón bloqueado y feedback visual.
+- `applied`: confirmación + formulario operativo.
+- `failed`: error visible + formulario recuperable sin recarga completa.
 
 ### Accessibility baseline
-- Keyboard and screen-reader baseline for user-facing interactions.
+- Submit por teclado, foco preservado tras respuesta, mensajes de estado legibles por lectores.
 
 ### Asset and placeholder strategy
-- Use credible placeholder/image/icon sources (for example placehold.co, Lucide/Heroicons) and define an explicit fallback strategy.
-- Avoid default primitive-only output when domain requires visual fidelity.
+- Reusar componentes y estilos actuales del panel; no introducir assets pesados.
 
 ## 8. Backlog
 > Create as many epics/stories as needed. Do not impose artificial limits.
 
 ### Epics
-- Epic 1:
-  - Outcome:
-  - Notes:
-- Epic 2:
-  - Outcome:
-  - Notes:
+- EP-1: Flujo determinista de apply y UX estable.
+  - Outcome: cero auto-apply, cero bloqueo por ráfagas, estado claro al usuario.
+  - Notes: incluye sync en formulario y control single-flight.
+- EP-2: Boundary privilegiado robusto y seguro.
+  - Outcome: ejecución hardware segura fuera del web process con validación y auditoría.
+  - Notes: incluye timeout/cancel cleanup y trazabilidad.
+- EP-3: Optimización de recursos y observabilidad.
+  - Outcome: comportamiento estable en Pi5 con consumo casi imperceptible y métricas de control.
+  - Notes: incluye pruebas de regresión de latencia/huella.
 
 ### User Stories
 For each story include clear Acceptance Criteria (Given/When/Then).
 
-#### Story:
-- As a <actor>, I want <capability>, so that <benefit>.
+#### US-1 Explicit Apply
+- As an Admin operator, I want hardware changes to apply only when I press Apply, so that I avoid accidental multi-requests.
 - Acceptance Criteria:
-  - Given ..., when ..., then ...
-  - Given ..., when ..., then ...
+  - Given edited fields, when no apply action is triggered, then no hardware apply request is sent.
+  - Given edited fields, when Apply is pressed, then exactly one apply request starts.
 
-(repeat as needed)
+#### US-2 Deterministic Operation State
+- As an Admin operator, I want clear `idle|applying|failed|applied` state, so that I can operate without ambiguity.
+- Acceptance Criteria:
+  - Given an apply in progress, when another apply is requested, then behavior is deterministic and never leaves stuck-busy state.
+  - Given apply completion, when response returns, then UI state transitions to `applied` or `failed`.
+
+#### US-3 Secure Privileged Boundary
+- As a Security owner, I want privileged hardware execution isolated in helper boundary, so that web process remains unprivileged.
+- Acceptance Criteria:
+  - Given hardware apply execution, when command runs, then no direct sudo/privileged exec happens from web process.
+  - Given invalid parameters, when helper receives payload, then request is rejected and audited.
+
+#### US-4 Timeout and Cleanup Reliability
+- As a Platform operator, I want timeout/cancel to fully release resources and lock state, so that next apply can run normally.
+- Acceptance Criteria:
+  - Given an apply timeout, when operation is canceled, then all child processes are cleaned and lock is released.
+  - Given subsequent apply request, when previous timed out, then new request can execute successfully.
+
+#### US-5 Pi5 Lightweight Runtime
+- As a Product owner, I want near-imperceptible resource impact, so that Ultron remains lightweight on Pi5.
+- Acceptance Criteria:
+  - Given repeated applies, when monitoring CPU/RAM/IO, then no sustained abnormal increase is introduced by refactor.
+  - Given idle hardware page, when no apply is active, then background work remains minimal.
+
+#### US-6 Audit and Telemetry
+- As a Maintainer, I want traceable per-apply telemetry, so that incidents are diagnosable quickly.
+- Acceptance Criteria:
+  - Given an apply request, when processing completes, then logs include request id, duration, result, and error cause when applicable.
+  - Given failure scenarios, when reviewing logs, then root cause is identifiable without guesswork.
 
 ## 9. Test Cases (QA Persona)
 > Create as many test cases as needed. Include negative and edge cases.
 
 ### Functional
-1.
-2.
+1. Validate explicit apply contract (no auto-request on field edits).
+2. Validate deterministic state transitions and no stuck-busy.
+3. Validate helper execution success/failure mapping to UI responses.
 
 ### Negative / Abuse
-1.
-2.
+1. Repeated rapid apply clicks under active execution.
+2. Invalid payload values rejected by helper allowlist.
+3. Helper unavailable/socket error handling without UI deadlock.
 
 ### Security
-1.
-2.
+1. Verify no direct privileged execution from web process.
+2. Verify CSRF/session enforcement on hardware apply endpoint.
+3. Verify audit trail on denied/failed privileged operations.
 
 ### Edge cases
-1.
-2.
+1. Pironman high-latency behavior with timeout/cancel.
+2. Partial failure after prior successful apply.
+3. Recovery path after helper restart during active session.
 
 ## 10. Implementation Notes (Developer Persona)
 - Suggested sequence:
--
+- S1: Frontend explicit-apply contract + sync semantics.
+- S2: Helper single-flight + timeout/cancel cleanup hardening.
+- S3: Operation-state endpoint + UI state machine.
+- S4: Telemetry/audit enrichment + Pi5 regression checks.
 - Dependencies:
--
+- Helper service, Pironman runtime, HTMX form contracts, action logs.
 - Rollout / fallback:
--
+- Deploy in canary on Pi host, keep rollback binary/service unit available.

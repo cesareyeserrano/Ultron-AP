@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "hardware-stability-refactor",
+  "decidedAt": "2026-02-24T16:16:58.322Z",
+  "policyEvidence": "docs/policy/hardware-stability-refactor.json",
+  "verificationEvidence": "docs/verification/hardware-stability-refactor.json"
+}
