@@ -7,9 +7,11 @@ TAILWIND=./tailwindcss
 
 build: css
 	$(GO) build -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/ultron-ap/
+	$(GO) build -o $(BUILD_DIR)/ultron-helper ./cmd/ultron-helper/
 
 build-arm: css
 	GOOS=linux GOARCH=arm64 $(GO) build -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 ./cmd/ultron-ap/
+	GOOS=linux GOARCH=arm64 $(GO) build -o $(BUILD_DIR)/ultron-helper-linux-arm64 ./cmd/ultron-helper/
 
 test:
 	$(GO) test ./... -v

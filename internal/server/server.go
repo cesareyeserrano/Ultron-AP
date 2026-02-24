@@ -22,6 +22,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
+	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 	"github.com/cesareyeserrano/ultron-ap/web"
 )
@@ -64,6 +65,7 @@ type Server struct {
 	backupKeyRef        atomic.Value // string
 	backupUploadTimeout atomic.Int64
 	backupMaxUploadMB   atomic.Int64
+	privileged          *privileged.Client
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -93,6 +95,7 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 		sseBroker:  newSSEBroker(),
 		templates:  web.Templates,
 		startedAt:  time.Now(),
+		privileged: privileged.NewClient(cfg.HelperSocket, cfg.HelperTimeout),
 	}
 	s.sseIntervalNs.Store(int64(5 * time.Second))
 	s.backupIntervalHours.Store(24) // Default 24h

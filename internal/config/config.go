@@ -17,6 +17,8 @@ type Config struct {
 	AdminPass       string
 	SessionTTL      time.Duration
 	MetricsInterval time.Duration
+	HelperSocket    string
+	HelperTimeout   time.Duration
 }
 
 var validLogLevels = map[string]bool{
@@ -35,6 +37,8 @@ func Load() (*Config, error) {
 		AdminPass:       "",
 		SessionTTL:      24 * time.Hour,
 		MetricsInterval: 5 * time.Second,
+		HelperSocket:    "/run/ultron-helper.sock",
+		HelperTimeout:   5 * time.Second,
 	}
 
 	if v := os.Getenv("ULTRON_PORT"); v != "" {
@@ -86,6 +90,23 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("invalid metrics interval: must be >= 1s, got %v", d)
 		}
 		cfg.MetricsInterval = d
+	}
+
+	if v := os.Getenv("ULTRON_HELPER_SOCKET"); v != "" {
+		cfg.HelperSocket = strings.TrimSpace(v)
+		if cfg.HelperSocket == "" {
+			cfg.HelperSocket = "/run/ultron-helper.sock"
+		}
+	}
+	if v := os.Getenv("ULTRON_HELPER_TIMEOUT"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid helper timeout %q: %w", v, err)
+		}
+		if d < 1*time.Second {
+			return nil, fmt.Errorf("invalid helper timeout: must be >= 1s, got %v", d)
+		}
+		cfg.HelperTimeout = d
 	}
 
 	return cfg, nil

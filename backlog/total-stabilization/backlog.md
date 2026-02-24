@@ -82,7 +82,7 @@
 - [x] US-8 completed
 
 ## Post-Stabilization Root Remediation (Security Architecture)
-- BL-ROOT-1: Privileged operations helper-service split (open)
+- BL-ROOT-1: Privileged operations helper-service split (completed 2026-02-24)
   - Priority: P0
   - Problem: with `NoNewPrivileges=true`, web-process `sudo` paths (hardware/system operations) are intentionally blocked.
   - Root fix: move privileged actions to a dedicated root-owned local helper (systemd service + Unix socket IPC + strict allowlist), and make web panel an unprivileged client only.

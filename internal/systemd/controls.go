@@ -2,10 +2,13 @@ package systemd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
 )
 
 const controlTimeout = 30 * time.Second
@@ -52,12 +55,35 @@ func (m *Monitor) runControl(ctx context.Context, action, name string) ServiceAc
 	ctlCtx, cancel := context.WithTimeout(ctx, controlTimeout)
 	defer cancel()
 
-	out, err := m.runner.Run(ctlCtx, "sudo", "-n", "systemctl", action, name)
+	helper := privileged.NewClientFromEnv()
+	if err := helper.ServiceAction(ctlCtx, action, name); err == nil {
+		result.Success = true
+		result.Message = fmt.Sprintf("Service %s %sed", name, action)
+		m.forceRefresh(ctx)
+		return result
+	} else if !errors.Is(err, privileged.ErrUnavailable) {
+		msg := strings.TrimSpace(err.Error())
+		if strings.Contains(msg, "not found") || strings.Contains(msg, "No such") {
+			result.Message = fmt.Sprintf("Service not found: %s", name)
+		} else if ctlCtx.Err() != nil {
+			result.Message = fmt.Sprintf("Timeout: %s %s did not complete in %v", action, name, controlTimeout)
+		} else {
+			result.Message = fmt.Sprintf("Failed to %s %s: %s", action, name, msg)
+		}
+		return result
+	}
+
+	// Backward-compatible fallback for test environments where helper is not present.
+	if m.runner == nil {
+		result.Message = fmt.Sprintf("Permission denied: cannot %s %s (helper unavailable)", action, name)
+		return result
+	}
+	out, err := m.runner.Run(ctlCtx, "systemctl", action, name)
 	if err != nil {
 		stderr := strings.TrimSpace(string(out))
 		if strings.Contains(stderr, "Permission denied") || strings.Contains(stderr, "Interactive authentication") ||
 			strings.Contains(stderr, "password is required") || strings.Contains(stderr, "sudo:") {
-			result.Message = fmt.Sprintf("Permission denied: cannot %s %s (sudo not configured)", action, name)
+			result.Message = fmt.Sprintf("Permission denied: cannot %s %s (helper unavailable)", action, name)
 		} else if strings.Contains(stderr, "not found") || strings.Contains(stderr, "No such") {
 			result.Message = fmt.Sprintf("Service not found: %s", name)
 		} else if ctlCtx.Err() != nil {

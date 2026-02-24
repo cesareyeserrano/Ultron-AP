@@ -1,0 +1,26 @@
+[Unit]
+Description=Ultron Privileged Helper
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/opt/ultron-ap/ultron-helper
+Restart=on-failure
+RestartSec=2
+Environment=ULTRON_HELPER_SOCKET=/run/ultron-helper.sock
+Environment=ULTRON_HELPER_SOCKET_GROUP=ultron
+
+# Hardening (helper still needs host control capabilities)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/run
+
+[Install]
+WantedBy=multi-user.target

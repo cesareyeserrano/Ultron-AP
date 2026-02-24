@@ -1,11 +1,14 @@
 package pironman
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
 )
 
 // RGBStyles lists the valid pironman5 LED animation styles.
@@ -72,13 +75,7 @@ func parseBoolOrString(raw json.RawMessage) bool {
 	return s == "on" || s == "1" || s == "true"
 }
 
-// ReadConfig runs `sudo -n /usr/local/bin/pironman5 -c` and returns the parsed configuration.
-func ReadConfig() (*Config, error) {
-	out, err := exec.Command("sudo", "-n", "/usr/local/bin/pironman5", "-c").Output()
-	if err != nil {
-		return nil, fmt.Errorf("pironman5 -c: %w", err)
-	}
-
+func ParseConfigJSON(out []byte) (*Config, error) {
 	var raw rawConfig
 	if err := json.Unmarshal(out, &raw); err != nil {
 		return nil, fmt.Errorf("pironman5 config parse: %w", err)
@@ -100,8 +97,20 @@ func ReadConfig() (*Config, error) {
 	}, nil
 }
 
-// ApplyConfig applies settings by running `pironman5 restart <flags>`.
-func ApplyConfig(cfg Config) error {
+// ReadConfig gets pironman settings through the privileged helper.
+func ReadConfig() (*Config, error) {
+	cli := privileged.NewClientFromEnv()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	raw, err := cli.PironmanRead(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("pironman5 -c via helper: %w", err)
+	}
+	return ParseConfigJSON([]byte(raw))
+}
+
+// BuildApplyArgs builds arguments for `pironman5 restart`.
+func BuildApplyArgs(cfg Config) []string {
 	rgbEnable := "off"
 	if cfg.RGBEnable {
 		rgbEnable = "on"
@@ -124,17 +133,36 @@ func ApplyConfig(cfg Config) error {
 		"-or", strconv.Itoa(cfg.OLEDRotation),
 		"-os", strconv.Itoa(cfg.OLEDSleep),
 	}
+	return args
+}
 
-	sudoArgs := append([]string{"-n", "/usr/local/bin/pironman5"}, args...)
-	out, err := exec.Command("sudo", sudoArgs...).CombinedOutput()
+// ApplyConfig applies settings through the privileged helper.
+func ApplyConfig(cfg Config) error {
+	cli := privileged.NewClientFromEnv()
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	err := cli.PironmanApply(ctx, privileged.PironmanConfig{
+		RGBColor:      cfg.RGBColor,
+		RGBBrightness: cfg.RGBBrightness,
+		RGBStyle:      cfg.RGBStyle,
+		RGBSpeed:      cfg.RGBSpeed,
+		RGBEnable:     cfg.RGBEnable,
+		FanMode:       cfg.FanMode,
+		FanLED:        cfg.FanLED,
+		OLEDEnable:    cfg.OLEDEnable,
+		OLEDRotation:  cfg.OLEDRotation,
+		OLEDSleep:     cfg.OLEDSleep,
+	})
 	if err != nil {
-		return fmt.Errorf("pironman5 apply: %s: %w", strings.TrimSpace(string(out)), err)
+		return fmt.Errorf("pironman5 apply via helper: %w", err)
 	}
 	return nil
 }
 
 // Available reports whether pironman5 is installed on the system.
 func Available() bool {
-	_, err := exec.LookPath("/usr/local/bin/pironman5")
-	return err == nil
+	cli := privileged.NewClientFromEnv()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	return cli.Ping(ctx) == nil
 }

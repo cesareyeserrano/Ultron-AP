@@ -1,12 +1,12 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"log"
 	"net/http"
-	"os/exec"
-	"strings"
+	"time"
 )
 
 func (s *Server) handleSystemRestart(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +17,9 @@ func (s *Server) handleSystemRestart(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	log.Println("system: restart requested via UI")
-	err := exec.Command("sudo", "-n", "shutdown", "-r", "now").Start()
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	err := s.privileged.Shutdown(ctx, "restart")
 	s.auditLog(r, "system", "restart", "host", "", err == nil)
 
 	if err != nil {
@@ -42,7 +44,9 @@ func (s *Server) handleSystemShutdown(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	log.Println("system: shutdown requested via UI")
-	err := exec.Command("sudo", "-n", "shutdown", "-h", "now").Start()
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	err := s.privileged.Shutdown(ctx, "poweroff")
 	s.auditLog(r, "system", "shutdown", "host", "", err == nil)
 
 	if err != nil {
@@ -54,7 +58,6 @@ func (s *Server) handleSystemShutdown(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, `<span class="text-text-muted text-xs">Shutting down...</span>`)
 }
 
-
 func (s *Server) handleLogsPage(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, "logs.html", "System Logs", "logs", nil)
 }
@@ -63,44 +66,23 @@ func (s *Server) handleFetchSystemLogs(w http.ResponseWriter, r *http.Request) {
 	source := r.URL.Query().Get("source")
 	lines := 100
 
-	var (
-		cmd         *exec.Cmd
-		kernelLimit bool
-	)
 	switch source {
-	case "ultron-ap":
-		cmd = exec.Command("sudo", "-n", "journalctl", "-u", "ultron-ap", "-n", fmt.Sprintf("%d", lines), "--no-pager")
-	case "docker":
-		cmd = exec.Command("sudo", "-n", "journalctl", "-u", "docker", "-n", fmt.Sprintf("%d", lines), "--no-pager")
-	case "kernel":
-		// Avoid shell/pipes; fetch full stream and trim in-process.
-		cmd = exec.Command("sudo", "-n", "dmesg", "-T")
-		kernelLimit = true
+	case "ultron-ap", "docker", "kernel":
 	default:
 		http.Error(w, "Invalid log source", http.StatusBadRequest)
 		return
 	}
-
-	out, err := cmd.CombinedOutput()
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	out, err := s.privileged.SystemLogs(ctx, source, lines)
 	if err != nil {
 		log.Printf("system: failed to fetch logs for %s: %v", source, err)
-		errMsg := string(out)
-		if errMsg == "" {
-			errMsg = err.Error()
-		}
-		http.Error(w, "Failed to fetch logs: "+errMsg, http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch logs: "+err.Error(), http.StatusInternalServerError)
 		return
-	}
-	if kernelLimit {
-		parts := strings.Split(strings.TrimSpace(string(out)), "\n")
-		if len(parts) > lines {
-			parts = parts[len(parts)-lines:]
-		}
-		out = []byte(strings.Join(parts, "\n"))
 	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Write(out)
+	w.Write([]byte(out))
 }
 
 func (s *Server) handleTailscaleStatus(w http.ResponseWriter, r *http.Request) {

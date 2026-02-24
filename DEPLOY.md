@@ -45,23 +45,31 @@ sudo systemctl restart caddy
 
 ## Host Hardening (Recommended)
 
-### 1) Install hardened systemd unit
+### 1) Install privileged helper (root boundary)
+```bash
+sudo install -m 0755 /opt/ultron-ap/ultron-helper /opt/ultron-ap/ultron-helper
+sudo install -m 0644 deploy/ultron-helper.service /etc/systemd/system/ultron-helper.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now ultron-helper
+```
+
+### 2) Install hardened web unit
 ```bash
 sudo install -m 0644 deploy/ultron-ap.service /etc/systemd/system/ultron-ap.service
 sudo systemctl daemon-reload
 sudo systemctl restart ultron-ap
 ```
 
-### 2) Install least-privilege sudoers policy
+### 3) Remove legacy sudoers policy (no longer required)
 ```bash
-sudo install -m 0440 deploy/ultron-ap.sudoers /etc/sudoers.d/ultron-ap
-sudo visudo -cf /etc/sudoers.d/ultron-ap
+sudo rm -f /etc/sudoers.d/ultron-ap /etc/sudoers.d/ultron-logs
 ```
 
-### 3) Validate effective hardening
+### 4) Validate effective hardening
 ```bash
 systemctl show ultron-ap -p NoNewPrivileges -p ProtectSystem -p PrivateTmp -p ProtectKernelTunables -p RestrictSUIDSGID
-sudo -l -U ultron
+systemctl is-active ultron-helper ultron-ap
+ls -l /run/ultron-helper.sock
 ```
 
-Note: `NoNewPrivileges` remains `false` in the current design because the app still uses `sudo` for privileged operations. Set it to `true` only after moving privileged actions to a separate root-owned helper/service boundary.
+`NoNewPrivileges=true` is now enforced on `ultron-ap`; privileged operations execute only via `ultron-helper` over local Unix socket.

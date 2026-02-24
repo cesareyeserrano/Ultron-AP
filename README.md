@@ -16,6 +16,7 @@ Built with a **zero-runtime-dependency** philosophy using Go, HTMX, and Tailwind
 - **Smart Alerting:** Configurable threshold-based rules with real-time notifications via **Telegram** and Email.
 - **Hardware Integration:** Native support for **Pironman 5** (RGB, Fan modes, and OLED configuration).
 - **Security First:** Built-in CSRF protection, secure sessions (bcrypt), brute-force protection, and a full action audit trail.
+- **Privilege Separation:** Web process runs unprivileged with `NoNewPrivileges=true`; host-level actions are executed by a root-owned local helper over Unix socket.
 - **Resource Optimized:** Consumes ~15MB RAM and minimal CPU, making it ideal for background operation on any Pi model.
 
 ---
@@ -38,6 +39,8 @@ make build
    - `ULTRON_ADMIN_PASS`: Initial admin password (required on first run).
    - `ULTRON_PORT`: Default is `8080`.
    - `ULTRON_DB_PATH`: Path to SQLite database.
+   - `ULTRON_HELPER_SOCKET`: Unix socket path for privileged helper (default `/run/ultron-helper.sock`).
+   - `ULTRON_HELPER_TIMEOUT`: Helper RPC timeout (default `5s`).
 
 ---
 

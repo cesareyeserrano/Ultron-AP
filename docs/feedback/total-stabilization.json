@@ -9,8 +9,8 @@
       "category": "improvement",
       "description": "Pi5 E2E audit identified resource and security hardening gaps: SSE currently runs globally and should be dashboard-only with adaptive polling by active clients; add baseline security headers; harden systemd unit and sudo scope; split SSE/non-SSE write timeout behavior; encrypt notification secrets and backup artifacts; and add trusted-proxy IP handling plus DB indexes for alert/action/session hot paths.",
       "severity": "high",
-      "resolution": "Partially resolved on 2026-02-24: dashboard-scoped SSE, split write timeout behavior, backup/notification encryption, systemd+sandbox hardening, and CI security gate were implemented. Remaining root item tracked in backlog: migrate privileged host operations out of web process into dedicated root-owned helper service so `NoNewPrivileges=true` can stay enforced without feature degradation.",
-      "resolvedAt": null
+      "resolution": "Resolved end-to-end on 2026-02-24: dashboard-scoped SSE, split write timeout behavior, backup/notification encryption, systemd+sandbox hardening, CI security gate, and root-owned `ultron-helper` IPC boundary replacing direct privileged execution from web process.",
+      "resolvedAt": "2026-02-24T09:27:33.000Z"
     },
     {
       "id": "FB-2",
@@ -42,8 +42,8 @@
       "category": "improvement",
       "description": "Production-readiness execution completed on Pi host 192.168.1.29: base performance and backup-restore integrity passed, auth/CSRF baseline passed, but browser security headers and least-privilege host hardening remain open. Supply-chain CVE verification could not be completed due environment limits (no govulncheck/network access) and must run in CI-connected security stage.",
       "severity": "high",
-      "resolution": "Partially resolved on 2026-02-24: browser hardening baseline and supply-chain gate (`govulncheck`) added to CI, and host hardening applied. Remaining least-privilege closure is tracked as helper-service architecture for privileged operations.",
-      "resolvedAt": null
+      "resolution": "Resolved on 2026-02-24: browser hardening baseline and supply-chain gate (`govulncheck`) added, host hardening applied, and least-privilege closure completed with dedicated helper-service architecture for privileged operations.",
+      "resolvedAt": "2026-02-24T09:27:33.000Z"
     }
   ]
 }

@@ -1,6 +1,7 @@
 [Unit]
 Description=Ultron Admin Panel
-After=network.target
+After=network.target ultron-helper.service
+Requires=ultron-helper.service
 
 [Service]
 Type=simple
