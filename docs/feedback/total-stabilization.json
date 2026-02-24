@@ -9,7 +9,7 @@
       "category": "improvement",
       "description": "Pi5 E2E audit identified resource and security hardening gaps: SSE currently runs globally and should be dashboard-only with adaptive polling by active clients; add baseline security headers; harden systemd unit and sudo scope; split SSE/non-SSE write timeout behavior; encrypt notification secrets and backup artifacts; and add trusted-proxy IP handling plus DB indexes for alert/action/session hot paths.",
       "severity": "high",
-      "resolution": null,
+      "resolution": "Partially resolved on 2026-02-24: dashboard-scoped SSE, split write timeout behavior, backup/notification encryption, systemd+sandbox hardening, and CI security gate were implemented. Remaining root item tracked in backlog: migrate privileged host operations out of web process into dedicated root-owned helper service so `NoNewPrivileges=true` can stay enforced without feature degradation.",
       "resolvedAt": null
     },
     {
@@ -20,8 +20,8 @@
       "category": "bug",
       "description": "Production SSH audit on 192.168.1.29 shows repeated template runtime failures on hardware page: `Failed to execute template hardware.html: template: hardware-form.html:3:52: executing \\\"partials/hardware-form.html\\\" at <.CSRFToken>: can't evaluate field CSRFToken in type server.hardwarePageData`. This causes hardware UI rendering failures and repeated sudo/pironman calls in logs.",
       "severity": "high",
-      "resolution": null,
-      "resolvedAt": null
+      "resolution": "Resolved by aligning hardware view-model/template contract and restoring CSRF token propagation in hardware partial rendering.",
+      "resolvedAt": "2026-02-24T03:06:00.000Z"
     },
     {
       "id": "FB-3",
@@ -31,8 +31,8 @@
       "category": "requirement-gap",
       "description": "Root requirement for backup subsystem: it must be fully parameterizable from Settings as a first-class module (enabled flag, interval, retention count, local path, destination mode, encryption on/off, key reference, upload timeout/size). Current implementation is partially configurable; full operational control and security posture require complete settings-driven configuration with live apply and audited changes.",
       "severity": "high",
-      "resolution": null,
-      "resolvedAt": null
+      "resolution": "Resolved by extending settings/config model and scheduler runtime to include schedule mode (`interval|daily|weekly|biweekly`), schedule hour/minute, encryption toggle + key reference, upload timeout, and max upload size with live apply.",
+      "resolvedAt": "2026-02-24T03:21:00.000Z"
     },
     {
       "id": "FB-4",
@@ -42,7 +42,7 @@
       "category": "improvement",
       "description": "Production-readiness execution completed on Pi host 192.168.1.29: base performance and backup-restore integrity passed, auth/CSRF baseline passed, but browser security headers and least-privilege host hardening remain open. Supply-chain CVE verification could not be completed due environment limits (no govulncheck/network access) and must run in CI-connected security stage.",
       "severity": "high",
-      "resolution": null,
+      "resolution": "Partially resolved on 2026-02-24: browser hardening baseline and supply-chain gate (`govulncheck`) added to CI, and host hardening applied. Remaining least-privilege closure is tracked as helper-service architecture for privileged operations.",
       "resolvedAt": null
     }
   ]

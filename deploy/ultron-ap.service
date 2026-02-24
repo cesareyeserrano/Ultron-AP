@@ -13,9 +13,9 @@ RestartSec=5
 EnvironmentFile=-/etc/ultron-ap/ultron-ap.env
 
 # Security hardening
-# NOTE: kept false because current runtime executes privileged actions via sudo.
-# Set to true once privileged operations are moved out of the web process.
-NoNewPrivileges=false
+# Security-default: web process cannot acquire new privileges.
+# Privileged host actions should be moved to a dedicated root-owned helper/service.
+NoNewPrivileges=true
 ProtectSystem=full
 ProtectHome=true
 PrivateTmp=true

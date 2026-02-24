@@ -26,6 +26,12 @@ func (db *DB) GetNotificationConfig(channel string) (*NotificationConfig, error)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get notification config: %w", err)
 	}
+	// Backward-compatible: plaintext stays plaintext; encrypted payload is auto-decrypted.
+	if dec, err := decryptSecret(nc.Config); err == nil {
+		nc.Config = dec
+	} else {
+		return nil, fmt.Errorf("cannot decrypt notification config: %w", err)
+	}
 	nc.Enabled = enabled == 1
 	return &nc, nil
 }
@@ -36,11 +42,20 @@ func (db *DB) UpsertNotificationConfig(nc *NotificationConfig) error {
 	if nc.Enabled {
 		enabled = 1
 	}
+	configToStore := nc.Config
+	// Only encrypt sensitive channels; performance config is non-secret and kept plain.
+	if nc.Channel == "telegram" || nc.Channel == "email" {
+		enc, err := encryptSecret(nc.Config)
+		if err != nil {
+			return fmt.Errorf("cannot encrypt notification config: %w", err)
+		}
+		configToStore = enc
+	}
 	_, err := db.Exec(
 		`INSERT INTO NotificationConfig (channel, enabled, config)
 		 VALUES (?, ?, ?)
 		 ON CONFLICT(channel) DO UPDATE SET enabled=excluded.enabled, config=excluded.config, updated_at=CURRENT_TIMESTAMP`,
-		nc.Channel, enabled, nc.Config,
+		nc.Channel, enabled, configToStore,
 	)
 	if err != nil {
 		return fmt.Errorf("cannot upsert notification config: %w", err)

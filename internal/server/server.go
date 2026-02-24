@@ -60,6 +60,10 @@ type Server struct {
 	backupScheduleMode  atomic.Value // string
 	backupScheduleHour  atomic.Int64
 	backupScheduleMin   atomic.Int64
+	backupEncrypt       atomic.Int64
+	backupKeyRef        atomic.Value // string
+	backupUploadTimeout atomic.Int64
+	backupMaxUploadMB   atomic.Int64
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -99,6 +103,10 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 	s.backupScheduleMode.Store("interval")
 	s.backupScheduleHour.Store(3)
 	s.backupScheduleMin.Store(0)
+	s.backupEncrypt.Store(0)
+	s.backupKeyRef.Store("")
+	s.backupUploadTimeout.Store(30)
+	s.backupMaxUploadMB.Store(50)
 
 	s.parseTemplates()
 	s.registerRoutes(mux)
@@ -144,6 +152,14 @@ func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
 	s.backupScheduleMode.Store(cfg.ScheduleMode)
 	s.backupScheduleHour.Store(int64(cfg.ScheduleHour))
 	s.backupScheduleMin.Store(int64(cfg.ScheduleMinute))
+	if cfg.EncryptEnabled {
+		s.backupEncrypt.Store(1)
+	} else {
+		s.backupEncrypt.Store(0)
+	}
+	s.backupKeyRef.Store(cfg.EncryptionKeyRef)
+	s.backupUploadTimeout.Store(int64(cfg.UploadTimeoutSec))
+	s.backupMaxUploadMB.Store(int64(cfg.MaxUploadSizeMB))
 }
 
 func nextBackupDelay(now time.Time, enabled bool, mode string, intervalHours int, hour int, minute int) time.Duration {
@@ -246,6 +262,7 @@ func (s *Server) performAutomatedBackup() error {
 		destinationMode = "local_only"
 	}
 	backupPathOverride, _ := s.backupLocalPath.Load().(string)
+	keyRef, _ := s.backupKeyRef.Load().(string)
 
 	// 1. Create local backup file
 	backupDir := filepath.Join(filepath.Dir(s.cfg.DBPath), "backups")
@@ -265,6 +282,19 @@ func (s *Server) performAutomatedBackup() error {
 		return fmt.Errorf("failed to create local backup: %w", err)
 	}
 	log.Printf("backup: local backup created at %s", backupPath)
+	if s.backupEncrypt.Load() == 1 {
+		key, err := backupKeyFromRef(keyRef)
+		if err != nil {
+			return fmt.Errorf("backup encryption key error: %w", err)
+		}
+		encPath := backupPath + ".enc"
+		if err := encryptFileAESGCM(backupPath, encPath, key); err != nil {
+			return fmt.Errorf("backup encryption failed: %w", err)
+		}
+		_ = os.Remove(backupPath)
+		backupPath = encPath
+		log.Printf("backup: encrypted backup created at %s", backupPath)
+	}
 
 	// Always enforce local retention after creating a backup, even if remote upload fails.
 	defer func() {
@@ -288,6 +318,15 @@ func (s *Server) performAutomatedBackup() error {
 		log.Printf("backup: destination=%s, skipping remote upload", destinationMode)
 		return nil
 	}
+	maxUploadMB := s.backupMaxUploadMB.Load()
+	if maxUploadMB < 1 {
+		maxUploadMB = 50
+	}
+	if info, err := os.Stat(backupPath); err == nil {
+		if info.Size() > maxUploadMB*1024*1024 {
+			return fmt.Errorf("backup artifact exceeds max upload size (%d MB)", maxUploadMB)
+		}
+	}
 
 	// 2. Send to Telegram if configured
 	nc, err := s.db.GetNotificationConfig("telegram")
@@ -306,7 +345,11 @@ func (s *Server) performAutomatedBackup() error {
 		return fmt.Errorf("telegram bot token or chat ID is missing")
 	}
 
-	sender := notify.NewTelegramSender(botToken, chatID)
+	timeoutSec := s.backupUploadTimeout.Load()
+	if timeoutSec < 5 {
+		timeoutSec = 30
+	}
+	sender := notify.NewTelegramSenderWithTimeout(botToken, chatID, time.Duration(timeoutSec)*time.Second)
 	hostname, _ := os.Hostname()
 	caption := fmt.Sprintf("\xf0\x9f\x92\xbe *Ultron-AP Automated Backup*\n\nTimestamp: `%s` \nVersion: `%s` \nDevice: `%s` \nStatus: `Success`",
 		time.Now().Format("2006-01-02 15:04:05"), Version, hostname)

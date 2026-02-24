@@ -26,10 +26,17 @@ type TelegramSender struct {
 
 // NewTelegramSender creates a Telegram notifier.
 func NewTelegramSender(botToken, chatID string) *TelegramSender {
+	return NewTelegramSenderWithTimeout(botToken, chatID, 30*time.Second)
+}
+
+func NewTelegramSenderWithTimeout(botToken, chatID string, timeout time.Duration) *TelegramSender {
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
 	return &TelegramSender{
 		botToken: botToken,
 		chatID:   chatID,
-		client:   &http.Client{Timeout: 30 * time.Second}, // Increased timeout for file uploads
+		client:   &http.Client{Timeout: timeout},
 	}
 }
 

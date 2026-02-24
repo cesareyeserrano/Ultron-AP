@@ -1,0 +1,27 @@
+name: Security Gate
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run unit tests
+        run: go test ./...
+
+      - name: Run govulncheck
+        run: govulncheck ./...
