@@ -7,16 +7,18 @@
     "tests/hardware-stability-refactor/generated/tc-9-enforce-security-control-enforce-par.test.mjs",
     "tests/hardware-stability-refactor/generated/tc-2-validate-us-2-primary-behavior.test.mjs",
     "tests/hardware-stability-refactor/generated/tc-3-validate-us-3-primary-behavior.test.mjs",
-    "tests/hardware-stability-refactor/generated/tc-4-validate-us-4-primary-behavior.test.mjs"
+    "tests/hardware-stability-refactor/generated/tc-4-validate-us-4-primary-behavior.test.mjs",
+    "tests/hardware-stability-refactor/generated/tc-5-validate-us-5-primary-behavior.test.mjs"
   ],
   "interfaceFiles": [
     "src/contracts/fr-1-hardware-settings-updates-must-b.js",
     "src/contracts/fr-2-the-hardware-apply-pipeline-must.js",
     "src/contracts/fr-3-integration-with-pironman-must-p.js",
-    "src/contracts/fr-4-privileged-execution-must-stay-o.js"
+    "src/contracts/fr-4-privileged-execution-must-stay-o.js",
+    "src/contracts/fr-5-every-hardware-apply-request-mus.js"
   ],
   "baseConfigs": [],
   "feature": "hardware-stability-refactor",
   "stackFamily": "node",
-  "generatedAt": "2026-02-24T16:21:14.836Z"
+  "generatedAt": "2026-02-24T16:22:09.925Z"
 }

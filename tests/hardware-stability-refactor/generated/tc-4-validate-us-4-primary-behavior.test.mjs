@@ -5,8 +5,14 @@ import { fr_4_privileged_execution_must_stay_outside_web_pr } from "../../../src
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("tc_4_validate_us_4_primary_behavior", () => {
-  // TODO: Validate these acceptance criteria:
-  // AC-5: Given security posture validation, when hardware apply executes, then privileged operations are bounded to helper path with auditable logs and no direct web-process privilege escalation.
-  assert.fail("Not implemented: TC-4 — Validate us-4 primary behavior");
+test("tc_4_validate_us_4_primary_behavior", async () => {
+  const report = await fr_4_privileged_execution_must_stay_outside_web_pr({
+    helperServicePath: "deploy/ultron-helper.service",
+    webServicePath: "deploy/ultron-ap.service",
+    systemHandlerPath: "internal/server/handlers_system.go",
+    helperPath: "cmd/ultron-helper/main.go",
+  });
+  assert.equal(report.isolatedBoundary, true);
+  assert.equal(report.noDirectPrivilegeInWeb, true);
+  assert.equal(report.validatedAndAuditable, true);
 });
