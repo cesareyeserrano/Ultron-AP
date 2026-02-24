@@ -1,7 +1,6 @@
 # AF-SPEC: total-stabilization
 
-STATUS: DRAFT
-
+STATUS: APPROVED
 ## 1. Context
 A deep total stabilization and optimization pass for Ultron-AP covering runtime reliability, security hardening, automated test expansion, and documentation hygiene optimization.
 
@@ -16,17 +15,21 @@ Requirement source: Provided explicitly by user in guided draft.
 - Admin (single Raspberry Pi owner/operator) and maintainers who evolve the codebase.
 
 ## 3. Functional Rules (traceable)
-- FR-1: The system must complete deep stabilization without regressions by making operational failures observable and by validating all critical reliability/security paths through automated tests.
-- FR-2: The documentation set must be hygienized: no unresolved duplicates, no orphan/residual markdown files without owner or purpose, and oversized documents must be split or condensed to follow explicit length limits.
+- FR-1: The system must enforce a documentation asset strategy where only repository markdown and source files are used; no external media assets are introduced during stabilization and every referenced document path must resolve locally.
 
 ## 4. Edge Cases
 - A markdown document appears redundant by title or section overlap but is still referenced by automation/spec workflows; cleanup must detect these references before deletion and preserve traceability.
 
 ## 5. Failure Conditions
-- TBD (refine during review)
+- If automated backup fails (for example Telegram upload failure), the run is marked as failed with a clear error cause and does not silently pass.
+- If documentation cleanup proposes deleting a file that still has inbound references, deletion is blocked until references are removed or the file is reclassified.
+- If stabilization changes break existing core behavior (monitoring, alerts, hardware controls, authentication), approval is blocked until regression tests pass.
 
 ## 6. Non-Functional Requirements
-- TBD (refine during review)
+- Determinism: Documentation hygiene outputs must be reproducible from the same repository state.
+- Traceability: Every `consolidate/archive/delete` decision must include a rationale and owner.
+- Maintainability: Markdown files should follow a controlled length policy; oversized files must be split or condensed while preserving navigability.
+- Performance safety: Stabilization work must not introduce materially worse runtime characteristics for normal operation.
 
 ## 7. Security Considerations
 - State-changing endpoints must enforce CSRF token checks plus same-origin protections (Origin/Referer policy), and session cookies must remain secure under direct TLS and trusted proxy TLS termination.
