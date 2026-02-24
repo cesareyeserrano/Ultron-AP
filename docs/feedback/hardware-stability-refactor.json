@@ -1,0 +1,16 @@
+{
+  "feature": "hardware-stability-refactor",
+  "entries": [
+    {
+      "id": "FB-1",
+      "addedAt": "2026-02-24T17:39:16.603Z",
+      "source": "user-testing",
+      "linkedRef": "FR-2",
+      "category": "bug",
+      "description": "Root cause fixed: Pironman apply path returned frequent 'apply busy: previous apply still running' under repeated UI submits. Implemented helper-side serialized apply queue worker with burst coalescing, and frontend submit lock to prevent concurrent applies. Deployed to Pi and validated service health/runtime logs.",
+      "severity": "high",
+      "resolution": null,
+      "resolvedAt": null
+    }
+  ]
+}
