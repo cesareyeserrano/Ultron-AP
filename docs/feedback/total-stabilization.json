@@ -11,6 +11,17 @@
       "severity": "high",
       "resolution": null,
       "resolvedAt": null
+    },
+    {
+      "id": "FB-2",
+      "addedAt": "2026-02-24T02:45:07.516Z",
+      "source": "internal",
+      "linkedRef": "FR-5",
+      "category": "bug",
+      "description": "Production SSH audit on 192.168.1.29 shows repeated template runtime failures on hardware page: `Failed to execute template hardware.html: template: hardware-form.html:3:52: executing \\\"partials/hardware-form.html\\\" at <.CSRFToken>: can't evaluate field CSRFToken in type server.hardwarePageData`. This causes hardware UI rendering failures and repeated sudo/pironman calls in logs.",
+      "severity": "high",
+      "resolution": null,
+      "resolvedAt": null
     }
   ]
 }
