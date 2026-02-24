@@ -301,6 +301,9 @@ func TestBackupConfigSave_PersistsAndApplies(t *testing.T) {
 		"enabled":            {"on"},
 		"interval_hours":     {"12"},
 		"retention_count":    {"9"},
+		"schedule_mode":      {"weekly"},
+		"schedule_hour":      {"2"},
+		"schedule_minute":    {"30"},
 		"destination_mode":   {"local_plus_telegram"},
 		"local_path":         {"/tmp/ultron-backups"},
 		"encrypt_enabled":    {"on"},
@@ -321,6 +324,9 @@ func TestBackupConfigSave_PersistsAndApplies(t *testing.T) {
 	assert.True(t, cfg.Enabled)
 	assert.Equal(t, 12, cfg.IntervalHours)
 	assert.Equal(t, 9, cfg.RetentionCount)
+	assert.Equal(t, "weekly", cfg.ScheduleMode)
+	assert.Equal(t, 2, cfg.ScheduleHour)
+	assert.Equal(t, 30, cfg.ScheduleMinute)
 	assert.Equal(t, "local_plus_telegram", cfg.DestinationMode)
 	assert.Equal(t, "/tmp/ultron-backups", cfg.LocalPath)
 	assert.True(t, cfg.EncryptEnabled)

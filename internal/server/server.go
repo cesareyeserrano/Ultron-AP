@@ -57,6 +57,9 @@ type Server struct {
 	backupRetention     atomic.Int64
 	backupDestination   atomic.Value // string
 	backupLocalPath     atomic.Value // string
+	backupScheduleMode  atomic.Value // string
+	backupScheduleHour  atomic.Int64
+	backupScheduleMin   atomic.Int64
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -93,6 +96,9 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 	s.backupRetention.Store(7)
 	s.backupDestination.Store("local_only")
 	s.backupLocalPath.Store("")
+	s.backupScheduleMode.Store("interval")
+	s.backupScheduleHour.Store(3)
+	s.backupScheduleMin.Store(0)
 
 	s.parseTemplates()
 	s.registerRoutes(mux)
@@ -135,35 +141,86 @@ func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
 	}
 	s.backupDestination.Store(cfg.DestinationMode)
 	s.backupLocalPath.Store(cfg.LocalPath)
+	s.backupScheduleMode.Store(cfg.ScheduleMode)
+	s.backupScheduleHour.Store(int64(cfg.ScheduleHour))
+	s.backupScheduleMin.Store(int64(cfg.ScheduleMinute))
+}
+
+func nextBackupDelay(now time.Time, enabled bool, mode string, intervalHours int, hour int, minute int) time.Duration {
+	if !enabled {
+		return time.Hour
+	}
+	if hour < 0 {
+		hour = 0
+	}
+	if hour > 23 {
+		hour = 23
+	}
+	if minute < 0 {
+		minute = 0
+	}
+	if minute > 59 {
+		minute = 59
+	}
+	target := time.Date(now.Year(), now.Month(), now.Day(), hour, minute, 0, 0, now.Location())
+	switch mode {
+	case "daily":
+		if now.Before(target) {
+			return target.Sub(now)
+		}
+		return target.Add(24 * time.Hour).Sub(now)
+	case "weekly":
+		if now.Before(target) {
+			return target.Sub(now)
+		}
+		return target.Add(7 * 24 * time.Hour).Sub(now)
+	case "biweekly":
+		if now.Before(target) {
+			return target.Sub(now)
+		}
+		return target.Add(14 * 24 * time.Hour).Sub(now)
+	default:
+		if intervalHours < 1 {
+			intervalHours = 24
+		}
+		return time.Duration(intervalHours) * time.Hour
+	}
+}
+
+func (s *Server) currentBackupDelay(now time.Time) time.Duration {
+	mode, _ := s.backupScheduleMode.Load().(string)
+	return nextBackupDelay(
+		now,
+		s.backupEnabled.Load() == 1,
+		mode,
+		int(s.backupIntervalHours.Load()),
+		int(s.backupScheduleHour.Load()),
+		int(s.backupScheduleMin.Load()),
+	)
 }
 
 // startBackupJob runs automated backups at the configured interval.
 func (s *Server) startBackupJob() {
 	go func() {
-		// First run after 15 minutes to avoid competing with startup I/O.
-		timer := time.NewTimer(15 * time.Minute)
+		timer := time.NewTimer(s.currentBackupDelay(time.Now()))
 		defer timer.Stop()
 		for {
 			<-timer.C
 
-			// Always get fresh interval
-			intervalHours := s.backupIntervalHours.Load()
-			if intervalHours < 1 {
-				intervalHours = 24
-			}
 			if s.backupEnabled.Load() == 0 {
 				log.Printf("backup: disabled, rechecking in 1h")
 				timer.Reset(1 * time.Hour)
 				continue
 			}
 
-			log.Printf("backup: running automated backup (interval=%dh)", intervalHours)
+			log.Printf("backup: running automated backup")
 			err := s.performAutomatedBackup()
 			s.recordBackupOutcome(err)
 
 			// Schedule next run
-			log.Printf("backup: next automated backup scheduled in %dh", intervalHours)
-			timer.Reset(time.Duration(intervalHours) * time.Hour)
+			delay := s.currentBackupDelay(time.Now())
+			log.Printf("backup: next automated backup scheduled in %v", delay.Round(time.Minute))
+			timer.Reset(delay)
 		}
 	}()
 }

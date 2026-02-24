@@ -68,6 +68,9 @@ CREATE TABLE IF NOT EXISTS BackupConfig (
 	enabled INTEGER NOT NULL DEFAULT 1,
 	interval_hours INTEGER NOT NULL DEFAULT 24,
 	retention_count INTEGER NOT NULL DEFAULT 7,
+	schedule_mode TEXT NOT NULL DEFAULT 'interval',
+	schedule_hour INTEGER NOT NULL DEFAULT 3,
+	schedule_minute INTEGER NOT NULL DEFAULT 0,
 	destination_mode TEXT NOT NULL DEFAULT 'local_only',
 	local_path TEXT NOT NULL DEFAULT '',
 	encrypt_enabled INTEGER NOT NULL DEFAULT 0,
@@ -178,6 +181,10 @@ func New(dbPath string) (*DB, error) {
 
 	// Add source column to ActionLog if not present (migration for existing DBs)
 	_, _ = db.Exec(`ALTER TABLE ActionLog ADD COLUMN source TEXT NOT NULL DEFAULT ''`)
+	// BackupConfig schedule fields migration for existing DBs.
+	_, _ = db.Exec(`ALTER TABLE BackupConfig ADD COLUMN schedule_mode TEXT NOT NULL DEFAULT 'interval'`)
+	_, _ = db.Exec(`ALTER TABLE BackupConfig ADD COLUMN schedule_hour INTEGER NOT NULL DEFAULT 3`)
+	_, _ = db.Exec(`ALTER TABLE BackupConfig ADD COLUMN schedule_minute INTEGER NOT NULL DEFAULT 0`)
 
 	// Integrity check
 	var result string

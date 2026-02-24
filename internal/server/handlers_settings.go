@@ -350,8 +350,8 @@ func (s *Server) handlePerformanceSave(w http.ResponseWriter, r *http.Request) {
 		cfg.SystemdIntervalSec = v
 	}
 
-	log.Printf("settings: saving performance config: SSE=%ds, Disk=%dm, Docker=%ds, Systemd=%ds, Backup=%dh",
-		cfg.SSEIntervalSec, cfg.DiskIntervalMin, cfg.DockerIntervalSec, cfg.SystemdIntervalSec, cfg.BackupIntervalHours)
+	log.Printf("settings: saving performance config: SSE=%ds, Disk=%dm, Docker=%ds, Systemd=%ds",
+		cfg.SSEIntervalSec, cfg.DiskIntervalMin, cfg.DockerIntervalSec, cfg.SystemdIntervalSec)
 
 	if err := s.db.SavePerformanceConfig(cfg); err != nil {
 		log.Printf("settings: failed to save performance config: %v", err)
@@ -380,6 +380,16 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 	}
 	if v, err := strconv.Atoi(r.FormValue("retention_count")); err == nil {
 		cfg.RetentionCount = v
+	}
+	scheduleMode := strings.TrimSpace(r.FormValue("schedule_mode"))
+	if scheduleMode != "" {
+		cfg.ScheduleMode = scheduleMode
+	}
+	if v, err := strconv.Atoi(r.FormValue("schedule_hour")); err == nil {
+		cfg.ScheduleHour = v
+	}
+	if v, err := strconv.Atoi(r.FormValue("schedule_minute")); err == nil {
+		cfg.ScheduleMinute = v
 	}
 	mode := strings.TrimSpace(r.FormValue("destination_mode"))
 	if mode != "" {

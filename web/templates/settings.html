@@ -245,6 +245,31 @@
                         </div>
                     </div>
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Schedule cadence</label>
+                        <select name="schedule_mode" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <option value="interval" {{if eq .Content.Backup.ScheduleMode "interval"}}selected{{end}}>By interval (hours)</option>
+                            <option value="daily" {{if eq .Content.Backup.ScheduleMode "daily"}}selected{{end}}>Daily</option>
+                            <option value="weekly" {{if eq .Content.Backup.ScheduleMode "weekly"}}selected{{end}}>Weekly</option>
+                            <option value="biweekly" {{if eq .Content.Backup.ScheduleMode "biweekly"}}selected{{end}}>Biweekly</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Schedule hour</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="schedule_hour" value="{{.Content.Backup.ScheduleHour}}" min="0" max="23" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <span class="text-xs text-text-muted shrink-0">0-23</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-text-muted block mb-1">Schedule minute</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="schedule_minute" value="{{.Content.Backup.ScheduleMinute}}" min="0" max="59" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <span class="text-xs text-text-muted shrink-0">0-59</span>
+                        </div>
+                    </div>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="text-xs text-text-muted block mb-1">Destination mode</label>

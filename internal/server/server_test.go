@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -138,4 +139,22 @@ func TestPerformAutomatedBackup_RetentionRunsOnTelegramError(t *testing.T) {
 	files, readErr := os.ReadDir(backupDir)
 	require.NoError(t, readErr)
 	assert.LessOrEqual(t, len(files), 7)
+}
+
+func TestNextBackupDelay_Daily(t *testing.T) {
+	now := time.Date(2026, 2, 24, 10, 15, 0, 0, time.UTC)
+	delay := nextBackupDelay(now, true, "daily", 24, 11, 0)
+	assert.Equal(t, 45*time.Minute, delay)
+}
+
+func TestNextBackupDelay_Weekly(t *testing.T) {
+	now := time.Date(2026, 2, 24, 10, 15, 0, 0, time.UTC)
+	delay := nextBackupDelay(now, true, "weekly", 24, 9, 0)
+	assert.Equal(t, 6*24*time.Hour+22*time.Hour+45*time.Minute, delay)
+}
+
+func TestNextBackupDelay_Biweekly(t *testing.T) {
+	now := time.Date(2026, 2, 24, 10, 15, 0, 0, time.UTC)
+	delay := nextBackupDelay(now, true, "biweekly", 24, 10, 15)
+	assert.Equal(t, 14*24*time.Hour, delay)
 }
