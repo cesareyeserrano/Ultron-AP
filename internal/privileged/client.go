@@ -99,7 +99,14 @@ func (c *Client) call(ctx context.Context, action string, payload any) (*Respons
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
-	dialer := net.Dialer{Timeout: c.timeout}
+	effectiveTimeout := c.timeout
+	if deadline, ok := ctx.Deadline(); ok {
+		if until := time.Until(deadline); until > 0 {
+			effectiveTimeout = until
+		}
+	}
+
+	dialer := net.Dialer{Timeout: effectiveTimeout}
 	conn, err := dialer.DialContext(ctx, "unix", c.socketPath)
 	if err != nil {
 		if isUnavailableErr(err) {
@@ -109,7 +116,7 @@ func (c *Client) call(ctx context.Context, action string, payload any) (*Respons
 	}
 	defer conn.Close()
 
-	_ = conn.SetDeadline(time.Now().Add(c.timeout))
+	_ = conn.SetDeadline(time.Now().Add(effectiveTimeout))
 	if _, err := conn.Write(append(reqData, '\n')); err != nil {
 		return nil, fmt.Errorf("write helper request: %w", err)
 	}

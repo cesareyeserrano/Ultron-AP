@@ -85,7 +85,7 @@ func main() {
 
 func handleConn(conn net.Conn) {
 	defer conn.Close()
-	_ = conn.SetDeadline(time.Now().Add(20 * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(90 * time.Second))
 
 	reader := bufio.NewReader(conn)
 	line, err := reader.ReadBytes('\n')
