@@ -33,7 +33,7 @@
     <form hx-post="/api/hardware/apply"
           hx-target="#hardware-content"
           hx-swap="innerHTML"
-          hx-trigger="change">
+          hx-sync="this:replace">
         <div id="hardware-content">
             {{template "partials/hardware-form.html" .Content}}
         </div>

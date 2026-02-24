@@ -5,21 +5,21 @@
   "command": "node --test tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
   "commandSource": "node:test:file",
   "exitCode": 0,
-  "durationMs": 89,
+  "durationMs": 81,
   "timeoutMs": 120000,
-  "startedAt": "2026-02-24T16:23:23.741Z",
-  "finishedAt": "2026-02-24T16:23:23.832Z",
-  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.518208ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 43.915167",
+  "startedAt": "2026-02-24T16:24:07.232Z",
+  "finishedAt": "2026-02-24T16:24:07.313Z",
+  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.656958ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 44.7175",
   "stderrTail": "",
   "reason": "passed",
   "tcCoverage": {
     "available": true,
     "mode": "scaffold",
     "declared": 11,
-    "executable": 10,
-    "passing": 10,
+    "executable": 11,
+    "passing": 11,
     "failing": 0,
-    "missing": 1,
+    "missing": 0,
     "mapped": {
       "TC-1": {
         "found": true,
@@ -62,8 +62,8 @@
         "file": "tests/hardware-stability-refactor/generated/tc-10-validate-timeout-cancel-cleanup-unlo.test.mjs"
       },
       "TC-11": {
-        "found": false,
-        "file": null
+        "found": true,
+        "file": "tests/hardware-stability-refactor/generated/tc-11-validate-pi5-lightweight-resource-pr.test.mjs"
       }
     }
   },
@@ -84,16 +84,15 @@
       "US-3",
       "US-4",
       "US-5",
-      "US-6"
+      "US-6",
+      "US-7"
     ],
     "partial": [],
-    "unverified": [
-      "US-7"
-    ]
+    "unverified": []
   },
   "coverageConfidence": {
-    "score": 91,
-    "ratio": 0.9090909090909091,
+    "score": 100,
+    "ratio": 1,
     "mode": "scaffold"
   },
   "evidenceFile": "docs/verification/hardware-stability-refactor.json"

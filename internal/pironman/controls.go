@@ -100,7 +100,7 @@ func ParseConfigJSON(out []byte) (*Config, error) {
 // ReadConfig gets pironman settings through the privileged helper.
 func ReadConfig() (*Config, error) {
 	cli := privileged.NewClientFromEnv()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	raw, err := cli.PironmanRead(ctx)
 	if err != nil {
@@ -139,7 +139,7 @@ func BuildApplyArgs(cfg Config) []string {
 // ApplyConfig applies settings through the privileged helper.
 func ApplyConfig(cfg Config) error {
 	cli := privileged.NewClientFromEnv()
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	err := cli.PironmanApply(ctx, privileged.PironmanConfig{
 		RGBColor:      cfg.RGBColor,

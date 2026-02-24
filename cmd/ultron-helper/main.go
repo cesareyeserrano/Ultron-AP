@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -15,6 +16,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -22,6 +24,7 @@ import (
 )
 
 var serviceNameRe = regexp.MustCompile(`^[a-zA-Z0-9_.@\-]+$`)
+var pironmanApplyMu sync.Mutex
 
 func main() {
 	socket := strings.TrimSpace(os.Getenv("ULTRON_HELPER_SOCKET"))
@@ -85,7 +88,7 @@ func main() {
 
 func handleConn(conn net.Conn) {
 	defer conn.Close()
-	_ = conn.SetDeadline(time.Now().Add(90 * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
 
 	reader := bufio.NewReader(conn)
 	line, err := reader.ReadBytes('\n')
@@ -229,6 +232,12 @@ func handleLogs(source string, lines int) (string, error) {
 }
 
 func handlePironmanApply(cfg privileged.PironmanConfig) error {
+	if !pironmanApplyMu.TryLock() {
+		return fmt.Errorf("pironman apply busy: previous apply still running")
+	}
+	defer pironmanApplyMu.Unlock()
+	start := time.Now()
+
 	rgbEnable := "off"
 	if cfg.RGBEnable {
 		rgbEnable = "on"
@@ -238,6 +247,7 @@ func handlePironmanApply(cfg privileged.PironmanConfig) error {
 		oledEnable = "on"
 	}
 	args := []string{
+		"--background", "true",
 		"restart",
 		"-rc", cfg.RGBColor,
 		"-rb", strconv.Itoa(cfg.RGBBrightness),
@@ -250,9 +260,11 @@ func handlePironmanApply(cfg privileged.PironmanConfig) error {
 		"-or", strconv.Itoa(cfg.OLEDRotation),
 		"-os", strconv.Itoa(cfg.OLEDSleep),
 	}
-	if _, err := run(context.Background(), 10*time.Second, "/usr/local/bin/pironman5", args...); err != nil {
+	if _, err := run(context.Background(), 20*time.Second, "/usr/local/bin/pironman5", args...); err != nil {
+		log.Printf("pironman apply failed after %v: %v", time.Since(start).Round(time.Millisecond), err)
 		return fmt.Errorf("pironman apply failed: %w", err)
 	}
+	log.Printf("pironman apply completed in %v", time.Since(start).Round(time.Millisecond))
 	return nil
 }
 
@@ -260,13 +272,44 @@ func run(ctx context.Context, timeout time.Duration, name string, args ...string
 	runCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	cmd := exec.CommandContext(runCtx, name, args...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		msg := strings.TrimSpace(string(out))
-		if msg != "" {
-			return nil, fmt.Errorf("%s", msg)
-		}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-	return out, nil
+
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			msg := strings.TrimSpace(out.String())
+			if msg != "" {
+				return nil, fmt.Errorf("%s", msg)
+			}
+			return nil, err
+		}
+		return out.Bytes(), nil
+	case <-runCtx.Done():
+		if cmd.Process != nil {
+			if pgid, err := syscall.Getpgid(cmd.Process.Pid); err == nil {
+				_ = syscall.Kill(-pgid, syscall.SIGKILL)
+			}
+			_ = cmd.Process.Kill()
+		}
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+		}
+		msg := strings.TrimSpace(out.String())
+		if msg != "" {
+			return nil, fmt.Errorf("timeout: %s", msg)
+		}
+		return nil, fmt.Errorf("timeout after %v", timeout)
+	}
 }
