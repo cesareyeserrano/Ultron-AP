@@ -5,8 +5,14 @@ import { fr_1_hardware_settings_updates_must_be_explicitly_ } from "../../../src
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("tc_6_handle_edge_behavior_user_modifies_many_controls_quickly_before_pressing_apply", () => {
-  // TODO: Validate these acceptance criteria:
-  // No AC mapped to this TC.
-  assert.fail("Not implemented: TC-6 — Handle edge behavior - User modifies many controls quickly before pressing apply");
+test("tc_6_handle_edge_behavior_user_modifies_many_controls_quickly_before_pressing_apply", async () => {
+  const report = await fr_1_hardware_settings_updates_must_be_explicitly_({
+    hardwareTemplatePath: "web/templates/hardware.html",
+    hardwarePartialPath: "web/templates/partials/hardware-form.html",
+    hardwareHandlerPath: "internal/server/handlers_hardware.go",
+    helperPath: "cmd/ultron-helper/main.go",
+    systemHandlerPath: "internal/server/handlers_system.go",
+  });
+  assert.equal(report.explicitApplyOnly, true);
+  assert.equal(report.singleFlightApply, true);
 });

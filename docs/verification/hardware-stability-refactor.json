@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "hardware-stability-refactor",
+  "command": "node --test tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+  "commandSource": "node:test:file",
+  "exitCode": 0,
+  "durationMs": 76,
+  "timeoutMs": 120000,
+  "startedAt": "2026-02-24T16:19:49.357Z",
+  "finishedAt": "2026-02-24T16:19:49.435Z",
+  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.518458ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 48.601542",
+  "stderrTail": "",
+  "reason": "passed",
+  "tcCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 11,
+    "executable": 5,
+    "passing": 5,
+    "failing": 0,
+    "missing": 6,
+    "mapped": {
+      "TC-1": {
+        "found": true,
+        "file": "tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs"
+      },
+      "TC-2": {
+        "found": false,
+        "file": null
+      },
+      "TC-3": {
+        "found": false,
+        "file": null
+      },
+      "TC-4": {
+        "found": false,
+        "file": null
+      },
+      "TC-5": {
+        "found": false,
+        "file": null
+      },
+      "TC-6": {
+        "found": true,
+        "file": "tests/hardware-stability-refactor/generated/tc-6-handle-edge-behavior-user-modifies-m.test.mjs"
+      },
+      "TC-7": {
+        "found": true,
+        "file": "tests/hardware-stability-refactor/generated/tc-7-handle-edge-behavior-user-sends-repe.test.mjs"
+      },
+      "TC-8": {
+        "found": true,
+        "file": "tests/hardware-stability-refactor/generated/tc-8-enforce-security-control-keep-privil.test.mjs"
+      },
+      "TC-9": {
+        "found": true,
+        "file": "tests/hardware-stability-refactor/generated/tc-9-enforce-security-control-enforce-par.test.mjs"
+      },
+      "TC-10": {
+        "found": false,
+        "file": null
+      },
+      "TC-11": {
+        "found": false,
+        "file": null
+      }
+    }
+  },
+  "frCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 5,
+    "covered": 1,
+    "uncovered": [
+      "FR-2",
+      "FR-3",
+      "FR-4",
+      "FR-5"
+    ]
+  },
+  "usCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 7,
+    "fullyVerified": [
+      "US-1"
+    ],
+    "partial": [],
+    "unverified": [
+      "US-2",
+      "US-3",
+      "US-4",
+      "US-5",
+      "US-6",
+      "US-7"
+    ]
+  },
+  "coverageConfidence": {
+    "score": 45,
+    "ratio": 0.45454545454545453,
+    "mode": "scaffold"
+  },
+  "evidenceFile": "docs/verification/hardware-stability-refactor.json"
+}

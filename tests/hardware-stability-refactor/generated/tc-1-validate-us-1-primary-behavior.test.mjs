@@ -5,8 +5,13 @@ import { fr_1_hardware_settings_updates_must_be_explicitly_ } from "../../../src
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("tc_1_validate_us_1_primary_behavior", () => {
-  // TODO: Validate these acceptance criteria:
-  // AC-1: Given an authenticated admin on hardware page, when fields are edited, then no apply request is sent until explicit apply action is triggered.
-  assert.fail("Not implemented: TC-1 — Validate us-1 primary behavior");
+test("tc_1_validate_us_1_primary_behavior", async () => {
+  const report = await fr_1_hardware_settings_updates_must_be_explicitly_({
+    hardwareTemplatePath: "web/templates/hardware.html",
+    hardwarePartialPath: "web/templates/partials/hardware-form.html",
+    hardwareHandlerPath: "internal/server/handlers_hardware.go",
+    helperPath: "cmd/ultron-helper/main.go",
+    systemHandlerPath: "internal/server/handlers_system.go",
+  });
+  assert.equal(report.explicitApplyOnly, true);
 });

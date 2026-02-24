@@ -5,8 +5,13 @@ import { fr_1_hardware_settings_updates_must_be_explicitly_ } from "../../../src
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("tc_8_enforce_security_control_keep_privileged_operations_only_in_dedicated_helper_boundary_web_process_must_not_execute_sudo_or_direct_privileged_commands", () => {
-  // TODO: Validate these acceptance criteria:
-  // No AC mapped to this TC.
-  assert.fail("Not implemented: TC-8 — Enforce security control - Keep privileged operations only in dedicated helper boundary; web process must not execute `sudo` or direct privileged commands");
+test("tc_8_enforce_security_control_keep_privileged_operations_only_in_dedicated_helper_boundary_web_process_must_not_execute_sudo_or_direct_privileged_commands", async () => {
+  const report = await fr_1_hardware_settings_updates_must_be_explicitly_({
+    hardwareTemplatePath: "web/templates/hardware.html",
+    hardwarePartialPath: "web/templates/partials/hardware-form.html",
+    hardwareHandlerPath: "internal/server/handlers_hardware.go",
+    helperPath: "cmd/ultron-helper/main.go",
+    systemHandlerPath: "internal/server/handlers_system.go",
+  });
+  assert.equal(report.noDirectWebPrivilege, true);
 });
