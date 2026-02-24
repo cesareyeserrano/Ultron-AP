@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"strings"
 )
 
 func (s *Server) handleSystemRestart(w http.ResponseWriter, r *http.Request) {
@@ -62,16 +63,19 @@ func (s *Server) handleFetchSystemLogs(w http.ResponseWriter, r *http.Request) {
 	source := r.URL.Query().Get("source")
 	lines := 100
 
-	var cmd *exec.Cmd
+	var (
+		cmd         *exec.Cmd
+		kernelLimit bool
+	)
 	switch source {
 	case "ultron-ap":
 		cmd = exec.Command("sudo", "-n", "journalctl", "-u", "ultron-ap", "-n", fmt.Sprintf("%d", lines), "--no-pager")
 	case "docker":
 		cmd = exec.Command("sudo", "-n", "journalctl", "-u", "docker", "-n", fmt.Sprintf("%d", lines), "--no-pager")
 	case "kernel":
-		cmd = exec.Command("sudo", "-n", "dmesg", "-T", "|", "tail", "-n", fmt.Sprintf("%d", lines))
-		// Note: dmesg with pipe needs bash
-		cmd = exec.Command("bash", "-c", fmt.Sprintf("sudo -n dmesg -T | tail -n %d", lines))
+		// Avoid shell/pipes; fetch full stream and trim in-process.
+		cmd = exec.Command("sudo", "-n", "dmesg", "-T")
+		kernelLimit = true
 	default:
 		http.Error(w, "Invalid log source", http.StatusBadRequest)
 		return
@@ -86,6 +90,13 @@ func (s *Server) handleFetchSystemLogs(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Error(w, "Failed to fetch logs: "+errMsg, http.StatusInternalServerError)
 		return
+	}
+	if kernelLimit {
+		parts := strings.Split(strings.TrimSpace(string(out)), "\n")
+		if len(parts) > lines {
+			parts = parts[len(parts)-lines:]
+		}
+		out = []byte(strings.Join(parts, "\n"))
 	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")

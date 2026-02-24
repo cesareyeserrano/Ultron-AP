@@ -13,9 +13,19 @@ RestartSec=5
 EnvironmentFile=-/etc/ultron-ap/ultron-ap.env
 
 # Security hardening
+# NOTE: kept false because current runtime executes privileged actions via sudo.
+# Set to true once privileged operations are moved out of the web process.
 NoNewPrivileges=false
 ProtectSystem=full
 ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
 ReadWritePaths=/var/lib/ultron-ap /tmp
 
 [Install]

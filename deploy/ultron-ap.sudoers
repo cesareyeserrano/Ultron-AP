@@ -1,0 +1,35 @@
+# Ultron least-privilege sudoers profile.
+# Install with: sudo install -m 0440 deploy/ultron-ap.sudoers /etc/sudoers.d/ultron-ap
+#
+# Scope:
+# - Service controls only for explicit units used by the panel.
+# - Read-only logs for explicit units.
+# - Controlled system power actions.
+# - Pironman helper command.
+
+User_Alias ULTRON_USER = ultron
+
+Cmnd_Alias ULTRON_SYSTEMCTL = \
+    /usr/bin/systemctl start ultron-ap.service, \
+    /usr/bin/systemctl stop ultron-ap.service, \
+    /usr/bin/systemctl restart ultron-ap.service, \
+    /usr/bin/systemctl start docker.service, \
+    /usr/bin/systemctl stop docker.service, \
+    /usr/bin/systemctl restart docker.service, \
+    /usr/bin/systemctl start tailscaled.service, \
+    /usr/bin/systemctl stop tailscaled.service, \
+    /usr/bin/systemctl restart tailscaled.service
+
+Cmnd_Alias ULTRON_LOGS = \
+    /usr/bin/journalctl -u ultron-ap -n * --no-pager, \
+    /usr/bin/journalctl -u docker -n * --no-pager, \
+    /usr/bin/dmesg -T
+
+Cmnd_Alias ULTRON_POWER = \
+    /usr/sbin/shutdown -r now, \
+    /usr/sbin/shutdown -h now
+
+Cmnd_Alias ULTRON_PIRONMAN = \
+    /usr/local/bin/pironman5 *
+
+ULTRON_USER ALL=(root) NOPASSWD: ULTRON_SYSTEMCTL, ULTRON_LOGS, ULTRON_POWER, ULTRON_PIRONMAN

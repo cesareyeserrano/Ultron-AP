@@ -42,3 +42,26 @@ sudo systemctl restart caddy
 - **Firewall**: If using a reverse proxy, ensure port `8080` is only accessible from `localhost`.
 - **Brute-Force**: Ultron-AP has built-in brute-force protection (3 attempts / 15m), but for public exposure, consider a WAF like Cloudflare.
 - **VPN**: For maximum security, only expose Ultron-AP via a VPN (Tailscale/Wireguard) and never open ports on your router.
+
+## Host Hardening (Recommended)
+
+### 1) Install hardened systemd unit
+```bash
+sudo install -m 0644 deploy/ultron-ap.service /etc/systemd/system/ultron-ap.service
+sudo systemctl daemon-reload
+sudo systemctl restart ultron-ap
+```
+
+### 2) Install least-privilege sudoers policy
+```bash
+sudo install -m 0440 deploy/ultron-ap.sudoers /etc/sudoers.d/ultron-ap
+sudo visudo -cf /etc/sudoers.d/ultron-ap
+```
+
+### 3) Validate effective hardening
+```bash
+systemctl show ultron-ap -p NoNewPrivileges -p ProtectSystem -p PrivateTmp -p ProtectKernelTunables -p RestrictSUIDSGID
+sudo -l -U ultron
+```
+
+Note: `NoNewPrivileges` remains `false` in the current design because the app still uses `sudo` for privileged operations. Set it to `true` only after moving privileged actions to a separate root-owned helper/service boundary.
