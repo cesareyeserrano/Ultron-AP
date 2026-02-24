@@ -68,3 +68,23 @@
 - Acceptance Criteria:
   - Given repeated hardware applies, when resource metrics are sampled, then no sustained abnormal CPU/RAM/IO increase is introduced by refactor.
   - Given idle hardware screen, when no apply is running, then background workload remains minimal.
+
+## Future Enhancements (Post-Stabilization)
+
+### FE-1: Optional Debounced Auto-Apply (Replace Apply Button)
+- As an Admin operator, I want an optional mode that auto-applies hardware changes with debounce, so that UX is faster without introducing unstable rapid-fire operations.
+- Constraints:
+  - Keep `Apply` as default mode.
+  - Debounce window configurable (recommended 800-1500ms).
+  - Feature flag in settings (`hardware.apply_mode = manual|debounced_auto`).
+  - Reuse helper queue and single-flight safeguards.
+
+### FE-2: Pi5 CPU Budget Guardrail For Hardware Stack
+- As a Platform maintainer, I want continuous CPU budget visibility for `ultron-ap`, `ultron-helper`, and Pironman-related daemons, so that resource regressions are detected before production impact.
+- Current finding (2026-02-24):
+  - `ultron-ap` low usage (~0.1% CPU in sample window).
+  - Higher steady load observed from `pironman5-service` (~2.5% CPU) plus `influxd` (~0.2% CPU).
+- Actions:
+  - Add lightweight periodic process snapshot in diagnostics.
+  - Define budget thresholds and warning banner for sustained over-budget windows.
+  - Document low-power profile recommendations (RGB mode/brightness, OLED policy) for operators.

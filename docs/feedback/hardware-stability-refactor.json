@@ -22,6 +22,17 @@
       "severity": "critical",
       "resolution": null,
       "resolvedAt": null
+    },
+    {
+      "id": "FB-3",
+      "addedAt": "2026-02-24T18:22:56.203Z",
+      "source": "user-testing",
+      "linkedRef": "FR-3",
+      "category": "improvement",
+      "description": "Future enhancement: keep manual Apply as default, but add optional debounced auto-apply mode behind a feature flag for users who want faster UX. Also add Pi5 CPU budget guardrails and diagnostics snapshots for ultron-ap/ultron-helper/Pironman stack; current live sample shows Ultron processes low CPU while extra steady CPU comes from pironman5-service and influxd.",
+      "severity": "medium",
+      "resolution": null,
+      "resolvedAt": null
     }
   ]
 }
