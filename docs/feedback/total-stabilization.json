@@ -22,6 +22,17 @@
       "severity": "high",
       "resolution": null,
       "resolvedAt": null
+    },
+    {
+      "id": "FB-3",
+      "addedAt": "2026-02-24T02:48:17.845Z",
+      "source": "support",
+      "linkedRef": "FR-3",
+      "category": "requirement-gap",
+      "description": "Root requirement for backup subsystem: it must be fully parameterizable from Settings as a first-class module (enabled flag, interval, retention count, local path, destination mode, encryption on/off, key reference, upload timeout/size). Current implementation is partially configurable; full operational control and security posture require complete settings-driven configuration with live apply and audited changes.",
+      "severity": "high",
+      "resolution": null,
+      "resolvedAt": null
     }
   ]
 }

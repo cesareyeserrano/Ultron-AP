@@ -150,6 +150,77 @@ Requested backlog conversion:
 - EP: SQLite Hot-Path Indexing and IO Budgeting
 ```
 
+## Live Raspberry Pi Validation (SSH 192.168.1.29)
+
+### Runtime Status
+- Host: `Ultron` (`Linux 6.12.62+rpt-rpi-2712`, aarch64).
+- `ultron-ap` service: active/running for ~2h21m.
+- Health endpoint:
+  - `GET /health` returned `200` with `{"status":"ok"}`.
+
+### Resource Snapshot (Live)
+- Process (`ultron-ap`) memory:
+  - RSS ~`25 MB` (`25856 KB`), `%MEM ~0.3`.
+- System memory:
+  - `7.9 GiB` total, ~`554 MiB` used.
+- CPU/load at capture:
+  - `load average 0.31 / 0.42 / 0.44` and CPU mostly idle.
+
+### Security Header Validation (Live)
+- `GET /login` response headers do not include baseline hardening headers (no CSP/XFO/XCTO/Referrer-Policy observed).
+- `GET /health` likewise returns minimal headers only.
+- Confirms static audit findings around missing HTTP hardening middleware.
+
+### New Production Bug Found
+- Repeated runtime error in journal:
+  - `Failed to execute template hardware.html: template: hardware-form.html:3:52: executing "partials/hardware-form.html" at <.CSRFToken>: can't evaluate field CSRFToken in type server.hardwarePageData`
+- Operational impact:
+  - Hardware page render failure and repeated noisy sudo/pironman activity in logs.
+- Immediate remediation:
+  - Ensure `CSRFToken` is passed in `hardwarePageData` path or render through `PageData` consistently.
+  - Add integration test that renders `/hardware` and asserts no template execution errors.
+
+## Root-Solution Implementation Blueprint (No Patch Strategy)
+
+### A) Frontend/Template Contract Unification (Root cause of hardware render failure)
+- Problem class:
+  - Partial templates depend on fields not guaranteed by page-specific structs.
+- Root solution:
+  - Define a single typed view-model contract for all pages with mandatory shared fields (`CSRFToken`, `Username`, `Version`, etc.).
+  - Enforce compile-time usage by rendering through one canonical `PageData` envelope.
+  - Ban direct partial execution with ad-hoc structs for authenticated pages.
+- Definition of done:
+  - All template render entrypoints use a common presenter/builder.
+  - `/hardware` render path covered by integration test + template compile smoke test in CI.
+
+### B) Backup Module as First-Class Configurable Subsystem (Settings-driven)
+- Requirement (new):
+  - Backup module must be fully parameterizable from Settings.
+- Root solution:
+  - Introduce `BackupConfig` domain object persisted in DB (separate from generic notification config blob).
+  - Configurable fields:
+    - `enabled`
+    - `interval_hours`
+    - `retention_count`
+    - `destination_mode` (`local_only`, `local_plus_telegram`, future providers)
+    - `local_path`
+    - `encrypt_enabled`
+    - `encryption_key_ref`
+    - `max_upload_size_mb`
+    - `upload_timeout_sec`
+  - Scheduler consumes config dynamically without restart.
+  - Backup execution pipeline split into stages:
+    - snapshot -> local retention -> encryption -> optional upload -> audit event.
+- Definition of done:
+  - Settings UI exposes and validates all backup parameters.
+  - Config changes apply live.
+  - Tests cover retention, encryption on/off, upload success/failure, and rollback-safe behavior.
+
+### C) Security/Operations Baseline by Design
+- Standardize HTTP security middleware and systemd hardening profile as non-optional defaults.
+- Separate privileged operations into narrow service adapters with explicit allowlists.
+- Add threat-model checklist gate before delivery (`auth`, `secrets`, `backup`, `privileged exec`, `headers`).
+
 ## Suggested Resolution Plan (Implementation-Oriented)
 
 ### Wave 1 (Immediate hardening, low risk)
