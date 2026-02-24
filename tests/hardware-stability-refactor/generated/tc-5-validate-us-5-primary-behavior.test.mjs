@@ -5,8 +5,11 @@ import { fr_5_every_hardware_apply_request_must_produce_tra } from "../../../src
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("tc_5_validate_us_5_primary_behavior", () => {
-  // TODO: Validate these acceptance criteria:
-  // AC-1: Given an authenticated admin on hardware page, when fields are edited, then no apply request is sent until explicit apply action is triggered.
-  assert.fail("Not implemented: TC-5 — Validate us-5 primary behavior");
+test("tc_5_validate_us_5_primary_behavior", async () => {
+  const report = await fr_5_every_hardware_apply_request_must_produce_tra({
+    helperPath: "cmd/ultron-helper/main.go",
+    hardwareHandlerPath: "internal/server/handlers_hardware.go",
+  });
+  assert.equal(report.durationTelemetry, true);
+  assert.equal(report.resultAndErrorPath, true);
 });

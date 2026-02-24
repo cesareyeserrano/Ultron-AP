@@ -8,7 +8,8 @@
     "tests/hardware-stability-refactor/generated/tc-2-validate-us-2-primary-behavior.test.mjs",
     "tests/hardware-stability-refactor/generated/tc-3-validate-us-3-primary-behavior.test.mjs",
     "tests/hardware-stability-refactor/generated/tc-4-validate-us-4-primary-behavior.test.mjs",
-    "tests/hardware-stability-refactor/generated/tc-5-validate-us-5-primary-behavior.test.mjs"
+    "tests/hardware-stability-refactor/generated/tc-5-validate-us-5-primary-behavior.test.mjs",
+    "tests/hardware-stability-refactor/generated/tc-10-validate-timeout-cancel-cleanup-unlo.test.mjs"
   ],
   "interfaceFiles": [
     "src/contracts/fr-1-hardware-settings-updates-must-b.js",
@@ -20,5 +21,5 @@
   "baseConfigs": [],
   "feature": "hardware-stability-refactor",
   "stackFamily": "node",
-  "generatedAt": "2026-02-24T16:22:09.925Z"
+  "generatedAt": "2026-02-24T16:22:39.611Z"
 }
