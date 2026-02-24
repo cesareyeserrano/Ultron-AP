@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/pironman"
 )
@@ -54,7 +55,11 @@ func (s *Server) handleHardwareApply(w http.ResponseWriter, r *http.Request) {
 
 	if err := pironman.ApplyConfig(cfg); err != nil {
 		log.Printf("hardware: apply config: %v", err)
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(err.Error())))
+		toastType := "error"
+		if strings.Contains(strings.ToLower(err.Error()), "apply busy") {
+			toastType = "warning"
+		}
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "%s"}}`, html.EscapeString(err.Error()), toastType))
 		fmt.Fprintf(w,
 			`<div class="rounded-lg bg-danger/10 border border-danger/30 p-3 mb-4 text-sm text-danger">%s</div>`,
 			html.EscapeString(err.Error()),

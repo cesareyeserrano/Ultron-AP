@@ -24,7 +24,16 @@ import (
 )
 
 var serviceNameRe = regexp.MustCompile(`^[a-zA-Z0-9_.@\-]+$`)
-var pironmanApplyMu sync.Mutex
+
+type applyJob struct {
+	cfg  privileged.PironmanConfig
+	done chan error
+}
+
+var (
+	applyQueue     chan applyJob
+	applyQueueOnce sync.Once
+)
 
 func main() {
 	socket := strings.TrimSpace(os.Getenv("ULTRON_HELPER_SOCKET"))
@@ -64,6 +73,7 @@ func main() {
 	}
 
 	log.Printf("ultron-helper listening on %s", socket)
+	startApplyWorker()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
@@ -84,6 +94,39 @@ func main() {
 		}
 		go handleConn(conn)
 	}
+}
+
+func startApplyWorker() {
+	applyQueueOnce.Do(func() {
+		applyQueue = make(chan applyJob, 64)
+		go func() {
+			for {
+				first, ok := <-applyQueue
+				if !ok {
+					return
+				}
+
+				latest := first
+				waiters := []chan error{first.done}
+				for {
+					select {
+					case next := <-applyQueue:
+						latest = next
+						waiters = append(waiters, next.done)
+					default:
+						goto EXECUTE
+					}
+				}
+
+			EXECUTE:
+				err := handlePironmanApplyNow(latest.cfg)
+				for _, done := range waiters {
+					done <- err
+					close(done)
+				}
+			}
+		}()
+	})
 }
 
 func handleConn(conn net.Conn) {
@@ -232,10 +275,23 @@ func handleLogs(source string, lines int) (string, error) {
 }
 
 func handlePironmanApply(cfg privileged.PironmanConfig) error {
-	if !pironmanApplyMu.TryLock() {
-		return fmt.Errorf("pironman apply busy: previous apply still running")
+	startApplyWorker()
+	done := make(chan error, 1)
+	job := applyJob{cfg: cfg, done: done}
+	select {
+	case applyQueue <- job:
+	case <-time.After(1 * time.Second):
+		return fmt.Errorf("pironman apply queue overloaded")
 	}
-	defer pironmanApplyMu.Unlock()
+	select {
+	case err := <-done:
+		return err
+	case <-time.After(30 * time.Second):
+		return fmt.Errorf("pironman apply timed out waiting for worker")
+	}
+}
+
+func handlePironmanApplyNow(cfg privileged.PironmanConfig) error {
 	start := time.Now()
 
 	rgbEnable := "off"

@@ -17,8 +17,9 @@ export async function fr_1_hardware_settings_updates_must_be_explicitly_(input) 
     !/hx-trigger="change"/.test(hardwarePage);
 
   const singleFlightApply =
-    /hx-sync="this:replace"/.test(hardwarePage) &&
-    /TryLock\(\)/.test(helper);
+    /hx-sync="this:(drop|replace)"/.test(hardwarePage) &&
+    /applyQueue/.test(helper) &&
+    /startApplyWorker/.test(helper);
 
   const noDirectWebPrivilege =
     !/exec\.Command\("sudo"/.test(systemHandler) &&

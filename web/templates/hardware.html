@@ -33,7 +33,7 @@
     <form hx-post="/api/hardware/apply"
           hx-target="#hardware-content"
           hx-swap="innerHTML"
-          hx-sync="this:replace">
+          hx-sync="this:drop">
         <div id="hardware-content">
             {{template "partials/hardware-form.html" .Content}}
         </div>
@@ -52,6 +52,26 @@ htmx.on('htmx:afterSwap', function() {
             if (span) span.textContent = el.value;
         });
     });
+});
+
+document.body.addEventListener('htmx:beforeRequest', function(e) {
+    if (e.detail.elt && e.detail.elt.matches('form[hx-post="/api/hardware/apply"]')) {
+        var btn = document.getElementById('hardware-apply-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Applying...';
+        }
+    }
+});
+
+document.body.addEventListener('htmx:afterRequest', function(e) {
+    if (e.detail.elt && e.detail.elt.matches('form[hx-post="/api/hardware/apply"]')) {
+        var btn = document.getElementById('hardware-apply-btn');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Apply hardware settings';
+        }
+    }
 });
 </script>
 {{end}}

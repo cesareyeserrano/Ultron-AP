@@ -10,9 +10,10 @@ export async function fr_2_the_hardware_apply_pipeline_must_expose_deter(input) 
   const handler = read(input.hardwareHandlerPath);
 
   const deterministicApplyControl =
-    /hx-sync="this:replace"/.test(hardwarePage) &&
-    /TryLock\(\)/.test(helper) &&
-    /pironman apply busy/.test(helper);
+    /hx-sync="this:(drop|replace)"/.test(hardwarePage) &&
+    /applyQueue/.test(helper) &&
+    /startApplyWorker/.test(helper) &&
+    /handlePironmanApplyNow/.test(helper);
 
   const failurePathIsExplicit =
     /showToast/.test(handler) &&
