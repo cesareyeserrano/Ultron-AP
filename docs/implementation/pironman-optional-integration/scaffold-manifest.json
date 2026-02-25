@@ -1,0 +1,20 @@
+{
+  "testFiles": [
+    "tests/pironman-optional-integration/generated/tc-1_feature-flag-disabled-path_test.go",
+    "tests/pironman-optional-integration/generated/tc-2_feature-flag-enabled-route_test.go",
+    "tests/pironman-optional-integration/generated/tc-5_timeout-capability-mapping_test.go",
+    "tests/pironman-optional-integration/generated/tc-6_socket-unavailable-mapping_test.go",
+    "tests/pironman-optional-integration/generated/tc-3_apply-endpoint-csrf-session-guard_test.go",
+    "tests/pironman-optional-integration/generated/tc-4_input-sanitization_test.go"
+  ],
+  "interfaceFiles": [
+    "internal/contracts/fr-1-the-optional-pironman-module-mus.go",
+    "internal/contracts/fr-3-integration-must-expose-capabili.go",
+    "internal/contracts/fr-2-hardware-settings-must-be-applie.go",
+    "internal/contracts/fr-4-privileged-operations-must-remai.go"
+  ],
+  "baseConfigs": [],
+  "feature": "pironman-optional-integration",
+  "stackFamily": "go",
+  "generatedAt": "2026-02-25T23:36:16.490Z"
+}

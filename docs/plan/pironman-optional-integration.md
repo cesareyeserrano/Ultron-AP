@@ -1,186 +1,122 @@
 # Plan: pironman-optional-integration
 
-STATUS: DRAFT
+STATUS: READY
 
-## 1. Intent (from approved spec)
-- Retrieval mode: section-level
+## Intent
+- Reintroduce Pironman control in Ultron as an optional module, disabled by default.
+- Keep core panel stable/lightweight on Raspberry Pi 5.
+- Preserve security boundary: privileged work only through `ultron-helper`.
 
-### Context snapshot
-- Integracion opcional de Pironman en Ultron, desacoplada del core, con control de hardware estable y seguro estilo Home Assistant.
-- Primary actor: Admin operator de Ultron, maintainer de plataforma, y security owner.
-- Expected outcome: El operador puede ver estado de integracion (available/unavailable/degraded), leer configuracion Pironman y aplicar cambios de forma determinista sin bloqueos; si falla, Ultron sigue operativo y muestra error accionable.
+## Scope
+- In scope:
+- Feature flag (`ULTRON_FEATURE_PIRONMAN`) with default `false`.
+- Optional module route and isolated UI flow.
+- Deterministic apply model (explicit submit + single-flight helper queue).
+- Capability states: `available | degraded | unavailable`.
+- On-demand diagnostics and per-request telemetry.
+- Out of scope:
+- Global UI redesign.
+- Pironman/Influx service lifecycle management from Ultron core.
+- Changes to unrelated modules.
 
-### Actors snapshot
-- Admin operator de Ultron, maintainer de plataforma, y security owner.
+## Architecture
+- Web layer:
+- Optional routes only when feature flag is enabled.
+- CSRF/session checks required for mutations.
+- Integration layer:
+- Read/apply through `internal/pironman` and helper socket client.
+- Degraded/unavailable mapping on timeout/socket/API errors.
+- Privileged boundary:
+- `ultron-helper` remains single point for privileged actions.
+- No direct `sudo` or host lifecycle commands from web handlers.
 
-### Functional rules snapshot
-- The optional Pironman module must run with explicit feature flag gating and default disabled mode.
-- Hardware settings must be applied only by explicit user action and only one apply operation can run at a time.
-- Integration must expose capability states `available|unavailable|degraded` and must not block Ultron core when Pironman fails.
-- Privileged operations must remain in helper boundary with strict parameter validation and auditable logs.
+## Reliability Rules
+- Apply executes only on explicit user action.
+- At most one active apply operation at a time (helper queue single-flight/coalescing).
+- Any timeout/error must return deterministic state and actionable feedback.
+- Core panel remains operable even when Pironman is down.
 
-### Acceptance criteria snapshot
-- Given un admin autenticado en el modulo opcional de hardware, when edita valores y presiona Apply, then se ejecuta una sola operacion, el estado transiciona a applied o failed, y la UI nunca queda en busy permanente.
-- Given el feature flag de Pironman esta deshabilitado, when el usuario navega por Ultron core, then no se muestra modulo hardware ni se ejecutan operaciones Pironman.
-- Given Pironman API falla o excede timeout, when se solicita read/apply, then la integracion reporta `degraded` o `unavailable` y Ultron core permanece operativo.
-- Given una solicitud invalida de parametros hardware, when llega al helper, then se rechaza y queda registro auditable del rechazo.
+## Security Rules
+- Keep `NoNewPrivileges=true` on web service.
+- Strict parameter validation before apply.
+- CSRF + authenticated session mandatory.
+- Audit trail for failures and rejected invalid requests.
 
-### Security snapshot
-- Mantener privilegios fuera del web process: helper root como unico boundary, validacion estricta de parametros, CSRF/session obligatorios y logs auditables.
+## Resource Strategy (Pi5)
+- No continuous hardware polling loops.
+- Diagnostics are on-demand only.
+- Idle targets:
+- `ultron-ap` <= 2% CPU
+- `ultron-helper` <= 1% CPU
 
-### Out-of-scope snapshot
-- No rediseño visual global, no gestion de lifecycle de servicios Pironman/Influx desde core, no cambios en modulos no hardware.
-
-### Retrieval metadata
-- Retrieval mode: section-level
-- Retrieved sections: 1. Context, 2. Actors, 3. Functional Rules, 7. Security Considerations, 8. Out of Scope, 9. Acceptance Criteria
-- Summary:
--
-- Success looks like:
--
-
-## 2. Discovery Review (Discovery Persona)
-### Problem framing
-- Current direct integration caused busy/timeout states and degraded UX; high severity because it blocks operator actions.
-- Core rule to preserve: The optional Pironman module must run with explicit feature flag gating and default disabled mode.
-
-### Constraints and dependencies
-- Constraints: Keep Ultron lightweight on Pi5, no service lifecycle control from core, strict helper privilege boundary, CSRF/session enforcement, no regressions in core modules.
-- Dependencies: ultron-helper over unix socket, local Pironman API (127.0.0.1:34001), existing Ultron auth/session/database.
-
-### Success metrics
-- 0 stuck busy states; p95 apply under 2s when API healthy; idle CPU budget maintained (ultron-ap <=2%, helper <=1%).; Baseline: No hardware module in core; optional diagnostics endpoint exists; Pironman/influx often inactive by default.
-
-### Key assumptions
-- Pironman API endpoints remain stable and reachable when service is active; helper queue/cancel model remains deterministic under burst input.; Why now: Need stable, secure hardware control without regressing core after full stabilization and decoupling.
-
-### Discovery rigor profile
-- Discovery interview mode: deep
-- Planning policy: Plan for full decomposition (explicit risks, constraints, and dependency handling).
-- Follow-up gate: No extra discovery depth required before implementation unless scope changes.
-
-## 3. Scope
-### In scope
--
-
-### Out of scope
--
+## Delivery Phases
+- Phase 1: Design + contracts + tests for optional module behavior.
+- Phase 2: Implement feature flag and optional Pironman routes/UI.
+- Phase 3: Harden failure mapping, telemetry, and guardrails.
+- Phase 4: Pi runtime verification and release gating.
 
 ## 4. Product Review (Product Persona)
 ### Business value
-- Address user pain by enforcing: The optional Pironman module must run with explicit feature flag gating and default disabled mode.
-- Secondary value from supporting rule: Hardware settings must be applied only by explicit user action and only one apply operation can run at a time.
+- Reintroduces hardware control without reopening core instability.
+- Keeps default operator flow minimal while enabling advanced optional use-cases.
 
 ### Success metric
-- Primary KPI: 0 stuck busy states; p95 apply under 2s when API healthy; idle CPU budget maintained (ultron-ap <=2%, helper <=1%).; Baseline: No hardware module in core; optional diagnostics endpoint exists; Pironman/influx often inactive by default.
-- Ship only if metric has baseline and target.
+- No stuck-busy regressions.
+- Optional module remains disabled by default.
+- Core panel remains responsive when Pironman is unavailable.
 
 ### Assumptions to validate
-- Pironman API endpoints remain stable and reachable when service is active; helper queue/cancel model remains deterministic under burst input.; Why now: Need stable, secure hardware control without regressing core after full stabilization and decoupling.
-- Validate dependency and constraint impact before implementation start.
-- Discovery rigor policy: No extra discovery depth required before implementation unless scope changes.
+- Pironman API endpoint behavior remains stable on target firmware.
+- Helper queue logic remains deterministic under burst apply input.
+- Optional route exposure does not create measurable idle overhead on Pi5.
 
 ## 5. Architecture (Architect Persona)
 ### Components
-- Go HTTP handler or CLI entrypoint
-- Go package: pironman-optional-integration-service
-- Go package: account-repository
+- Feature flag configuration (`ULTRON_FEATURE_PIRONMAN`).
+- Optional Pironman page and apply endpoint.
+- Existing `internal/pironman` adapter and `ultron-helper` boundary.
+- Diagnostics endpoint with capability and process snapshot.
+
+### Boundaries
+- Web process performs validation + orchestration only.
+- Helper performs privileged hardware operations.
+- No service lifecycle orchestration from web process.
 
 ### Data flow
-- Request enters Go handler and is validated at boundary.
-- Service package applies FR rules and coordinates adapters.
-- Storage/integration package persists data and returns typed results.
+- Authenticated operator opens optional module.
+- Web handler reads capability state via helper read path.
+- Operator submits explicit apply payload.
+- Web handler validates/sanitizes and forwards through `internal/pironman` -> helper socket.
+- Helper executes bounded API operations and returns deterministic outcome.
+- Web handler returns applied/failed state and emits audit-friendly logs.
 
 ### Key decisions
-- Keep FR to implementation traceability explicit by preserving story and TC identifiers.
-- Use Go service aligned with detected stack (Go).
-- Favor deterministic error paths over silent fallback behavior.
+- Default-off feature flag to protect stable core baseline.
+- Keep optional module outside primary sidebar workflow.
+- Reuse existing helper queue and timeout controls instead of creating parallel executors.
+- Use explicit capability states in UI rather than implicit service probing.
 
 ### Risks & mitigations
-- Spec-to-code drift risk: enforce FR/US/TC traces in generated artifacts.
-- Integration fragility risk: isolate external calls behind adapters with clear contracts.
-- Scope drift risk: block changes not linked to approved FR/AC entries.
+- Risk: timeout storms when Pironman API is unstable.
+- Mitigation: bounded timeouts + degraded mapping + fail-fast UX.
+- Risk: accidental privilege regression in web layer.
+- Mitigation: no direct privileged exec in handlers; helper-only boundary.
+- Risk: resource drift on Pi5.
+- Mitigation: on-demand diagnostics only, no hardware polling loop.
 
 ### Observability (logs/metrics/tracing)
-- Context-aware logs with request identifiers.
-- Metrics for route latency and failure classes.
-- Tracing spans for external calls.
-
-### Domain quality profile
-- Domain: Game/Interactive (game)
-- Stack constraint: Use a rendering/game engine (for example Phaser or Three.js). Avoid raw primitive-only canvas logic as architecture baseline.
-- Forbidden defaults: Rectangle-only or geometry-only output without asset pipeline.
-
-## 6. Security (Security Persona)
-### Threats
-- Review spec for domain-specific threat model.
-- Derived from spec security section: - Mantener privilegios fuera del web process: helper root como unico boundary, validacion estricta de parametros, CSRF/session obligatorios y logs auditables.
-
-### Required controls
-- - Mantener privilegios fuera del web process: helper root como unico boundary, validacion estricta de parametros, CSRF/session obligatorios y logs auditables.
-
-### Validation rules
-- Security controls must be verified before delivery gate.
+- Log apply result and failure reason at handler/helper boundaries.
+- Expose capability and process snapshot through diagnostics endpoint.
+- Keep action outcomes traceable via existing action/audit logging patterns.
 
 ## 7. UX/UI Review (UX/UI Persona, if user-facing)
-### Primary user flow
-- Flow must include complete state coverage and fallback paths.
+### Primary flow
+- Open optional module from Settings.
+- Review capability state and config.
+- Edit values and press Apply.
+- Receive deterministic applied/failed feedback.
 
-### Key states (empty/loading/error/success)
-- Define deterministic behavior for empty/loading/error/success states.
-
-### Accessibility baseline
-- Keyboard and screen-reader baseline for user-facing interactions.
-
-### Asset and placeholder strategy
-- Use external asset loading (sprites/GLTF/audio) with public-domain packs or placeholders and document fallback behavior.
-- Avoid default primitive-only output when domain requires visual fidelity.
-
-## 8. Backlog
-> Create as many epics/stories as needed. Do not impose artificial limits.
-
-### Epics
-- Epic 1:
-  - Outcome:
-  - Notes:
-- Epic 2:
-  - Outcome:
-  - Notes:
-
-### User Stories
-For each story include clear Acceptance Criteria (Given/When/Then).
-
-#### Story:
-- As a <actor>, I want <capability>, so that <benefit>.
-- Acceptance Criteria:
-  - Given ..., when ..., then ...
-  - Given ..., when ..., then ...
-
-(repeat as needed)
-
-## 9. Test Cases (QA Persona)
-> Create as many test cases as needed. Include negative and edge cases.
-
-### Functional
-1.
-2.
-
-### Negative / Abuse
-1.
-2.
-
-### Security
-1.
-2.
-
-### Edge cases
-1.
-2.
-
-## 10. Implementation Notes (Developer Persona)
-- Suggested sequence:
--
-- Dependencies:
--
-- Rollout / fallback:
--
+### State handling
+- `available`: form usable.
+- `degraded`: form visible with actionable warning.
+- `unavailable`: fail-fast message; no host side effects.

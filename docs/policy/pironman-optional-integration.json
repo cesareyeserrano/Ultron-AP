@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "limited": false,
+  "feature": "pironman-optional-integration",
+  "evaluatedAt": "2026-02-25T23:35:32.199Z",
+  "policy": {
+    "allowDependencyChanges": false,
+    "blockedImports": [],
+    "blockedPaths": []
+  },
+  "files": {
+    "changed": [
+      "backlog/pironman-optional-integration/backlog.md",
+      "docs/plan/pironman-optional-integration.md",
+      "internal/config/config.go",
+      "internal/config/config_test.go",
+      "internal/server/handlers_settings.go",
+      "internal/server/server.go",
+      "internal/server/templates.go",
+      "tests/pironman-optional-integration/tests.md",
+      "web/templates/settings.html",
+      "internal/server/handlers_pironman_optional.go",
+      "internal/server/handlers_pironman_optional_test.go",
+      "web/templates/integration-pironman.html",
+      "web/templates/partials/pironman-form.html"
+    ],
+    "dependencyChanged": []
+  },
+  "gaps": {
+    "dependency_drift": [],
+    "forbidden_path": [],
+    "forbidden_import": []
+  },
+  "gapSummary": {
+    "dependency_drift": 0,
+    "forbidden_path": 0,
+    "forbidden_import": 0
+  },
+  "issues": [],
+  "warnings": [],
+  "evidenceFile": "docs/policy/pironman-optional-integration.json"
+}
