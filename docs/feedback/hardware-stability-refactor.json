@@ -55,6 +55,17 @@
       "severity": "high",
       "resolution": "implemented",
       "resolvedAt": "2026-02-25T09:10:00.000Z"
+    },
+    {
+      "id": "FB-6",
+      "addedAt": "2026-02-25T10:05:00.000Z",
+      "source": "implementation",
+      "linkedRef": "PHASE-3-4",
+      "category": "improvement",
+      "description": "Completed optional-integration hardening: Settings now exposes on-demand integration diagnostics with Pironman capability states (`available|unavailable|degraded`) and process-level CPU/RAM attribution for `ultron-ap`, `ultron-helper`, `pironman5-service`, and `influxd`. Added explicit operations policy forbidding core lifecycle management of Pironman/Influx.",
+      "severity": "high",
+      "resolution": "implemented",
+      "resolvedAt": "2026-02-25T10:05:00.000Z"
     }
   ]
 }

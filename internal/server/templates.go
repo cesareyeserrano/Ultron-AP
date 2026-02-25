@@ -55,6 +55,7 @@ func (s *Server) parseTemplates() {
 		"partials/docker-detail.html",
 		"partials/alerts-list.html",
 		"partials/alert-rules-table.html",
+		"partials/integration-diagnostics.html",
 		"partials/tailscale-peers.html",
 	}
 

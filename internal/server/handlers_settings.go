@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -16,6 +17,8 @@ import (
 
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
+	"github.com/cesareyeserrano/ultron-ap/internal/pironman"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 type settingsData struct {
@@ -30,6 +33,28 @@ type settingsData struct {
 type notifDisplay struct {
 	Enabled bool
 	Fields  map[string]string // display values (masked)
+}
+
+type integrationStatusView struct {
+	Name   string
+	State  string
+	Detail string
+}
+
+type processBudgetView struct {
+	Name       string
+	Running    bool
+	PID        int32
+	CPUPercent float64
+	RSSMB      float64
+	CPUBudget  float64
+	Status     string
+}
+
+type integrationDiagnosticsData struct {
+	GeneratedAt string
+	Integration integrationStatusView
+	Processes   []processBudgetView
 }
 
 func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
@@ -417,6 +442,122 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
 		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>` +
 		`Backup settings applied</div>`))
+}
+
+func (s *Server) handleIntegrationDiagnostics(w http.ResponseWriter, r *http.Request) {
+	view := integrationDiagnosticsData{
+		GeneratedAt: time.Now().Format(time.RFC3339),
+		Integration: s.currentPironmanIntegrationStatus(r.Context()),
+		Processes:   collectProcessBudgets(),
+	}
+	html := s.renderPartial("partials/integration-diagnostics.html", view)
+	if html == "" {
+		http.Error(w, "Failed to render diagnostics", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = w.Write([]byte(html))
+}
+
+func (s *Server) currentPironmanIntegrationStatus(parent context.Context) integrationStatusView {
+	ctx, cancel := context.WithTimeout(parent, 2*time.Second)
+	defer cancel()
+
+	raw, err := s.privileged.PironmanRead(ctx)
+	if err != nil {
+		return classifyPironmanRead("", err)
+	}
+	return classifyPironmanRead(raw, nil)
+}
+
+func classifyPironmanRead(raw string, readErr error) integrationStatusView {
+	status := integrationStatusView{Name: "Pironman", State: "available", Detail: "runtime reachable and config parse succeeded"}
+	if readErr != nil {
+		msg := strings.TrimSpace(readErr.Error())
+		low := strings.ToLower(msg)
+		if strings.Contains(low, "i/o timeout") || strings.Contains(low, "context deadline exceeded") {
+			status.State = "degraded"
+			status.Detail = "helper reachable but Pironman API timed out"
+		} else {
+			status.State = "unavailable"
+			status.Detail = msg
+		}
+		return status
+	}
+	if strings.TrimSpace(raw) == "" {
+		status.State = "degraded"
+		status.Detail = "empty config payload"
+		return status
+	}
+	if _, err := pironman.ParseConfigJSON([]byte(raw)); err != nil {
+		status.State = "degraded"
+		status.Detail = fmt.Sprintf("config parse error: %v", err)
+	}
+	return status
+}
+
+func collectProcessBudgets() []processBudgetView {
+	type budgetSpec struct {
+		Name    string
+		Aliases []string
+		CPU     float64
+	}
+	specs := []budgetSpec{
+		{Name: "ultron-ap", Aliases: []string{"ultron-ap"}, CPU: 2.0},
+		{Name: "ultron-helper", Aliases: []string{"ultron-helper"}, CPU: 1.0},
+		{Name: "pironman5-service", Aliases: []string{"pironman5-service", "pironman5"}, CPU: 5.0},
+		{Name: "influxd", Aliases: []string{"influxd"}, CPU: 2.0},
+	}
+
+	processes, err := process.Processes()
+	if err != nil {
+		out := make([]processBudgetView, 0, len(specs))
+		for _, spec := range specs {
+			out = append(out, processBudgetView{
+				Name:      spec.Name,
+				CPUBudget: spec.CPU,
+				Status:    "error",
+			})
+		}
+		return out
+	}
+
+	out := make([]processBudgetView, 0, len(specs))
+	for _, spec := range specs {
+		view := processBudgetView{Name: spec.Name, CPUBudget: spec.CPU, Status: "stopped"}
+		for _, proc := range processes {
+			name, err := proc.Name()
+			if err != nil || !matchesProcessAlias(name, spec.Aliases) {
+				continue
+			}
+			view.Running = true
+			view.PID = proc.Pid
+			if cpu, err := proc.CPUPercent(); err == nil {
+				view.CPUPercent = cpu
+			}
+			if mem, err := proc.MemoryInfo(); err == nil && mem != nil {
+				view.RSSMB = float64(mem.RSS) / (1024 * 1024)
+			}
+			view.Status = "ok"
+			if view.CPUPercent > spec.CPU {
+				view.Status = "over_budget"
+			}
+			break
+		}
+		out = append(out, view)
+	}
+	return out
+}
+
+func matchesProcessAlias(name string, aliases []string) bool {
+	lower := strings.ToLower(strings.TrimSpace(name))
+	for _, alias := range aliases {
+		needle := strings.ToLower(strings.TrimSpace(alias))
+		if lower == needle || strings.Contains(lower, needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) handleSettingsBackup(w http.ResponseWriter, r *http.Request) {

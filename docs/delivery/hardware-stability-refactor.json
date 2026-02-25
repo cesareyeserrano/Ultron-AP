@@ -3,7 +3,7 @@
   "ok": true,
   "feature": "hardware-stability-refactor",
   "decision": "SHIP",
-  "generatedAt": "2026-02-24T16:24:58.794Z",
+  "generatedAt": "2026-02-25T23:07:12.931Z",
   "confidence": {
     "score": 1,
     "threshold": 0.85,
@@ -144,14 +144,12 @@
   ],
   "uiRefValidation": [],
   "blockers": [],
-  "warnings": [
-    "No proof-of-compliance record found. Run: aitri prove --feature hardware-stability-refactor"
-  ],
+  "warnings": [],
   "timeline": {
     "go": "2026-02-24T16:16:58.322Z",
     "scaffold": "2026-02-24T16:23:28.109Z",
     "implement": "2026-02-24T16:23:28.110Z",
-    "verify": "2026-02-24T16:24:07.313Z"
+    "verify": "2026-02-25T23:07:03.518Z"
   },
   "evidence": {
     "verification": "docs/verification/hardware-stability-refactor.json",
@@ -159,7 +157,7 @@
     "implement": "docs/implementation/hardware-stability-refactor/implement-manifest.json",
     "go": "docs/implementation/hardware-stability-refactor/go.json"
   },
-  "releaseTag": "aitri-release/hardware-stability-refactor-2026-02-24T16-24-58",
+  "releaseTag": "aitri-release/hardware-stability-refactor-2026-02-25T23-07-26",
   "releaseTagError": null,
   "buildExitCode": 0
 }

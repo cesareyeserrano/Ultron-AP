@@ -325,5 +325,25 @@
             </div>
         </div>
     </section>
+
+    <!-- Optional Integrations & Resource Diagnostics -->
+    <section>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Integrations Diagnostics</h2>
+        <div class="bg-surface rounded-lg border border-border p-4 space-y-3">
+            <p class="text-xs text-text-muted">Optional integration visibility for Pironman and process-level CPU/RAM attribution. No service start/stop actions are executed from this panel.</p>
+            <div class="flex items-center gap-3">
+                <button type="button"
+                        hx-get="/api/settings/integrations/diagnostics"
+                        hx-target="#integration-diagnostics"
+                        hx-swap="innerHTML"
+                        class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">
+                    Refresh Diagnostics
+                </button>
+            </div>
+            <div id="integration-diagnostics" class="rounded-lg border border-border/70 bg-base p-3 text-xs text-text-muted">
+                No snapshot loaded yet.
+            </div>
+        </div>
+    </section>
 </div>
 {{end}}
