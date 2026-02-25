@@ -19,6 +19,7 @@ type Config struct {
 	MetricsInterval time.Duration
 	HelperSocket    string
 	HelperTimeout   time.Duration
+	FeaturePironman bool
 }
 
 var validLogLevels = map[string]bool{
@@ -39,6 +40,7 @@ func Load() (*Config, error) {
 		MetricsInterval: 5 * time.Second,
 		HelperSocket:    "/run/ultron-helper.sock",
 		HelperTimeout:   5 * time.Second,
+		FeaturePironman: false,
 	}
 
 	if v := os.Getenv("ULTRON_PORT"); v != "" {
@@ -107,6 +109,9 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("invalid helper timeout: must be >= 1s, got %v", d)
 		}
 		cfg.HelperTimeout = d
+	}
+	if v := strings.ToLower(strings.TrimSpace(os.Getenv("ULTRON_FEATURE_PIRONMAN"))); v != "" {
+		cfg.FeaturePironman = v == "1" || v == "true" || v == "yes" || v == "on"
 	}
 
 	return cfg, nil

@@ -11,7 +11,7 @@ import (
 
 func clearEnv(t *testing.T) {
 	t.Helper()
-	for _, key := range []string{"ULTRON_PORT", "ULTRON_DB_PATH", "ULTRON_LOG_LEVEL", "ULTRON_ADMIN_USER", "ULTRON_ADMIN_PASS", "ULTRON_SESSION_TTL", "ULTRON_METRICS_INTERVAL"} {
+	for _, key := range []string{"ULTRON_PORT", "ULTRON_DB_PATH", "ULTRON_LOG_LEVEL", "ULTRON_ADMIN_USER", "ULTRON_ADMIN_PASS", "ULTRON_SESSION_TTL", "ULTRON_METRICS_INTERVAL", "ULTRON_FEATURE_PIRONMAN"} {
 		t.Setenv(key, "")
 		os.Unsetenv(key)
 	}
@@ -30,6 +30,7 @@ func TestLoad_Defaults(t *testing.T) {
 	assert.Equal(t, "", cfg.AdminPass)
 	assert.Equal(t, 24*time.Hour, cfg.SessionTTL)
 	assert.Equal(t, 5*time.Second, cfg.MetricsInterval)
+	assert.False(t, cfg.FeaturePironman)
 }
 
 func TestLoad_CustomPort(t *testing.T) {
@@ -186,4 +187,13 @@ func TestLoad_MetricsIntervalTooLow(t *testing.T) {
 	_, err := Load()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "must be >= 1s")
+}
+
+func TestLoad_FeaturePironman(t *testing.T) {
+	clearEnv(t)
+	t.Setenv("ULTRON_FEATURE_PIRONMAN", "true")
+
+	cfg, err := Load()
+	require.NoError(t, err)
+	assert.True(t, cfg.FeaturePironman)
 }

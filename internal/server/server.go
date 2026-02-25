@@ -444,6 +444,9 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /history", s.requireAuth(http.HandlerFunc(s.handleHistoryPage)))
 	mux.Handle("GET /logs", s.requireAuth(http.HandlerFunc(s.handleLogsPage)))
 	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handleSettings)))
+	if s.cfg.FeaturePironman {
+		mux.Handle("GET /integrations/pironman", s.requireAuth(http.HandlerFunc(s.handlePironmanPage)))
+	}
 
 	// API routes (require auth)
 	mux.Handle("GET /api/sse/dashboard", s.requireAuth(http.HandlerFunc(s.handleSSE)))
@@ -463,6 +466,9 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/performance", s.requireAuth(http.HandlerFunc(s.handlePerformanceSave)))
 	mux.Handle("POST /api/backup/config", s.requireAuth(http.HandlerFunc(s.handleBackupConfigSave)))
 	mux.Handle("GET /api/settings/integrations/diagnostics", s.requireAuth(http.HandlerFunc(s.handleIntegrationDiagnostics)))
+	if s.cfg.FeaturePironman {
+		mux.Handle("POST /api/integrations/pironman/apply", s.requireAuth(http.HandlerFunc(s.handlePironmanApply)))
+	}
 	mux.Handle("POST /api/services/{name}/start", s.requireAuth(http.HandlerFunc(s.handleServiceStart)))
 	mux.Handle("POST /api/services/{name}/stop", s.requireAuth(http.HandlerFunc(s.handleServiceStop)))
 	mux.Handle("POST /api/services/{name}/restart", s.requireAuth(http.HandlerFunc(s.handleServiceRestart)))

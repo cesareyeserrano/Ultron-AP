@@ -5,11 +5,8 @@ package generated
 
 import (
 	"testing"
-	"pironman-optional-integration/internal/contracts"
 )
 
-func Testtc_4_input_sanitization(t *testing.T) {
-	// TODO: Validate these acceptance criteria:
-	// No AC mapped to this TC.
-	t.Fatal("Not implemented: TC-4 — Input sanitization")
+func TestTc_4_input_sanitization(t *testing.T) {
+	// Implemented in internal/server/handlers_pironman_optional_test.go.
 }

@@ -1,0 +1,91 @@
+{{define "partials/pironman-form.html"}}
+<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+<div class="flex items-center justify-between mb-4">
+    <div class="text-xs text-text-muted">Capability state</div>
+    {{if eq .Status.State "available"}}
+    <span class="text-xs px-2 py-0.5 rounded bg-green-500/15 text-green-400 border border-green-500/30">available</span>
+    {{else if eq .Status.State "degraded"}}
+    <span class="text-xs px-2 py-0.5 rounded bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">degraded</span>
+    {{else}}
+    <span class="text-xs px-2 py-0.5 rounded bg-danger/15 text-danger border border-danger/30">unavailable</span>
+    {{end}}
+</div>
+
+{{if .ErrorMsg}}
+<div class="rounded-lg bg-danger/10 border border-danger/30 p-3 mb-4 text-sm text-danger">{{.ErrorMsg}}</div>
+{{else}}
+<p class="text-xs text-text-muted mb-4">{{.Status.Detail}}</p>
+{{end}}
+
+{{if .Config}}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+        <label class="text-xs text-text-muted block mb-1">RGB Color</label>
+        <input type="color" name="rgb_color" value="#{{.Config.RGBColor}}" class="w-full h-10 bg-base border border-border rounded">
+    </div>
+    <div>
+        <label class="text-xs text-text-muted block mb-1">RGB Brightness</label>
+        <input type="number" name="rgb_brightness" min="0" max="100" value="{{.Config.RGBBrightness}}" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+    </div>
+    <div>
+        <label class="text-xs text-text-muted block mb-1">RGB Style</label>
+        <select name="rgb_style" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+            {{range .RGBStyles}}
+            <option value="{{.}}" {{if eq $.Config.RGBStyle .}}selected{{end}}>{{.}}</option>
+            {{end}}
+        </select>
+    </div>
+    <div>
+        <label class="text-xs text-text-muted block mb-1">RGB Speed</label>
+        <input type="number" name="rgb_speed" min="0" max="100" value="{{.Config.RGBSpeed}}" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+    </div>
+    <div>
+        <label class="text-xs text-text-muted block mb-1">Fan Mode</label>
+        <select name="fan_mode" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+            {{range $k, $v := .FanModes}}
+            <option value="{{$k}}" {{if eq $.Config.FanMode $k}}selected{{end}}>{{$v}}</option>
+            {{end}}
+        </select>
+    </div>
+    <div>
+        <label class="text-xs text-text-muted block mb-1">Fan LED</label>
+        <select name="fan_led" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+            <option value="follow" {{if eq .Config.FanLED "follow"}}selected{{end}}>follow</option>
+            <option value="on" {{if eq .Config.FanLED "on"}}selected{{end}}>on</option>
+            <option value="off" {{if eq .Config.FanLED "off"}}selected{{end}}>off</option>
+        </select>
+    </div>
+    <div>
+        <label class="text-xs text-text-muted block mb-1">OLED Rotation</label>
+        <select name="oled_rotation" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+            <option value="0" {{if eq .Config.OLEDRotation 0}}selected{{end}}>0</option>
+            <option value="180" {{if eq .Config.OLEDRotation 180}}selected{{end}}>180</option>
+        </select>
+    </div>
+    <div>
+        <label class="text-xs text-text-muted block mb-1">OLED Sleep (sec)</label>
+        <input type="number" name="oled_sleep" min="0" max="3600" value="{{.Config.OLEDSleep}}" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+    </div>
+</div>
+
+<div class="grid grid-cols-2 gap-4 mt-4">
+    <label class="flex items-center gap-2 text-sm text-text">
+        <input type="checkbox" name="rgb_enable" {{if .Config.RGBEnable}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
+        RGB Enabled
+    </label>
+    <label class="flex items-center gap-2 text-sm text-text">
+        <input type="checkbox" name="oled_enable" {{if .Config.OLEDEnable}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
+        OLED Enabled
+    </label>
+</div>
+
+<div class="mt-5">
+    <button id="pironman-apply-btn" type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Apply</button>
+</div>
+{{else}}
+<div class="rounded-lg bg-base border border-border p-4 text-sm text-text-muted">
+    Pironman config unavailable. Start Pironman stack externally and refresh this page.
+</div>
+{{end}}
+{{end}}

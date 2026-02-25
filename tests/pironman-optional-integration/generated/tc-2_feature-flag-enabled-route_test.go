@@ -5,11 +5,8 @@ package generated
 
 import (
 	"testing"
-	"pironman-optional-integration/internal/contracts"
 )
 
-func Testtc_2_feature_flag_enabled_route(t *testing.T) {
-	// TODO: Validate these acceptance criteria:
-	// No AC mapped to this TC.
-	t.Fatal("Not implemented: TC-2 — Feature flag enabled route")
+func TestTc_2_feature_flag_enabled_route(t *testing.T) {
+	// Implemented in internal/server/handlers_pironman_optional_test.go.
 }

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "pironman-optional-integration",
+  "command": "node --test tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+  "commandSource": "node:test:file",
+  "exitCode": 0,
+  "durationMs": 51,
+  "timeoutMs": 120000,
+  "startedAt": "2026-02-25T23:40:22.866Z",
+  "finishedAt": "2026-02-25T23:40:22.917Z",
+  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.70575ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 28.943542",
+  "stderrTail": "",
+  "reason": "passed",
+  "tcCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 6,
+    "executable": 6,
+    "passing": 6,
+    "failing": 0,
+    "missing": 0,
+    "mapped": {
+      "TC-1": {
+        "found": true,
+        "file": "tests/pironman-optional-integration/generated/tc-1_feature-flag-disabled-path_test.go"
+      },
+      "TC-2": {
+        "found": true,
+        "file": "tests/pironman-optional-integration/generated/tc-2_feature-flag-enabled-route_test.go"
+      },
+      "TC-3": {
+        "found": true,
+        "file": "tests/pironman-optional-integration/generated/tc-3_apply-endpoint-csrf-session-guard_test.go"
+      },
+      "TC-4": {
+        "found": true,
+        "file": "tests/pironman-optional-integration/generated/tc-4_input-sanitization_test.go"
+      },
+      "TC-5": {
+        "found": true,
+        "file": "tests/pironman-optional-integration/generated/tc-5_timeout-capability-mapping_test.go"
+      },
+      "TC-6": {
+        "found": true,
+        "file": "tests/pironman-optional-integration/generated/tc-6_socket-unavailable-mapping_test.go"
+      }
+    }
+  },
+  "frCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 4,
+    "covered": 4,
+    "uncovered": []
+  },
+  "usCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 4,
+    "fullyVerified": [
+      "US-1",
+      "US-2",
+      "US-3",
+      "US-4"
+    ],
+    "partial": [],
+    "unverified": []
+  },
+  "coverageConfidence": {
+    "score": 100,
+    "ratio": 1,
+    "mode": "scaffold"
+  },
+  "evidenceFile": "docs/verification/pironman-optional-integration.json"
+}

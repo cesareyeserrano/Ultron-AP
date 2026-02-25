@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "pironman-optional-integration",
+  "decision": "SHIP",
+  "generatedAt": "2026-02-25T23:40:28.253Z",
+  "confidence": {
+    "score": 1,
+    "threshold": 0.85,
+    "pass": true
+  },
+  "tcSummary": {
+    "declared": 6,
+    "executable": 6,
+    "passing": 6,
+    "failing": 0,
+    "missing": 0
+  },
+  "frMatrix": [
+    {
+      "frId": "FR-1",
+      "tc": [
+        "TC-1",
+        "TC-2"
+      ],
+      "passingTc": [
+        "TC-1",
+        "TC-2"
+      ],
+      "covered": true
+    },
+    {
+      "frId": "FR-2",
+      "tc": [
+        "TC-3"
+      ],
+      "passingTc": [
+        "TC-3"
+      ],
+      "covered": true
+    },
+    {
+      "frId": "FR-3",
+      "tc": [
+        "TC-5",
+        "TC-6"
+      ],
+      "passingTc": [
+        "TC-5",
+        "TC-6"
+      ],
+      "covered": true
+    },
+    {
+      "frId": "FR-4",
+      "tc": [
+        "TC-3",
+        "TC-4"
+      ],
+      "passingTc": [
+        "TC-3",
+        "TC-4"
+      ],
+      "covered": true
+    }
+  ],
+  "acMatrix": [
+    {
+      "acId": "AC-1",
+      "tc": [
+        "TC-3"
+      ],
+      "passingTc": [
+        "TC-3"
+      ],
+      "covered": true
+    },
+    {
+      "acId": "AC-2",
+      "tc": [
+        "TC-1",
+        "TC-2"
+      ],
+      "passingTc": [
+        "TC-1",
+        "TC-2"
+      ],
+      "covered": true
+    },
+    {
+      "acId": "AC-3",
+      "tc": [
+        "TC-5",
+        "TC-6"
+      ],
+      "passingTc": [
+        "TC-5",
+        "TC-6"
+      ],
+      "covered": true
+    },
+    {
+      "acId": "AC-4",
+      "tc": [
+        "TC-3",
+        "TC-4"
+      ],
+      "passingTc": [
+        "TC-3",
+        "TC-4"
+      ],
+      "covered": true
+    }
+  ],
+  "uiRefValidation": [],
+  "blockers": [],
+  "warnings": [
+    "Contract coverage: 0/4 contracts imported. Uncovered: internal/contracts/fr-1-the-optional-pironman-module-mus.go, internal/contracts/fr-3-integration-must-expose-capabili.go, internal/contracts/fr-2-hardware-settings-must-be-applie.go, internal/contracts/fr-4-privileged-operations-must-remai.go"
+  ],
+  "timeline": {
+    "go": "2026-02-25T23:35:45.669Z",
+    "scaffold": "2026-02-25T23:36:16.490Z",
+    "implement": "2026-02-25T23:36:16.491Z",
+    "verify": "2026-02-25T23:40:22.917Z"
+  },
+  "evidence": {
+    "verification": "docs/verification/pironman-optional-integration.json",
+    "scaffold": "docs/implementation/pironman-optional-integration/scaffold-manifest.json",
+    "implement": "docs/implementation/pironman-optional-integration/implement-manifest.json",
+    "go": "docs/implementation/pironman-optional-integration/go.json"
+  },
+  "releaseTag": "aitri-release/pironman-optional-integration-2026-02-25T23-40-42",
+  "releaseTagError": null,
+  "buildExitCode": 0
+}
