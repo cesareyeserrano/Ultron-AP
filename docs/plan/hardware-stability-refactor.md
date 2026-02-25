@@ -167,6 +167,20 @@ STATUS: READY
 ## 8. Backlog
 > Create as many epics/stories as needed. Do not impose artificial limits.
 
+## 8.1 Official Phased Execution Plan (Aitri-aligned)
+- Phase 1 (Completed): Core decoupling from visible hardware module flow.
+  - Delivered: hardware removed from main navigation and default operator flow.
+  - Verification: core regression tests pass.
+- Phase 2 (Planned): hard removal of hardware module from core runtime.
+  - Target: remove hardware handlers/routes/templates and core dependency chain.
+  - Verification: no core runtime reference to hardware module; tests updated and green.
+- Phase 3 (Planned): optional external Pironman integration.
+  - Target: plugin/adaptor pattern with explicit capability states and fail-fast behavior.
+  - Verification: integration works only when external runtime is active; no host side effects when inactive.
+- Phase 4 (Planned): policy and operations hardening.
+  - Target: document non-intrusive host policy and add per-module resource attribution diagnostics.
+  - Verification: operator docs updated and resource guardrails observable.
+
 ### Epics
 - EP-1: Flujo determinista de apply y UX estable.
   - Outcome: cero auto-apply, cero bloqueo por ráfagas, estado claro al usuario.

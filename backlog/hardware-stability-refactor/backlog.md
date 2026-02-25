@@ -71,6 +71,49 @@
 
 ## Future Enhancements (Post-Stabilization)
 
+## Official Implementation Phases (Aitri)
+
+### Phase 1: Core Decoupling (Completed)
+- Goal:
+  - Remove Pironman hardware module from main Ultron core navigation and default operator flow.
+- Scope:
+  - Hide hardware entrypoint from sidebar.
+  - Keep compatibility handlers/routing only where required by current test/contracts.
+- Exit criteria:
+  - Hardware no longer appears in core navigation.
+  - Core routes/features remain stable.
+  - Regression suite remains green.
+
+### Phase 2: Core Hard Removal (Planned)
+- Goal:
+  - Remove hardware module code paths from Ultron core runtime.
+- Scope:
+  - Remove hardware handlers, templates, route registration, and direct core dependencies on `internal/pironman`.
+  - Update/replace tests tied to removed core hardware behavior.
+- Exit criteria:
+  - No runtime references from core navigation/routes to hardware module.
+  - Build and tests pass with hardware module absent from core.
+
+### Phase 3: Optional External Integration (Planned)
+- Goal:
+  - Reintroduce Pironman as an optional external integration (plugin/adaptor model), not core.
+- Scope:
+  - Integration boundary with explicit capability states: `available | unavailable | degraded`.
+  - No service lifecycle management from Ultron core (`start/stop/restart` forbidden for Pironman/Influx).
+- Exit criteria:
+  - Integration works only when external runtime is already active.
+  - If unavailable, Ultron fails-fast with explicit status and no host side effects.
+
+### Phase 4: Policy & Operations Hardening (Planned)
+- Goal:
+  - Institutionalize non-intrusive host policy and operational guardrails.
+- Scope:
+  - Document policy: Ultron core does not manage host hardware services by default.
+  - Add diagnostics and budget visibility for resource impact attribution by module.
+- Exit criteria:
+  - Policy documented in operator-facing docs.
+  - CPU/RAM attribution visible for core vs optional integration stacks.
+
 ### FE-1: Optional Debounced Auto-Apply (Replace Apply Button)
 - As an Admin operator, I want an optional mode that auto-applies hardware changes with debounce, so that UX is faster without introducing unstable rapid-fire operations.
 - Constraints:
