@@ -55,7 +55,6 @@ func (s *Server) parseTemplates() {
 		"partials/docker-detail.html",
 		"partials/alerts-list.html",
 		"partials/alert-rules-table.html",
-		"partials/hardware-form.html",
 		"partials/tailscale-peers.html",
 	}
 
@@ -113,7 +112,6 @@ func (s *Server) parseTemplates() {
 		{"history.html", nil},
 		{"logs.html", nil},
 		{"settings.html", []string{"templates/partials/alert-rules-table.html"}},
-		{"hardware.html", []string{"templates/partials/hardware-form.html"}},
 		{"placeholder.html", nil},
 	}
 

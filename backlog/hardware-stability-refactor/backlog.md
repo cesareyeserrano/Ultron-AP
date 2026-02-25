@@ -84,7 +84,7 @@
   - Core routes/features remain stable.
   - Regression suite remains green.
 
-### Phase 2: Core Hard Removal (Planned)
+### Phase 2: Core Hard Removal (Completed)
 - Goal:
   - Remove hardware module code paths from Ultron core runtime.
 - Scope:

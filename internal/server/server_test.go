@@ -158,3 +158,43 @@ func TestNextBackupDelay_Biweekly(t *testing.T) {
 	delay := nextBackupDelay(now, true, "biweekly", 24, 10, 15)
 	assert.Equal(t, 14*24*time.Hour, delay)
 }
+
+func TestApplyBackupConfig_RequestsReschedule(t *testing.T) {
+	srv := &Server{
+		backupRescheduleCh: make(chan struct{}, 1),
+	}
+	cfg := database.DefaultBackupConfig()
+	cfg.ScheduleMode = "daily"
+	cfg.ScheduleHour = 22
+	cfg.ScheduleMinute = 30
+
+	srv.ApplyBackupConfig(cfg)
+
+	select {
+	case <-srv.backupRescheduleCh:
+		// expected: config apply should ask scheduler to recompute immediately.
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("expected backup reschedule signal after ApplyBackupConfig")
+	}
+}
+
+func TestRequestBackupReschedule_DoesNotBlockWhenChannelFull(t *testing.T) {
+	srv := &Server{
+		backupRescheduleCh: make(chan struct{}, 1),
+	}
+	// Fill the channel so the next request takes the default non-blocking path.
+	srv.backupRescheduleCh <- struct{}{}
+
+	done := make(chan struct{})
+	go func() {
+		srv.requestBackupReschedule()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// expected
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("requestBackupReschedule blocked with full channel")
+	}
+}

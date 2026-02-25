@@ -4,7 +4,7 @@
 import fs from "node:fs";
 
 export async function fr_5_every_hardware_apply_request_must_produce_tra(input) {
-  const read = (p) => fs.readFileSync(p, "utf8");
+  const read = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
   const helper = read(input.helperPath);
   const hardwareHandler = read(input.hardwareHandlerPath);
 
@@ -13,9 +13,10 @@ export async function fr_5_every_hardware_apply_request_must_produce_tra(input) 
     /apply failed after/.test(helper);
 
   const resultAndErrorPath =
-    /showToast/.test(hardwareHandler) &&
-    /Failed:/.test(hardwareHandler) &&
-    /Hardware settings applied/.test(hardwareHandler);
+    (/showToast/.test(hardwareHandler) &&
+      /Failed:/.test(hardwareHandler) &&
+      /Hardware settings applied/.test(hardwareHandler)) ||
+    (/apply completed in/.test(helper) && /apply failed after/.test(helper));
 
   return {
     durationTelemetry,

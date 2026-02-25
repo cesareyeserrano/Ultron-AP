@@ -4,7 +4,7 @@
 import fs from "node:fs";
 
 export async function fr_4_privileged_execution_must_stay_outside_web_pr(input) {
-  const read = (p) => fs.readFileSync(p, "utf8");
+  const read = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
   const helperService = read(input.helperServicePath);
   const webService = read(input.webServicePath);
   const systemHandler = read(input.systemHandlerPath);

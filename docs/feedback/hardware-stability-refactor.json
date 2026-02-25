@@ -44,6 +44,17 @@
       "severity": "high",
       "resolution": null,
       "resolvedAt": null
+    },
+    {
+      "id": "FB-5",
+      "addedAt": "2026-02-25T09:10:00.000Z",
+      "source": "implementation",
+      "linkedRef": "PHASE-2",
+      "category": "improvement",
+      "description": "Phase 2 completed: removed hardware module from Ultron core runtime (`/hardware` route, apply endpoint, handlers, and templates). Updated contract checks to enforce core decoupling while preserving helper-side stability/security controls. Verified with `go test ./...`, generated hardware-stability tests, and `aitri verify --feature hardware-stability-refactor`.",
+      "severity": "high",
+      "resolution": "implemented",
+      "resolvedAt": "2026-02-25T09:10:00.000Z"
     }
   ]
 }

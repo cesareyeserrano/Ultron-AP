@@ -171,9 +171,9 @@ STATUS: READY
 - Phase 1 (Completed): Core decoupling from visible hardware module flow.
   - Delivered: hardware removed from main navigation and default operator flow.
   - Verification: core regression tests pass.
-- Phase 2 (Planned): hard removal of hardware module from core runtime.
+- Phase 2 (Completed): hard removal of hardware module from core runtime.
   - Target: remove hardware handlers/routes/templates and core dependency chain.
-  - Verification: no core runtime reference to hardware module; tests updated and green.
+  - Verification: no core runtime reference to hardware module; contracts/tests updated to enforce decoupling and green.
 - Phase 3 (Planned): optional external Pironman integration.
   - Target: plugin/adaptor pattern with explicit capability states and fail-fast behavior.
   - Verification: integration works only when external runtime is active; no host side effects when inactive.

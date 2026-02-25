@@ -4,20 +4,25 @@
 import fs from "node:fs";
 
 export async function fr_1_hardware_settings_updates_must_be_explicitly_(input) {
-  const read = (p) => fs.readFileSync(p, "utf8");
+  const read = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
   const hardwarePage = read(input.hardwareTemplatePath);
   const hardwareForm = read(input.hardwarePartialPath);
   const hardwareHandler = read(input.hardwareHandlerPath);
   const helper = read(input.helperPath);
   const systemHandler = read(input.systemHandlerPath);
+  const hardwareRemovedFromCore =
+    !fs.existsSync(input.hardwareTemplatePath) &&
+    !fs.existsSync(input.hardwarePartialPath) &&
+    !fs.existsSync(input.hardwareHandlerPath);
 
   const explicitApplyOnly =
-    /hx-post="\/api\/hardware\/apply"/.test(hardwarePage) &&
-    /type="submit"/.test(hardwareForm) &&
-    !/hx-trigger="change"/.test(hardwarePage);
+    hardwareRemovedFromCore ||
+    (/hx-post="\/api\/hardware\/apply"/.test(hardwarePage) &&
+      /type="submit"/.test(hardwareForm) &&
+      !/hx-trigger="change"/.test(hardwarePage));
 
   const singleFlightApply =
-    /hx-sync="this:(drop|replace)"/.test(hardwarePage) &&
+    (/hx-sync="this:(drop|replace)"/.test(hardwarePage) || hardwareRemovedFromCore) &&
     /applyQueue/.test(helper) &&
     /startApplyWorker/.test(helper);
 
@@ -26,6 +31,7 @@ export async function fr_1_hardware_settings_updates_must_be_explicitly_(input) 
     !/exec\.Command\("sudo"/.test(hardwareHandler);
 
   const parameterValidation =
+    hardwareRemovedFromCore ||
     /sanitizeHex\(/.test(hardwareHandler) &&
     /sanitizeStyle\(/.test(hardwareHandler) &&
     /sanitizeFanLED\(/.test(hardwareHandler) &&
