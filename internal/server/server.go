@@ -65,6 +65,7 @@ type Server struct {
 	backupKeyRef        atomic.Value // string
 	backupUploadTimeout atomic.Int64
 	backupMaxUploadMB   atomic.Int64
+	backupRescheduleCh  chan struct{}
 	privileged          *privileged.Client
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
@@ -96,6 +97,8 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 		templates:  web.Templates,
 		startedAt:  time.Now(),
 		privileged: privileged.NewClient(cfg.HelperSocket, cfg.HelperTimeout),
+		// Buffered channel so config updates can request a reschedule without blocking.
+		backupRescheduleCh: make(chan struct{}, 1),
 	}
 	s.sseIntervalNs.Store(int64(5 * time.Second))
 	s.backupIntervalHours.Store(24) // Default 24h
@@ -163,6 +166,24 @@ func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
 	s.backupKeyRef.Store(cfg.EncryptionKeyRef)
 	s.backupUploadTimeout.Store(int64(cfg.UploadTimeoutSec))
 	s.backupMaxUploadMB.Store(int64(cfg.MaxUploadSizeMB))
+	s.requestBackupReschedule()
+}
+
+func (s *Server) requestBackupReschedule() {
+	select {
+	case s.backupRescheduleCh <- struct{}{}:
+	default:
+	}
+}
+
+func resetTimer(timer *time.Timer, delay time.Duration) {
+	if !timer.Stop() {
+		select {
+		case <-timer.C:
+		default:
+		}
+	}
+	timer.Reset(delay)
 }
 
 func nextBackupDelay(now time.Time, enabled bool, mode string, intervalHours int, hour int, minute int) time.Duration {
@@ -224,11 +245,18 @@ func (s *Server) startBackupJob() {
 		timer := time.NewTimer(s.currentBackupDelay(time.Now()))
 		defer timer.Stop()
 		for {
-			<-timer.C
+			select {
+			case <-s.backupRescheduleCh:
+				delay := s.currentBackupDelay(time.Now())
+				log.Printf("backup: schedule reloaded, next automated backup in %v", delay.Round(time.Minute))
+				resetTimer(timer, delay)
+				continue
+			case <-timer.C:
+			}
 
 			if s.backupEnabled.Load() == 0 {
 				log.Printf("backup: disabled, rechecking in 1h")
-				timer.Reset(1 * time.Hour)
+				resetTimer(timer, 1*time.Hour)
 				continue
 			}
 
@@ -239,7 +267,7 @@ func (s *Server) startBackupJob() {
 			// Schedule next run
 			delay := s.currentBackupDelay(time.Now())
 			log.Printf("backup: next automated backup scheduled in %v", delay.Round(time.Minute))
-			timer.Reset(delay)
+			resetTimer(timer, delay)
 		}
 	}()
 }
@@ -416,6 +444,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /history", s.requireAuth(http.HandlerFunc(s.handleHistoryPage)))
 	mux.Handle("GET /logs", s.requireAuth(http.HandlerFunc(s.handleLogsPage)))
 	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handleSettings)))
+	// Kept for compatibility; not exposed in core navigation.
 	mux.Handle("GET /hardware", s.requireAuth(http.HandlerFunc(s.handleHardwarePage)))
 	mux.Handle("POST /api/hardware/apply", s.requireAuth(http.HandlerFunc(s.handleHardwareApply)))
 
