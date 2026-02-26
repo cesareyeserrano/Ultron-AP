@@ -1,22 +1,19 @@
 {{define "content"}}
-<div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-lg font-semibold text-text">Action History</h1>
-        <span class="text-xs text-text-muted">Audit trail for all service control operations</span>
+<div class="space-y-6 page-premium">
+    <div class="page-head">
+        <h1 class="page-title">Action History</h1>
+        <span class="page-subtitle">Audit trail for all service control operations</span>
     </div>
 
     <!-- Source Filter -->
-    <div class="flex gap-2">
-        <a href="/history" class="text-xs px-3 py-1.5 rounded-lg transition-colors
-            {{if eq .Content.SourceFilter ""}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+    <div class="flex gap-2 flex-wrap">
+        <a href="/history" class="filter-chip {{if eq .Content.SourceFilter ""}}filter-chip-active{{end}}" hx-boost="true">
             All
         </a>
-        <a href="/history?source=docker" class="text-xs px-3 py-1.5 rounded-lg transition-colors
-            {{if eq .Content.SourceFilter "docker"}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+        <a href="/history?source=docker" class="filter-chip {{if eq .Content.SourceFilter "docker"}}filter-chip-active{{end}}" hx-boost="true">
             Docker
         </a>
-        <a href="/history?source=systemd" class="text-xs px-3 py-1.5 rounded-lg transition-colors
-            {{if eq .Content.SourceFilter "systemd"}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
+        <a href="/history?source=systemd" class="filter-chip {{if eq .Content.SourceFilter "systemd"}}filter-chip-active{{end}}" hx-boost="true">
             Systemd
         </a>
     </div>
@@ -25,7 +22,7 @@
     {{if .Content.Logs}}
     <div class="space-y-2">
         {{range .Content.Logs}}
-        <div class="bg-card rounded-lg p-3 border border-border/50">
+        <div class="bg-card rounded-lg p-3 border border-border/50 list-row-card">
             <div class="flex items-start gap-3">
                 <!-- Result indicator -->
                 <div class="shrink-0 mt-0.5">
