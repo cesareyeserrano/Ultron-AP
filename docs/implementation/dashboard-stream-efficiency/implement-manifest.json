@@ -1,0 +1,47 @@
+{
+  "feature": "dashboard-stream-efficiency",
+  "generatedAt": "2026-02-26T17:06:32.238Z",
+  "stories": [
+    {
+      "id": "US-1",
+      "order": 1,
+      "dependencyScore": 3,
+      "brief": "docs/implementation/dashboard-stream-efficiency/US-1.md",
+      "testCases": [
+        "TC-1",
+        "TC-5",
+        "TC-6",
+        "TC-7",
+        "TC-8"
+      ]
+    },
+    {
+      "id": "US-2",
+      "order": 2,
+      "dependencyScore": 3,
+      "brief": "docs/implementation/dashboard-stream-efficiency/US-2.md",
+      "testCases": [
+        "TC-2"
+      ]
+    },
+    {
+      "id": "US-3",
+      "order": 3,
+      "dependencyScore": 3,
+      "brief": "docs/implementation/dashboard-stream-efficiency/US-3.md",
+      "testCases": [
+        "TC-3"
+      ]
+    },
+    {
+      "id": "US-4",
+      "order": 4,
+      "dependencyScore": 3,
+      "brief": "docs/implementation/dashboard-stream-efficiency/US-4.md",
+      "testCases": [
+        "TC-4"
+      ]
+    }
+  ],
+  "orderFile": "docs/implementation/dashboard-stream-efficiency/IMPLEMENTATION_ORDER.md"
+}

@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "feature": "dashboard-stream-efficiency",
+  "generatedAt": "2026-02-26T17:06:32.238Z",
+  "completedStories": [
+    "US-1",
+    "US-2",
+    "US-3",
+    "US-4"
+  ],
+  "pendingStories": [],
+  "stories": [
+    {
+      "id": "US-1",
+      "brief": "docs/implementation/dashboard-stream-efficiency/US-1.md",
+      "scaffoldFiles": [
+        "tests/dashboard-stream-efficiency/generated/tc-1_validate-us-1-primary-behavior_test.go",
+        "tests/dashboard-stream-efficiency/generated/tc-5_handle-edge-behavior-temperature-sen_test.go",
+        "tests/dashboard-stream-efficiency/generated/tc-6_handle-edge-behavior-sparse-history-_test.go",
+        "tests/dashboard-stream-efficiency/generated/tc-7_enforce-security-control-keep-existi_test.go",
+        "tests/dashboard-stream-efficiency/generated/tc-8_enforce-security-control-do-not-intr_test.go",
+        "internal/contracts/fr-1-dashboard-stream-path-must-suppo.go"
+      ],
+      "verified": true
+    },
+    {
+      "id": "US-2",
+      "brief": "docs/implementation/dashboard-stream-efficiency/US-2.md",
+      "scaffoldFiles": [
+        "tests/dashboard-stream-efficiency/generated/tc-2_validate-us-2-primary-behavior_test.go",
+        "internal/contracts/fr-2-dashboard-must-include-temperatu.go"
+      ],
+      "verified": true
+    },
+    {
+      "id": "US-3",
+      "brief": "docs/implementation/dashboard-stream-efficiency/US-3.md",
+      "scaffoldFiles": [
+        "tests/dashboard-stream-efficiency/generated/tc-3_validate-us-3-primary-behavior_test.go",
+        "internal/contracts/fr-3-temperature-indicator-and-temper.go"
+      ],
+      "verified": true
+    },
+    {
+      "id": "US-4",
+      "brief": "docs/implementation/dashboard-stream-efficiency/US-4.md",
+      "scaffoldFiles": [
+        "tests/dashboard-stream-efficiency/generated/tc-4_validate-us-4-primary-behavior_test.go",
+        "internal/contracts/fr-4-sse-broadcast-must-avoid-unneces.go"
+      ],
+      "verified": true
+    }
+  ]
+}
