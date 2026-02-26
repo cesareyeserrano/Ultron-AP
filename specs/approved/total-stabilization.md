@@ -6,7 +6,7 @@ A deep total stabilization and optimization pass for Ultron-AP covering runtime 
 
 Primary actor: Admin (single Raspberry Pi owner/operator) and maintainers who evolve the codebase.
 Expected outcome: The system remains stable under backup and operational failures with observable error reporting, critical security/session paths are strongly validated, all core tests pass, and project documentation is reduced to a clear, non-duplicated, maintained set with controlled file lengths.
-In scope: Backup scheduler failure tracking and persistence, regression tests for retention when Telegram is disabled/fails, Pironman parser compatibility tests, hardware apply tests for unchecked toggles and CSRF, session cookie tests for TLS and X-Forwarded-Proto, brute-force tracker memory cleanup strategy, CSRF Origin/Referer defense-in-depth, documentation inventory of all markdown files, duplicate/residual detection, deletion or archival of unused docs with impact review, cross-link/index cleanup, and file-length optimization policy with measurable limits and splitting strategy for oversized docs.
+In scope: Backup scheduler failure tracking and persistence, regression tests for retention when Telegram is disabled/fails, external hardware boundary checks (no in-app Pironman control), session cookie tests for TLS and X-Forwarded-Proto, brute-force tracker memory cleanup strategy, CSRF Origin/Referer defense-in-depth, documentation inventory of all markdown files, duplicate/residual detection, deletion or archival of unused docs with impact review, cross-link/index cleanup, and file-length optimization policy with measurable limits and splitting strategy for oversized docs.
 Out of scope: No visual redesign, no new end-user features, no migration away from Go/HTMX/SQLite, and no infrastructure platform change.
 Technology: Go monolith, HTMX, Tailwind CSS, SQLite, SSE, Docker SDK, systemd CLI integration.
 Requirement source: Provided explicitly by user in guided draft.
@@ -19,7 +19,7 @@ Requirement source: Provided explicitly by user in guided draft.
 - FR-2: The system must surface automated backup failures with explicit, actionable outcomes (logs and/or persisted evidence) and never silently ignore failed backup runs.
 - FR-3: The system must preserve deterministic local backup retention even when Telegram delivery is disabled or fails.
 - FR-4: The system must strengthen security posture by enforcing CSRF token checks plus same-origin protections for state-changing endpoints, with proxy-aware session-cookie security behavior.
-- FR-5: The system must add targeted automated tests for high-risk reliability/security paths (backup failures, retention branches, hardware apply toggles/CSRF, session cookie flags, Pironman compatibility parsing) without regressing existing behavior.
+- FR-5: The system must add targeted automated tests for high-risk reliability/security paths (backup failures, retention branches, external hardware boundary, session cookie flags, and CSRF protections) without regressing existing behavior.
 
 ## 4. Edge Cases
 - A markdown document appears redundant by title or section overlap but is still referenced by automation/spec workflows; cleanup must detect these references before deletion and preserve traceability.
@@ -27,7 +27,7 @@ Requirement source: Provided explicitly by user in guided draft.
 ## 5. Failure Conditions
 - If automated backup fails (for example Telegram upload failure), the run is marked as failed with a clear error cause and does not silently pass.
 - If documentation cleanup proposes deleting a file that still has inbound references, deletion is blocked until references are removed or the file is reclassified.
-- If stabilization changes break existing core behavior (monitoring, alerts, hardware controls, authentication), approval is blocked until regression tests pass.
+- If stabilization changes break existing core behavior (monitoring, alerts, authentication, and external-hardware boundary), approval is blocked until regression tests pass.
 
 ## 6. Non-Functional Requirements
 - Determinism: Documentation hygiene outputs must be reproducible from the same repository state.

@@ -42,7 +42,7 @@ Refined problem framing:
 - Must keep existing Go monolith architecture and behavior, no new product features, no UI redesign, no infrastructure migration, and keep performance/resource footprint suitable for Raspberry Pi.
 
 - Dependencies:
-- Dependencies include SQLite storage, Docker daemon/socket, systemd CLI integration, Pironman5 CLI integration, and Telegram API integration for backup delivery.
+- Dependencies include SQLite storage, Docker daemon/socket, systemd CLI integration, and Telegram API integration for backup delivery. Pironman is treated as an external service boundary only.
 
 - Success metrics:
 - go test ./... remains green; zero open P0 stabilization items; backup failure outcomes are explicitly logged/persisted; all targeted new reliability/security tests pass; 100% markdown files classified as keep/consolidate/archive/delete with rationale; zero broken internal markdown links.; Baseline: Current baseline: go test ./... is green; stabilization backlog BL0001 remains open with pending P0/P1/P2 actions; documentation classification (keep/consolidate/archive/delete) is not yet complete.
@@ -55,7 +55,7 @@ Refined problem framing:
 
 ## 3. Scope
 ### In scope
-- 1) Backup scheduler failure tracking and surfaced outcomes. 2) Retention regression tests for Telegram-disabled/failure paths. 3) Pironman parse compatibility tests. 4) Hardware apply handler tests for checkbox-off and CSRF. 5) Session cookie policy tests for TLS/X-Forwarded-Proto. 6) Brute-force tracker cleanup strategy. 7) CSRF Origin/Referer defense-in-depth checks. 8) Full markdown inventory and classification. 9) Duplicate/residual/orphan detection and safe cleanup. 10) Cross-link/index repair. 11) File-length policy enforcement and oversized-doc split/condense actions.
+- 1) Backup scheduler failure tracking and surfaced outcomes. 2) Retention regression tests for Telegram-disabled/failure paths. 3) External hardware boundary tests (no in-app Pironman control path). 4) Session cookie policy tests for TLS/X-Forwarded-Proto. 5) Brute-force tracker cleanup strategy. 6) CSRF Origin/Referer defense-in-depth checks. 7) Full markdown inventory and classification. 8) Duplicate/residual/orphan detection and safe cleanup. 9) Cross-link/index repair. 10) File-length policy enforcement and oversized-doc split/condense actions.
 
 ### Out of scope
 - UI redesign, new dashboard features, architecture rewrite, technology stack migration, and infrastructure topology changes.; No-go zone: Do not introduce scope creep into new product functionality, UI overhauls, or platform migrations during this stabilization phase.

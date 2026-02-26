@@ -38,7 +38,7 @@ STATUS: DRAFT
 - SQLite persistence.
 - Docker daemon/socket.
 - systemd integration.
-- Pironman5 CLI.
+- External Pironman service boundary (`:34001`) as monitor-only context.
 - Telegram integration for backup delivery.
 
 ### Success metrics
@@ -55,8 +55,7 @@ STATUS: DRAFT
 - CSRF origin/referer hardening for state-changing endpoints.
 - Session cookie policy validation under TLS and proxied TLS.
 - Brute-force tracker cleanup strategy.
-- Pironman compatibility parser tests.
-- Hardware apply endpoint tests (checkbox-off semantics and CSRF).
+- External hardware boundary tests (no in-app Pironman control path).
 - Documentation inventory, classification, dedupe/consolidation decisions, link cleanup, and file-length optimization.
 
 ### Out of scope
@@ -93,7 +92,7 @@ STATUS: DRAFT
 - `internal/server/server.go` (backup scheduler behavior).
 - `internal/server/handlers_settings.go` and security middleware/validators.
 - `internal/auth/*` and session/cookie handling.
-- `internal/metrics/*`, `internal/notify/*`, `internal/pironman/*` tests and reliability guards.
+- `internal/metrics/*`, `internal/notify/*`, and server boundary/security tests and reliability guards.
 - Documentation tree: `README.md`, `DEPLOY.md`, `sdlc-studio/**`, `specs/**`, `backlog/**`, `docs/**`.
 
 ### Data flow

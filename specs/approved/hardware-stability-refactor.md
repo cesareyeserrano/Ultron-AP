@@ -1,6 +1,12 @@
 # AF-SPEC: hardware-stability-refactor
 
 STATUS: APPROVED
+
+## Amendment (2026-02-26)
+- This spec is retained for historical traceability.
+- Operative decision superseding prior control-oriented sections: Ultron is `monitor-only` for Pironman.
+- Ultron must not expose Pironman control routes/endpoints/helper actions; Pironman management remains external on `:34001`.
+
 ## 1. Context
 Summary (provided by user): Refactor del modulo hardware de Ultron para eliminar bloqueos/busy/timeouts, usando integracion estable con Pironman y flujo UX controlado. Restricciones no negociables: consumo de recursos casi imperceptible en Raspberry Pi 5 (CPU/RAM/IO) y seguridad fuerte (least-privilege, boundaries, auditabilidad).
 Requirement source: provided explicitly by user via --idea.

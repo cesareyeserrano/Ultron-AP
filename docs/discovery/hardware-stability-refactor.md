@@ -2,6 +2,10 @@
 
 STATUS: DRAFT
 
+## Operative Note (2026-02-26)
+- Historical discovery content below reflects pre-decision analysis.
+- Current architecture decision: Pironman is external-only; Ultron has no Pironman control path and only generic diagnostics/monitoring.
+
 ## 1. Problem Statement
 Derived from approved spec retrieval snapshot:
 - Retrieval mode: section-level

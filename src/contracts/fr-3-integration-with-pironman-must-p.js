@@ -6,22 +6,24 @@ import fs from "node:fs";
 export async function fr_3_integration_with_pironman_must_prioritize_sta(input) {
   const read = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
   const helper = read(input.helperPath);
-  const hardwareHandler = read(input.hardwareHandlerPath);
-  const pironmanControls = read(input.pironmanControlsPath);
+  const server = read(input.serverPath);
+  const settingsHandler = read(input.settingsHandlerPath);
+  const settingsTemplate = read(input.settingsTemplatePath);
 
   const stableHelperPath =
-    /ULTRON_HELPER_SOCKET/.test(helper) &&
-    /PironmanApply/.test(pironmanControls) &&
-    /pironmanAPIBaseURL/.test(helper) &&
-    !/exec\.Command\("pironman5"/.test(helper);
+    !/pironman\.apply/.test(helper) &&
+    !/pironman\.read/.test(helper) &&
+    !/pironmanAPIBaseURL/.test(helper);
 
   const boundedExecution =
-    /context\.WithTimeout\(context\.Background\(\), 20\*time\.Second\)/.test(pironmanControls) &&
-    /context\.WithTimeout\(context\.Background\(\), 25\*time\.Second\)/.test(helper);
+    !/\/api\/settings\/integrations\/diagnostics/.test(server) &&
+    !/\/api\/settings\/diagnostics/.test(server) &&
+    !/handleRuntimeDiagnostics/.test(settingsHandler);
 
   const actionableFailure =
-    (/showToast/.test(hardwareHandler) && /Failed:/.test(hardwareHandler)) ||
-    (/apply failed after/.test(helper) && /timed out waiting for worker/.test(helper));
+    !/Open Module/.test(settingsTemplate) &&
+    !/\/integrations\/pironman/.test(server) &&
+    !/\/api\/integrations\/pironman\/apply/.test(server);
 
   return {
     stableHelperPath,

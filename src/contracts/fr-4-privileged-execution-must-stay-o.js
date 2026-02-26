@@ -18,8 +18,7 @@ export async function fr_4_privileged_execution_must_stay_outside_web_pr(input) 
 
   const validatedAndAuditable =
     /serviceNameRe/.test(helper) &&
-    /invalid service name/.test(helper) &&
-    /pironman apply/.test(helper);
+    /invalid service name/.test(helper);
 
   return {
     isolatedBoundary,

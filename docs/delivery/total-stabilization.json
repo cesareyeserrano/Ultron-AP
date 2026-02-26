@@ -3,7 +3,7 @@
   "ok": true,
   "feature": "total-stabilization",
   "decision": "SHIP",
-  "generatedAt": "2026-02-24T02:19:45.480Z",
+  "generatedAt": "2026-02-26T01:39:56.227Z",
   "confidence": {
     "score": 1,
     "threshold": 0.85,
@@ -163,7 +163,7 @@
     "go": "2026-02-24T02:04:24.450Z",
     "scaffold": "2026-02-24T02:04:57.295Z",
     "implement": "2026-02-24T02:04:57.296Z",
-    "verify": "2026-02-24T02:19:34.141Z"
+    "verify": "2026-02-26T01:39:51.068Z"
   },
   "evidence": {
     "verification": "docs/verification/total-stabilization.json",
@@ -171,7 +171,7 @@
     "implement": "docs/implementation/total-stabilization/implement-manifest.json",
     "go": "docs/implementation/total-stabilization/go.json"
   },
-  "releaseTag": "aitri-release/total-stabilization-2026-02-24T02-19-45",
+  "releaseTag": "aitri-release/total-stabilization-2026-02-26T01-40-00",
   "releaseTagError": null,
   "buildExitCode": 0
 }

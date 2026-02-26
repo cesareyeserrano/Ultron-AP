@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -336,23 +335,19 @@ func TestBackupConfigSave_PersistsAndApplies(t *testing.T) {
 	assert.Equal(t, 80, cfg.MaxUploadSizeMB)
 }
 
-func TestClassifyPironmanRead_Available(t *testing.T) {
-	raw := `{"system":{"rgb_color":"#00ff00","rgb_brightness":50,"rgb_style":"solid","rgb_speed":20,"rgb_enable":true,"gpio_fan_mode":2,"gpio_fan_led":"follow","oled_enable":"on","oled_rotation":0,"oled_sleep_timeout":30}}`
-	got := classifyPironmanRead(raw, nil)
-	assert.Equal(t, "available", got.State)
+func TestRuntimeDiagnosticsRouteNotFound(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/settings/diagnostics", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
-func TestClassifyPironmanRead_DegradedTimeout(t *testing.T) {
-	got := classifyPironmanRead("", errors.New("read unix @->/run/ultron-helper.sock: i/o timeout"))
-	assert.Equal(t, "degraded", got.State)
-}
-
-func TestClassifyPironmanRead_UnavailableForSocketFailure(t *testing.T) {
-	got := classifyPironmanRead("", errors.New("dial unix /run/ultron-helper.sock: connect: no such file or directory"))
-	assert.Equal(t, "unavailable", got.State)
-}
-
-func TestIntegrationDiagnosticsEndpoint(t *testing.T) {
+func TestLegacyIntegrationDiagnosticsRouteNotFound(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/settings/integrations/diagnostics", nil)
@@ -361,7 +356,5 @@ func TestIntegrationDiagnosticsEndpoint(t *testing.T) {
 
 	srv.httpServer.Handler.ServeHTTP(rec, req)
 
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Contains(t, rec.Body.String(), "Pironman Integration")
-	assert.Contains(t, rec.Body.String(), "ultron-ap")
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }

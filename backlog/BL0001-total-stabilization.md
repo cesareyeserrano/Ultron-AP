@@ -30,12 +30,14 @@
     - `internal/server/server_test.go`: `TestPerformAutomatedBackup_RetentionRunsOnTelegramError`.
 
 ### P1
-- [x] Add unit tests for Pironman parser compatibility mode (`bool` vs `"on"/"off"`).
-  - Current gap: `parseBoolOrString` has no direct tests.
+- [x] Removed obsolete Pironman parser test scope after zero-control decision.
+  - Current gap: parser path no longer exists in Ultron core.
   - Done when:
-    - Table-driven tests cover `true`, `false`, `"on"`, `"off"`, `"1"`, malformed payloads.
+    - No Pironman parser unit tests are referenced as active scope.
+    - Runtime remains monitor-only with external Pironman management.
   - Evidence:
-    - `internal/pironman/controls_test.go`: `TestParseBoolOrString`.
+    - `internal/pironman/controls.go` removed.
+    - `internal/pironman/controls_test.go` removed.
 
 - [x] Add tests for hardware apply payload semantics.
   - Current gap: no targeted tests for checkbox-off behavior (`rgb_enable`/`oled_enable` absent in form).

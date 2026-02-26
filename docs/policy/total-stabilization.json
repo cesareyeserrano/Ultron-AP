@@ -15,13 +15,12 @@
       "internal/database/sqlite.go",
       "internal/metrics/reader.go",
       "internal/notify/telegram_test.go",
-      "internal/pironman/controls.go",
       "internal/server/handlers_auth.go",
-      "internal/server/handlers_hardware.go",
+      "internal/server/handlers_settings.go",
       "internal/server/server.go",
       "sdlc-studio/stories/US0020-bug-fixes.md",
       "tests/total-stabilization/tests.md",
-      "web/templates/partials/hardware-form.html"
+      "web/templates/settings.html"
     ],
     "dependencyChanged": []
   },

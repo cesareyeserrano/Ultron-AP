@@ -1,19 +1,16 @@
 # Hardware Integration Operations Policy
 
 Date: 2026-02-25
-Scope: Ultron core on Raspberry Pi 5 with optional Pironman stack.
+Scope: Ultron core on Raspberry Pi 5 with external hardware stack.
 
 ## Non-Intrusive Host Rule
 - Ultron core must not start, stop, or restart Pironman/Influx services from Settings or automatic jobs.
-- Optional integrations are observed, not orchestrated, from core runtime.
+- Pironman is external-only and managed outside Ultron (`:34001`).
 - Privileged execution remains isolated to `ultron-helper` local boundary.
 
 ## Capability Contract
-- Pironman integration state is reported as:
-  - `available`: helper reachable and Pironman config parsed correctly.
-  - `degraded`: helper reachable but Pironman API timeout or invalid payload.
-  - `unavailable`: helper/runtime not reachable.
-- Core UX must fail fast with explicit status and no side effects when unavailable/degraded.
+- Ultron must not expose Pironman control endpoints, forms, or helper actions.
+- Diagnostics are generic runtime snapshots and must not include Pironman-specific control logic.
 
 ## Resource Attribution Guardrail
 - Process-level diagnostics must be on-demand (no periodic polling loop).

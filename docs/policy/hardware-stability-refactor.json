@@ -13,10 +13,10 @@
       "backlog/hardware-stability-refactor/backlog.md",
       "cmd/ultron-helper/main.go",
       "docs/plan/hardware-stability-refactor.md",
-      "internal/pironman/controls.go",
+      "internal/server/handlers_settings.go",
       "tests/hardware-stability-refactor/tests.md",
-      "web/templates/hardware.html",
-      "web/templates/partials/hardware-form.html"
+      "web/templates/settings.html",
+      "web/templates/settings.html"
     ],
     "dependencyChanged": []
   },

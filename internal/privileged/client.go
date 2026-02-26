@@ -27,19 +27,6 @@ type Response struct {
 	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
-type PironmanConfig struct {
-	RGBColor      string `json:"rgb_color"`
-	RGBBrightness int    `json:"rgb_brightness"`
-	RGBStyle      string `json:"rgb_style"`
-	RGBSpeed      int    `json:"rgb_speed"`
-	RGBEnable     bool   `json:"rgb_enable"`
-	FanMode       int    `json:"fan_mode"`
-	FanLED        string `json:"fan_led"`
-	OLEDEnable    bool   `json:"oled_enable"`
-	OLEDRotation  int    `json:"oled_rotation"`
-	OLEDSleep     int    `json:"oled_sleep"`
-}
-
 type systemctlPayload struct {
 	Action string `json:"action"`
 	Name   string `json:"name"`
@@ -172,24 +159,5 @@ func (c *Client) SystemLogs(ctx context.Context, source string, lines int) (stri
 
 func (c *Client) Shutdown(ctx context.Context, mode string) error {
 	_, err := c.call(ctx, "shutdown", shutdownPayload{Mode: mode})
-	return err
-}
-
-func (c *Client) PironmanRead(ctx context.Context) (string, error) {
-	resp, err := c.call(ctx, "pironman.read", nil)
-	if err != nil {
-		return "", err
-	}
-	var out string
-	if len(resp.Payload) > 0 {
-		if err := json.Unmarshal(resp.Payload, &out); err != nil {
-			return "", fmt.Errorf("decode pironman payload: %w", err)
-		}
-	}
-	return out, nil
-}
-
-func (c *Client) PironmanApply(ctx context.Context, cfg PironmanConfig) error {
-	_, err := c.call(ctx, "pironman.apply", cfg)
 	return err
 }

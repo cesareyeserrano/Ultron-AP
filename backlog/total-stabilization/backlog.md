@@ -47,7 +47,7 @@
 - As a maintainer, I want targeted tests for known fragile paths, so that regressions are caught before release.
 - Trace: FR-5, AC-4
 - Acceptance Criteria:
-  - Given stabilization test suite, when executed, then backup failure, retention branch, hardware toggles/CSRF, cookie policy, and Pironman parsing are covered.
+  - Given stabilization test suite, when executed, then backup failure, retention branch, cookie policy, CSRF/origin protections, and external hardware boundary checks are covered.
   - Given full repository tests, when executed, then legacy tests remain green.
 
 ### US-6 Brute-force tracker cleanup strategy

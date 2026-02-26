@@ -8,8 +8,9 @@ import assert from "node:assert/strict";
 test("tc_11_validate_pi5_lightweight_resource_profile_under_repeated_applies", async () => {
   const report = await fr_3_integration_with_pironman_must_prioritize_sta({
     helperPath: "cmd/ultron-helper/main.go",
-    hardwareHandlerPath: "internal/server/handlers_hardware.go",
-    pironmanControlsPath: "internal/pironman/controls.go",
+    serverPath: "internal/server/server.go",
+    settingsHandlerPath: "internal/server/handlers_settings.go",
+    settingsTemplatePath: "web/templates/settings.html",
   });
   assert.equal(report.stableHelperPath, true);
   assert.equal(report.boundedExecution, true);

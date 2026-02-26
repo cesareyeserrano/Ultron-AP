@@ -47,12 +47,12 @@
   2. When session cookie is set.
   3. Then secure cookie semantics are present.
 
-### TC-7 Pironman parser compatibility table
+### TC-7 External hardware boundary compatibility
 - Trace: US-5, FR-5, AC-4
 - Steps:
-  1. Given parser inputs `true`, `false`, `"on"`, `"off"`, `"1"`, malformed values.
-  2. When parser runs.
-  3. Then outputs match expected boolean compatibility behavior.
+  1. Given Ultron running with helper and external Pironman service.
+  2. When integration diagnostics and routes are validated.
+  3. Then no Pironman control endpoint/action exists in Ultron core.
 
 ### TC-8 Hardware apply checkbox-off semantics
 - Trace: US-5, FR-5, AC-4

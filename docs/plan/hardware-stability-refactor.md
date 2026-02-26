@@ -2,6 +2,11 @@
 
 STATUS: READY
 
+## Operative Note (2026-02-26)
+- This plan includes historical phases and decisions.
+- Final enforced posture is monitor-only: no Pironman control in Ultron core/runtime/helper APIs.
+- External Pironman service remains managed outside Ultron via `:34001`.
+
 ## 1. Intent (from approved spec)
 - Retrieval mode: section-level
 

@@ -5,20 +5,16 @@ import fs from "node:fs";
 
 export async function fr_2_the_hardware_apply_pipeline_must_expose_deter(input) {
   const read = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
-  const hardwarePage = read(input.hardwareTemplatePath);
   const helper = read(input.helperPath);
-  const handler = read(input.hardwareHandlerPath);
+  const server = read(input.serverPath);
   const hardwareRemovedFromCore = !fs.existsSync(input.hardwareTemplatePath) && !fs.existsSync(input.hardwareHandlerPath);
 
-  const deterministicApplyControl =
-    (/hx-sync="this:(drop|replace)"/.test(hardwarePage) || hardwareRemovedFromCore) &&
-    /applyQueue/.test(helper) &&
-    /startApplyWorker/.test(helper) &&
-    /handlePironmanApplyNow/.test(helper);
+  const deterministicApplyControl = hardwareRemovedFromCore;
 
   const failurePathIsExplicit =
-    (/showToast/.test(handler) && /Failed:/.test(handler)) ||
-    (/apply timed out waiting for worker/.test(helper) && /apply failed after/.test(helper));
+    !/pironman\.apply/.test(helper) &&
+    !/pironman\.read/.test(helper) &&
+    !/\/integrations\/pironman/.test(server);
 
   return {
     deterministicApplyControl,
