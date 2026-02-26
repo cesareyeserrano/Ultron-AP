@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "ux-ui-upgrade",
+  "decidedAt": "2026-02-26T02:18:26.542Z",
+  "policyEvidence": "docs/policy/ux-ui-upgrade.json",
+  "verificationEvidence": "docs/verification/ux-ui-upgrade.json"
+}
