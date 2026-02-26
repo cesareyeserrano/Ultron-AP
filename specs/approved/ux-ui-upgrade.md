@@ -1,7 +1,6 @@
 # AF-SPEC: ux-ui-upgrade
 
-STATUS: DRAFT
-
+STATUS: APPROVED
 ## 1. Context
 A complete UX/UI upgrade for Ultron: modern and premium dashboard experience across desktop and mobile.
 
@@ -16,17 +15,20 @@ Requirement source: Provided explicitly by user in guided draft.
 - Primary user: system admin/operator managing Raspberry Pi services from Ultron.
 
 ## 3. Functional Rules (traceable)
-- FR-1: The system must provide a coherent premium UI across all core Ultron pages, with consistent visual language and improved information hierarchy for operational decisions.
-- FR-2: Dashboard charts and metrics must be visually clearer and easier to interpret at a glance, including responsive behavior on mobile screens.
+- FR-1: The system must define and apply a dashboard visual asset strategy that uses existing local iconography and CSS-driven primitives first, and introduces new branded assets only when required for readability or hierarchy.
 
 ## 4. Edge Cases
 - When live data is delayed/unavailable, the UI must still present clear placeholders and statuses without layout jumps or unreadable states.
 
 ## 5. Failure Conditions
-- TBD (refine during review)
+- UI presents unreadable or low-contrast content on dark surfaces.
+- Desktop or mobile layouts introduce horizontal overflow in core pages.
+- Dashboard/Settings redesign breaks operational clarity (critical status and actions are harder to locate than current baseline).
 
 ## 6. Non-Functional Requirements
-- TBD (refine during review)
+- Performance parity: visual upgrade must not introduce noticeable interaction lag in normal dashboard navigation.
+- Responsive reliability: desktop and mobile views must remain stable with no layout shift during live data updates.
+- Consistency: shared component language (buttons, badges, panels, forms, modals, tables) must be applied across all in-scope pages.
 
 ## 7. Security Considerations
 - UI changes must preserve all existing CSRF/authentication flows and must not expose sensitive configuration values in visible states.
@@ -36,6 +38,7 @@ Requirement source: Provided explicitly by user in guided draft.
 
 ## 9. Acceptance Criteria
 - AC-1: Given an authenticated admin on desktop and mobile, when navigating Dashboard, Docker, Services, Alerts, Logs, History, and Settings, then each page renders with the new premium visual system consistently and remains fully usable without horizontal overflow.
+- AC-2: Given the Ultron icon on dark surfaces, when rendered in app chrome (sidebar/header/login/favicon context), then the icon remains clearly visible using an approved variant (`on-dark` light/metallic or accent-tinted), while preserving the original black silhouette for neutral/print contexts.
 
 ## 10. Requirement Source Statement
 - All requirements in this draft were provided explicitly by the user.
@@ -43,3 +46,7 @@ Requirement source: Provided explicitly by user in guided draft.
 
 ## 11. Resource Strategy
 - Reuse existing local assets and icon set; no mandatory external assets required.
+- Icon adjustment required in this feature:
+  - Preserve current black icon shape as master form.
+  - Add `on-dark` UI variant for readability on dark backgrounds.
+  - Add optional `brand` accent variant for premium product expression.
