@@ -44,6 +44,17 @@
       "severity": "high",
       "resolution": "Resolved on 2026-02-24: browser hardening baseline and supply-chain gate (`govulncheck`) added, host hardening applied, and least-privilege closure completed with dedicated helper-service architecture for privileged operations.",
       "resolvedAt": "2026-02-24T09:27:33.000Z"
+    },
+    {
+      "id": "FB-5",
+      "addedAt": "2026-02-26T01:59:24Z",
+      "source": "ux-audit",
+      "linkedRef": "UX-UI,Dashboard,Mobile",
+      "category": "improvement",
+      "description": "E2E UX/UI audit of Ultron identified a solid functional base but non-premium visual execution. Main gaps: low visual hierarchy in dashboard, flat cards/surfaces, weak chart readability (minimal sparkline without depth/context), duplicated heading signals (header + page title), high cognitive load in Settings on mobile, and limited brand expression from default typography/system token contrast. Recommendation: move to a tactical premium visual system with atmospheric layered backgrounds, stronger panel depth, expressive but controlled typography, clear component hierarchy, richer data visualization (area + grid + value chips), and mobile-first sectioning/accordion patterns for long forms.",
+      "severity": "medium",
+      "resolution": null,
+      "resolvedAt": null
     }
   ]
 }
