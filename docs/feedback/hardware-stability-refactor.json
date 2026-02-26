@@ -66,6 +66,17 @@
       "severity": "high",
       "resolution": "implemented",
       "resolvedAt": "2026-02-25T10:05:00.000Z"
+    },
+    {
+      "id": "FB-7",
+      "addedAt": "2026-02-25T19:05:00.000Z",
+      "source": "product-decision",
+      "linkedRef": "PHASE-3",
+      "category": "architecture",
+      "description": "Final product decision: remove Pironman control from Ultron entirely to preserve minimal Pi5 resource usage and reduce integration risk. Ultron keeps monitoring-only posture; Pironman management remains external via native API/UI on port 34001.",
+      "severity": "high",
+      "resolution": "accepted",
+      "resolvedAt": "2026-02-25T19:05:00.000Z"
     }
   ]
 }

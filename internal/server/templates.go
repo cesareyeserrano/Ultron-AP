@@ -56,7 +56,6 @@ func (s *Server) parseTemplates() {
 		"partials/alerts-list.html",
 		"partials/alert-rules-table.html",
 		"partials/integration-diagnostics.html",
-		"partials/pironman-form.html",
 		"partials/tailscale-peers.html",
 	}
 
@@ -114,7 +113,6 @@ func (s *Server) parseTemplates() {
 		{"history.html", nil},
 		{"logs.html", nil},
 		{"settings.html", []string{"templates/partials/alert-rules-table.html"}},
-		{"integration-pironman.html", []string{"templates/partials/pironman-form.html"}},
 		{"placeholder.html", nil},
 	}
 

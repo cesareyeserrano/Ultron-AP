@@ -94,7 +94,7 @@
   - No runtime references from core navigation/routes to hardware module.
   - Build and tests pass with hardware module absent from core.
 
-### Phase 3: Optional External Integration (Completed)
+### Phase 3: Optional External Integration (Cancelled by Product Decision)
 - Goal:
   - Reintroduce Pironman as an optional external integration (plugin/adaptor model), not core.
 - Scope:
@@ -103,6 +103,9 @@
 - Exit criteria:
   - Integration works only when external runtime is already active.
   - If unavailable, Ultron fails-fast with explicit status and no host side effects.
+ - Decision:
+  - Superseded by zero-control policy: Ultron will not provide Pironman control surfaces.
+  - Pironman remains external on `:34001`; Ultron only monitors like any other service.
 
 ### Phase 4: Policy & Operations Hardening (Completed)
 - Goal:

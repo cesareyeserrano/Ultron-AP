@@ -1,8 +1,0 @@
-{
-  "schemaVersion": 1,
-  "ok": true,
-  "feature": "pironman-optional-integration",
-  "decidedAt": "2026-02-25T23:35:45.669Z",
-  "policyEvidence": "docs/policy/pironman-optional-integration.json",
-  "verificationEvidence": "docs/verification/pironman-optional-integration.json"
-}

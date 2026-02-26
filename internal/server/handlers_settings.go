@@ -22,13 +22,12 @@ import (
 )
 
 type settingsData struct {
-	Rules           []database.AlertConfig
-	Telegram        *notifDisplay
-	Email           *notifDisplay
-	Perf            database.PerformanceConfig
-	Backup          database.BackupConfig
-	Flash           string
-	PironmanFeature bool
+	Rules    []database.AlertConfig
+	Telegram *notifDisplay
+	Email    *notifDisplay
+	Perf     database.PerformanceConfig
+	Backup   database.BackupConfig
+	Flash    string
 }
 
 type notifDisplay struct {
@@ -64,10 +63,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		log.Printf("settings: failed to list rules: %v", err)
 	}
 
-	data := settingsData{
-		Rules:           rules,
-		PironmanFeature: s.cfg.FeaturePironman,
-	}
+	data := settingsData{Rules: rules}
 
 	// Load notification configs
 	if tg, err := s.db.GetNotificationConfig("telegram"); err == nil && tg != nil {

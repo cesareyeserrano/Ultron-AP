@@ -174,9 +174,9 @@ STATUS: READY
 - Phase 2 (Completed): hard removal of hardware module from core runtime.
   - Target: remove hardware handlers/routes/templates and core dependency chain.
   - Verification: no core runtime reference to hardware module; contracts/tests updated to enforce decoupling and green.
-- Phase 3 (Completed): optional external Pironman integration.
+- Phase 3 (Cancelled by product decision): optional external Pironman integration.
   - Target: plugin/adaptor pattern with explicit capability states and fail-fast behavior.
-  - Verification: integration capability exposed as `available|unavailable|degraded`; no service lifecycle action from core settings flow.
+  - Decision: do not ship Pironman control in Ultron. Keep Pironman external (`:34001`) and monitor only from Ultron.
 - Phase 4 (Completed): policy and operations hardening.
   - Target: document non-intrusive host policy and add per-module resource attribution diagnostics.
   - Verification: operator docs updated and on-demand CPU/RAM process snapshot visible from settings diagnostics.
