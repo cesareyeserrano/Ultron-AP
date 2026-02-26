@@ -1,30 +1,34 @@
 {{define "content"}}
-<div class="space-y-6 page-premium">
-    <div class="page-head">
-        <h1 class="page-title">Alerts</h1>
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-lg font-semibold text-text">Alerts</h1>
         {{if .Content.UnackCount}}
-        <span class="page-status-badge page-status-danger">{{.Content.UnackCount}} unacknowledged</span>
+        <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">{{.Content.UnackCount}} unacknowledged</span>
         {{end}}
     </div>
 
     <!-- Severity Filter -->
-    <div class="flex gap-2 flex-wrap">
-        <a href="/alerts" class="filter-chip {{if eq .Content.SeverityFilter ""}}filter-chip-active{{end}}" hx-boost="true">
+    <div class="flex gap-2">
+        <a href="/alerts" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SeverityFilter ""}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
             All
         </a>
-        <a href="/alerts?severity=critical" class="filter-chip {{if eq .Content.SeverityFilter "critical"}}filter-chip-danger{{end}}" hx-boost="true">
+        <a href="/alerts?severity=critical" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SeverityFilter "critical"}}bg-danger text-white{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
             Critical
         </a>
-        <a href="/alerts?severity=warning" class="filter-chip {{if eq .Content.SeverityFilter "warning"}}filter-chip-warn{{end}}" hx-boost="true">
+        <a href="/alerts?severity=warning" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SeverityFilter "warning"}}bg-yellow-400 text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
             Warning
         </a>
-        <a href="/alerts?severity=info" class="filter-chip {{if eq .Content.SeverityFilter "info"}}filter-chip-active{{end}}" hx-boost="true">
+        <a href="/alerts?severity=info" class="text-xs px-3 py-1.5 rounded-lg transition-colors
+            {{if eq .Content.SeverityFilter "info"}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
             Info
         </a>
     </div>
 
     <!-- Alerts List -->
-    <div id="alerts-list" class="panel-shell p-2">
+    <div id="alerts-list">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         {{template "partials/alerts-list.html" dict "Alerts" .Content.Alerts "CSRFToken" .CSRFToken}}
     </div>

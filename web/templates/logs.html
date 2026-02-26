@@ -1,12 +1,12 @@
 {{define "content"}}
-<div class="space-y-6 page-premium">
+<div class="space-y-6">
     <div>
-        <h1 class="page-title">System Logs</h1>
-        <p class="page-subtitle">On-demand log retrieval from system services.</p>
+        <h1 class="text-lg font-semibold text-text">System Logs</h1>
+        <p class="text-xs text-text-muted mt-0.5">On-demand log retrieval from system services.</p>
     </div>
 
     <!-- Controls -->
-    <div class="flex flex-wrap items-center gap-3 panel-shell p-4">
+    <div class="flex flex-wrap items-center gap-3 bg-surface border border-border p-4 rounded-lg">
         <div class="flex flex-col gap-1">
             <label class="text-[10px] uppercase tracking-wider text-text-muted font-bold">Source</label>
             <select id="log-source" class="px-3 py-1.5 text-sm bg-base border border-border rounded text-text min-w-[160px] focus:ring-accent focus:border-accent">
@@ -27,7 +27,7 @@
     </div>
 
     <!-- Log Viewer Area -->
-    <div class="relative bg-black rounded-lg border border-border shadow-2xl overflow-hidden flex flex-col min-h-[500px] terminal-shell">
+    <div class="relative bg-black rounded-lg border border-border shadow-2xl overflow-hidden flex flex-col min-h-[500px]">
         <div class="flex items-center justify-between px-4 py-2 border-b border-border/20 bg-card/30">
             <div class="flex gap-1.5">
                 <div class="w-2.5 h-2.5 rounded-full bg-danger/50"></div>

@@ -1,9 +1,9 @@
 {{define "content"}}
-<div class="space-y-6 page-premium">
-    <div class="page-head">
-        <h1 class="page-title">Docker Containers</h1>
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-lg font-semibold text-text">Docker Containers</h1>
         {{if not .Content.Available}}
-        <span class="page-status-badge page-status-danger">Docker unavailable</span>
+        <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">Docker unavailable</span>
         {{end}}
     </div>
 
@@ -11,7 +11,7 @@
     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
     <!-- Container List -->
-    <div id="docker-list" class="panel-shell p-2">
+    <div id="docker-list">
         {{template "partials/docker-list.html" .Content.Containers}}
     </div>
 </div>

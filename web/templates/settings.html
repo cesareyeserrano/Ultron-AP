@@ -1,6 +1,6 @@
 {{define "content"}}
-<div class="space-y-6 page-premium">
-    <h1 class="page-title">Settings</h1>
+<div class="space-y-6">
+    <h1 class="text-lg font-semibold text-text">Settings</h1>
 
     <!-- Alert Rules Section -->
     <section>
@@ -13,7 +13,7 @@
         </div>
 
         <!-- Add Rule Form -->
-        <div class="mt-4 panel-shell p-4">
+        <div class="mt-4 bg-surface rounded-lg border border-border p-4">
             <h3 class="text-sm font-medium text-text mb-3">Add Rule</h3>
             <form hx-post="/api/alerts/rules" hx-target="#rules-table" hx-swap="innerHTML" class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
@@ -66,7 +66,7 @@
     <!-- Telegram Configuration -->
     <section>
         <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Telegram Notifications</h2>
-        <div class="panel-shell p-4">
+        <div class="bg-surface rounded-lg border border-border p-4">
             <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" class="space-y-3">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -99,7 +99,7 @@
     <!-- Email Configuration -->
     <section>
         <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Email Notifications</h2>
-        <div class="panel-shell p-4">
+        <div class="bg-surface rounded-lg border border-border p-4">
             <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" class="space-y-3">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -148,7 +148,7 @@
     <!-- Performance Settings -->
     <section>
         <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Performance</h2>
-        <div class="panel-shell p-4">
+        <div class="bg-surface rounded-lg border border-border p-4">
             <p class="text-xs text-text-muted mb-4">Tune polling intervals to reduce CPU and I/O overhead. Changes apply immediately without restart.</p>
             <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" class="space-y-4">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
@@ -201,7 +201,7 @@
     <!-- Backup Configuration -->
     <section>
         <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Backup Module</h2>
-        <div class="panel-shell p-4">
+        <div class="bg-surface rounded-lg border border-border p-4">
             <p class="text-xs text-text-muted mb-4">Backup scheduler and destination pipeline settings. Changes apply immediately without restart.</p>
             <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" class="space-y-4">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
@@ -298,7 +298,7 @@
     <!-- System Maintenance -->
     <section>
         <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">System Maintenance</h2>
-        <div class="panel-shell p-4">
+        <div class="bg-surface rounded-lg border border-border p-4">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-text">Database Backup</h3>

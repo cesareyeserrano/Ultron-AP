@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} - Ultron-AP</title>
-    <link rel="icon" type="image/svg+xml" href="/static/brand/ultron-mark-brand.svg">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="stylesheet" href="/static/css/app.css">
     <script src="/static/js/htmx.min.js"></script>
     {{if eq .ActivePage "dashboard"}}
     <script src="/static/js/sse.js"></script>
     {{end}}
 </head>
-<body class="bg-base text-text font-sans min-h-screen flex ultron-premium" hx-boost="true">
+<body class="bg-base text-text font-sans min-h-screen flex" hx-boost="true">
     <!-- Mobile overlay -->
     <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden"></div>
 

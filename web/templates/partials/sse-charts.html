@@ -1,22 +1,12 @@
 {{define "partials/sse-charts.html"}}
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div class="chart-tile">
-        <div class="chart-head">
-            <p class="chart-label">CPU History</p>
-            {{if .Metrics}}<span class="chart-badge">{{formatPercent .Metrics.CPU.TotalPercent}}</span>{{end}}
-        </div>
-        <div class="chart-canvas">
-            {{sparklineSVG .CPUValues}}
-        </div>
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <p class="text-xs text-text-muted mb-2">CPU History</p>
+        {{sparklineSVG .CPUValues}}
     </div>
-    <div class="chart-tile">
-        <div class="chart-head">
-            <p class="chart-label">Memory History</p>
-            {{if .Metrics}}<span class="chart-badge">{{formatPercent .Metrics.RAM.Percent}}</span>{{end}}
-        </div>
-        <div class="chart-canvas">
-            {{sparklineSVG .RAMValues}}
-        </div>
+    <div class="bg-surface rounded-lg border border-border p-4">
+        <p class="text-xs text-text-muted mb-2">Memory History</p>
+        {{sparklineSVG .RAMValues}}
     </div>
 </div>
 {{end}}

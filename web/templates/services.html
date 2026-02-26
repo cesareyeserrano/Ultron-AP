@@ -1,9 +1,9 @@
 {{define "content"}}
-<div class="space-y-6 page-premium">
-    <div class="page-head">
-        <h1 class="page-title">Systemd Services</h1>
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-lg font-semibold text-text">Systemd Services</h1>
         {{if not .Content.Available}}
-        <span class="page-status-badge page-status-danger">systemctl unavailable</span>
+        <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">systemctl unavailable</span>
         {{end}}
     </div>
 
@@ -11,7 +11,7 @@
     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
     <!-- Service List -->
-    <div id="services-list" class="panel-shell p-2">
+    <div id="services-list">
         {{template "partials/services-list.html" .Content.Services}}
     </div>
 </div>
