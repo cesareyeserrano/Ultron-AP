@@ -1,0 +1,16 @@
+{
+  "feature": "ux-ui-upgrade",
+  "entries": [
+    {
+      "id": "FB-1",
+      "addedAt": "2026-02-26T02:37:32.834Z",
+      "source": "internal",
+      "linkedRef": "FR-1, AC-2",
+      "category": "ux",
+      "description": "Delivery completed with SHIP, but follow-up UX iteration should prioritize full icon variant rollout (`on-dark`, `brand`, `mono`) and consistency pass across non-dashboard pages to maintain premium visual cohesion.",
+      "severity": "medium",
+      "resolution": null,
+      "resolvedAt": null
+    }
+  ]
+}

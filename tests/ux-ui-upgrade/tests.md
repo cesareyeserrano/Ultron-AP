@@ -24,8 +24,8 @@
 
 ### TC-3
 - Title: Enforce security control - UI changes must preserve all existing CSRF/authentication flows and must not expose sensitive configuration values in visible states.
-- Trace: US-1, FR-1
-- AC: Given threat scenario: ui changes must preserve all existing csrf/authentication flows and must not expose sensitive configuration values in visible states, when an invalid or abusive action is attempted, then access is blocked and evidence is logged.
+- Trace: US-1, FR-1, AC-2
+- AC: Given the Ultron icon on dark surfaces, when rendered in app chrome (sidebar/header/login/favicon context), then the icon remains clearly visible using an approved variant while CSRF/auth flows remain preserved and no sensitive values are exposed in UI states.
 
 ## Edge Cases
 

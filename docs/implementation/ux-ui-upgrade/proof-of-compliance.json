@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "ux-ui-upgrade",
+  "provenAt": "2026-02-26T02:26:11.671Z",
+  "summary": {
+    "total": 1,
+    "proven": 1,
+    "unproven": 0,
+    "trivialTcs": [],
+    "unimplementedContractTcs": [],
+    "mutation": null
+  },
+  "frProof": {
+    "FR-1": {
+      "proven": true,
+      "via": [
+        "TC-1"
+      ],
+      "tracingTcs": [
+        "TC-1",
+        "TC-2",
+        "TC-3"
+      ],
+      "evidence": [
+        "tests/ux-ui-upgrade/generated/tc-1_validate-us-1-primary-behavior_test.go"
+      ],
+      "mutationScore": null
+    }
+  },
+  "tcResults": {
+    "TC-1": {
+      "passed": true,
+      "file": "tests/ux-ui-upgrade/generated/tc-1_validate-us-1-primary-behavior_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-2": {
+      "passed": false,
+      "file": "tests/ux-ui-upgrade/generated/tc-2_handle-edge-behavior-when-live-data-_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-3": {
+      "passed": false,
+      "file": "tests/ux-ui-upgrade/generated/tc-3_enforce-security-control-ui-changes-_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    }
+  }
+}

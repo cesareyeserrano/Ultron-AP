@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "ux-ui-upgrade",
+  "command": "node --test tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+  "commandSource": "node:test:file",
+  "exitCode": 0,
+  "durationMs": 147,
+  "timeoutMs": 120000,
+  "startedAt": "2026-02-26T02:34:19.931Z",
+  "finishedAt": "2026-02-26T02:34:20.078Z",
+  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.826792ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 80.448708",
+  "stderrTail": "",
+  "reason": "passed",
+  "tcCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 3,
+    "executable": 3,
+    "passing": 3,
+    "failing": 0,
+    "missing": 0,
+    "mapped": {
+      "TC-1": {
+        "found": true,
+        "file": "tests/ux-ui-upgrade/generated/tc-1_validate-us-1-primary-behavior_test.go"
+      },
+      "TC-2": {
+        "found": true,
+        "file": "tests/ux-ui-upgrade/generated/tc-2_handle-edge-behavior-when-live-data-_test.go"
+      },
+      "TC-3": {
+        "found": true,
+        "file": "tests/ux-ui-upgrade/generated/tc-3_enforce-security-control-ui-changes-_test.go"
+      }
+    }
+  },
+  "frCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 1,
+    "covered": 1,
+    "uncovered": []
+  },
+  "usCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 1,
+    "fullyVerified": [
+      "US-1"
+    ],
+    "partial": [],
+    "unverified": []
+  },
+  "coverageConfidence": {
+    "score": 100,
+    "ratio": 1,
+    "mode": "scaffold"
+  },
+  "evidenceFile": "docs/verification/ux-ui-upgrade.json"
+}
