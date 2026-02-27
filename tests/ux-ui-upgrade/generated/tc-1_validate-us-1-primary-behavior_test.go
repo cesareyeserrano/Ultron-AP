@@ -68,7 +68,7 @@ func TestTc1ValidateUs1PrimaryBehavior(t *testing.T) {
 	if !strings.Contains(string(sidebar), "href=\"/dashboard\"") && !strings.Contains(string(sidebar), "href=\"/\"") {
 		t.Fatal("expected dashboard navigation entry in sidebar")
 	}
-	if !strings.Contains(string(dashboard), "sse-connect=\"/api/sse/dashboard\"") {
+	if !strings.Contains(string(dashboard), "sse-connect=\"/api/sse/dashboard?window=") {
 		t.Fatal("expected dashboard SSE live telemetry hook")
 	}
 	if !strings.Contains(string(metrics), "grid grid-cols-") || !strings.Contains(string(charts), "grid grid-cols-") {

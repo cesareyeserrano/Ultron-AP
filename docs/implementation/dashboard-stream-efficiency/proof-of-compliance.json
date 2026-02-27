@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "ok": true,
   "feature": "dashboard-stream-efficiency",
-  "provenAt": "2026-02-27T00:35:41.638Z",
+  "provenAt": "2026-02-27T02:14:06.078Z",
   "summary": {
     "total": 4,
     "proven": 4,
@@ -17,7 +17,6 @@
       "via": [
         "TC-1",
         "TC-5",
-        "TC-6",
         "TC-7",
         "TC-8"
       ],
@@ -31,7 +30,6 @@
       "evidence": [
         "tests/dashboard-stream-efficiency/generated/tc-1_validate-us-1-primary-behavior_test.go",
         "tests/dashboard-stream-efficiency/generated/tc-5_handle-edge-behavior-temperature-sen_test.go",
-        "tests/dashboard-stream-efficiency/generated/tc-6_handle-edge-behavior-sparse-history-_test.go",
         "tests/dashboard-stream-efficiency/generated/tc-7_enforce-security-control-keep-existi_test.go",
         "tests/dashboard-stream-efficiency/generated/tc-8_enforce-security-control-do-not-intr_test.go"
       ],
@@ -119,7 +117,7 @@
       "mutation": null
     },
     "TC-6": {
-      "passed": true,
+      "passed": false,
       "file": "tests/dashboard-stream-efficiency/generated/tc-6_handle-edge-behavior-sparse-history-_test.go",
       "trivial": false,
       "contractUnimplemented": false,
