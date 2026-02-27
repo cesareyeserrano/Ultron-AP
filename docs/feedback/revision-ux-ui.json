@@ -1,0 +1,16 @@
+{
+  "feature": "revision-ux-ui",
+  "entries": [
+    {
+      "id": "FB-1",
+      "addedAt": "2026-02-27T20:49:56.623Z",
+      "source": "internal",
+      "linkedRef": "FR-1",
+      "category": "ux",
+      "description": "Comprehensive UX/UI review across dashboard, docker, services, alerts, history, logs, and settings found key issues in hierarchy consistency, mobile action wrapping, text truncation for long operational strings, and uneven control alignment. Applied fixes keep dark graphite style while improving readability, responsive layout behavior, and action discoverability without adding new features.",
+      "severity": "high",
+      "resolution": null,
+      "resolvedAt": null
+    }
+  ]
+}

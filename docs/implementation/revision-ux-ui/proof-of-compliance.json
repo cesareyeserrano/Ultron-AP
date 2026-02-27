@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "revision-ux-ui",
+  "provenAt": "2026-02-27T20:06:01.662Z",
+  "summary": {
+    "total": 4,
+    "proven": 4,
+    "unproven": 0,
+    "trivialTcs": [],
+    "unimplementedContractTcs": [],
+    "mutation": null
+  },
+  "frProof": {
+    "FR-1": {
+      "proven": true,
+      "via": [
+        "TC-1",
+        "TC-5",
+        "TC-6"
+      ],
+      "tracingTcs": [
+        "TC-1",
+        "TC-5",
+        "TC-6"
+      ],
+      "evidence": [
+        "tests/revision-ux-ui/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+        "tests/revision-ux-ui/generated/tc-5-handle-edge-behavior-on-small-screen.test.mjs",
+        "tests/revision-ux-ui/generated/tc-6-enforce-security-control-expose-only.test.mjs"
+      ],
+      "mutationScore": null
+    },
+    "FR-2": {
+      "proven": true,
+      "via": [
+        "TC-2"
+      ],
+      "tracingTcs": [
+        "TC-2"
+      ],
+      "evidence": [
+        "tests/revision-ux-ui/generated/tc-2-validate-us-2-primary-behavior.test.mjs"
+      ],
+      "mutationScore": null
+    },
+    "FR-3": {
+      "proven": true,
+      "via": [
+        "TC-3"
+      ],
+      "tracingTcs": [
+        "TC-3"
+      ],
+      "evidence": [
+        "tests/revision-ux-ui/generated/tc-3-validate-us-3-primary-behavior.test.mjs"
+      ],
+      "mutationScore": null
+    },
+    "FR-4": {
+      "proven": true,
+      "via": [
+        "TC-4"
+      ],
+      "tracingTcs": [
+        "TC-4"
+      ],
+      "evidence": [
+        "tests/revision-ux-ui/generated/tc-4-validate-us-4-primary-behavior.test.mjs"
+      ],
+      "mutationScore": null
+    }
+  },
+  "tcResults": {
+    "TC-1": {
+      "passed": true,
+      "file": "tests/revision-ux-ui/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-2": {
+      "passed": true,
+      "file": "tests/revision-ux-ui/generated/tc-2-validate-us-2-primary-behavior.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-3": {
+      "passed": true,
+      "file": "tests/revision-ux-ui/generated/tc-3-validate-us-3-primary-behavior.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-4": {
+      "passed": true,
+      "file": "tests/revision-ux-ui/generated/tc-4-validate-us-4-primary-behavior.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-5": {
+      "passed": true,
+      "file": "tests/revision-ux-ui/generated/tc-5-handle-edge-behavior-on-small-screen.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-6": {
+      "passed": true,
+      "file": "tests/revision-ux-ui/generated/tc-6-enforce-security-control-expose-only.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    }
+  }
+}
