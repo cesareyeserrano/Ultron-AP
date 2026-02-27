@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "ok": true,
+  "ok": false,
   "feature": "hardware-stability-refactor",
-  "provenAt": "2026-02-25T23:07:04.086Z",
+  "provenAt": "2026-02-27T00:17:34.718Z",
   "summary": {
     "total": 5,
-    "proven": 5,
-    "unproven": 0,
+    "proven": 4,
+    "unproven": 1,
     "trivialTcs": [],
     "unimplementedContractTcs": [],
     "mutation": null
@@ -16,8 +16,6 @@
       "proven": true,
       "via": [
         "TC-1",
-        "TC-6",
-        "TC-7",
         "TC-8",
         "TC-9"
       ],
@@ -30,8 +28,6 @@
       ],
       "evidence": [
         "tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
-        "tests/hardware-stability-refactor/generated/tc-6-handle-edge-behavior-user-modifies-m.test.mjs",
-        "tests/hardware-stability-refactor/generated/tc-7-handle-edge-behavior-user-sends-repe.test.mjs",
         "tests/hardware-stability-refactor/generated/tc-8-enforce-security-control-keep-privil.test.mjs",
         "tests/hardware-stability-refactor/generated/tc-9-enforce-security-control-enforce-par.test.mjs"
       ],
@@ -86,16 +82,12 @@
       "mutationScore": null
     },
     "FR-5": {
-      "proven": true,
-      "via": [
-        "TC-5"
-      ],
+      "proven": false,
+      "via": [],
       "tracingTcs": [
         "TC-5"
       ],
-      "evidence": [
-        "tests/hardware-stability-refactor/generated/tc-5-validate-us-5-primary-behavior.test.mjs"
-      ],
+      "evidence": [],
       "mutationScore": null
     }
   },
@@ -133,7 +125,7 @@
       "mutation": null
     },
     "TC-5": {
-      "passed": true,
+      "passed": false,
       "file": "tests/hardware-stability-refactor/generated/tc-5-validate-us-5-primary-behavior.test.mjs",
       "trivial": false,
       "contractUnimplemented": false,
@@ -141,7 +133,7 @@
       "mutation": null
     },
     "TC-6": {
-      "passed": true,
+      "passed": false,
       "file": "tests/hardware-stability-refactor/generated/tc-6-handle-edge-behavior-user-modifies-m.test.mjs",
       "trivial": false,
       "contractUnimplemented": false,
@@ -149,7 +141,7 @@
       "mutation": null
     },
     "TC-7": {
-      "passed": true,
+      "passed": false,
       "file": "tests/hardware-stability-refactor/generated/tc-7-handle-edge-behavior-user-sends-repe.test.mjs",
       "trivial": false,
       "contractUnimplemented": false,

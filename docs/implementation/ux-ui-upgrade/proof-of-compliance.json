@@ -1,36 +1,32 @@
 {
   "schemaVersion": 1,
-  "ok": true,
+  "ok": false,
   "feature": "ux-ui-upgrade",
-  "provenAt": "2026-02-26T02:26:11.671Z",
+  "provenAt": "2026-02-27T00:17:33.971Z",
   "summary": {
     "total": 1,
-    "proven": 1,
-    "unproven": 0,
+    "proven": 0,
+    "unproven": 1,
     "trivialTcs": [],
     "unimplementedContractTcs": [],
     "mutation": null
   },
   "frProof": {
     "FR-1": {
-      "proven": true,
-      "via": [
-        "TC-1"
-      ],
+      "proven": false,
+      "via": [],
       "tracingTcs": [
         "TC-1",
         "TC-2",
         "TC-3"
       ],
-      "evidence": [
-        "tests/ux-ui-upgrade/generated/tc-1_validate-us-1-primary-behavior_test.go"
-      ],
+      "evidence": [],
       "mutationScore": null
     }
   },
   "tcResults": {
     "TC-1": {
-      "passed": true,
+      "passed": false,
       "file": "tests/ux-ui-upgrade/generated/tc-1_validate-us-1-primary-behavior_test.go",
       "trivial": false,
       "contractUnimplemented": false,
