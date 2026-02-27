@@ -82,6 +82,24 @@ func scanActionLogs(rows *sql.Rows) ([]ActionLog, error) {
 	return logs, rows.Err()
 }
 
+// DeleteActionLogs removes action logs. If source is empty, removes all.
+func (db *DB) DeleteActionLogs(source string) (int64, error) {
+	var (
+		res sql.Result
+		err error
+	)
+	if source == "" {
+		res, err = db.Exec("DELETE FROM ActionLog")
+	} else {
+		res, err = db.Exec("DELETE FROM ActionLog WHERE source = ?", source)
+	}
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	return n, nil
+}
+
 // PruneOldData deletes ActionLog and Alert records older than the given number
 // of days. Returns the total number of rows deleted.
 func (db *DB) PruneOldData(days int) (int64, error) {

@@ -2,9 +2,18 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-lg font-semibold text-text">Alerts</h1>
-        {{if .Content.UnackCount}}
-        <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">{{.Content.UnackCount}} unacknowledged</span>
-        {{end}}
+        <div class="flex items-center gap-2">
+            {{if .Content.UnackCount}}
+            <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">{{.Content.UnackCount}} unacknowledged</span>
+            {{end}}
+            <form method="POST" action="/api/alerts/clear" onsubmit="return confirm('Clear alerts list?');">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="severity" value="{{.Content.SeverityFilter}}">
+                <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-surface border border-border text-text-muted hover:bg-danger/10 hover:text-danger transition-colors">
+                    Clear Alerts
+                </button>
+            </form>
+        </div>
     </div>
 
     <!-- Severity Filter -->

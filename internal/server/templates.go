@@ -20,15 +20,33 @@ func (s *Server) parseTemplates() {
 
 	// FuncMap shared by all SSE / HTMX partials.
 	partialFuncs := template.FuncMap{
-		"formatBytes":    formatBytes,
-		"formatPercent":  formatPercent,
-		"tempColor":      tempColor,
-		"healthColor":    healthColor,
-		"svcHealthColor": svcHealthColor,
-		"shortID":        shortID,
-		"sparklineSVG":   sparklineSVG,
-		"formatTemp":     formatTemp,
-		"deref":          derefFloat,
+		"formatBytes":           formatBytes,
+		"formatPercent":         formatPercent,
+		"tempColor":             tempColor,
+		"healthColor":           healthColor,
+		"svcHealthColor":        svcHealthColor,
+		"shortID":               shortID,
+		"sparklineSVG":          sparklineSVG,
+		"sparklineSVGColor":     sparklineSVGColor,
+		"sparkMin":              sparkMin,
+		"sparkMax":              sparkMax,
+		"sparkCurrent":          sparkCurrent,
+		"tempSeriesClass":       tempSeriesClass,
+		"tempSeriesStroke":      tempSeriesStroke,
+		"formatTemp":            formatTemp,
+		"deref":                 derefFloat,
+		"groupServices":         groupServices,
+		"serviceGroup":          serviceGroup,
+		"serviceGroupLabel":     serviceGroupLabel,
+		"serviceGroupPillClass": serviceGroupPillClass,
+		"serviceInfo":           serviceInfo,
+		"serviceHasRuntime":     serviceHasRuntime,
+		"serviceCPU":            serviceCPU,
+		"serviceRSS":            serviceRSS,
+		"countServicesState":    countServicesState,
+		"countContainersState":  countContainersState,
+		"tailscalePeerTotal":    tailscalePeerTotal,
+		"tailscalePeerOnline":   tailscalePeerOnline,
 		"dict": func(values ...interface{}) (map[string]interface{}, error) {
 			if len(values)%2 != 0 {
 				return nil, fmt.Errorf("invalid dict call")
@@ -50,6 +68,7 @@ func (s *Server) parseTemplates() {
 		"partials/sse-docker.html",
 		"partials/sse-systemd.html",
 		"partials/sse-charts.html",
+		"partials/sse-summary.html",
 		"partials/services-list.html",
 		"partials/docker-list.html",
 		"partials/docker-detail.html",
@@ -75,8 +94,24 @@ func (s *Server) parseTemplates() {
 
 	// FuncMap for full page templates.
 	pageFuncs := template.FuncMap{
-		"add": func(a, b int) int { return a + b },
-		"sub": func(a, b int) int { return a - b },
+		"add":                   func(a, b int) int { return a + b },
+		"sub":                   func(a, b int) int { return a - b },
+		"formatBytes":           formatBytes,
+		"formatPercent":         formatPercent,
+		"formatTemp":            formatTemp,
+		"tempColor":             tempColor,
+		"groupServices":         groupServices,
+		"serviceGroup":          serviceGroup,
+		"serviceGroupLabel":     serviceGroupLabel,
+		"serviceGroupPillClass": serviceGroupPillClass,
+		"serviceInfo":           serviceInfo,
+		"serviceHasRuntime":     serviceHasRuntime,
+		"serviceCPU":            serviceCPU,
+		"serviceRSS":            serviceRSS,
+		"countServicesState":    countServicesState,
+		"countContainersState":  countContainersState,
+		"tailscalePeerTotal":    tailscalePeerTotal,
+		"tailscalePeerOnline":   tailscalePeerOnline,
 		"dict": func(values ...interface{}) (map[string]interface{}, error) {
 			if len(values)%2 != 0 {
 				return nil, fmt.Errorf("invalid dict call")
@@ -105,7 +140,7 @@ func (s *Server) parseTemplates() {
 	}
 
 	pages := []pageSpec{
-		{"dashboard.html", []string{"templates/partials/tailscale-peers.html"}},
+		{"dashboard.html", []string{"templates/partials/tailscale-peers.html", "templates/partials/sse-summary.html"}},
 		{"docker.html", []string{"templates/partials/docker-list.html"}},
 		{"services.html", []string{"templates/partials/services-list.html"}},
 		{"alerts.html", []string{"templates/partials/alerts-list.html"}},

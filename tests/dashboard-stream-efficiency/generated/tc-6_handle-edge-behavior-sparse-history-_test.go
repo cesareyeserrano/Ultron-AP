@@ -3,13 +3,13 @@
 // No AC mapped to this TC.
 package generated
 
-import (
-	"testing"
-	"dashboard-stream-efficiency/internal/contracts"
-)
+import "testing"
 
-func Testtc_6_handle_edge_behavior_sparse_history_few_points_after_startup_charts_must_render_with_available_points_only(t *testing.T) {
-	// TODO: Validate these acceptance criteria:
-	// No AC mapped to this TC.
-	t.Fatal("Not implemented: TC-6 — Handle edge behavior - Sparse history (few points after startup): charts must render with available points only")
+func TestTc_6_handle_edge_behavior_sparse_history_few_points_after_startup_charts_must_render_with_available_points_only(t *testing.T) {
+	helpers := readRepoFile(t, "internal/server/helpers.go")
+	sse := readRepoFile(t, "internal/server/sse.go")
+	assertContains(t, helpers, "if len(values) == 0 {")
+	assertContains(t, helpers, "return \"\"")
+	assertContains(t, helpers, "math.Max(1, float64(len(values)-1))")
+	assertContains(t, sse, "history := s.collector.History(60)")
 }

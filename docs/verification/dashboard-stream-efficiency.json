@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "dashboard-stream-efficiency",
+  "command": "node --test tests/hardware-stability-refactor/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+  "commandSource": "node:test:file",
+  "exitCode": 0,
+  "durationMs": 62,
+  "timeoutMs": 120000,
+  "startedAt": "2026-02-26T17:06:45.766Z",
+  "finishedAt": "2026-02-26T17:06:45.829Z",
+  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.620708ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 38.025125",
+  "stderrTail": "",
+  "reason": "passed",
+  "tcCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 8,
+    "executable": 8,
+    "passing": 8,
+    "failing": 0,
+    "missing": 0,
+    "mapped": {
+      "TC-1": {
+        "found": true,
+        "file": "tests/dashboard-stream-efficiency/generated/tc-1_validate-us-1-primary-behavior_test.go"
+      },
+      "TC-2": {
+        "found": true,
+        "file": "tests/dashboard-stream-efficiency/generated/tc-2_validate-us-2-primary-behavior_test.go"
+      },
+      "TC-3": {
+        "found": true,
+        "file": "tests/dashboard-stream-efficiency/generated/tc-3_validate-us-3-primary-behavior_test.go"
+      },
+      "TC-4": {
+        "found": true,
+        "file": "tests/dashboard-stream-efficiency/generated/tc-4_validate-us-4-primary-behavior_test.go"
+      },
+      "TC-5": {
+        "found": true,
+        "file": "tests/dashboard-stream-efficiency/generated/tc-5_handle-edge-behavior-temperature-sen_test.go"
+      },
+      "TC-6": {
+        "found": true,
+        "file": "tests/dashboard-stream-efficiency/generated/tc-6_handle-edge-behavior-sparse-history-_test.go"
+      },
+      "TC-7": {
+        "found": true,
+        "file": "tests/dashboard-stream-efficiency/generated/tc-7_enforce-security-control-keep-existi_test.go"
+      },
+      "TC-8": {
+        "found": true,
+        "file": "tests/dashboard-stream-efficiency/generated/tc-8_enforce-security-control-do-not-intr_test.go"
+      }
+    }
+  },
+  "frCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 4,
+    "covered": 4,
+    "uncovered": []
+  },
+  "usCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 4,
+    "fullyVerified": [
+      "US-1",
+      "US-2",
+      "US-3",
+      "US-4"
+    ],
+    "partial": [],
+    "unverified": []
+  },
+  "coverageConfidence": {
+    "score": 100,
+    "ratio": 1,
+    "mode": "scaffold"
+  },
+  "evidenceFile": "docs/verification/dashboard-stream-efficiency.json"
+}

@@ -1,120 +1,68 @@
 {{define "content"}}
-<div class="space-y-6" hx-ext="sse" sse-connect="/api/sse/dashboard">
+<div class="space-y-5" hx-ext="sse" sse-connect="/api/sse/dashboard">
 
-    <!-- Metric Cards -->
     <section>
         <div id="metrics-cards" sse-swap="metrics" hx-swap="innerHTML">
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {{if .Content.Metrics}}
-                <div class="bg-surface rounded-lg border border-border p-4">
-                    <p class="text-xs text-text-muted mb-1">CPU</p>
-                    <p class="text-2xl font-mono font-bold text-accent">{{printf "%.1f%%" .Content.Metrics.CPU.TotalPercent}}</p>
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">CPU</p>
+                    <p class="text-xl font-mono font-bold text-accent">{{printf "%.1f%%" .Content.Metrics.CPU.TotalPercent}}</p>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-4">
-                    <p class="text-xs text-text-muted mb-1">Memory</p>
-                    <p class="text-2xl font-mono font-bold text-accent">{{printf "%.1f%%" .Content.Metrics.RAM.Percent}}</p>
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Memory</p>
+                    <p class="text-xl font-mono font-bold text-accent">{{printf "%.1f%%" .Content.Metrics.RAM.Percent}}</p>
                 </div>
                 {{else}}
-                <div class="bg-surface rounded-lg border border-border p-4">
-                    <p class="text-xs text-text-muted mb-1">CPU</p>
-                    <p class="text-2xl font-mono font-bold text-text-muted">--</p>
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">CPU</p>
+                    <p class="text-xl font-mono font-bold text-text-muted">--</p>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-4">
-                    <p class="text-xs text-text-muted mb-1">Memory</p>
-                    <p class="text-2xl font-mono font-bold text-text-muted">--</p>
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Memory</p>
+                    <p class="text-xl font-mono font-bold text-text-muted">--</p>
                 </div>
                 {{end}}
-                <div class="bg-surface rounded-lg border border-border p-4">
-                    <p class="text-xs text-text-muted mb-1">Disk</p>
-                    <p class="text-2xl font-mono font-bold text-text-muted">--</p>
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Disk</p>
+                    <p class="text-xl font-mono font-bold text-text-muted">--</p>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-4">
-                    <p class="text-xs text-text-muted mb-1">Network</p>
-                    <p class="text-2xl font-mono font-bold text-text-muted">--</p>
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Network</p>
+                    <p class="text-xl font-mono font-bold text-text-muted">--</p>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-4">
-                    <p class="text-xs text-text-muted mb-1">Temp</p>
-                    <p class="text-2xl font-mono font-bold text-text-muted">--</p>
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Temp</p>
+                    <p class="text-xl font-mono font-bold {{if .Content.Metrics}}{{if .Content.Metrics.Temperature}}{{tempColor .Content.Metrics.Temperature}}{{else}}text-text-muted{{end}}{{else}}text-text-muted{{end}}">{{if .Content.Metrics}}{{formatTemp .Content.Metrics.Temperature}}{{else}}--{{end}}</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Charts -->
     <section>
         <div id="charts-area" sse-swap="charts" hx-swap="innerHTML">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-surface rounded-lg border border-border p-4">
-                    <p class="text-xs text-text-muted mb-2">CPU History</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-2 uppercase tracking-wider">CPU History</p>
                     <div class="h-16 flex items-center justify-center text-text-muted text-xs">Collecting data...</div>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-4">
-                    <p class="text-xs text-text-muted mb-2">Memory History</p>
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-2 uppercase tracking-wider">Memory History</p>
+                    <div class="h-16 flex items-center justify-center text-text-muted text-xs">Collecting data...</div>
+                </div>
+                <div class="bg-surface rounded-lg border border-border p-3">
+                    <p class="text-[11px] text-text-muted mb-2 uppercase tracking-wider">Temp History</p>
                     <div class="h-16 flex items-center justify-center text-text-muted text-xs">Collecting data...</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- VPN Section -->
     <section>
-        <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider">VPN Peers</h2>
-            <button class="text-xs text-text-muted hover:text-text transition-colors"
-                hx-get="/api/tailscale/status"
-                hx-target="#vpn-peers"
-                hx-swap="innerHTML"
-                title="Refresh">
-                <!-- Lucide: RefreshCw -->
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
-                </svg>
-            </button>
-        </div>
-        <div class="bg-surface rounded-lg border border-border">
-            <div id="vpn-peers">
-                {{template "partials/tailscale-peers.html" .Content.Tailscale}}
-            </div>
-        </div>
-    </section>
-
-    <!-- Docker Section -->
-    <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Docker Containers</h2>
-        <div id="docker-section" sse-swap="docker" hx-swap="innerHTML" class="bg-surface rounded-lg border border-border">
-            <div class="p-4">
-                <p class="text-text-muted text-sm">Loading...</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Systemd Section -->
-    <section>
-        <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider">Services</h2>
-            <label class="flex items-center gap-2 text-xs text-text-muted cursor-pointer">
-                <input type="checkbox" id="filter-failed" class="rounded border-border bg-surface" onchange="filterServices(this.checked)">
-                Errors only
-            </label>
-        </div>
-        <div id="systemd-section" sse-swap="systemd" hx-swap="innerHTML" class="bg-surface rounded-lg border border-border">
-            <div class="p-4">
-                <p class="text-text-muted text-sm">Loading...</p>
-            </div>
+        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">Operational Indicators</h2>
+        <div id="ops-summary">
+            {{template "partials/sse-summary.html" .Content}}
         </div>
     </section>
 </div>
-
-<script>
-function filterServices(errorsOnly) {
-    var rows = document.querySelectorAll('.svc-row');
-    rows.forEach(function(row) {
-        if (errorsOnly && row.dataset.health !== 'failed') {
-            row.style.display = 'none';
-        } else {
-            row.style.display = '';
-        }
-    });
-}
-</script>
 {{end}}

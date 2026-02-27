@@ -95,8 +95,9 @@ func TestDashboard_ContainsHeader(t *testing.T) {
 	srv.handleDashboard(rec, req)
 
 	body := rec.Body.String()
-	assert.Contains(t, body, "Ultron-AP")
-	assert.Contains(t, body, "/logout")
+	assert.Contains(t, body, "Ultron")
+	assert.Contains(t, body, "Rasberry PI")
+	assert.Contains(t, body, "Dashboard.")
 	assert.Contains(t, body, "admin")
 }
 
@@ -117,11 +118,11 @@ func TestDashboard_ContainsUptime(t *testing.T) {
 func TestDashboard_ContainsCSRFToken(t *testing.T) {
 	srv, session := setupTestServerWithSession(t)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/settings", nil)
 	req = addSessionContext(req, session)
 	rec := httptest.NewRecorder()
 
-	srv.handleDashboard(rec, req)
+	srv.httpServer.Handler.ServeHTTP(rec, req)
 
 	body := rec.Body.String()
 	assert.Contains(t, body, "test-csrf-token")

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -88,4 +89,27 @@ func (s *Server) renderAlertsList(w http.ResponseWriter, r *http.Request) {
 	html := s.renderPartial("partials/alerts-list.html", data)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(html))
+}
+
+func (s *Server) handleAlertsClear(w http.ResponseWriter, r *http.Request) {
+	if !s.validateCSRF(w, r) {
+		return
+	}
+	severity := r.FormValue("severity")
+	if severity != "" && !isValidSeverity(severity) {
+		severity = ""
+	}
+	deleted, err := s.db.DeleteAlerts(severity)
+	if err != nil {
+		log.Printf("alerts: failed to clear: %v", err)
+		http.Error(w, "Failed to clear alerts", http.StatusInternalServerError)
+		return
+	}
+	s.auditLog(r, "alerts", "clear", severity, fmt.Sprintf("deleted=%d", deleted), true)
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast":{"message":"Cleared %d alerts","type":"success"}}`, deleted))
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	http.Redirect(w, r, "/alerts", http.StatusSeeOther)
 }

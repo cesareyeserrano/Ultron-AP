@@ -254,6 +254,24 @@ func (db *DB) ListAlertsBySeverity(severity string, limit int) ([]Alert, error) 
 	return alerts, rows.Err()
 }
 
+// DeleteAlerts removes alerts. If severity is empty, removes all.
+func (db *DB) DeleteAlerts(severity string) (int64, error) {
+	var (
+		res sql.Result
+		err error
+	)
+	if severity == "" {
+		res, err = db.Exec("DELETE FROM Alert")
+	} else {
+		res, err = db.Exec("DELETE FROM Alert WHERE severity = ?", severity)
+	}
+	if err != nil {
+		return 0, fmt.Errorf("cannot delete alerts: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	return n, nil
+}
+
 // SeedDefaultAlertConfigs inserts default alert rules if none exist.
 func (db *DB) SeedDefaultAlertConfigs() error {
 	count, err := db.AlertConfigCount()

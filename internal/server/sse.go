@@ -2,9 +2,12 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +23,8 @@ type DashboardData struct {
 	Metrics      *metrics.Snapshot
 	CPUValues    []float64 // Only what's needed for sparklines
 	RAMValues    []float64
+	TempValues   []float64
+	ProcessStats map[string]ProcessConsumer
 	Containers   []docker.ContainerInfo
 	DockerAvail  bool
 	Services     []systemd.ServiceInfo
@@ -33,6 +38,12 @@ type DashboardData struct {
 type TailscaleData struct {
 	Available bool
 	Status    *tailscale.Status
+}
+
+type ProcessConsumer struct {
+	Name       string
+	CPUPercent float64
+	RSSBytes   uint64
 }
 
 func gatherTailscaleData() TailscaleData {
@@ -138,6 +149,7 @@ func (s *Server) startSSEBroadcast() {
 		current := s.sseInterval()
 		ticker := time.NewTicker(current)
 		defer ticker.Stop()
+		tick := 0
 		for range ticker.C {
 			s.sseBroker.mu.RLock()
 			count := len(s.sseBroker.clients)
@@ -145,11 +157,19 @@ func (s *Server) startSSEBroadcast() {
 			if count == 0 {
 				continue
 			}
-			data := s.buildSSEPayload()
+			tick++
+			// Metrics remain fast; charts and heavy sections use slower cadences.
+			chartsEvery := cadenceEvery(current, 15*time.Second)
+			heavyEvery := cadenceEvery(current, 30*time.Second) // docker/systemd/alerts
+			data := s.buildSSEPayloadWithOptions(
+				tick%chartsEvery == 0,
+				tick%heavyEvery == 0,
+			)
 			s.sseBroker.broadcast(data)
 			// Dynamically adjust ticker if interval was changed.
 			if next := s.sseInterval(); next != current {
 				current = next
+				tick = 0
 				ticker.Reset(current)
 			}
 		}
@@ -157,6 +177,24 @@ func (s *Server) startSSEBroadcast() {
 }
 
 func (s *Server) buildSSEPayload() []byte {
+	return s.buildSSEPayloadWithOptions(true, true)
+}
+
+func cadenceEvery(current, target time.Duration) int {
+	if current <= 0 {
+		return 1
+	}
+	if current >= target {
+		return 1
+	}
+	steps := int((target + current - 1) / current) // ceil(target/current)
+	if steps < 1 {
+		return 1
+	}
+	return steps
+}
+
+func (s *Server) buildSSEPayloadWithOptions(includeCharts bool, includeHeavy bool) []byte {
 	var buf bytes.Buffer
 	dd := s.gatherDashboardData()
 
@@ -164,20 +202,14 @@ func (s *Server) buildSSEPayload() []byte {
 	metricsHTML := s.renderPartial("partials/sse-metrics.html", dd)
 	writeSSEEvent(&buf, "metrics", metricsHTML)
 
-	// Docker event
-	dockerHTML := s.renderPartial("partials/sse-docker.html", dd)
-	writeSSEEvent(&buf, "docker", dockerHTML)
+	if includeCharts {
+		// Charts event
+		chartsHTML := s.renderPartial("partials/sse-charts.html", dd)
+		writeSSEEvent(&buf, "charts", chartsHTML)
+	}
 
-	// Systemd event
-	systemdHTML := s.renderPartial("partials/sse-systemd.html", dd)
-	writeSSEEvent(&buf, "systemd", systemdHTML)
-
-	// Charts event
-	chartsHTML := s.renderPartial("partials/sse-charts.html", dd)
-	writeSSEEvent(&buf, "charts", chartsHTML)
-
-	// Alert count event — uses a 30s TTL cache to avoid a DB query on every tick.
-	if s.db != nil {
+	// Alert count event uses TTL cache and follows heavy cadence.
+	if includeHeavy && s.db != nil {
 		unackCount := s.cachedAlertCount()
 		if unackCount > 0 {
 			writeSSEEvent(&buf, "alert-count", fmt.Sprintf("%d", unackCount))
@@ -212,9 +244,15 @@ func (s *Server) gatherDashboardData() DashboardData {
 		history := s.collector.History(60)
 		dd.CPUValues = make([]float64, len(history))
 		dd.RAMValues = make([]float64, len(history))
+		dd.TempValues = make([]float64, len(history))
+		lastTemp := 0.0
 		for i, snap := range history {
 			dd.CPUValues[i] = snap.CPU.TotalPercent
 			dd.RAMValues[i] = snap.RAM.Percent
+			if snap.Temperature != nil {
+				lastTemp = *snap.Temperature
+			}
+			dd.TempValues[i] = lastTemp
 		}
 	}
 
@@ -228,10 +266,60 @@ func (s *Server) gatherDashboardData() DashboardData {
 		dd.Services = s.systemd.Services()
 	}
 
+	dd.ProcessStats = collectProcessUsage()
+
 	// NOTE: Tailscale is NOT fetched here — it spawns an external process
 	// and is only loaded on page load / manual refresh.
 
 	return dd
+}
+
+func collectProcessUsage() map[string]ProcessConsumer {
+	ctx, cancel := context.WithTimeout(context.Background(), 900*time.Millisecond)
+	defer cancel()
+
+	stats := map[string]ProcessConsumer{}
+	out, err := exec.CommandContext(ctx, "ps", "-eo", "comm=,pcpu=,rss=").Output()
+	if err == nil {
+		lines := strings.Split(string(out), "\n")
+		for _, line := range lines {
+			fields := strings.Fields(strings.TrimSpace(line))
+			if len(fields) < 3 {
+				continue
+			}
+			cpu, err1 := strconv.ParseFloat(fields[1], 64)
+			rssKB, err2 := strconv.ParseUint(fields[2], 10, 64)
+			if err1 != nil || err2 != nil {
+				continue
+			}
+			comm := fields[0]
+			cur := ProcessConsumer{
+				Name:       comm,
+				CPUPercent: cpu,
+				RSSBytes:   rssKB * 1024,
+			}
+			prev, ok := stats[comm]
+			if !ok || cur.CPUPercent > prev.CPUPercent || cur.RSSBytes > prev.RSSBytes {
+				stats[comm] = cur
+			}
+		}
+	}
+	// Alias map for service names to process names shown by ps.
+	for k, v := range map[string]string{
+		"ultron-ap": "ultron-ap",
+		"influxdb":  "influxd",
+		"docker":    "dockerd",
+		"pironman5": "pironman5-servi",
+	} {
+		if p, ok := stats[v]; ok {
+			stats[k] = ProcessConsumer{
+				Name:       k,
+				CPUPercent: p.CPUPercent,
+				RSSBytes:   p.RSSBytes,
+			}
+		}
+	}
+	return stats
 }
 
 func (s *Server) renderPartial(name string, data interface{}) string {

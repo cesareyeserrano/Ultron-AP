@@ -192,8 +192,6 @@ func TestSSEEndpoint_SendsInitialData(t *testing.T) {
 
 	body := rec.Body.String()
 	assert.Contains(t, body, "event: metrics")
-	assert.Contains(t, body, "event: docker")
-	assert.Contains(t, body, "event: systemd")
 	assert.Contains(t, body, "event: charts")
 }
 
@@ -235,8 +233,8 @@ func TestDashboard_RendersWithContent(t *testing.T) {
 	body := rec.Body.String()
 	assert.Contains(t, body, "sse-connect")
 	assert.Contains(t, body, "/static/js/sse.js")
-	assert.Contains(t, body, "Docker Containers")
-	assert.Contains(t, body, "Services")
+	assert.Contains(t, body, "Operational Indicators")
+	assert.Contains(t, body, "Containers")
 }
 
 func TestSettings_DoesNotEnableSSE(t *testing.T) {

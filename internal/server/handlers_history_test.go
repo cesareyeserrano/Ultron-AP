@@ -3,6 +3,8 @@ package server
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -124,4 +126,40 @@ func TestHistoryPage_ErrorIndicators(t *testing.T) {
 	srv.httpServer.Handler.ServeHTTP(rec, req)
 
 	assert.Contains(t, rec.Body.String(), "Failed to stop db: timeout")
+}
+
+func TestHistoryClear_All(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+	seedTestActionLogs(t, srv)
+
+	form := url.Values{"csrf_token": {session.CSRFToken}}
+	req := httptest.NewRequest(http.MethodPost, "/api/history/clear", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusSeeOther, rec.Code)
+
+	logs, err := srv.db.ListActionLogs(100)
+	require.NoError(t, err)
+	assert.Len(t, logs, 1)
+	assert.Equal(t, "history", logs[0].Source)
+	assert.Equal(t, "clear", logs[0].Action)
+}
+
+func TestHistoryClear_HTMX(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+	seedTestActionLogs(t, srv)
+
+	form := url.Values{"csrf_token": {session.CSRFToken}}
+	req := httptest.NewRequest(http.MethodPost, "/api/history/clear", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Contains(t, rec.Header().Get("HX-Trigger"), "Cleared")
 }

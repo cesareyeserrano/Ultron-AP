@@ -9,14 +9,16 @@ import (
 )
 
 type servicesPageData struct {
-	Services  []systemd.ServiceInfo
-	Available bool
+	Services     []systemd.ServiceInfo
+	ProcessStats map[string]ProcessConsumer
+	Available    bool
 }
 
 func (s *Server) handleServicesPage(w http.ResponseWriter, r *http.Request) {
 	data := servicesPageData{
-		Services:  s.systemd.Services(),
-		Available: s.systemd.Available(),
+		Services:     s.systemd.Services(),
+		ProcessStats: collectProcessUsage(),
+		Available:    s.systemd.Available(),
 	}
 	s.render(w, r, "services.html", "Services", "services", data)
 }
@@ -73,7 +75,10 @@ func (s *Server) renderServicesResult(w http.ResponseWriter, r *http.Request, re
 		}
 		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "%s service: %s", "type": "success"}}`, actionPast, result.ServiceName))
 	}
-	listHTML := s.renderPartial("partials/services-list.html", s.systemd.Services())
+	listHTML := s.renderPartial("partials/services-list.html", servicesPageData{
+		Services:     s.systemd.Services(),
+		ProcessStats: collectProcessUsage(),
+		Available:    s.systemd.Available(),
+	})
 	w.Write([]byte(listHTML))
 }
-

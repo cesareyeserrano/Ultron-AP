@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -47,4 +48,27 @@ func (s *Server) handleHistoryPage(w http.ResponseWriter, r *http.Request) {
 		HasNext:      hasNext,
 	}
 	s.render(w, r, "history.html", "History", "history", data)
+}
+
+func (s *Server) handleHistoryClear(w http.ResponseWriter, r *http.Request) {
+	if !s.validateCSRF(w, r) {
+		return
+	}
+	source := r.FormValue("source")
+	if source != "" && source != "docker" && source != "systemd" {
+		source = ""
+	}
+	deleted, err := s.db.DeleteActionLogs(source)
+	if err != nil {
+		log.Printf("history: failed to clear: %v", err)
+		http.Error(w, "Failed to clear history", http.StatusInternalServerError)
+		return
+	}
+	s.auditLog(r, "history", "clear", source, fmt.Sprintf("deleted=%d", deleted), true)
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast":{"message":"Cleared %d history records","type":"success"}}`, deleted))
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	http.Redirect(w, r, "/history", http.StatusSeeOther)
 }

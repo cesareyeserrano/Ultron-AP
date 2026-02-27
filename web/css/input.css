@@ -3,16 +3,16 @@
 @source "../templates/**/*.html";
 
 @theme {
-  /* Dark palette */
-  --color-base: #1a1a2e;
-  --color-surface: #16213e;
-  --color-card: #0f3460;
-  --color-text: #e0e0e0;
-  --color-text-muted: #a0a0b0;
-  --color-accent: #00d4ff;
-  --color-danger: #e94560;
-  --color-danger-hover: #c73650;
-  --color-border: #333;
+  /* Dark graphite palette */
+  --color-base: #0b0c0f;
+  --color-surface: #121418;
+  --color-card: #1a1d23;
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+  --color-accent: #c2c7d0;
+  --color-danger: #e34b6a;
+  --color-danger-hover: #c93f5c;
+  --color-border: #2a2f37;
   --color-error-bg: #4a1525;
   --color-error-text: #ff6b6b;
 

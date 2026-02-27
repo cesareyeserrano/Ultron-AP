@@ -171,3 +171,37 @@ func TestAlertAcknowledge_DecreasesUnackCount(t *testing.T) {
 	count, _ = srv.db.UnacknowledgedAlertCount()
 	assert.Equal(t, 1, count)
 }
+
+func TestAlertsClear_All(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+	seedTestAlerts(t, srv.db)
+
+	form := url.Values{"csrf_token": {session.CSRFToken}}
+	req := httptest.NewRequest(http.MethodPost, "/api/alerts/clear", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusSeeOther, rec.Code)
+
+	alerts, err := srv.db.ListAlerts(100)
+	require.NoError(t, err)
+	assert.Len(t, alerts, 0)
+}
+
+func TestAlertsClear_HTMX(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+	seedTestAlerts(t, srv.db)
+
+	form := url.Values{"csrf_token": {session.CSRFToken}}
+	req := httptest.NewRequest(http.MethodPost, "/api/alerts/clear", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Contains(t, rec.Header().Get("HX-Trigger"), "Cleared")
+}

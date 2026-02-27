@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "feature": "dashboard-stream-efficiency",
+  "provenAt": "2026-02-26T17:12:19.854Z",
+  "summary": {
+    "total": 4,
+    "proven": 0,
+    "unproven": 4,
+    "trivialTcs": [],
+    "unimplementedContractTcs": [],
+    "mutation": null
+  },
+  "frProof": {
+    "FR-1": {
+      "proven": false,
+      "via": [],
+      "tracingTcs": [
+        "TC-1",
+        "TC-5",
+        "TC-6",
+        "TC-7",
+        "TC-8"
+      ],
+      "evidence": [],
+      "mutationScore": null
+    },
+    "FR-2": {
+      "proven": false,
+      "via": [],
+      "tracingTcs": [
+        "TC-2"
+      ],
+      "evidence": [],
+      "mutationScore": null
+    },
+    "FR-3": {
+      "proven": false,
+      "via": [],
+      "tracingTcs": [
+        "TC-3"
+      ],
+      "evidence": [],
+      "mutationScore": null
+    },
+    "FR-4": {
+      "proven": false,
+      "via": [],
+      "tracingTcs": [
+        "TC-4"
+      ],
+      "evidence": [],
+      "mutationScore": null
+    }
+  },
+  "tcResults": {
+    "TC-1": {
+      "passed": false,
+      "file": "tests/dashboard-stream-efficiency/generated/tc-1_validate-us-1-primary-behavior_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-2": {
+      "passed": false,
+      "file": "tests/dashboard-stream-efficiency/generated/tc-2_validate-us-2-primary-behavior_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-3": {
+      "passed": false,
+      "file": "tests/dashboard-stream-efficiency/generated/tc-3_validate-us-3-primary-behavior_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-4": {
+      "passed": false,
+      "file": "tests/dashboard-stream-efficiency/generated/tc-4_validate-us-4-primary-behavior_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-5": {
+      "passed": false,
+      "file": "tests/dashboard-stream-efficiency/generated/tc-5_handle-edge-behavior-temperature-sen_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-6": {
+      "passed": false,
+      "file": "tests/dashboard-stream-efficiency/generated/tc-6_handle-edge-behavior-sparse-history-_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-7": {
+      "passed": false,
+      "file": "tests/dashboard-stream-efficiency/generated/tc-7_enforce-security-control-keep-existi_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-8": {
+      "passed": false,
+      "file": "tests/dashboard-stream-efficiency/generated/tc-8_enforce-security-control-do-not-intr_test.go",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractIssues": [],
+      "mutation": null
+    }
+  }
+}
