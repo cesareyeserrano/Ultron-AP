@@ -1,0 +1,56 @@
+{
+  "ok": true,
+  "limited": false,
+  "feature": "revision-ux-ui",
+  "evaluatedAt": "2026-02-27T20:03:33.051Z",
+  "policy": {
+    "allowDependencyChanges": false,
+    "blockedImports": [],
+    "blockedPaths": []
+  },
+  "files": {
+    "changed": [
+      "cmd/ultron-helper/main.go",
+      "internal/server/handlers.go",
+      "internal/server/handlers_alerts.go",
+      "internal/server/handlers_alerts_test.go",
+      "internal/server/handlers_history.go",
+      "internal/server/handlers_history_test.go",
+      "internal/server/handlers_system.go",
+      "internal/server/helpers.go",
+      "internal/server/render_test.go",
+      "internal/server/server.go",
+      "internal/server/sse.go",
+      "web/css/input.css",
+      "web/static/css/app.css",
+      "web/static/js/sidebar.js",
+      "web/templates/alerts.html",
+      "web/templates/base.html",
+      "web/templates/dashboard.html",
+      "web/templates/history.html",
+      "web/templates/login.html",
+      "web/templates/logs.html",
+      "web/templates/partials/header.html",
+      "web/templates/partials/services-list.html",
+      "web/templates/partials/sidebar.html",
+      "web/templates/partials/sse-summary.html",
+      "web/templates/settings.html",
+      ".gocache/",
+      "docs/policy/revision-ux-ui.json"
+    ],
+    "dependencyChanged": []
+  },
+  "gaps": {
+    "dependency_drift": [],
+    "forbidden_path": [],
+    "forbidden_import": []
+  },
+  "gapSummary": {
+    "dependency_drift": 0,
+    "forbidden_path": 0,
+    "forbidden_import": 0
+  },
+  "issues": [],
+  "warnings": [],
+  "evidenceFile": "docs/policy/revision-ux-ui.json"
+}

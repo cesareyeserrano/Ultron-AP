@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "revision-ux-ui",
+  "decidedAt": "2026-02-27T20:03:36.394Z",
+  "policyEvidence": "docs/policy/revision-ux-ui.json",
+  "verificationEvidence": "docs/verification/revision-ux-ui.json"
+}
