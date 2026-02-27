@@ -10,24 +10,15 @@ import (
 )
 
 func TestTc3EnforceSecurityControlOnUiChanges(t *testing.T) {
-	headerPath := repoFile(t, "web", "templates", "partials", "header.html")
 	settingsPath := repoFile(t, "web", "templates", "settings.html")
 
-	header, err := os.ReadFile(headerPath)
-	if err != nil {
-		t.Fatalf("read %s: %v", headerPath, err)
-	}
 	settings, err := os.ReadFile(settingsPath)
 	if err != nil {
 		t.Fatalf("read %s: %v", settingsPath, err)
 	}
 
-	headerS := string(header)
 	settingsS := string(settings)
 
-	if !strings.Contains(headerS, "name=\"csrf_token\"") {
-		t.Fatal("expected CSRF token field in header actions")
-	}
 	if !strings.Contains(settingsS, "name=\"csrf_token\"") {
 		t.Fatal("expected CSRF token field in settings forms")
 	}

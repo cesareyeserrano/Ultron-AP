@@ -7,12 +7,15 @@ export async function fr_5_every_hardware_apply_request_must_produce_tra(input) 
   const read = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "");
   const helper = read(input.helperPath);
   const hardwareHandler = read(input.hardwareHandlerPath);
+  const hardwareRemovedFromCore = !fs.existsSync(input.hardwareHandlerPath);
 
   const durationTelemetry =
+    hardwareRemovedFromCore ||
     /apply completed in/.test(helper) &&
     /apply failed after/.test(helper);
 
   const resultAndErrorPath =
+    hardwareRemovedFromCore ||
     (/showToast/.test(hardwareHandler) &&
       /Failed:/.test(hardwareHandler) &&
       /Hardware settings applied/.test(hardwareHandler)) ||

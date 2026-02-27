@@ -1,20 +1,26 @@
 {
   "schemaVersion": 1,
-  "ok": false,
+  "ok": true,
   "feature": "dashboard-stream-efficiency",
-  "provenAt": "2026-02-27T00:17:34.302Z",
+  "provenAt": "2026-02-27T00:35:41.638Z",
   "summary": {
     "total": 4,
-    "proven": 0,
-    "unproven": 4,
+    "proven": 4,
+    "unproven": 0,
     "trivialTcs": [],
     "unimplementedContractTcs": [],
     "mutation": null
   },
   "frProof": {
     "FR-1": {
-      "proven": false,
-      "via": [],
+      "proven": true,
+      "via": [
+        "TC-1",
+        "TC-5",
+        "TC-6",
+        "TC-7",
+        "TC-8"
+      ],
       "tracingTcs": [
         "TC-1",
         "TC-5",
@@ -22,40 +28,58 @@
         "TC-7",
         "TC-8"
       ],
-      "evidence": [],
+      "evidence": [
+        "tests/dashboard-stream-efficiency/generated/tc-1_validate-us-1-primary-behavior_test.go",
+        "tests/dashboard-stream-efficiency/generated/tc-5_handle-edge-behavior-temperature-sen_test.go",
+        "tests/dashboard-stream-efficiency/generated/tc-6_handle-edge-behavior-sparse-history-_test.go",
+        "tests/dashboard-stream-efficiency/generated/tc-7_enforce-security-control-keep-existi_test.go",
+        "tests/dashboard-stream-efficiency/generated/tc-8_enforce-security-control-do-not-intr_test.go"
+      ],
       "mutationScore": null
     },
     "FR-2": {
-      "proven": false,
-      "via": [],
+      "proven": true,
+      "via": [
+        "TC-2"
+      ],
       "tracingTcs": [
         "TC-2"
       ],
-      "evidence": [],
+      "evidence": [
+        "tests/dashboard-stream-efficiency/generated/tc-2_validate-us-2-primary-behavior_test.go"
+      ],
       "mutationScore": null
     },
     "FR-3": {
-      "proven": false,
-      "via": [],
+      "proven": true,
+      "via": [
+        "TC-3"
+      ],
       "tracingTcs": [
         "TC-3"
       ],
-      "evidence": [],
+      "evidence": [
+        "tests/dashboard-stream-efficiency/generated/tc-3_validate-us-3-primary-behavior_test.go"
+      ],
       "mutationScore": null
     },
     "FR-4": {
-      "proven": false,
-      "via": [],
+      "proven": true,
+      "via": [
+        "TC-4"
+      ],
       "tracingTcs": [
         "TC-4"
       ],
-      "evidence": [],
+      "evidence": [
+        "tests/dashboard-stream-efficiency/generated/tc-4_validate-us-4-primary-behavior_test.go"
+      ],
       "mutationScore": null
     }
   },
   "tcResults": {
     "TC-1": {
-      "passed": false,
+      "passed": true,
       "file": "tests/dashboard-stream-efficiency/generated/tc-1_validate-us-1-primary-behavior_test.go",
       "trivial": false,
       "contractUnimplemented": false,
@@ -63,7 +87,7 @@
       "mutation": null
     },
     "TC-2": {
-      "passed": false,
+      "passed": true,
       "file": "tests/dashboard-stream-efficiency/generated/tc-2_validate-us-2-primary-behavior_test.go",
       "trivial": false,
       "contractUnimplemented": false,
@@ -71,7 +95,7 @@
       "mutation": null
     },
     "TC-3": {
-      "passed": false,
+      "passed": true,
       "file": "tests/dashboard-stream-efficiency/generated/tc-3_validate-us-3-primary-behavior_test.go",
       "trivial": false,
       "contractUnimplemented": false,
@@ -79,7 +103,7 @@
       "mutation": null
     },
     "TC-4": {
-      "passed": false,
+      "passed": true,
       "file": "tests/dashboard-stream-efficiency/generated/tc-4_validate-us-4-primary-behavior_test.go",
       "trivial": false,
       "contractUnimplemented": false,
@@ -87,7 +111,7 @@
       "mutation": null
     },
     "TC-5": {
-      "passed": false,
+      "passed": true,
       "file": "tests/dashboard-stream-efficiency/generated/tc-5_handle-edge-behavior-temperature-sen_test.go",
       "trivial": false,
       "contractUnimplemented": false,
@@ -95,7 +119,7 @@
       "mutation": null
     },
     "TC-6": {
-      "passed": false,
+      "passed": true,
       "file": "tests/dashboard-stream-efficiency/generated/tc-6_handle-edge-behavior-sparse-history-_test.go",
       "trivial": false,
       "contractUnimplemented": false,
@@ -103,7 +127,7 @@
       "mutation": null
     },
     "TC-7": {
-      "passed": false,
+      "passed": true,
       "file": "tests/dashboard-stream-efficiency/generated/tc-7_enforce-security-control-keep-existi_test.go",
       "trivial": false,
       "contractUnimplemented": false,
@@ -111,7 +135,7 @@
       "mutation": null
     },
     "TC-8": {
-      "passed": false,
+      "passed": true,
       "file": "tests/dashboard-stream-efficiency/generated/tc-8_enforce-security-control-do-not-intr_test.go",
       "trivial": false,
       "contractUnimplemented": false,

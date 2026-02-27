@@ -4,7 +4,10 @@
 package generated
 
 import (
-	"testing"
+    "os"
+    "path/filepath"
+    "strings"
+    "testing"
 )
 
 func TestTc_3_validate_us_3_primary_behavior(t *testing.T) {
@@ -17,4 +20,28 @@ func TestTc_3_validate_us_3_primary_behavior(t *testing.T) {
 	assertContains(t, helpers, "return \"text-danger\"")
 	assertContains(t, chartsTpl, "tempSeriesClass .TempValues")
 	assertContains(t, chartsTpl, "tempSeriesStroke .TempValues")
+}
+
+func readRepoFile(t *testing.T, rel string) string {
+	t.Helper()
+	p := filepath.Join("..", "..", "..", rel)
+	b, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("read %s: %v", rel, err)
+	}
+	return string(b)
+}
+
+func assertContains(t *testing.T, src, needle string) {
+	t.Helper()
+	if !strings.Contains(src, needle) {
+		t.Fatalf("expected to find %q", needle)
+	}
+}
+
+func assertNotContains(t *testing.T, src, needle string) {
+	t.Helper()
+	if strings.Contains(src, needle) {
+		t.Fatalf("expected to not find %q", needle)
+	}
 }

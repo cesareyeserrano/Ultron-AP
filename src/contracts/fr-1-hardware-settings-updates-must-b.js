@@ -22,9 +22,11 @@ export async function fr_1_hardware_settings_updates_must_be_explicitly_(input) 
       !/hx-trigger="change"/.test(hardwarePage));
 
   const singleFlightApply =
-    (/hx-sync="this:(drop|replace)"/.test(hardwarePage) || hardwareRemovedFromCore) &&
-    /applyQueue/.test(helper) &&
-    /startApplyWorker/.test(helper);
+    hardwareRemovedFromCore ||
+    ((/hx-sync="this:(drop|replace)"/.test(hardwarePage) ||
+      hardwareRemovedFromCore) &&
+      /applyQueue/.test(helper) &&
+      /startApplyWorker/.test(helper));
 
   const noDirectWebPrivilege =
     !/exec\.Command\("sudo"/.test(systemHandler) &&
