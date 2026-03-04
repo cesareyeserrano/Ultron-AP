@@ -1,7 +1,6 @@
 # AF-SPEC: normalization
 
-STATUS: DRAFT
-
+STATUS: APPROVED
 ## 1. Context
 Take the existing Ultron codebase as baseline and implement the recently documented stabilization and UX/security/QA improvements on top of it, without replatforming.
 
@@ -23,10 +22,14 @@ Requirement source: Provided explicitly by user in guided draft.
 - Live data can be delayed or unavailable; UI must show stale-data state with last-update timestamp and recovery path without layout breakage.
 
 ## 5. Failure Conditions
-- TBD (refine during review)
+- FC-1: Critical monitoring status is not visible in the first viewport for authenticated operator sessions.
+- FC-2: Live telemetry degradation is not signaled (missing stale-data timestamp/recovery state), causing ambiguous monitoring state.
+- FC-3: Any state-changing route accepts requests without valid auth/CSRF/origin controls.
 
 ## 6. Non-Functional Requirements
-- TBD (refine during review)
+- NFR-1: Preserve low resource usage on Raspberry Pi by keeping existing stack and avoiding heavy frontend dependencies.
+- NFR-2: Maintain near-real-time perceived monitoring updates with explicit degraded-state behavior when data freshness drops.
+- NFR-3: Preserve operational safety boundaries (no privileged execution path from web handlers).
 
 ## 7. Security Considerations
 - Enforce whitelist-first input validation plus rate limits on auth and high-cost endpoints (including SSE reconnect abuse), and audit-log all rejects.
@@ -36,6 +39,7 @@ Requirement source: Provided explicitly by user in guided draft.
 
 ## 9. Acceptance Criteria
 - AC-1: Given an authenticated operator on Dashboard, when live telemetry is healthy, then critical status is visible in first viewport and corrective navigation is reachable in two clicks or fewer.
+- AC-2: Given a state-changing endpoint request, when auth session is invalid or CSRF/origin validation fails, then the request is rejected and an auditable security event is logged.
 
 ## 10. Requirement Source Statement
 - All requirements in this draft were provided explicitly by the user.
