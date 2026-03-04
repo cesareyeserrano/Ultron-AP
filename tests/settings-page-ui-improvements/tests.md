@@ -40,3 +40,23 @@
 ## Edge Cases
 
 1. On small mobile screens, long setting labels, helper text, and validation errors can overlap or push critical controls off-screen, causing accidental taps or missed confirmations.
+
+<!-- QA Plan context (from aitri qa-plan) -->
+# QA Plan: Ultron Monitoring Stabilization
+
+## 1. Test Suite Architecture
+- Unit tests:
+  - Scope: collector transforms, alert rule evaluation, stale-state logic, validation helpers.
+  - Tooling: `go test` (table-driven), lightweight mocks/fakes.
+- Integration/Contract tests:
+  - Scope: SSE channel payload shape, HTMX endpoint behavior, SQLite persistence boundaries, auth/CSRF middleware.
+  - Tooling: Go HTTP test server + SQLite temp DB + golden payload assertions.
+- E2E tests:
+  - Scope: operator flow Dashboard -> Alerts -> Logs/Services, reconnection and degraded-state behavior.
+  - Tooling: Playwright (or equivalent) with deterministic fixtures.
+
+## 2. Breaking Point Analysis
+- Concurrent SSE clients:
+  - Break condition: render/emit latency exceeds acceptable update window.
+  - Expect
+<!-- End QA Plan context -->
