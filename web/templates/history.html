@@ -1,10 +1,15 @@
 {{define "content"}}
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-lg font-semibold text-text">Action History</h1>
-        <div class="flex items-center gap-3">
-            <span class="text-xs text-text-muted">Audit trail for all service control operations</span>
-            <form method="POST" action="/api/history/clear" onsubmit="return confirm('Clear action history?');">
+    <h2 class="sr-only">Action History</h2>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm text-text-muted">Audit trail for service and container operations.</p>
+        <div class="flex flex-wrap items-center gap-3">
+            <form
+                hx-post="/api/history/clear"
+                hx-target="body"
+                hx-swap="none"
+                hx-confirm="Clear action history?"
+            >
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <input type="hidden" name="source" value="{{.Content.SourceFilter}}">
                 <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-surface border border-border text-text-muted hover:bg-danger/10 hover:text-danger transition-colors">
@@ -15,7 +20,7 @@
     </div>
 
     <!-- Source Filter -->
-    <div class="flex gap-2">
+    <div class="panel-soft p-2 flex flex-wrap gap-2">
         <a href="/history" class="text-xs px-3 py-1.5 rounded-lg transition-colors
             {{if eq .Content.SourceFilter ""}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
             All
@@ -57,10 +62,10 @@
                         <!-- Action -->
                         <span class="text-sm text-text font-medium">{{.Action}}</span>
                         <!-- Target -->
-                        <span class="text-sm text-text-muted truncate">{{.Target}}</span>
+                        <span class="text-sm text-text-muted break-all">{{.Target}}</span>
                     </div>
                     {{if and (eq .Result "error") .Details}}
-                    <p class="text-xs text-danger mt-1 truncate" title="{{.Details}}">{{.Details}}</p>
+                    <p class="text-xs text-danger mt-1 break-words" title="{{.Details}}">{{.Details}}</p>
                     {{end}}
                 </div>
 

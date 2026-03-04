@@ -51,6 +51,10 @@ type Server struct {
 
 	// sseIntervalNs holds the SSE broadcast interval as nanoseconds (atomic).
 	sseIntervalNs atomic.Int64
+	// dashboardHistoryPoints controls how many samples are rendered in dashboard charts.
+	dashboardHistoryPoints atomic.Int64
+	// dashboardChartWindow stores selected dashboard window label (5m, 2h, 6h, 12h, 24h).
+	dashboardChartWindow atomic.Value // string
 
 	// backupIntervalHours holds the automated backup interval in hours (atomic).
 	backupIntervalHours atomic.Int64
@@ -101,6 +105,8 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 		backupRescheduleCh: make(chan struct{}, 1),
 	}
 	s.sseIntervalNs.Store(int64(5 * time.Second))
+	s.dashboardHistoryPoints.Store(60)
+	s.dashboardChartWindow.Store("5m")
 	s.backupIntervalHours.Store(24) // Default 24h
 	s.backupEnabled.Store(1)
 	s.backupRetention.Store(7)

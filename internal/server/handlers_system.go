@@ -6,8 +6,19 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"sort"
+	"strings"
 	"time"
 )
+
+type logSourceOption struct {
+	Value string
+	Label string
+}
+
+type logsPageData struct {
+	Sources []logSourceOption
+}
 
 func (s *Server) handleSystemRestart(w http.ResponseWriter, r *http.Request) {
 	if !s.validateCSRF(w, r) {
@@ -59,16 +70,40 @@ func (s *Server) handleSystemShutdown(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogsPage(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, "logs.html", "System Logs", "logs", nil)
+	sources := []logSourceOption{
+		{Value: "ultron-ap", Label: "Ultron-AP Service"},
+		{Value: "docker", Label: "Docker Daemon"},
+		{Value: "kernel", Label: "Kernel (dmesg)"},
+		{Value: "cpu", Label: "CPU Usage Snapshot"},
+		{Value: "memory", Label: "Memory Usage Snapshot"},
+		{Value: "pironman", Label: "Pironman Logs"},
+		{Value: "homeassistant", Label: "Home Assistant Logs"},
+	}
+	if s.systemd != nil {
+		services := s.systemd.Services()
+		sort.SliceStable(services, func(i, j int) bool { return services[i].Name < services[j].Name })
+		for _, svc := range services {
+			name := strings.TrimSpace(svc.Name)
+			if name == "" {
+				continue
+			}
+			sources = append(sources, logSourceOption{
+				Value: "service:" + name,
+				Label: "Service: " + name,
+			})
+		}
+	}
+	s.render(w, r, "logs.html", "System Logs", "logs", logsPageData{Sources: sources})
 }
 
 func (s *Server) handleFetchSystemLogs(w http.ResponseWriter, r *http.Request) {
 	source := r.URL.Query().Get("source")
 	lines := 100
 
-	switch source {
-	case "ultron-ap", "docker", "kernel":
-	default:
+	if source == "" {
+		source = "ultron-ap"
+	}
+	if !isValidLogSource(source) {
 		http.Error(w, "Invalid log source", http.StatusBadRequest)
 		return
 	}
@@ -83,6 +118,15 @@ func (s *Server) handleFetchSystemLogs(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Write([]byte(out))
+}
+
+func isValidLogSource(source string) bool {
+	switch source {
+	case "ultron-ap", "docker", "kernel", "cpu", "memory", "pironman", "homeassistant":
+		return true
+	default:
+		return strings.HasPrefix(source, "service:")
+	}
 }
 
 func (s *Server) handleTailscaleStatus(w http.ResponseWriter, r *http.Request) {

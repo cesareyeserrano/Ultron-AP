@@ -158,11 +158,55 @@ func sparkCurrent(values []float64) float64 {
 	return values[len(values)-1]
 }
 
+func sparkMid(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	minV, maxV := values[0], values[0]
+	for _, v := range values[1:] {
+		if v < minV {
+			minV = v
+		}
+		if v > maxV {
+			maxV = v
+		}
+	}
+	return (minV + maxV) / 2
+}
+
 func tempSeriesClass(values []float64) string {
 	if len(values) == 0 {
 		return "text-text-muted"
 	}
 	return tempClassForValue(sparkCurrent(values))
+}
+
+func cpuSeriesClass(values []float64) string {
+	if len(values) == 0 {
+		return "text-text-muted"
+	}
+	return usageClassForPercent(sparkCurrent(values))
+}
+
+func cpuSeriesStroke(values []float64) string {
+	if len(values) == 0 {
+		return "var(--color-accent)"
+	}
+	return usageStrokeForPercent(sparkCurrent(values))
+}
+
+func ramSeriesClass(values []float64) string {
+	if len(values) == 0 {
+		return "text-text-muted"
+	}
+	return usageClassForPercent(sparkCurrent(values))
+}
+
+func ramSeriesStroke(values []float64) string {
+	if len(values) == 0 {
+		return "var(--color-accent)"
+	}
+	return usageStrokeForPercent(sparkCurrent(values))
 }
 
 func tempSeriesStroke(values []float64) string {
@@ -188,6 +232,28 @@ func tempClassForValue(v float64) string {
 		return "text-yellow-400"
 	default:
 		return "text-green-400"
+	}
+}
+
+func usageClassForPercent(v float64) string {
+	switch {
+	case v >= 90:
+		return "text-danger"
+	case v >= 75:
+		return "text-yellow-400"
+	default:
+		return "text-green-400"
+	}
+}
+
+func usageStrokeForPercent(v float64) string {
+	switch {
+	case v >= 90:
+		return "var(--color-danger)"
+	case v >= 75:
+		return "var(--color-yellow-400)"
+	default:
+		return "var(--color-green-400)"
 	}
 }
 
@@ -247,22 +313,8 @@ func serviceGroupLabel(key string) string {
 }
 
 func serviceGroupPillClass(key string) string {
-	switch key {
-	case "core":
-		return "bg-accent/20 text-accent border-accent/20"
-	case "container":
-		return "bg-green-400/20 text-green-400 border-green-400/30"
-	case "network":
-		return "bg-yellow-400/20 text-yellow-400 border-yellow-400/30"
-	case "hardware":
-		return "bg-danger/20 text-danger border-danger/30"
-	case "observability":
-		return "bg-card text-text border-border/50"
-	case "system":
-		return "bg-surface text-text-muted border-border/50"
-	default:
-		return "bg-surface text-text-muted border-border/30"
-	}
+	_ = key
+	return "bg-accent/20 text-accent border-accent/20"
 }
 
 func groupServices(services []systemd.ServiceInfo) []serviceGroupData {
@@ -302,19 +354,34 @@ func serviceInfo(name, description string) string {
 		n = "pironman5"
 	}
 	if v, ok := map[string]string{
-		"ultron-ap":        "Main Ultron web admin process.",
-		"ultron-helper":    "Privileged helper boundary for controlled host actions.",
-		"pironman5":        "Pironman hardware control daemon (fan/RGB/OLED).",
-		"influxdb":         "Time-series database used by monitoring stack.",
-		"influxd":          "InfluxDB time-series engine process.",
-		"docker":           "Docker daemon for containers runtime.",
-		"containerd":       "Container runtime used by Docker.",
-		"tailscaled":       "Tailscale secure mesh VPN service.",
-		"networkmanager":   "Network interface manager.",
-		"rpi-connectd":     "Raspberry Pi remote connectivity agent.",
-		"ssh":              "Secure shell access daemon.",
-		"systemd-logind":   "Session and user login manager.",
-		"systemd-journald": "System logs collector.",
+		"ultron-ap":         "Main Ultron web admin process.",
+		"ultron-helper":     "Privileged helper boundary for controlled host actions.",
+		"pironman5":         "Pironman hardware control daemon (fan/RGB/OLED).",
+		"pironman5-service": "Pironman hardware control daemon (fan/RGB/OLED).",
+		"influxdb":          "Time-series database used by monitoring stack.",
+		"influxd":           "InfluxDB time-series engine process.",
+		"docker":            "Docker daemon for containers runtime.",
+		"containerd":        "Container runtime used by Docker.",
+		"home-assistant":    "Home Assistant core automation platform.",
+		"homeassistant":     "Home Assistant core automation platform.",
+		"mosquitto":         "MQTT broker for IoT messaging.",
+		"redis":             "In-memory cache and queue backend.",
+		"postgresql":        "PostgreSQL relational database engine.",
+		"mysql":             "MySQL relational database engine.",
+		"node-exporter":     "Prometheus node metrics exporter.",
+		"cadvisor":          "Container resource metrics collector.",
+		"prometheus":        "Metrics scraper and alerting engine.",
+		"promtail":          "Log shipping agent.",
+		"grafana":           "Monitoring and observability dashboard UI.",
+		"nginx":             "Web reverse proxy and static server.",
+		"caddy":             "Web server and reverse proxy.",
+		"tailscaled":        "Tailscale secure mesh VPN service.",
+		"networkmanager":    "Network interface manager.",
+		"rpi-connectd":      "Raspberry Pi remote connectivity agent.",
+		"sshd":              "Secure shell access daemon.",
+		"ssh":               "Secure shell access daemon.",
+		"systemd-logind":    "Session and user login manager.",
+		"systemd-journald":  "System logs collector.",
 	}[n]; ok {
 		return v
 	}

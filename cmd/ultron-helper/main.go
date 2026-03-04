@@ -208,9 +208,42 @@ func handleLogs(source string, lines int) (string, error) {
 			parts = parts[len(parts)-lines:]
 		}
 		return strings.Join(parts, "\n"), nil
+	case "cpu":
+		out, err := run(context.Background(), 10*time.Second, "ps", "-eo", "pid,comm,%cpu,%mem", "--sort=-%cpu")
+		return string(out), err
+	case "memory":
+		out, err := run(context.Background(), 10*time.Second, "ps", "-eo", "pid,comm,rss,%mem", "--sort=-rss")
+		return string(out), err
+	case "pironman":
+		return runFirstServiceLogs(lines, "pironman5-service", "pironman5")
+	case "homeassistant":
+		return runFirstServiceLogs(lines, "home-assistant@homeassistant", "homeassistant")
 	default:
+		if strings.HasPrefix(source, "service:") {
+			unit := strings.TrimSpace(strings.TrimPrefix(source, "service:"))
+			if unit == "" || !serviceNameRe.MatchString(unit) {
+				return "", fmt.Errorf("invalid service log source")
+			}
+			out, err := run(context.Background(), 10*time.Second, "journalctl", "-u", unit, "-n", strconv.Itoa(lines), "--no-pager")
+			return string(out), err
+		}
 		return "", fmt.Errorf("invalid log source")
 	}
+}
+
+func runFirstServiceLogs(lines int, units ...string) (string, error) {
+	var lastErr error
+	for _, unit := range units {
+		out, err := run(context.Background(), 10*time.Second, "journalctl", "-u", unit, "-n", strconv.Itoa(lines), "--no-pager")
+		if err == nil {
+			return string(out), nil
+		}
+		lastErr = err
+	}
+	if lastErr == nil {
+		lastErr = fmt.Errorf("no service unit configured")
+	}
+	return "", lastErr
 }
 
 func run(ctx context.Context, timeout time.Duration, name string, args ...string) ([]byte, error) {

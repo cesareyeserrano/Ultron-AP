@@ -1,22 +1,22 @@
 {{define "content"}}
 <div class="space-y-6">
+    <h2 class="sr-only">System Logs</h2>
     <div>
-        <h1 class="text-lg font-semibold text-text">System Logs</h1>
         <p class="text-xs text-text-muted mt-0.5">On-demand log retrieval from system services.</p>
     </div>
 
     <!-- Controls -->
-    <div class="flex flex-wrap items-center gap-3 bg-surface border border-border p-4 rounded-lg">
+    <div class="panel-soft flex flex-wrap items-end gap-3 p-4">
         <div class="flex flex-col gap-1">
             <label class="text-[10px] uppercase tracking-wider text-text-muted font-bold">Source</label>
             <select id="log-source" class="px-3 py-1.5 text-sm bg-base border border-border rounded text-text min-w-[160px] focus:ring-accent focus:border-accent">
-                <option value="ultron-ap">Ultron-AP Service</option>
-                <option value="docker">Docker Daemon</option>
-                <option value="kernel">Kernel (dmesg)</option>
+                {{range .Content.Sources}}
+                <option value="{{.Value}}">{{.Label}}</option>
+                {{end}}
             </select>
         </div>
         
-        <div class="flex items-end h-full mt-4">
+        <div class="flex items-end h-full">
             <button 
                 onclick="fetchLogs()"
                 class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity flex items-center gap-2">

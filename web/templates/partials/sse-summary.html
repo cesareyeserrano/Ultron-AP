@@ -1,6 +1,6 @@
 {{define "partials/sse-summary.html"}}
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-    <div class="bg-surface rounded-lg border border-border p-3">
+    <div class="metric-tile">
         <p class="text-[11px] text-text-muted uppercase tracking-wider mb-1">Apps (Systemd)</p>
         <div class="flex items-baseline gap-2 mb-2">
             <span class="text-lg font-mono font-semibold text-text">{{countServicesState .Services "active"}}</span>
@@ -8,7 +8,7 @@
             <span class="text-xs text-danger ml-2">{{countServicesState .Services "failed"}} failed</span>
             <span class="text-xs text-text-muted ml-auto">{{len .Services}} total</span>
         </div>
-        <details class="rounded border border-border/40 bg-card/30 p-2">
+        <details class="rounded border border-border/40 bg-card/30 p-2" data-default-open open>
             <summary class="cursor-pointer text-xs text-text-muted">Show app names</summary>
             <div class="mt-2 max-h-40 overflow-y-auto space-y-1">
                 {{if .Services}}
@@ -25,14 +25,14 @@
         </details>
     </div>
 
-    <div class="bg-surface rounded-lg border border-border p-3">
+    <div class="metric-tile">
         <p class="text-[11px] text-text-muted uppercase tracking-wider mb-1">VPN</p>
         <div class="flex items-baseline gap-2 mb-2">
             <span class="text-lg font-mono font-semibold {{if .Tailscale.Available}}text-text{{else}}text-text-muted{{end}}">{{if .Tailscale.Available}}{{tailscalePeerOnline .Tailscale}}{{else}}--{{end}}</span>
             <span class="text-xs text-text-muted">online peers</span>
             <span class="text-xs text-text-muted ml-auto">{{if .Tailscale.Available}}{{tailscalePeerTotal .Tailscale}} total{{else}}not available{{end}}</span>
         </div>
-        <details class="rounded border border-border/40 bg-card/30 p-2" {{if and .Tailscale.Available (gt (tailscalePeerTotal .Tailscale) 0)}}{{else}}open{{end}}>
+        <details class="rounded border border-border/40 bg-card/30 p-2" data-default-open open>
             <summary class="cursor-pointer text-xs text-text-muted">Show VPN users</summary>
             <div class="mt-2 max-h-40 overflow-y-auto space-y-1">
                 {{if and .Tailscale.Available .Tailscale.Status (gt (len .Tailscale.Status.Peers) 0)}}
@@ -49,14 +49,14 @@
         </details>
     </div>
 
-    <div class="bg-surface rounded-lg border border-border p-3">
+    <div class="metric-tile">
         <p class="text-[11px] text-text-muted uppercase tracking-wider mb-1">Containers</p>
         <div class="flex items-baseline gap-2 mb-2">
             <span class="text-lg font-mono font-semibold text-text">{{countContainersState .Containers "running"}}</span>
             <span class="text-xs text-text-muted">running</span>
             <span class="text-xs text-text-muted ml-auto">{{len .Containers}} total</span>
         </div>
-        <details class="rounded border border-border/40 bg-card/30 p-2">
+        <details class="rounded border border-border/40 bg-card/30 p-2" data-default-open open>
             <summary class="cursor-pointer text-xs text-text-muted">Show container names</summary>
             <div class="mt-2 max-h-40 overflow-y-auto space-y-1">
                 {{if .Containers}}

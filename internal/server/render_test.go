@@ -95,10 +95,9 @@ func TestDashboard_ContainsHeader(t *testing.T) {
 	srv.handleDashboard(rec, req)
 
 	body := rec.Body.String()
-	assert.Contains(t, body, "Ultron")
-	assert.Contains(t, body, "Rasberry PI")
-	assert.Contains(t, body, "Dashboard.")
-	assert.Contains(t, body, "admin")
+	assert.Contains(t, body, "ULTRON")
+	assert.Contains(t, body, "Raspberry Dashboard")
+	assert.NotContains(t, body, "Usuario Administrador:")
 }
 
 func TestDashboard_ContainsUptime(t *testing.T) {

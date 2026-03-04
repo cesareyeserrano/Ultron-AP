@@ -6,13 +6,13 @@
     <title>{{.Title}} - Ultron</title>
     <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon-64.png?v=20260226h">
     <link rel="apple-touch-icon" href="/static/ultron-192.png?v=20260226h">
-    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/app.css?v=20260227ux3">
     <script src="/static/js/htmx.min.js"></script>
     {{if eq .ActivePage "dashboard"}}
-    <script src="/static/js/sse.js"></script>
+    <script src="/static/js/sse.js?v=20260227ux3"></script>
     {{end}}
 </head>
-<body class="bg-base text-text font-sans min-h-screen flex" hx-boost="true">
+<body class="ux-shell bg-base text-text font-sans min-h-screen flex" hx-boost="true" data-active-page="{{.ActivePage}}">
     <!-- Mobile overlay -->
     <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden"></div>
 
@@ -29,7 +29,7 @@
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
-    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/sidebar.js?v=20260227ux3"></script>
     <script>
     (function() {
         // Toast system
@@ -62,17 +62,71 @@
         });
 
         var badge = document.getElementById('alert-badge');
+        var badgeDot = document.getElementById('alert-badge-dot');
         if (!badge) return;
+
+        function setSeenCount(count) {
+            try { sessionStorage.setItem('ultron-alerts-seen', String(count)); } catch (e) {}
+        }
+
+        function getSeenCount() {
+            try { return Number(sessionStorage.getItem('ultron-alerts-seen') || '0'); } catch (e) { return 0; }
+        }
+
+        function updateUnreadIndicator(count) {
+            var activePage = document.body.getAttribute('data-active-page') || '';
+            if (activePage === 'alerts') {
+                setSeenCount(count);
+                if (badgeDot) badgeDot.classList.add('hidden');
+                return;
+            }
+            if (count > getSeenCount()) {
+                if (badgeDot) badgeDot.classList.remove('hidden');
+            }
+        }
+
+        function applyDefaultExpanded(root) {
+            var scope = root || document;
+            scope.querySelectorAll('details[data-default-open]').forEach(function(el) {
+                if (!el.hasAttribute('open')) {
+                    el.setAttribute('open', '');
+                }
+            });
+        }
+
+        function syncTimelineChips() {
+            var chips = document.querySelectorAll('[data-timeline-chips] .timeline-chip[data-window]');
+            if (!chips.length) return;
+            var params = new URLSearchParams(window.location.search || '');
+            var current = params.get('window') || '5m';
+            chips.forEach(function(chip) {
+                var isActive = chip.getAttribute('data-window') === current;
+                chip.classList.toggle('timeline-chip-active', isActive);
+                chip.classList.toggle('timeline-chip-idle', !isActive);
+            });
+        }
+
+        applyDefaultExpanded(document);
+        syncTimelineChips();
+
+        document.body.addEventListener('htmx:afterSwap', function(e) {
+            applyDefaultExpanded(e.target || document);
+            syncTimelineChips();
+        });
         
         // Listen for alert-count events from the global SSE connection managed by HTMX
         document.body.addEventListener('htmx:sseMessage', function(e) {
             if (e.detail.type === 'alert-count') {
                 var count = e.detail.data.trim();
                 if (count && count !== '0') {
+                    var numeric = Number(count) || 0;
                     badge.textContent = count;
                     badge.classList.remove('hidden');
+                    updateUnreadIndicator(numeric);
                 } else {
                     badge.classList.add('hidden');
+                    if (badgeDot) badgeDot.classList.add('hidden');
+                    setSeenCount(0);
                 }
             }
         });

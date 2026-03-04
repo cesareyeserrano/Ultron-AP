@@ -1,7 +1,8 @@
 {{define "content"}}
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-lg font-semibold text-text">Systemd Services</h1>
+    <h2 class="sr-only">Systemd Services</h2>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="text-sm text-text-muted">Service health, runtime usage and control actions.</p>
         {{if not .Content.Available}}
         <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">systemctl unavailable</span>
         {{end}}

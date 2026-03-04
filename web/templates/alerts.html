@@ -1,12 +1,18 @@
 {{define "content"}}
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-lg font-semibold text-text">Alerts</h1>
-        <div class="flex items-center gap-2">
+    <h2 class="sr-only">Alerts</h2>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="text-sm text-text-muted">Active incidents and acknowledgment workflow.</p>
+        <div class="flex flex-wrap items-center gap-2">
             {{if .Content.UnackCount}}
-            <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">{{.Content.UnackCount}} unacknowledged</span>
+            <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full border border-danger/40">{{.Content.UnackCount}} unacknowledged</span>
             {{end}}
-            <form method="POST" action="/api/alerts/clear" onsubmit="return confirm('Clear alerts list?');">
+            <form
+                hx-post="/api/alerts/clear"
+                hx-target="#alerts-list"
+                hx-swap="innerHTML"
+                hx-confirm="Clear alerts list?"
+            >
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <input type="hidden" name="severity" value="{{.Content.SeverityFilter}}">
                 <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-surface border border-border text-text-muted hover:bg-danger/10 hover:text-danger transition-colors">
@@ -17,7 +23,7 @@
     </div>
 
     <!-- Severity Filter -->
-    <div class="flex gap-2">
+    <div class="panel-soft p-2 flex flex-wrap gap-2">
         <a href="/alerts" class="text-xs px-3 py-1.5 rounded-lg transition-colors
             {{if eq .Content.SeverityFilter ""}}bg-accent text-base{{else}}bg-surface text-text-muted hover:bg-card{{end}}" hx-boost="true">
             All

@@ -24,6 +24,8 @@ type DashboardData struct {
 	CPUValues    []float64 // Only what's needed for sparklines
 	RAMValues    []float64
 	TempValues   []float64
+	ChartWindow  string
+	ChartPoints  int
 	ProcessStats map[string]ProcessConsumer
 	Containers   []docker.ContainerInfo
 	DockerAvail  bool
@@ -106,6 +108,8 @@ func (b *sseBroker) broadcast(data []byte) {
 // --- SSE Handler ---
 
 func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
+	s.setDashboardChartWindow(r.URL.Query().Get("window"))
+
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
@@ -232,16 +236,63 @@ func writeSSEEvent(buf *bytes.Buffer, event string, data string) {
 	buf.WriteString("\n")
 }
 
+func chartWindowPoints(window string, sampleInterval time.Duration) (string, int) {
+	if sampleInterval <= 0 {
+		sampleInterval = 5 * time.Second
+	}
+	pointsFor := func(d time.Duration) int {
+		n := int(d / sampleInterval)
+		if n < 12 {
+			return 12
+		}
+		return n
+	}
+
+	switch strings.ToLower(strings.TrimSpace(window)) {
+	case "5m", "live":
+		return "5m", pointsFor(5 * time.Minute)
+	case "2h", "120m":
+		return "2h", pointsFor(2 * time.Hour)
+	case "6h", "360m":
+		return "6h", pointsFor(6 * time.Hour)
+	case "60m":
+		return "2h", pointsFor(2 * time.Hour)
+	case "12h":
+		return "12h", pointsFor(12 * time.Hour)
+	case "24h":
+		return "24h", pointsFor(24 * time.Hour)
+	case "week":
+		return "24h", pointsFor(24 * time.Hour)
+	default:
+		return "5m", pointsFor(5 * time.Minute)
+	}
+}
+
+func (s *Server) setDashboardChartWindow(window string) {
+	normalized, points := chartWindowPoints(window, s.cfg.MetricsInterval)
+	s.dashboardChartWindow.Store(normalized)
+	s.dashboardHistoryPoints.Store(int64(points))
+}
+
 func (s *Server) gatherDashboardData() DashboardData {
+	chartWindow, _ := s.dashboardChartWindow.Load().(string)
+	chartPoints := int(s.dashboardHistoryPoints.Load())
+	if chartPoints < 12 {
+		chartPoints = 60
+	}
+	if chartWindow == "" {
+		chartWindow = "5m"
+	}
 	dd := DashboardData{
-		Uptime:  formatUptime(time.Since(s.startedAt)),
-		Version: Version,
+		Uptime:      formatUptime(time.Since(s.startedAt)),
+		Version:     Version,
+		ChartWindow: chartWindow,
+		ChartPoints: chartPoints,
 	}
 
 	if s.collector != nil {
 		dd.Metrics = s.collector.Latest()
-		// Only fetch the necessary numbers for sparklines (last 5 min = 60 points)
-		history := s.collector.History(60)
+		history := s.collector.History(chartPoints)
 		dd.CPUValues = make([]float64, len(history))
 		dd.RAMValues = make([]float64, len(history))
 		dd.TempValues = make([]float64, len(history))

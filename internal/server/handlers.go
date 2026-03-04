@@ -13,6 +13,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
+	s.setDashboardChartWindow(r.URL.Query().Get("window"))
 	dd := s.gatherDashboardData()
 	dd.Tailscale = gatherTailscaleData() // only on page load, not in SSE loop
 	s.render(w, r, "dashboard.html", "Dashboard", "dashboard", dd)
@@ -52,4 +53,3 @@ func (s *Server) auditLog(r *http.Request, source, action, target, message strin
 		log.Printf("%s: failed to log action: %v", source, err)
 	}
 }
-

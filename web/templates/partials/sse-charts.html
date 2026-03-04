@@ -1,33 +1,57 @@
 {{define "partials/sse-charts.html"}}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    <div class="bg-surface rounded-lg border border-border p-4">
+    <div class="metric-tile">
         <div class="flex items-center justify-between mb-2">
             <p class="text-xs text-text-muted">CPU History</p>
-            <p class="text-xs font-mono text-accent">{{printf "%.0f%%" (sparkCurrent .CPUValues)}}</p>
+            <p class="text-xs font-mono {{cpuSeriesClass .CPUValues}}">{{printf "%.0f%%" (sparkCurrent .CPUValues)}}</p>
         </div>
-        {{sparklineSVG .CPUValues}}
+        <div class="text-[10px] text-text-muted mb-1">window {{.ChartWindow}} · {{len .CPUValues}} samples</div>
+        <div class="grid grid-cols-[28px_1fr] items-stretch gap-2">
+            <div class="h-16 flex flex-col justify-between text-[10px] text-text-muted font-mono">
+                <span>100</span>
+                <span>50</span>
+                <span>0</span>
+            </div>
+            <div>{{sparklineSVGColor .CPUValues (cpuSeriesStroke .CPUValues)}}</div>
+        </div>
         <div class="mt-2 flex items-center justify-between text-[10px] text-text-muted font-mono">
             <span>min {{printf "%.0f%%" (sparkMin .CPUValues)}}</span>
             <span>max {{printf "%.0f%%" (sparkMax .CPUValues)}}</span>
         </div>
     </div>
-    <div class="bg-surface rounded-lg border border-border p-4">
+    <div class="metric-tile">
         <div class="flex items-center justify-between mb-2">
             <p class="text-xs text-text-muted">Memory History</p>
-            <p class="text-xs font-mono text-accent">{{printf "%.0f%%" (sparkCurrent .RAMValues)}}</p>
+            <p class="text-xs font-mono {{ramSeriesClass .RAMValues}}">{{printf "%.0f%%" (sparkCurrent .RAMValues)}}</p>
         </div>
-        {{sparklineSVG .RAMValues}}
+        <div class="text-[10px] text-text-muted mb-1">window {{.ChartWindow}} · {{len .RAMValues}} samples</div>
+        <div class="grid grid-cols-[28px_1fr] items-stretch gap-2">
+            <div class="h-16 flex flex-col justify-between text-[10px] text-text-muted font-mono">
+                <span>100</span>
+                <span>50</span>
+                <span>0</span>
+            </div>
+            <div>{{sparklineSVGColor .RAMValues (ramSeriesStroke .RAMValues)}}</div>
+        </div>
         <div class="mt-2 flex items-center justify-between text-[10px] text-text-muted font-mono">
             <span>min {{printf "%.0f%%" (sparkMin .RAMValues)}}</span>
             <span>max {{printf "%.0f%%" (sparkMax .RAMValues)}}</span>
         </div>
     </div>
-    <div class="bg-surface rounded-lg border border-border p-4">
+    <div class="metric-tile">
         <div class="flex items-center justify-between mb-2">
             <p class="text-xs text-text-muted">Temp History</p>
             <p class="text-xs font-mono {{tempSeriesClass .TempValues}}">{{printf "%.0f°C" (sparkCurrent .TempValues)}}</p>
         </div>
-        {{sparklineSVGColor .TempValues (tempSeriesStroke .TempValues)}}
+        <div class="text-[10px] text-text-muted mb-1">window {{.ChartWindow}} · {{len .TempValues}} samples</div>
+        <div class="grid grid-cols-[28px_1fr] items-stretch gap-2">
+            <div class="h-16 flex flex-col justify-between text-[10px] text-text-muted font-mono">
+                <span>{{printf "%.0f" (sparkMax .TempValues)}}</span>
+                <span>{{printf "%.0f" (sparkMid .TempValues)}}</span>
+                <span>{{printf "%.0f" (sparkMin .TempValues)}}</span>
+            </div>
+            <div>{{sparklineSVGColor .TempValues (tempSeriesStroke .TempValues)}}</div>
+        </div>
         <div class="mt-2 flex items-center justify-between text-[10px] text-text-muted font-mono">
             <span>min {{printf "%.0f°C" (sparkMin .TempValues)}}</span>
             <span>max {{printf "%.0f°C" (sparkMax .TempValues)}}</span>

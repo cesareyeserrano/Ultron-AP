@@ -35,6 +35,15 @@
   }
 
   // Apply initial state
+  function updateToggleIcons() {
+    if (!toggleBtn) return;
+    var collapsed = sidebar.classList.contains("sidebar-collapsed");
+    var expandedIcon = toggleBtn.querySelector(".sidebar-expanded-icon");
+    var collapsedIcon = toggleBtn.querySelector(".sidebar-collapsed-icon");
+    if (expandedIcon) expandedIcon.classList.toggle("hidden", collapsed);
+    if (collapsedIcon) collapsedIcon.classList.toggle("hidden", !collapsed);
+  }
+
   function applyInitialState() {
     if (isMobile()) {
       sidebar.classList.add("sidebar-hidden");
@@ -51,12 +60,14 @@
       }
       sidebar.classList.remove("sidebar-hidden");
     }
+    updateToggleIcons();
   }
 
   // Toggle collapse (desktop/tablet)
   function toggleCollapse() {
     sidebar.classList.toggle("sidebar-collapsed");
     saveState(sidebar.classList.contains("sidebar-collapsed"));
+    updateToggleIcons();
   }
 
   // Toggle mobile menu
@@ -77,11 +88,17 @@
 
   // Bind events
   if (toggleBtn) {
-    toggleBtn.addEventListener("click", toggleCollapse);
+    toggleBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      toggleCollapse();
+    });
   }
 
   if (hamburgerBtn) {
-    hamburgerBtn.addEventListener("click", toggleMobile);
+    hamburgerBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      toggleMobile();
+    });
   }
 
   if (overlay) {

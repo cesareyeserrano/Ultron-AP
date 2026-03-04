@@ -49,12 +49,11 @@ func main() {
 	}
 
 	// Start metrics collector.
-	// Ring buffer: 30 minutes at the default 5s interval = 360 snapshots (~300 KB).
-	// The sparkline charts only consume 120 points (10 min), so 30 min is a
-	// generous headroom without the old 24h / 17 280 snapshot overhead.
+	// Ring buffer: 24 hours at the default 5s interval = 17 280 snapshots.
+	// This enables meaningful timeline windows (60m/12h/24h).
 	reader := metrics.NewSystemReader()
 	reader.SetDiskInterval(time.Duration(perf.DiskIntervalMin) * time.Minute)
-	collector := metrics.NewCollector(reader, cfg.MetricsInterval, 30*time.Minute)
+	collector := metrics.NewCollector(reader, cfg.MetricsInterval, 24*time.Hour)
 	collector.Start(context.Background())
 	defer collector.Stop()
 

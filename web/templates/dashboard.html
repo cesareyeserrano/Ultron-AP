@@ -1,37 +1,36 @@
 {{define "content"}}
-<div class="space-y-5" hx-ext="sse" sse-connect="/api/sse/dashboard">
-
+<div class="space-y-5" hx-ext="sse" sse-connect="/api/sse/dashboard?window={{.Content.ChartWindow}}">
     <section>
         <div id="metrics-cards" sse-swap="metrics" hx-swap="innerHTML">
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {{if .Content.Metrics}}
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile {{if ge .Content.Metrics.CPU.TotalPercent 90.0}}metric-critical{{else if ge .Content.Metrics.CPU.TotalPercent 75.0}}metric-warning{{end}}">
                     <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">CPU</p>
                     <p class="text-xl font-mono font-bold text-accent">{{printf "%.1f%%" .Content.Metrics.CPU.TotalPercent}}</p>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile {{if ge .Content.Metrics.RAM.Percent 90.0}}metric-critical{{else if ge .Content.Metrics.RAM.Percent 75.0}}metric-warning{{end}}">
                     <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Memory</p>
                     <p class="text-xl font-mono font-bold text-accent">{{printf "%.1f%%" .Content.Metrics.RAM.Percent}}</p>
                 </div>
                 {{else}}
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile">
                     <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">CPU</p>
                     <p class="text-xl font-mono font-bold text-text-muted">--</p>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile">
                     <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Memory</p>
                     <p class="text-xl font-mono font-bold text-text-muted">--</p>
                 </div>
                 {{end}}
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile">
                     <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Disk</p>
                     <p class="text-xl font-mono font-bold text-text-muted">--</p>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile">
                     <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Network</p>
                     <p class="text-xl font-mono font-bold text-text-muted">--</p>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile">
                     <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Temp</p>
                     <p class="text-xl font-mono font-bold {{if .Content.Metrics}}{{if .Content.Metrics.Temperature}}{{tempColor .Content.Metrics.Temperature}}{{else}}text-text-muted{{end}}{{else}}text-text-muted{{end}}">{{if .Content.Metrics}}{{formatTemp .Content.Metrics.Temperature}}{{else}}--{{end}}</p>
                 </div>
@@ -39,18 +38,27 @@
         </div>
     </section>
 
-    <section>
+    <section class="space-y-2">
+        <div class="flex flex-wrap items-center justify-end gap-1.5" data-timeline-chips>
+            <a href="/?window=5m" class="timeline-chip {{if eq .Content.ChartWindow "5m"}}timeline-chip-active{{else}}timeline-chip-idle{{end}}" data-window="5m" hx-boost="true">5m</a>
+            <a href="/?window=2h" class="timeline-chip {{if eq .Content.ChartWindow "2h"}}timeline-chip-active{{else}}timeline-chip-idle{{end}}" data-window="2h" hx-boost="true">2h</a>
+            <a href="/?window=6h" class="timeline-chip {{if eq .Content.ChartWindow "6h"}}timeline-chip-active{{else}}timeline-chip-idle{{end}}" data-window="6h" hx-boost="true">6h</a>
+            <a href="/?window=12h" class="timeline-chip {{if eq .Content.ChartWindow "12h"}}timeline-chip-active{{else}}timeline-chip-idle{{end}}" data-window="12h" hx-boost="true">12h</a>
+            <a href="/?window=24h" class="timeline-chip {{if eq .Content.ChartWindow "24h"}}timeline-chip-active{{else}}timeline-chip-idle{{end}}" data-window="24h" hx-boost="true">24h</a>
+            <span class="text-[10px] text-text-muted ml-2">window: {{.Content.ChartWindow}}</span>
+            <span class="text-[10px] text-text-muted">samples: {{.Content.ChartPoints}}</span>
+        </div>
         <div id="charts-area" sse-swap="charts" hx-swap="innerHTML">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile">
                     <p class="text-[11px] text-text-muted mb-2 uppercase tracking-wider">CPU History</p>
                     <div class="h-16 flex items-center justify-center text-text-muted text-xs">Collecting data...</div>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile">
                     <p class="text-[11px] text-text-muted mb-2 uppercase tracking-wider">Memory History</p>
                     <div class="h-16 flex items-center justify-center text-text-muted text-xs">Collecting data...</div>
                 </div>
-                <div class="bg-surface rounded-lg border border-border p-3">
+                <div class="metric-tile">
                     <p class="text-[11px] text-text-muted mb-2 uppercase tracking-wider">Temp History</p>
                     <div class="h-16 flex items-center justify-center text-text-muted text-xs">Collecting data...</div>
                 </div>

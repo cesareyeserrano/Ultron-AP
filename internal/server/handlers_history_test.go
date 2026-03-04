@@ -160,6 +160,7 @@ func TestHistoryClear_HTMX(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Contains(t, rec.Header().Get("HX-Trigger"), "Cleared")
+	assert.Contains(t, rec.Header().Get("HX-Redirect"), "/history")
 }

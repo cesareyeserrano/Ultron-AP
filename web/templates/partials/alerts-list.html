@@ -4,7 +4,10 @@
 {{if .Alerts}}
 <div class="space-y-2">
     {{range .Alerts}}
-    <div class="bg-card rounded-lg p-3 flex items-start gap-3 border border-border/50
+    <div class="alert-card flex items-start gap-3
+        {{if eq .Severity "critical"}}alert-card-critical
+        {{else if eq .Severity "warning"}}alert-card-warning
+        {{else}}alert-card-info{{end}}
         {{if .Acknowledged}}opacity-60{{end}}">
         <!-- Severity icon -->
         <div class="shrink-0 mt-0.5">
@@ -19,7 +22,7 @@
 
         <!-- Content -->
         <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-0.5">
+            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
                 <span class="text-xs px-1.5 py-0.5 rounded
                     {{if eq .Severity "critical"}}bg-danger/20 text-danger
                     {{else if eq .Severity "warning"}}bg-yellow-400/20 text-yellow-400
@@ -29,7 +32,7 @@
                 <span class="text-xs text-text-muted">&check; ack</span>
                 {{end}}
             </div>
-            <p class="text-sm text-text truncate">{{.Message}}</p>
+            <p class="text-sm text-text break-words">{{.Message}}</p>
             <div class="flex items-center gap-3 mt-1">
                 {{with .Value}}
                 <span class="text-xs text-text-muted font-mono">{{printf "%.1f" .}}</span>

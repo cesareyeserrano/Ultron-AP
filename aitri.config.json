@@ -1,0 +1,7 @@
+{
+  "ai": {
+    "provider": "claude",
+    "model": "claude-opus-4-6",
+    "apiKeyEnv": "ANTHROPIC_API_KEY"
+  }
+}

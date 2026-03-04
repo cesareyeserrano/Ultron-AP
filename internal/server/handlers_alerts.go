@@ -65,6 +65,9 @@ func (s *Server) handleAlertAcknowledge(w http.ResponseWriter, r *http.Request) 
 
 func (s *Server) renderAlertsList(w http.ResponseWriter, r *http.Request) {
 	severity := r.URL.Query().Get("severity")
+	if severity == "" {
+		severity = r.FormValue("severity")
+	}
 	var alerts []database.Alert
 
 	if severity != "" && isValidSeverity(severity) {
@@ -108,7 +111,7 @@ func (s *Server) handleAlertsClear(w http.ResponseWriter, r *http.Request) {
 	s.auditLog(r, "alerts", "clear", severity, fmt.Sprintf("deleted=%d", deleted), true)
 	if r.Header.Get("HX-Request") == "true" {
 		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast":{"message":"Cleared %d alerts","type":"success"}}`, deleted))
-		w.WriteHeader(http.StatusNoContent)
+		s.renderAlertsList(w, r)
 		return
 	}
 	http.Redirect(w, r, "/alerts", http.StatusSeeOther)
