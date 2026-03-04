@@ -1,0 +1,57 @@
+{
+  "ok": true,
+  "limited": false,
+  "feature": "normalization",
+  "evaluatedAt": "2026-03-04T03:36:11.548Z",
+  "policy": {
+    "allowDependencyChanges": false,
+    "blockedImports": [],
+    "blockedPaths": []
+  },
+  "files": {
+    "changed": [
+      ".aitri/discovery.md",
+      ".aitri/product-spec.md",
+      ".aitri/ux-design.md",
+      "docs/plan/normalization.md",
+      "internal/contracts/fr-1-dashboard-stream-path-must-suppo.go",
+      "internal/contracts/fr-1-the-system-must-define-and-apply-a-dashbo.go",
+      "internal/contracts/fr-2-dashboard-must-include-temperatu.go",
+      "internal/contracts/fr-3-temperature-indicator-and-temper.go",
+      "internal/contracts/fr-4-sse-broadcast-must-avoid-unneces.go",
+      "src/contracts/fr-1-hardware-settings-updates-must-b.js",
+      "src/contracts/fr-1-the-system-must-enforce-a-docume.js",
+      "src/contracts/fr-1-the-system-must-present-the-most.js",
+      "src/contracts/fr-2-the-hardware-apply-pipeline-must.js",
+      "src/contracts/fr-2-the-system-must-preserve-current.js",
+      "src/contracts/fr-2-the-system-must-surface-automate.js",
+      "src/contracts/fr-3-integration-with-pironman-must-p.js",
+      "src/contracts/fr-3-the-dashboard-visual-design-must.js",
+      "src/contracts/fr-3-the-system-must-preserve-determi.js",
+      "src/contracts/fr-4-privileged-execution-must-stay-o.js",
+      "src/contracts/fr-4-the-system-must-strengthen-secur.js",
+      "src/contracts/fr-4-the-ux-ui-review-must-include-op.js",
+      "src/contracts/fr-5-every-hardware-apply-request-mus.js",
+      "src/contracts/fr-5-the-system-must-add-targeted-aut.js",
+      ".aitri/architecture-decision.md",
+      ".aitri/dev-roadmap.md",
+      ".aitri/qa-plan.md",
+      ".aitri/security-review.md",
+      "deploy/raspberry-stable/"
+    ],
+    "dependencyChanged": []
+  },
+  "gaps": {
+    "dependency_drift": [],
+    "forbidden_path": [],
+    "forbidden_import": []
+  },
+  "gapSummary": {
+    "dependency_drift": 0,
+    "forbidden_path": 0,
+    "forbidden_import": 0
+  },
+  "issues": [],
+  "warnings": [],
+  "evidenceFile": "docs/policy/normalization.json"
+}

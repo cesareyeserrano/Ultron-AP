@@ -1,0 +1,27 @@
+{
+  "feature": "normalization",
+  "generatedAt": "2026-03-04T03:37:48.711Z",
+  "stories": [
+    {
+      "id": "US-1",
+      "order": 1,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/normalization/US-1.md",
+      "testCases": [
+        "TC-1",
+        "TC-3",
+        "TC-4"
+      ]
+    },
+    {
+      "id": "US-2",
+      "order": 2,
+      "dependencyScore": 2,
+      "brief": "docs/implementation/normalization/US-2.md",
+      "testCases": [
+        "TC-2"
+      ]
+    }
+  ],
+  "orderFile": "docs/implementation/normalization/IMPLEMENTATION_ORDER.md"
+}

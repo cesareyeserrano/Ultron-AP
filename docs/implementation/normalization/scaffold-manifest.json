@@ -1,0 +1,16 @@
+{
+  "testFiles": [
+    "tests/normalization/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+    "tests/normalization/generated/tc-3-handle-edge-behavior-live-data-can-b.test.mjs",
+    "tests/normalization/generated/tc-4-enforce-security-control-enforce-whi.test.mjs",
+    "tests/normalization/generated/tc-2-validate-us-2-primary-behavior.test.mjs"
+  ],
+  "interfaceFiles": [
+    "src/contracts/fr-1-the-system-must-present-critical.js",
+    "src/contracts/fr-2-the-system-must-preserve-strict-.js"
+  ],
+  "baseConfigs": [],
+  "feature": "normalization",
+  "stackFamily": "node",
+  "generatedAt": "2026-03-04T03:37:48.711Z"
+}

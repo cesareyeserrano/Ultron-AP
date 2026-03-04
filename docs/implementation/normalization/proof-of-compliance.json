@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "normalization",
+  "provenAt": "2026-03-04T03:40:48.402Z",
+  "summary": {
+    "total": 2,
+    "proven": 2,
+    "unproven": 0,
+    "trivialTcs": [],
+    "trivialContractTcs": [],
+    "unimplementedContractTcs": [],
+    "mutation": null
+  },
+  "frProof": {
+    "FR-1": {
+      "proven": true,
+      "via": [
+        "TC-1",
+        "TC-3",
+        "TC-4"
+      ],
+      "tracingTcs": [
+        "TC-1",
+        "TC-3",
+        "TC-4"
+      ],
+      "evidence": [
+        "tests/normalization/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+        "tests/normalization/generated/tc-3-handle-edge-behavior-live-data-can-b.test.mjs",
+        "tests/normalization/generated/tc-4-enforce-security-control-enforce-whi.test.mjs"
+      ],
+      "mutationScore": null
+    },
+    "FR-2": {
+      "proven": true,
+      "via": [
+        "TC-2"
+      ],
+      "tracingTcs": [
+        "TC-2"
+      ],
+      "evidence": [
+        "tests/normalization/generated/tc-2-validate-us-2-primary-behavior.test.mjs"
+      ],
+      "mutationScore": null
+    }
+  },
+  "tcResults": {
+    "TC-1": {
+      "passed": true,
+      "file": "tests/normalization/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractTrivial": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-2": {
+      "passed": true,
+      "file": "tests/normalization/generated/tc-2-validate-us-2-primary-behavior.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractTrivial": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-3": {
+      "passed": true,
+      "file": "tests/normalization/generated/tc-3-handle-edge-behavior-live-data-can-b.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractTrivial": false,
+      "contractIssues": [],
+      "mutation": null
+    },
+    "TC-4": {
+      "passed": true,
+      "file": "tests/normalization/generated/tc-4-enforce-security-control-enforce-whi.test.mjs",
+      "trivial": false,
+      "contractUnimplemented": false,
+      "contractTrivial": false,
+      "contractIssues": [],
+      "mutation": null
+    }
+  }
+}

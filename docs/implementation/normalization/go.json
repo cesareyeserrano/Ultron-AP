@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "normalization",
+  "decidedAt": "2026-03-04T03:37:02.166Z",
+  "policyEvidence": "docs/policy/normalization.json",
+  "verificationEvidence": "docs/verification/normalization.json"
+}

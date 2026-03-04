@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "normalization",
+  "command": "node --test tests/normalization/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+  "commandSource": "node:test:file",
+  "exitCode": 0,
+  "durationMs": 55,
+  "timeoutMs": 120000,
+  "startedAt": "2026-03-04T03:57:39.808Z",
+  "finishedAt": "2026-03-04T03:57:39.863Z",
+  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.350708ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 32.36025",
+  "stderrTail": "",
+  "reason": "passed",
+  "tcCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 4,
+    "executable": 4,
+    "passing": 4,
+    "failing": 0,
+    "missing": 0,
+    "mapped": {
+      "TC-1": {
+        "found": true,
+        "file": "tests/normalization/generated/tc-1-validate-us-1-primary-behavior.test.mjs"
+      },
+      "TC-2": {
+        "found": true,
+        "file": "tests/normalization/generated/tc-2-validate-us-2-primary-behavior.test.mjs"
+      },
+      "TC-3": {
+        "found": true,
+        "file": "tests/normalization/generated/tc-3-handle-edge-behavior-live-data-can-b.test.mjs"
+      },
+      "TC-4": {
+        "found": true,
+        "file": "tests/normalization/generated/tc-4-enforce-security-control-enforce-whi.test.mjs"
+      }
+    }
+  },
+  "frCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 2,
+    "covered": 2,
+    "uncovered": []
+  },
+  "usCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 2,
+    "fullyVerified": [
+      "US-1",
+      "US-2"
+    ],
+    "partial": [],
+    "unverified": []
+  },
+  "coverageConfidence": {
+    "score": 100,
+    "ratio": 1,
+    "mode": "scaffold"
+  },
+  "evidenceFile": "docs/verification/normalization.json"
+}
