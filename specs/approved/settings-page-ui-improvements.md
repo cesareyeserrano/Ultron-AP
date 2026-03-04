@@ -1,7 +1,6 @@
 # AF-SPEC: settings-page-ui-improvements
 
-STATUS: DRAFT
-
+STATUS: APPROVED
 ## 1. Context
 I want to completely redesign the Ultron Settings page UI. Right now it looks MVP, generic, and lacks clear UI criteria. It is also unsafe because Raspberry shutdown/restart can happen with an accidental single click. I need a modern UI with strong design criteria, much better usability, and a compact layout, including strong safeguards for dangerous actions.
 
@@ -18,15 +17,20 @@ Requirement source: Provided explicitly by user in guided draft.
 ## 3. Functional Rules (traceable)
 - FR-1: The system must provide a complete, mobile-first Settings UI where administrators can find, understand, and update configuration quickly through a compact, clearly structured interface with consistent components and feedback states.
 - FR-2: The system must protect dangerous actions (shutdown/restart) with a typed confirmation word in a dedicated confirmation field plus a short cancel window with a visible countdown animation, so accidental execution is prevented while keeping Ultron lightweight.
+- FR-3: The system must use existing Ultron design tokens and components by default, and any external UI asset is allowed only if it remains lightweight and does not degrade Raspberry Pi performance.
 
 ## 4. Edge Cases
 - On small mobile screens, long setting labels, helper text, and validation errors can overlap or push critical controls off-screen, causing accidental taps or missed confirmations.
 
 ## 5. Failure Conditions
-- TBD (refine during review)
+- FC-1: On mobile viewport, settings sections overlap, break hierarchy, or hide critical controls.
+- FC-2: Shutdown or restart can be executed with an accidental single click without typed confirmation plus cancel window.
+- FC-3: State-changing settings requests are accepted without valid session, CSRF, or same-origin validation.
 
 ## 6. Non-Functional Requirements
-- TBD (refine during review)
+- NFR-1: The Settings page must follow a strict mobile-first layout and remain readable and usable on small screens.
+- NFR-2: The UI and interaction model must stay compact and modern with consistent visual hierarchy and feedback states.
+- NFR-3: The implementation must keep Ultron lightweight on Raspberry Pi and avoid performance regression from UI changes.
 
 ## 7. Security Considerations
 - All state-changing settings actions must require a valid authenticated session, CSRF protection, and same-origin validation, and all rejected dangerous-action attempts must be audit-logged.
@@ -36,6 +40,8 @@ Requirement source: Provided explicitly by user in guided draft.
 
 ## 9. Acceptance Criteria
 - AC-1: Given an authenticated administrator on the Settings page on a mobile viewport, when the page loads, then the layout is compact, readable, and all primary settings sections are reachable without UI overlap or broken hierarchy.
+- AC-2: Given an authenticated administrator initiates shutdown or restart from Settings, when they have not typed the required confirmation word, then the action is blocked and no state change is executed.
+- AC-3: Given an authenticated administrator has typed the required confirmation word for shutdown or restart, when the action is submitted, then a visible countdown cancel window is shown before execution and the action can be canceled during that window.
 
 ## 10. Requirement Source Statement
 - All requirements in this draft were provided explicitly by the user.
