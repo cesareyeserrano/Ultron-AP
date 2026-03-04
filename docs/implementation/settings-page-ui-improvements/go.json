@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "settings-page-ui-improvements",
+  "decidedAt": "2026-03-04T22:56:36.030Z",
+  "policyEvidence": "docs/policy/settings-page-ui-improvements.json",
+  "verificationEvidence": "docs/verification/settings-page-ui-improvements.json"
+}
