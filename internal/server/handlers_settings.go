@@ -453,11 +453,13 @@ func (s *Server) handleSettingsBackupRun(w http.ResponseWriter, r *http.Request)
 func (s *Server) validateCSRF(w http.ResponseWriter, r *http.Request) bool {
 	cookie, err := r.Cookie("session")
 	if err != nil {
+		s.auditLog(r, "security", "csrf_reject", r.URL.Path, "missing session cookie", false)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return false
 	}
 	session, err := s.db.GetSession(cookie.Value)
 	if err != nil || session == nil {
+		s.auditLog(r, "security", "csrf_reject", r.URL.Path, "invalid session", false)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return false
 	}
@@ -468,12 +470,14 @@ func (s *Server) validateCSRF(w http.ResponseWriter, r *http.Request) bool {
 	}
 
 	if csrfToken != session.CSRFToken {
+		s.auditLog(r, "security", "csrf_reject", r.URL.Path, "csrf token mismatch", false)
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return false
 	}
 
 	// Defense-in-depth: enforce same-origin when Origin/Referer are provided.
 	if !isSameOriginRequest(r) {
+		s.auditLog(r, "security", "csrf_reject", r.URL.Path, "origin/referer mismatch", false)
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return false
 	}

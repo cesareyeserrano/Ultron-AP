@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os/exec"
 	"strconv"
@@ -21,6 +22,8 @@ import (
 // DashboardData holds all data for dashboard rendering.
 type DashboardData struct {
 	Metrics      *metrics.Snapshot
+	MetricsAgeSec int64
+	MetricsStale  bool
 	CPUValues    []float64 // Only what's needed for sparklines
 	RAMValues    []float64
 	TempValues   []float64
@@ -64,16 +67,24 @@ func gatherTailscaleData() TailscaleData {
 type sseClient struct {
 	ch     chan []byte
 	closed bool
+	ip     string
 }
 
 type sseBroker struct {
 	mu      sync.RWMutex
 	clients map[*sseClient]struct{}
+	ipCount map[string]int
+	// Small hard limits protect low-resource Pi from reconnect floods.
+	maxClients int
+	maxPerIP   int
 }
 
 func newSSEBroker() *sseBroker {
 	return &sseBroker{
-		clients: make(map[*sseClient]struct{}),
+		clients:    make(map[*sseClient]struct{}),
+		ipCount:    make(map[string]int),
+		maxClients: 50,
+		maxPerIP:   8,
 	}
 }
 
@@ -85,8 +96,32 @@ func (b *sseBroker) addClient() *sseClient {
 	return c
 }
 
+func (b *sseBroker) addClientForIP(ip string) (*sseClient, bool) {
+	c := &sseClient{ch: make(chan []byte, 8), ip: ip}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if len(b.clients) >= b.maxClients {
+		return nil, false
+	}
+	if ip != "" && b.ipCount[ip] >= b.maxPerIP {
+		return nil, false
+	}
+	b.clients[c] = struct{}{}
+	if ip != "" {
+		b.ipCount[ip]++
+	}
+	return c, true
+}
+
 func (b *sseBroker) removeClient(c *sseClient) {
 	b.mu.Lock()
+	if c.ip != "" {
+		if n := b.ipCount[c.ip] - 1; n > 0 {
+			b.ipCount[c.ip] = n
+		} else {
+			delete(b.ipCount, c.ip)
+		}
+	}
 	delete(b.clients, c)
 	c.closed = true
 	close(c.ch)
@@ -123,7 +158,13 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
 
-	client := s.sseBroker.addClient()
+	clientIP := clientIPFromRequest(r)
+	client, ok := s.sseBroker.addClientForIP(clientIP)
+	if !ok {
+		s.auditLog(r, "security", "sse_reject", clientIP, "sse connection limit exceeded", false)
+		http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+		return
+	}
 	defer s.sseBroker.removeClient(client)
 
 	// Send initial data immediately
@@ -292,6 +333,18 @@ func (s *Server) gatherDashboardData() DashboardData {
 
 	if s.collector != nil {
 		dd.Metrics = s.collector.Latest()
+		if dd.Metrics != nil && !dd.Metrics.Timestamp.IsZero() {
+			age := time.Since(dd.Metrics.Timestamp)
+			if age < 0 {
+				age = 0
+			}
+			dd.MetricsAgeSec = int64(age / time.Second)
+			staleThreshold := 3 * s.sseInterval()
+			if staleThreshold < 20*time.Second {
+				staleThreshold = 20 * time.Second
+			}
+			dd.MetricsStale = age > staleThreshold
+		}
 		history := s.collector.History(chartPoints)
 		dd.CPUValues = make([]float64, len(history))
 		dd.RAMValues = make([]float64, len(history))
@@ -323,6 +376,22 @@ func (s *Server) gatherDashboardData() DashboardData {
 	// and is only loaded on page load / manual refresh.
 
 	return dd
+}
+
+func clientIPFromRequest(r *http.Request) string {
+	xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
+	if xff != "" {
+		parts := strings.Split(xff, ",")
+		ip := strings.TrimSpace(parts[0])
+		if ip != "" {
+			return ip
+		}
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil {
+		return host
+	}
+	return r.RemoteAddr
 }
 
 func collectProcessUsage() map[string]ProcessConsumer {

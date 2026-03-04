@@ -2,39 +2,7 @@
 <div class="space-y-5" hx-ext="sse" sse-connect="/api/sse/dashboard?window={{.Content.ChartWindow}}">
     <section>
         <div id="metrics-cards" sse-swap="metrics" hx-swap="innerHTML">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {{if .Content.Metrics}}
-                <div class="metric-tile {{if ge .Content.Metrics.CPU.TotalPercent 90.0}}metric-critical{{else if ge .Content.Metrics.CPU.TotalPercent 75.0}}metric-warning{{end}}">
-                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">CPU</p>
-                    <p class="text-xl font-mono font-bold text-accent">{{printf "%.1f%%" .Content.Metrics.CPU.TotalPercent}}</p>
-                </div>
-                <div class="metric-tile {{if ge .Content.Metrics.RAM.Percent 90.0}}metric-critical{{else if ge .Content.Metrics.RAM.Percent 75.0}}metric-warning{{end}}">
-                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Memory</p>
-                    <p class="text-xl font-mono font-bold text-accent">{{printf "%.1f%%" .Content.Metrics.RAM.Percent}}</p>
-                </div>
-                {{else}}
-                <div class="metric-tile">
-                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">CPU</p>
-                    <p class="text-xl font-mono font-bold text-text-muted">--</p>
-                </div>
-                <div class="metric-tile">
-                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Memory</p>
-                    <p class="text-xl font-mono font-bold text-text-muted">--</p>
-                </div>
-                {{end}}
-                <div class="metric-tile">
-                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Disk</p>
-                    <p class="text-xl font-mono font-bold text-text-muted">--</p>
-                </div>
-                <div class="metric-tile">
-                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Network</p>
-                    <p class="text-xl font-mono font-bold text-text-muted">--</p>
-                </div>
-                <div class="metric-tile">
-                    <p class="text-[11px] text-text-muted mb-1 uppercase tracking-wider">Temp</p>
-                    <p class="text-xl font-mono font-bold {{if .Content.Metrics}}{{if .Content.Metrics.Temperature}}{{tempColor .Content.Metrics.Temperature}}{{else}}text-text-muted{{end}}{{else}}text-text-muted{{end}}">{{if .Content.Metrics}}{{formatTemp .Content.Metrics.Temperature}}{{else}}--{{end}}</p>
-                </div>
-            </div>
+            {{template "partials/sse-metrics.html" .Content}}
         </div>
     </section>
 

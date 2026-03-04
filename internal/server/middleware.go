@@ -20,18 +20,21 @@ func (s *Server) requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session")
 		if err != nil {
+			s.auditLog(r, "security", "auth_reject", r.URL.Path, "missing session cookie", false)
 			s.redirectOrUnauthorized(w, r)
 			return
 		}
 
 		session, err := s.db.GetSession(cookie.Value)
 		if err != nil || session == nil {
+			s.auditLog(r, "security", "auth_reject", r.URL.Path, "invalid session", false)
 			s.redirectOrUnauthorized(w, r)
 			return
 		}
 
 		if time.Now().After(session.ExpiresAt) {
 			s.db.DeleteSession(session.ID)
+			s.auditLog(r, "security", "auth_reject", r.URL.Path, "expired session", false)
 			s.redirectOrUnauthorized(w, r)
 			return
 		}

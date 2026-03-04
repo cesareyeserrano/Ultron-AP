@@ -145,7 +145,7 @@ func (s *Server) parseTemplates() {
 	}
 
 	pages := []pageSpec{
-		{"dashboard.html", []string{"templates/partials/tailscale-peers.html", "templates/partials/sse-summary.html"}},
+		{"dashboard.html", []string{"templates/partials/tailscale-peers.html", "templates/partials/sse-summary.html", "templates/partials/sse-metrics.html"}},
 		{"docker.html", []string{"templates/partials/docker-list.html"}},
 		{"services.html", []string{"templates/partials/services-list.html"}},
 		{"alerts.html", []string{"templates/partials/alerts-list.html"}},
