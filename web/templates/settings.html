@@ -94,7 +94,7 @@
                     <h3 class="text-sm font-semibold text-text">Telegram Notifications</h3>
                     <p class="text-xs text-text-muted">Configure bot token and target chat for alerts.</p>
                 </div>
-                <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" class="space-y-3">
+                <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" data-status-target="#telegram-status" data-saving-label="Saving Telegram settings..." class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
@@ -118,7 +118,7 @@
                             hx-include="[name='csrf_token']"
                             class="px-4 py-1.5 text-sm border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
                     </div>
-                    <div id="telegram-status" class="min-h-[2.5rem]"></div>
+                    <div id="telegram-status" class="min-h-[2.5rem]" aria-live="polite"></div>
                 </form>
             </section>
 
@@ -127,7 +127,7 @@
                     <h3 class="text-sm font-semibold text-text">Email Notifications</h3>
                     <p class="text-xs text-text-muted">SMTP delivery configuration for fallback and summaries.</p>
                 </div>
-                <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" class="space-y-3">
+                <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" data-status-target="#email-status" data-saving-label="Saving email settings..." class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
@@ -167,7 +167,7 @@
                             hx-include="[name='csrf_token']"
                             class="px-4 py-1.5 text-sm border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
                     </div>
-                    <div id="email-status" class="min-h-[2.5rem]"></div>
+                    <div id="email-status" class="min-h-[2.5rem]" aria-live="polite"></div>
                 </form>
             </section>
 
@@ -176,7 +176,7 @@
                     <h3 class="text-sm font-semibold text-text">Performance</h3>
                     <p class="text-xs text-text-muted">Tune refresh intervals to balance responsiveness and resource use.</p>
                 </div>
-                <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" class="space-y-4">
+                <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" data-status-target="#perf-status" data-saving-label="Applying performance profile..." class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                         <div>
@@ -211,7 +211,7 @@
                     <div class="flex items-center gap-3">
                         <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
                     </div>
-                    <div id="perf-status"></div>
+                    <div id="perf-status" aria-live="polite"></div>
                 </form>
             </section>
 
@@ -220,7 +220,7 @@
                     <h3 class="text-sm font-semibold text-text">Backup Module</h3>
                     <p class="text-xs text-text-muted">Schedule, retention and destination policy for data protection.</p>
                 </div>
-                <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" class="space-y-4">
+                <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <label class="flex items-center gap-2 text-sm text-text">
@@ -307,7 +307,7 @@
                     <div class="flex items-center gap-3">
                         <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save Backup Settings</button>
                     </div>
-                    <div id="backup-config-status"></div>
+                    <div id="backup-config-status" aria-live="polite"></div>
                 </form>
             </section>
 
@@ -360,7 +360,7 @@
                         </button>
                     </form>
 
-                    <form hx-post="/api/system/restart" hx-target="#system-action-status" hx-swap="innerHTML" class="bg-card/30 rounded-lg border border-border/40 p-3 flex items-center justify-between" onsubmit="return confirm('Restart Raspberry Pi now?');">
+                    <form hx-post="/api/system/restart" hx-target="#system-action-status" hx-swap="innerHTML" data-status-target="#system-action-status" data-saving-label="Dispatching restart action..." class="bg-card/30 rounded-lg border border-border/40 p-3 flex items-center justify-between" onsubmit="return confirm('Restart Raspberry Pi now?');">
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                         <div>
                             <p class="text-sm font-medium text-text">Restart Device</p>
@@ -372,7 +372,7 @@
                         </button>
                     </form>
 
-                    <form hx-post="/api/system/shutdown" hx-target="#system-action-status" hx-swap="innerHTML" class="bg-card/30 rounded-lg border border-border/40 p-3 flex items-center justify-between" onsubmit="return confirm('Shutdown Raspberry Pi now?');">
+                    <form hx-post="/api/system/shutdown" hx-target="#system-action-status" hx-swap="innerHTML" data-status-target="#system-action-status" data-saving-label="Dispatching shutdown action..." class="bg-card/30 rounded-lg border border-border/40 p-3 flex items-center justify-between" onsubmit="return confirm('Shutdown Raspberry Pi now?');">
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                         <input type="hidden" name="confirm" value="shutdown">
                         <div>
@@ -405,7 +405,7 @@
                         <button type="submit" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors">Clear</button>
                     </form>
                 </div>
-                <div id="system-action-status" class="text-xs text-text-muted"></div>
+                <div id="system-action-status" class="text-xs text-text-muted" aria-live="polite"></div>
             </section>
         </div>
     </div>

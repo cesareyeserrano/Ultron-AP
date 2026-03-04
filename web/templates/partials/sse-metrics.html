@@ -1,14 +1,48 @@
 {{define "partials/sse-metrics.html"}}
+<div class="mb-3 grid grid-cols-1 md:grid-cols-3 gap-2" role="status" aria-live="polite">
+    <div class="rounded-lg border px-3 py-2 text-xs {{if eq .SystemStatus "critical"}}border-danger/50 bg-danger/10 text-danger{{else if eq .SystemStatus "warning"}}border-yellow-400/50 bg-yellow-400/20 text-yellow-400{{else if eq .SystemStatus "ok"}}border-green-400/40 bg-green-400/15 text-green-400{{else}}border-border/50 bg-card/50 text-text-muted{{end}}">
+        <p class="uppercase tracking-wider text-[10px] {{if eq .SystemStatus "critical"}}text-danger{{else if eq .SystemStatus "warning"}}text-yellow-400{{else if eq .SystemStatus "ok"}}text-green-400{{else}}text-text-muted{{end}}">System</p>
+        <p class="text-sm font-semibold mt-0.5">{{if eq .SystemStatus "critical"}}Critical load{{else if eq .SystemStatus "warning"}}Elevated load{{else if eq .SystemStatus "ok"}}Stable{{else}}Unknown{{end}}</p>
+        <p class="text-[11px] mt-1 {{if eq .SystemStatus "critical"}}text-danger{{else if eq .SystemStatus "warning"}}text-yellow-400{{else if eq .SystemStatus "ok"}}text-green-400/90{{else}}text-text-muted{{end}}">{{.SystemHint}}</p>
+    </div>
+
+    <div class="rounded-lg border px-3 py-2 text-xs {{if eq .ServicesStatus "critical"}}border-danger/50 bg-danger/10 text-danger{{else if eq .ServicesStatus "warning"}}border-yellow-400/50 bg-yellow-400/20 text-yellow-400{{else if eq .ServicesStatus "ok"}}border-green-400/40 bg-green-400/15 text-green-400{{else}}border-border/50 bg-card/50 text-text-muted{{end}}">
+        <p class="uppercase tracking-wider text-[10px] {{if eq .ServicesStatus "critical"}}text-danger{{else if eq .ServicesStatus "warning"}}text-yellow-400{{else if eq .ServicesStatus "ok"}}text-green-400{{else}}text-text-muted{{end}}">Services</p>
+        <p class="text-sm font-semibold mt-0.5">{{if eq .ServicesStatus "critical"}}Action needed{{else if eq .ServicesStatus "warning"}}Degraded{{else if eq .ServicesStatus "ok"}}Healthy{{else}}Unknown{{end}}</p>
+        <p class="text-[11px] mt-1 {{if eq .ServicesStatus "critical"}}text-danger{{else if eq .ServicesStatus "warning"}}text-yellow-400{{else if eq .ServicesStatus "ok"}}text-green-400/90{{else}}text-text-muted{{end}}">{{.ServicesHint}}</p>
+    </div>
+
+    <div class="rounded-lg border px-3 py-2 text-xs {{if .MetricsStale}}border-yellow-500/50 bg-yellow-500/10{{else if .Metrics}}border-green-500/40 bg-green-500/10{{else}}border-border/50 bg-card/50{{end}}">
+        <p class="uppercase tracking-wider text-[10px] {{if .MetricsStale}}text-yellow-400{{else if .Metrics}}text-green-400{{else}}text-text-muted{{end}}">Data Freshness</p>
+        <div class="flex items-center justify-between gap-2 mt-0.5">
+            <span class="text-sm font-semibold {{if .MetricsStale}}text-yellow-400{{else if .Metrics}}text-green-400{{else}}text-text-muted{{end}}">
+                {{if .MetricsStale}}Telemetry delayed{{else if .Metrics}}Live telemetry healthy{{else}}Connecting telemetry{{end}}
+            </span>
+            {{if .Metrics}}
+            <span class="text-[11px] text-text-muted font-mono">age: {{.MetricsAgeSec}}s</span>
+            {{end}}
+        </div>
+        {{if .MetricsStale}}
+        <div class="flex items-center gap-2 mt-2">
+            <button type="button" onclick="window.location.reload()" class="text-[11px] px-2 py-1 rounded border border-yellow-400/40 text-yellow-400 hover:bg-yellow-400/20 transition-colors">
+                Reconnect
+            </button>
+            <a href="/logs" class="text-[11px] px-2 py-1 rounded border border-border/50 text-text-muted hover:text-text hover:bg-card transition-colors">Open logs</a>
+        </div>
+        {{end}}
+    </div>
+</div>
+{{if not .Metrics}}
+<div class="mb-2 rounded-lg border border-border/50 bg-card/50 px-3 py-2 text-xs text-text-muted">
+    Waiting for first telemetry sample...
+</div>
+{{end}}
 {{if .Metrics}}
 <div class="mb-2 rounded-lg border {{if .MetricsStale}}border-yellow-500/50 bg-yellow-500/10{{else}}border-green-500/40 bg-green-500/10{{end}} px-3 py-2 text-xs flex items-center justify-between gap-2">
     <span class="{{if .MetricsStale}}text-yellow-400{{else}}text-green-400{{end}}">
         {{if .MetricsStale}}Telemetry delayed{{else}}Live telemetry healthy{{end}}
     </span>
     <span class="text-text-muted font-mono">last update: {{.MetricsAgeSec}}s ago</span>
-</div>
-{{else}}
-<div class="mb-2 rounded-lg border border-border/50 bg-card/50 px-3 py-2 text-xs text-text-muted">
-    Waiting for first telemetry sample...
 </div>
 {{end}}
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">

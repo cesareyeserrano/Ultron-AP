@@ -106,12 +106,84 @@
             });
         }
 
+        function setFormBusy(form, isBusy) {
+            form.querySelectorAll('button, input, select, textarea').forEach(function(el) {
+                if (el.type === 'hidden') return;
+                el.disabled = isBusy;
+            });
+        }
+
+        function statusTargetFromForm(form) {
+            var selector = form.getAttribute('data-status-target');
+            if (!selector) return null;
+            return document.querySelector(selector);
+        }
+
+        function setStatusMessage(form, html) {
+            var target = statusTargetFromForm(form);
+            if (!target) return;
+            target.innerHTML = html;
+        }
+
+        function setAlertsFeedback(message, isError) {
+            var box = document.getElementById('alerts-feedback');
+            if (!box) return;
+            if (!message) {
+                box.textContent = '';
+                box.classList.add('hidden');
+                return;
+            }
+            box.textContent = message;
+            box.classList.remove('hidden');
+            box.classList.toggle('border-danger/40', !!isError);
+            box.classList.toggle('bg-danger/10', !!isError);
+            box.classList.toggle('text-danger', !!isError);
+            box.classList.toggle('border-border/50', !isError);
+            box.classList.toggle('bg-card/40', !isError);
+            box.classList.toggle('text-text-muted', !isError);
+        }
+
         applyDefaultExpanded(document);
         syncTimelineChips();
 
         document.body.addEventListener('htmx:afterSwap', function(e) {
             applyDefaultExpanded(e.target || document);
             syncTimelineChips();
+            if (e.detail && e.detail.target && e.detail.target.id === 'alerts-list') {
+                setAlertsFeedback('', false);
+            }
+        });
+
+        document.body.addEventListener('htmx:beforeRequest', function(e) {
+            var trigger = e.detail && e.detail.elt;
+            var form = trigger && trigger.closest ? trigger.closest('form') : null;
+            if (form && form.hasAttribute('data-status-target')) {
+                var savingLabel = form.getAttribute('data-saving-label') || 'Saving...';
+                setFormBusy(form, true);
+                setStatusMessage(form, '<div class="text-xs text-text-muted py-2">' + savingLabel + '</div>');
+            }
+            var target = e.detail && e.detail.target;
+            if (target && target.id === 'alerts-list') {
+                setAlertsFeedback('Updating alerts...', false);
+            }
+        });
+
+        document.body.addEventListener('htmx:afterRequest', function(e) {
+            var trigger = e.detail && e.detail.elt;
+            var form = trigger && trigger.closest ? trigger.closest('form') : null;
+            if (!form || !form.hasAttribute('data-status-target')) return;
+
+            setFormBusy(form, false);
+            if (!e.detail.successful) {
+                setStatusMessage(form, '<div class="text-xs text-danger py-2">Request failed. Verify values and retry.</div>');
+            }
+        });
+
+        document.body.addEventListener('htmx:responseError', function(e) {
+            var target = e.detail && e.detail.target;
+            if (target && target.id === 'alerts-list') {
+                setAlertsFeedback('Unable to refresh alerts right now. Retry in a few seconds.', true);
+            }
         });
         
         // Listen for alert-count events from the global SSE connection managed by HTMX

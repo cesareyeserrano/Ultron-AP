@@ -1,6 +1,7 @@
 {{define "content"}}
 <div class="space-y-6">
     <h2 class="sr-only">Alerts</h2>
+    <div id="alerts-feedback" class="hidden rounded-lg border border-danger/40 bg-danger/10 text-danger text-xs px-3 py-2" aria-live="polite"></div>
     <div class="flex flex-wrap items-center justify-between gap-2">
         <p class="text-sm text-text-muted">Active incidents and acknowledgment workflow.</p>
         <div class="flex flex-wrap items-center gap-2">
@@ -11,11 +12,15 @@
                 hx-post="/api/alerts/clear"
                 hx-target="#alerts-list"
                 hx-swap="innerHTML"
+                hx-indicator="#alerts-loading"
                 hx-confirm="Clear alerts list?"
             >
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                 <input type="hidden" name="severity" value="{{.Content.SeverityFilter}}">
-                <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-surface border border-border text-text-muted hover:bg-danger/10 hover:text-danger transition-colors">
+                <button type="submit" class="text-xs px-3 py-1.5 rounded-lg bg-surface border border-border text-text-muted hover:bg-danger/10 hover:text-danger transition-colors inline-flex items-center gap-1.5">
+                    <svg id="alerts-loading" class="w-3.5 h-3.5 animate-spin htmx-indicator" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
                     Clear Alerts
                 </button>
             </form>

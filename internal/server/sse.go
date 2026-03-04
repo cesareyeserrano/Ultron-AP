@@ -21,22 +21,28 @@ import (
 
 // DashboardData holds all data for dashboard rendering.
 type DashboardData struct {
-	Metrics      *metrics.Snapshot
-	MetricsAgeSec int64
-	MetricsStale  bool
-	CPUValues    []float64 // Only what's needed for sparklines
-	RAMValues    []float64
-	TempValues   []float64
-	ChartWindow  string
-	ChartPoints  int
-	ProcessStats map[string]ProcessConsumer
-	Containers   []docker.ContainerInfo
-	DockerAvail  bool
-	Services     []systemd.ServiceInfo
-	SystemdAvail bool
-	Uptime       string
-	Tailscale    TailscaleData
-	Version      string
+	Metrics        *metrics.Snapshot
+	MetricsAgeSec  int64
+	MetricsStale   bool
+	SystemStatus   string
+	SystemHint     string
+	ServicesStatus string
+	ServicesHint   string
+	DataStatus     string
+	DataHint       string
+	CPUValues      []float64 // Only what's needed for sparklines
+	RAMValues      []float64
+	TempValues     []float64
+	ChartWindow    string
+	ChartPoints    int
+	ProcessStats   map[string]ProcessConsumer
+	Containers     []docker.ContainerInfo
+	DockerAvail    bool
+	Services       []systemd.ServiceInfo
+	SystemdAvail   bool
+	Uptime         string
+	Tailscale      TailscaleData
+	Version        string
 }
 
 // TailscaleData is the data passed to the tailscale-peers partial.
@@ -325,10 +331,16 @@ func (s *Server) gatherDashboardData() DashboardData {
 		chartWindow = "5m"
 	}
 	dd := DashboardData{
-		Uptime:      formatUptime(time.Since(s.startedAt)),
-		Version:     Version,
-		ChartWindow: chartWindow,
-		ChartPoints: chartPoints,
+		Uptime:         formatUptime(time.Since(s.startedAt)),
+		Version:        Version,
+		ChartWindow:    chartWindow,
+		ChartPoints:    chartPoints,
+		SystemStatus:   "unknown",
+		SystemHint:     "waiting for telemetry",
+		ServicesStatus: "unknown",
+		ServicesHint:   "service health not loaded",
+		DataStatus:     "unknown",
+		DataHint:       "no sample received",
 	}
 
 	if s.collector != nil {
@@ -344,6 +356,30 @@ func (s *Server) gatherDashboardData() DashboardData {
 				staleThreshold = 20 * time.Second
 			}
 			dd.MetricsStale = age > staleThreshold
+			if dd.MetricsStale {
+				dd.DataStatus = "warning"
+				dd.DataHint = fmt.Sprintf("stale sample (%ds ago)", dd.MetricsAgeSec)
+			} else {
+				dd.DataStatus = "ok"
+				dd.DataHint = fmt.Sprintf("fresh sample (%ds ago)", dd.MetricsAgeSec)
+			}
+			cpu := dd.Metrics.CPU.TotalPercent
+			ram := dd.Metrics.RAM.Percent
+			temp := 0.0
+			if dd.Metrics.Temperature != nil {
+				temp = *dd.Metrics.Temperature
+			}
+			switch {
+			case cpu >= 90 || ram >= 90 || temp >= 80:
+				dd.SystemStatus = "critical"
+				dd.SystemHint = fmt.Sprintf("cpu %.0f%% ram %.0f%% temp %.1f°C", cpu, ram, temp)
+			case cpu >= 75 || ram >= 75 || temp >= 70:
+				dd.SystemStatus = "warning"
+				dd.SystemHint = fmt.Sprintf("elevated load (cpu %.0f%% ram %.0f%%)", cpu, ram)
+			default:
+				dd.SystemStatus = "ok"
+				dd.SystemHint = fmt.Sprintf("nominal (cpu %.0f%% ram %.0f%%)", cpu, ram)
+			}
 		}
 		history := s.collector.History(chartPoints)
 		dd.CPUValues = make([]float64, len(history))
@@ -369,6 +405,33 @@ func (s *Server) gatherDashboardData() DashboardData {
 		dd.SystemdAvail = s.systemd.Available()
 		dd.Services = s.systemd.Services()
 	}
+	if len(dd.Services) == 0 && len(dd.Containers) == 0 {
+		dd.ServicesStatus = "unknown"
+		dd.ServicesHint = "no services or containers discovered"
+	} else {
+		failedServices := 0
+		for _, svc := range dd.Services {
+			if svc.ActiveState == "failed" {
+				failedServices++
+			}
+		}
+		runningContainers := 0
+		for _, c := range dd.Containers {
+			if c.State == "running" {
+				runningContainers++
+			}
+		}
+		if failedServices > 0 {
+			dd.ServicesStatus = "critical"
+			dd.ServicesHint = fmt.Sprintf("%d service(s) failed", failedServices)
+		} else if runningContainers < len(dd.Containers) {
+			dd.ServicesStatus = "warning"
+			dd.ServicesHint = fmt.Sprintf("%d/%d containers running", runningContainers, len(dd.Containers))
+		} else {
+			dd.ServicesStatus = "ok"
+			dd.ServicesHint = fmt.Sprintf("%d services active, %d containers running", countActiveServices(dd.Services), runningContainers)
+		}
+	}
 
 	dd.ProcessStats = collectProcessUsage()
 
@@ -376,6 +439,16 @@ func (s *Server) gatherDashboardData() DashboardData {
 	// and is only loaded on page load / manual refresh.
 
 	return dd
+}
+
+func countActiveServices(services []systemd.ServiceInfo) int {
+	active := 0
+	for _, svc := range services {
+		if svc.ActiveState == "active" {
+			active++
+		}
+	}
+	return active
 }
 
 func clientIPFromRequest(r *http.Request) string {
