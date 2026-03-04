@@ -1,8 +1,0 @@
-{
-  "schemaVersion": 1,
-  "ok": true,
-  "feature": "dashboard-stream-efficiency",
-  "decidedAt": "2026-02-26T17:06:27.407Z",
-  "policyEvidence": "docs/policy/dashboard-stream-efficiency.json",
-  "verificationEvidence": "docs/verification/dashboard-stream-efficiency.json"
-}
