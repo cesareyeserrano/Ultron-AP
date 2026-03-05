@@ -34,7 +34,7 @@
 
 ### TC-5
 - Title: Enforce security control - All state-changing settings actions must require a valid authenticated session, CSRF protection, and same-origin validation, and all rejected dangerous-action attempts must be audit-logged.
-- Trace: US-1, FR-1
+- Trace: US-1, FR-1, AC-2
 - AC: Given threat scenario: all state-changing settings actions must require a valid authenticated session, csrf protection, and same-origin validation, and all rejected dangerous-action attempts must be audit-logged, when an invalid or abusive action is attempted, then access is blocked and evidence is logged.
 
 ## Edge Cases

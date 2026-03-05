@@ -14,7 +14,8 @@
       "brief": "docs/implementation/settings-page-ui-improvements/US-2.md",
       "scaffoldFiles": [
         "tests/settings-page-ui-improvements/generated/tc-2-validate-us-2-primary-behavior.test.mjs",
-        "src/contracts/fr-2-the-system-must-protect-dangerou.js"
+        "src/contracts/fr-2-the-system-must-protect-dangerou.js",
+        "internal/server/handlers_system.go"
       ],
       "verified": true
     },
@@ -34,7 +35,8 @@
         "tests/settings-page-ui-improvements/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
         "tests/settings-page-ui-improvements/generated/tc-4-handle-edge-behavior-on-small-mobile.test.mjs",
         "tests/settings-page-ui-improvements/generated/tc-5-enforce-security-control-all-state-c.test.mjs",
-        "src/contracts/fr-1-the-system-must-provide-a-comple.js"
+        "src/contracts/fr-1-the-system-must-provide-a-comple.js",
+        "web/templates/settings.html"
       ],
       "verified": true
     }

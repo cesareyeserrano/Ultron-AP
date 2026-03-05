@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "settings-page-ui-improvements",
+  "command": "node --test tests/normalization/generated/tc-1-validate-us-1-primary-behavior.test.mjs",
+  "commandSource": "node:test:file",
+  "exitCode": 0,
+  "durationMs": 50,
+  "timeoutMs": 120000,
+  "startedAt": "2026-03-04T23:45:51.014Z",
+  "finishedAt": "2026-03-04T23:45:51.065Z",
+  "stdoutTail": "✔ tc_1_validate_us_1_primary_behavior (0.252542ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 29.505625",
+  "stderrTail": "",
+  "reason": "passed",
+  "tcCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 5,
+    "executable": 5,
+    "passing": 5,
+    "failing": 0,
+    "missing": 0,
+    "mapped": {
+      "TC-1": {
+        "found": true,
+        "file": "tests/settings-page-ui-improvements/generated/tc-1-validate-us-1-primary-behavior.test.mjs"
+      },
+      "TC-2": {
+        "found": true,
+        "file": "tests/settings-page-ui-improvements/generated/tc-2-validate-us-2-primary-behavior.test.mjs"
+      },
+      "TC-3": {
+        "found": true,
+        "file": "tests/settings-page-ui-improvements/generated/tc-3-validate-us-3-primary-behavior.test.mjs"
+      },
+      "TC-4": {
+        "found": true,
+        "file": "tests/settings-page-ui-improvements/generated/tc-4-handle-edge-behavior-on-small-mobile.test.mjs"
+      },
+      "TC-5": {
+        "found": true,
+        "file": "tests/settings-page-ui-improvements/generated/tc-5-enforce-security-control-all-state-c.test.mjs"
+      }
+    }
+  },
+  "frCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 3,
+    "covered": 3,
+    "uncovered": []
+  },
+  "usCoverage": {
+    "available": true,
+    "mode": "scaffold",
+    "declared": 3,
+    "fullyVerified": [
+      "US-1",
+      "US-2",
+      "US-3"
+    ],
+    "partial": [],
+    "unverified": []
+  },
+  "coverageConfidence": {
+    "score": 100,
+    "ratio": 1,
+    "mode": "scaffold"
+  },
+  "evidenceFile": "docs/verification/settings-page-ui-improvements.json"
+}

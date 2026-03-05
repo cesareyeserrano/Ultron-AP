@@ -1,0 +1,16 @@
+{
+  "feature": "settings-page-ui-improvements",
+  "entries": [
+    {
+      "id": "FB-1",
+      "addedAt": "2026-03-05T00:29:56.705Z",
+      "source": "user-testing",
+      "linkedRef": "US-1, FR-1",
+      "category": "improvement",
+      "description": "verify --feature no siempre ejecuta tests aislados por feature y puede reportar cobertura completa con comando de otro feature; ademas el flujo no detecto que habia US de UI no reflejadas en implementacion visible.",
+      "severity": "high",
+      "resolution": null,
+      "resolvedAt": null
+    }
+  ]
+}

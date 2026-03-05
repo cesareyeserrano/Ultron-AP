@@ -24,6 +24,9 @@ func (s *Server) handleSystemRestart(w http.ResponseWriter, r *http.Request) {
 	if !s.validateCSRF(w, r) {
 		return
 	}
+	if !s.validateDangerousAction(w, r, "restart") {
+		return
+	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -46,9 +49,7 @@ func (s *Server) handleSystemShutdown(w http.ResponseWriter, r *http.Request) {
 	if !s.validateCSRF(w, r) {
 		return
 	}
-
-	if r.FormValue("confirm") != "shutdown" {
-		http.Error(w, "confirmation required", http.StatusBadRequest)
+	if !s.validateDangerousAction(w, r, "shutdown") {
 		return
 	}
 
@@ -67,6 +68,30 @@ func (s *Server) handleSystemShutdown(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprint(w, `<span class="text-text-muted text-xs">Shutting down...</span>`)
+}
+
+func (s *Server) validateDangerousAction(w http.ResponseWriter, r *http.Request, action string) bool {
+	action = strings.ToLower(strings.TrimSpace(action))
+	formAction := strings.ToLower(strings.TrimSpace(r.FormValue("confirm_action")))
+	confirmWord := strings.ToLower(strings.TrimSpace(r.FormValue("confirm_word")))
+	countdownAck := strings.TrimSpace(r.FormValue("countdown_ack"))
+
+	if formAction != action {
+		s.auditLog(r, "security", "danger_action_reject", r.URL.Path, "action mismatch", false)
+		http.Error(w, "invalid dangerous action", http.StatusBadRequest)
+		return false
+	}
+	if confirmWord != action {
+		s.auditLog(r, "security", "danger_action_reject", r.URL.Path, "confirmation word mismatch", false)
+		http.Error(w, "confirmation word required", http.StatusBadRequest)
+		return false
+	}
+	if countdownAck != "1" {
+		s.auditLog(r, "security", "danger_action_reject", r.URL.Path, "countdown not acknowledged", false)
+		http.Error(w, "countdown confirmation required", http.StatusBadRequest)
+		return false
+	}
+	return true
 }
 
 func (s *Server) handleLogsPage(w http.ResponseWriter, r *http.Request) {

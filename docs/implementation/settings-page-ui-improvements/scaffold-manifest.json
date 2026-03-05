@@ -9,7 +9,9 @@
   "interfaceFiles": [
     "src/contracts/fr-2-the-system-must-protect-dangerou.js",
     "src/contracts/fr-3-the-system-must-use-existing-ult.js",
-    "src/contracts/fr-1-the-system-must-provide-a-comple.js"
+    "src/contracts/fr-1-the-system-must-provide-a-comple.js",
+    "internal/server/handlers_system.go",
+    "web/templates/settings.html"
   ],
   "baseConfigs": [],
   "feature": "settings-page-ui-improvements",

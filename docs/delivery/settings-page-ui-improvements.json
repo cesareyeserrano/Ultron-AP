@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "feature": "settings-page-ui-improvements",
+  "decision": "SHIP",
+  "generatedAt": "2026-03-04T23:12:48.232Z",
+  "confidence": {
+    "score": 0.73,
+    "threshold": 0.7,
+    "pass": true
+  },
+  "tcSummary": {
+    "declared": 5,
+    "executable": 5,
+    "passing": 5,
+    "failing": 0,
+    "missing": 0
+  },
+  "frMatrix": [
+    {
+      "frId": "FR-1",
+      "tc": [
+        "TC-1",
+        "TC-4",
+        "TC-5"
+      ],
+      "passingTc": [
+        "TC-1",
+        "TC-4",
+        "TC-5"
+      ],
+      "covered": true
+    },
+    {
+      "frId": "FR-2",
+      "tc": [
+        "TC-2"
+      ],
+      "passingTc": [
+        "TC-2"
+      ],
+      "covered": true
+    },
+    {
+      "frId": "FR-3",
+      "tc": [
+        "TC-3"
+      ],
+      "passingTc": [
+        "TC-3"
+      ],
+      "covered": true
+    }
+  ],
+  "acMatrix": [
+    {
+      "acId": "AC-1",
+      "tc": [
+        "TC-1"
+      ],
+      "passingTc": [
+        "TC-1"
+      ],
+      "covered": true
+    },
+    {
+      "acId": "AC-2",
+      "tc": [
+        "TC-5"
+      ],
+      "passingTc": [
+        "TC-5"
+      ],
+      "covered": true
+    },
+    {
+      "acId": "AC-3",
+      "tc": [
+        "TC-2",
+        "TC-3"
+      ],
+      "passingTc": [
+        "TC-2",
+        "TC-3"
+      ],
+      "covered": true
+    }
+  ],
+  "uiRefValidation": [],
+  "blockers": [],
+  "warnings": [],
+  "timeline": {
+    "go": "2026-03-04T22:56:36.030Z",
+    "scaffold": "2026-03-04T22:57:12.505Z",
+    "implement": "2026-03-04T22:57:12.505Z",
+    "verify": "2026-03-04T22:58:30.964Z"
+  },
+  "evidence": {
+    "verification": "docs/verification/settings-page-ui-improvements.json",
+    "scaffold": "docs/implementation/settings-page-ui-improvements/scaffold-manifest.json",
+    "implement": "docs/implementation/settings-page-ui-improvements/implement-manifest.json",
+    "go": "docs/implementation/settings-page-ui-improvements/go.json"
+  },
+  "releaseTag": "aitri-release/settings-page-ui-improvements-2026-03-04T23-12-48",
+  "releaseTagError": null
+}

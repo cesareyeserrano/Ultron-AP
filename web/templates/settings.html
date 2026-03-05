@@ -1,54 +1,67 @@
 {{define "content"}}
-<div class="space-y-6">
-    <section class="panel-soft panel-glow p-5 md:p-6">
-        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div class="space-y-2">
-                <h2 class="text-lg font-semibold text-text">Settings Control Center</h2>
-                <p class="text-sm text-text-muted max-w-2xl">Administra reglas de alerta, notificaciones, rendimiento, backup y controles críticos del dispositivo desde un flujo unificado.</p>
+<div id="settings-shell" class="space-y-4">
+    <section class="panel-soft p-4 md:p-5">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-text">Settings</h2>
+                <p class="text-xs text-text-muted">Compact control surface for alerts, notifications, performance, backups, and system actions.</p>
             </div>
-            <div class="grid grid-cols-2 gap-2 text-xs text-text-muted min-w-[180px]">
-                <div class="bg-card/40 border border-border/40 rounded px-2 py-1.5">Alert Rules</div>
-                <div class="bg-card/40 border border-border/40 rounded px-2 py-1.5">Notifications</div>
-                <div class="bg-card/40 border border-border/40 rounded px-2 py-1.5">Performance</div>
-                <div class="bg-card/40 border border-border/40 rounded px-2 py-1.5">Backup</div>
+            <div class="grid grid-cols-2 gap-2 text-[11px] text-text-muted min-w-[200px]">
+                <div class="rounded border border-border/40 bg-card/30 px-2 py-1">Runtime</div>
+                <div class="rounded border border-border/40 bg-card/30 px-2 py-1">Notifications</div>
+                <div class="rounded border border-border/40 bg-card/30 px-2 py-1">Backup</div>
+                <div class="rounded border border-border/40 bg-card/30 px-2 py-1">Control</div>
             </div>
         </div>
     </section>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4 lg:gap-6">
-        <aside class="lg:sticky lg:top-4 lg:self-start">
-            <nav class="panel-soft p-3 space-y-1" aria-label="Settings sections">
-                <a href="#settings-alerts" class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Alert Rules</a>
-                <a href="#settings-telegram" class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Telegram</a>
-                <a href="#settings-email" class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Email</a>
-                <a href="#settings-performance" class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Performance</a>
-                <a href="#settings-backup" class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Backup</a>
-                <a href="#settings-maintenance" class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Maintenance</a>
-                <a href="#settings-controls" class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">System Controls</a>
+    <div class="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
+        <aside class="lg:sticky lg:top-4 lg:self-start space-y-3">
+            <nav class="panel-soft p-2 space-y-1" aria-label="Settings sections">
+                <a href="#settings-alerts" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Alert Rules</a>
+                <a href="#settings-telegram" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Telegram</a>
+                <a href="#settings-email" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Email</a>
+                <a href="#settings-performance" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Performance</a>
+                <a href="#settings-backup" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Backup</a>
+                <a href="#settings-maintenance" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Maintenance</a>
+                <a href="#settings-controls" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">System Controls</a>
             </nav>
+            <div class="panel-soft p-3 space-y-1.5 text-xs">
+                <p class="text-text-muted uppercase tracking-wider text-[10px]">Navigation</p>
+                <p id="settings-progress-copy" class="text-text-muted">7 sections available</p>
+                <p id="settings-active-copy" class="text-text">Current: Alert Rules</p>
+            </div>
         </aside>
 
-        <div class="space-y-6">
-            <section id="settings-alerts" class="panel-soft p-4 md:p-5 space-y-4">
-                <div class="space-y-1">
+        <div class="space-y-4">
+            <section id="settings-alerts" data-settings-section class="panel-soft p-4 space-y-3">
+                <div class="flex items-center gap-2">
                     <h3 class="text-sm font-semibold text-text">Alert Rules</h3>
-                    <p class="text-xs text-text-muted">Define thresholds and severity for runtime events.</p>
+                    <span data-form-state-pill="alerts-rule" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
+                <p class="text-xs text-text-muted">Define runtime thresholds and severity behavior.</p>
 
                 <div id="rules-table">
                     {{template "alert-rules-table" dict "Rules" .Content.Rules "CSRFToken" .CSRFToken}}
                 </div>
 
-                <div class="bg-card/30 rounded-lg border border-border/40 p-4">
-                    <h4 class="text-sm font-medium text-text mb-3">Add Rule</h4>
-                    <form hx-post="/api/alerts/rules" hx-target="#rules-table" hx-swap="innerHTML" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                <div class="rounded-lg border border-border/40 bg-card/25 p-3">
+                    <form
+                        hx-post="/api/alerts/rules"
+                        hx-target="#rules-table"
+                        hx-swap="innerHTML"
+                        data-status-target="#alerts-rule-status"
+                        data-saving-label="Saving alert rule..."
+                        data-settings-form="alerts-rule"
+                        class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2"
+                    >
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                        <div>
-                            <label class="text-xs text-text-muted">Name</label>
-                            <input type="text" name="name" placeholder="e.g. High CPU" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                        <div class="xl:col-span-2">
+                            <label class="text-[11px] text-text-muted">Name</label>
+                            <input type="text" name="name" placeholder="High CPU" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">Metric</label>
+                            <label class="text-[11px] text-text-muted">Metric</label>
                             <select name="metric" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                                 <option value="cpu">CPU</option>
                                 <option value="ram">RAM</option>
@@ -57,7 +70,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">Operator</label>
+                            <label class="text-[11px] text-text-muted">Operator</label>
                             <select name="operator" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                                 <option value=">">&gt;</option>
                                 <option value=">=">&gt;=</option>
@@ -67,11 +80,11 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">Threshold</label>
+                            <label class="text-[11px] text-text-muted">Threshold</label>
                             <input type="number" name="threshold" step="0.1" min="0" required class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">Severity</label>
+                            <label class="text-[11px] text-text-muted">Severity</label>
                             <select name="severity" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                                 <option value="critical">Critical</option>
                                 <option value="warning">Warning</option>
@@ -79,193 +92,178 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">Cooldown (min)</label>
+                            <label class="text-[11px] text-text-muted">Cooldown (min)</label>
                             <input type="number" name="cooldown" value="15" min="0" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
-                        <div class="sm:col-span-2 xl:col-span-2 flex items-end">
-                            <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Add Rule</button>
+                        <div class="sm:col-span-2 xl:col-span-2 flex items-end gap-2">
+                            <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Add Rule</button>
+                            <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
                         </div>
                     </form>
+                    <div id="alerts-rule-status" class="min-h-[2rem]" aria-live="polite"></div>
                 </div>
             </section>
 
-            <section id="settings-telegram" class="panel-soft p-4 md:p-5 space-y-3">
-                <div class="space-y-1">
-                    <h3 class="text-sm font-semibold text-text">Telegram Notifications</h3>
-                    <p class="text-xs text-text-muted">Configure bot token and target chat for alerts.</p>
+            <section id="settings-telegram" data-settings-section class="panel-soft p-4 space-y-3">
+                <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-semibold text-text">Telegram</h3>
+                    <span data-form-state-pill="telegram" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
-                <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" data-status-target="#telegram-status" data-saving-label="Saving Telegram settings..." class="space-y-3">
+                <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" data-status-target="#telegram-status" data-saving-label="Saving Telegram settings..." data-settings-form="telegram" class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
-                            <label class="text-xs text-text-muted">Bot Token</label>
-                            <input type="password" name="bot_token" placeholder="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "bot_token"}}{{else}}Enter bot token{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <label class="text-[11px] text-text-muted">Bot Token</label>
+                            <input type="password" name="bot_token" placeholder="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "bot_token"}}{{else}}Bot token{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">Chat ID</label>
+                            <label class="text-[11px] text-text-muted">Chat ID</label>
                             <input type="text" name="chat_id" value="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "chat_id"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <label class="flex items-center gap-2 text-sm text-text">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label class="flex items-center gap-2 text-xs text-text">
                             <input type="checkbox" name="enabled" {{if and .Content.Telegram .Content.Telegram.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
                             Enabled
                         </label>
-                        <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
-                        <button type="button"
-                            hx-post="/api/notifications/telegram/test"
-                            hx-target="#telegram-status"
-                            hx-include="[name='csrf_token']"
-                            class="px-4 py-1.5 text-sm border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
+                        <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                        <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
+                        <button type="button" hx-post="/api/notifications/telegram/test" hx-target="#telegram-status" hx-include="[name='csrf_token']" data-settings-ignore-state="true" class="px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
                     </div>
-                    <div id="telegram-status" class="min-h-[2.5rem]" aria-live="polite"></div>
+                    <div id="telegram-status" class="min-h-[2rem]" aria-live="polite"></div>
                 </form>
             </section>
 
-            <section id="settings-email" class="panel-soft p-4 md:p-5 space-y-3">
-                <div class="space-y-1">
-                    <h3 class="text-sm font-semibold text-text">Email Notifications</h3>
-                    <p class="text-xs text-text-muted">SMTP delivery configuration for fallback and summaries.</p>
+            <section id="settings-email" data-settings-section class="panel-soft p-4 space-y-3">
+                <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-semibold text-text">Email</h3>
+                    <span data-form-state-pill="email" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
-                <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" data-status-target="#email-status" data-saving-label="Saving email settings..." class="space-y-3">
+                <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" data-status-target="#email-status" data-saving-label="Saving email settings..." data-settings-form="email" class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div>
-                            <label class="text-xs text-text-muted">SMTP Host</label>
+                            <label class="text-[11px] text-text-muted">SMTP Host</label>
                             <input type="text" name="smtp_host" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_host"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">SMTP Port</label>
+                            <label class="text-[11px] text-text-muted">SMTP Port</label>
                             <input type="text" name="smtp_port" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_port"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">SMTP User</label>
+                            <label class="text-[11px] text-text-muted">SMTP User</label>
                             <input type="text" name="smtp_user" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_user"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">SMTP Password</label>
-                            <input type="password" name="smtp_password" placeholder="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_password"}}{{else}}Enter password{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <label class="text-[11px] text-text-muted">SMTP Password</label>
+                            <input type="password" name="smtp_password" placeholder="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_password"}}{{else}}Password{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">From</label>
+                            <label class="text-[11px] text-text-muted">From</label>
                             <input type="email" name="from" value="{{if .Content.Email}}{{index .Content.Email.Fields "from"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted">To</label>
+                            <label class="text-[11px] text-text-muted">To</label>
                             <input type="email" name="to" value="{{if .Content.Email}}{{index .Content.Email.Fields "to"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <label class="flex items-center gap-2 text-sm text-text">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label class="flex items-center gap-2 text-xs text-text">
                             <input type="checkbox" name="enabled" {{if and .Content.Email .Content.Email.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
                             Enabled
                         </label>
-                        <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
-                        <button type="button"
-                            hx-post="/api/notifications/email/test"
-                            hx-target="#email-status"
-                            hx-include="[name='csrf_token']"
-                            class="px-4 py-1.5 text-sm border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
+                        <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                        <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
+                        <button type="button" hx-post="/api/notifications/email/test" hx-target="#email-status" hx-include="[name='csrf_token']" data-settings-ignore-state="true" class="px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
                     </div>
-                    <div id="email-status" class="min-h-[2.5rem]" aria-live="polite"></div>
+                    <div id="email-status" class="min-h-[2rem]" aria-live="polite"></div>
                 </form>
             </section>
 
-            <section id="settings-performance" class="panel-soft p-4 md:p-5 space-y-3">
-                <div class="space-y-1">
+            <section id="settings-performance" data-settings-section class="panel-soft p-4 space-y-3">
+                <div class="flex items-center gap-2">
                     <h3 class="text-sm font-semibold text-text">Performance</h3>
-                    <p class="text-xs text-text-muted">Tune refresh intervals to balance responsiveness and resource use.</p>
+                    <span data-form-state-pill="performance" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
-                <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" data-status-target="#perf-status" data-saving-label="Applying performance profile..." class="space-y-4">
+                <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" data-status-target="#perf-status" data-saving-label="Applying performance profile..." data-settings-form="performance" class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Dashboard refresh</label>
-                            <div class="flex items-center gap-2">
+                            <label class="text-[11px] text-text-muted">Dashboard refresh</label>
+                            <div class="flex items-center gap-2 mt-1">
                                 <input type="number" name="sse_interval_sec" value="{{.Content.Perf.SSEIntervalSec}}" min="2" max="60" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">sec</span>
+                                <span class="text-[11px] text-text-muted">sec</span>
                             </div>
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Disk check</label>
-                            <div class="flex items-center gap-2">
+                            <label class="text-[11px] text-text-muted">Disk check</label>
+                            <div class="flex items-center gap-2 mt-1">
                                 <input type="number" name="disk_interval_min" value="{{.Content.Perf.DiskIntervalMin}}" min="1" max="1440" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">min</span>
+                                <span class="text-[11px] text-text-muted">min</span>
                             </div>
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Docker refresh</label>
-                            <div class="flex items-center gap-2">
+                            <label class="text-[11px] text-text-muted">Docker refresh</label>
+                            <div class="flex items-center gap-2 mt-1">
                                 <input type="number" name="docker_interval_sec" value="{{.Content.Perf.DockerIntervalSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">sec</span>
+                                <span class="text-[11px] text-text-muted">sec</span>
                             </div>
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Services refresh</label>
-                            <div class="flex items-center gap-2">
+                            <label class="text-[11px] text-text-muted">Services refresh</label>
+                            <div class="flex items-center gap-2 mt-1">
                                 <input type="number" name="systemd_interval_sec" value="{{.Content.Perf.SystemdIntervalSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">sec</span>
+                                <span class="text-[11px] text-text-muted">sec</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                    <div class="flex items-center gap-2">
+                        <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                        <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
                     </div>
-                    <div id="perf-status" aria-live="polite"></div>
+                    <div id="perf-status" class="min-h-[2rem]" aria-live="polite"></div>
                 </form>
             </section>
 
-            <section id="settings-backup" class="panel-soft p-4 md:p-5 space-y-3">
-                <div class="space-y-1">
-                    <h3 class="text-sm font-semibold text-text">Backup Module</h3>
-                    <p class="text-xs text-text-muted">Schedule, retention and destination policy for data protection.</p>
+            <section id="settings-backup" data-settings-section class="panel-soft p-4 space-y-3">
+                <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-semibold text-text">Backup</h3>
+                    <span data-form-state-pill="backup" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
-                <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." class="space-y-4">
+                <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." data-settings-form="backup" class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <label class="flex items-center gap-2 text-sm text-text">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                        <label class="flex items-center gap-2 text-xs text-text">
                             <input type="checkbox" name="enabled" {{if .Content.Backup.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
                             Backup enabled
                         </label>
-                        <label class="flex items-center gap-2 text-sm text-text">
+                        <label class="flex items-center gap-2 text-xs text-text">
                             <input type="checkbox" name="encrypt_enabled" {{if .Content.Backup.EncryptEnabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
                             Encrypt artifact
                         </label>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Interval</label>
-                            <div class="flex items-center gap-2">
-                                <input type="number" name="interval_hours" value="{{.Content.Backup.IntervalHours}}" min="1" max="720" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">hrs</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">Interval (hours)</label>
+                            <input type="number" name="interval_hours" value="{{.Content.Backup.IntervalHours}}" min="1" max="720" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Retention</label>
-                            <div class="flex items-center gap-2">
-                                <input type="number" name="retention_count" value="{{.Content.Backup.RetentionCount}}" min="1" max="200" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">files</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">Retention (files)</label>
+                            <input type="number" name="retention_count" value="{{.Content.Backup.RetentionCount}}" min="1" max="200" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Upload timeout</label>
-                            <div class="flex items-center gap-2">
-                                <input type="number" name="upload_timeout_sec" value="{{.Content.Backup.UploadTimeoutSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">sec</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">Upload timeout (sec)</label>
+                            <input type="number" name="upload_timeout_sec" value="{{.Content.Backup.UploadTimeoutSec}}" min="5" max="300" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Max upload size</label>
-                            <div class="flex items-center gap-2">
-                                <input type="number" name="max_upload_size_mb" value="{{.Content.Backup.MaxUploadSizeMB}}" min="1" max="1024" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">MB</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">Max size (MB)</label>
+                            <input type="number" name="max_upload_size_mb" value="{{.Content.Backup.MaxUploadSizeMB}}" min="1" max="1024" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Schedule cadence</label>
-                            <select name="schedule_mode" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <label class="text-[11px] text-text-muted">Schedule cadence</label>
+                            <select name="schedule_mode" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                                 <option value="interval" {{if eq .Content.Backup.ScheduleMode "interval"}}selected{{end}}>By interval (hours)</option>
                                 <option value="daily" {{if eq .Content.Backup.ScheduleMode "daily"}}selected{{end}}>Daily</option>
                                 <option value="weekly" {{if eq .Content.Backup.ScheduleMode "weekly"}}selected{{end}}>Weekly</option>
@@ -273,141 +271,437 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Schedule hour</label>
-                            <div class="flex items-center gap-2">
-                                <input type="number" name="schedule_hour" value="{{.Content.Backup.ScheduleHour}}" min="0" max="23" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">0-23</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">Schedule hour</label>
+                            <input type="number" name="schedule_hour" value="{{.Content.Backup.ScheduleHour}}" min="0" max="23" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Schedule minute</label>
-                            <div class="flex items-center gap-2">
-                                <input type="number" name="schedule_minute" value="{{.Content.Backup.ScheduleMinute}}" min="0" max="59" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
-                                <span class="text-xs text-text-muted shrink-0">0-59</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">Schedule minute</label>
+                            <input type="number" name="schedule_minute" value="{{.Content.Backup.ScheduleMinute}}" min="0" max="59" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Destination mode</label>
-                            <select name="destination_mode" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <label class="text-[11px] text-text-muted">Destination mode</label>
+                            <select name="destination_mode" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                                 <option value="local_only" {{if eq .Content.Backup.DestinationMode "local_only"}}selected{{end}}>Local only</option>
                                 <option value="local_plus_telegram" {{if eq .Content.Backup.DestinationMode "local_plus_telegram"}}selected{{end}}>Local + Telegram</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs text-text-muted block mb-1">Local backup path (optional)</label>
-                            <input type="text" name="local_path" value="{{.Content.Backup.LocalPath}}" placeholder="/var/lib/ultron-ap/backups" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <label class="text-[11px] text-text-muted">Local path (optional)</label>
+                            <input type="text" name="local_path" value="{{.Content.Backup.LocalPath}}" placeholder="/var/lib/ultron-ap/backups" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                         <div class="md:col-span-2">
-                            <label class="text-xs text-text-muted block mb-1">Encryption key reference (optional)</label>
-                            <input type="text" name="encryption_key_ref" value="{{.Content.Backup.EncryptionKeyRef}}" placeholder="env:ULTRON_BACKUP_KEY or kms://..." class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <label class="text-[11px] text-text-muted">Encryption key reference</label>
+                            <input type="text" name="encryption_key_ref" value="{{.Content.Backup.EncryptionKeyRef}}" placeholder="env:ULTRON_BACKUP_KEY or kms://..." class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <button type="submit" class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity">Save Backup Settings</button>
+                    <div class="flex items-center gap-2">
+                        <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                        <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
                     </div>
-                    <div id="backup-config-status" aria-live="polite"></div>
+                    <div id="backup-config-status" class="min-h-[2rem]" aria-live="polite"></div>
                 </form>
             </section>
 
-            <section id="settings-maintenance" class="panel-soft p-4 md:p-5 space-y-3">
-                <div class="space-y-1">
-                    <h3 class="text-sm font-semibold text-text">System Maintenance</h3>
-                    <p class="text-xs text-text-muted">Run manual backup/export tasks on demand.</p>
-                </div>
-                <div class="bg-card/30 rounded-lg border border-border/40 p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <section id="settings-maintenance" data-settings-section class="panel-soft p-4 space-y-3">
+                <h3 class="text-sm font-semibold text-text">Maintenance</h3>
+                <div class="rounded-lg border border-border/40 bg-card/25 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
-                        <h4 class="text-sm font-medium text-text">Database Backup</h4>
-                        <p class="text-xs text-text-muted mt-1">Download a consistent copy of the Ultron-AP SQLite database.</p>
+                        <p class="text-xs text-text">Database backup export</p>
+                        <p class="text-[11px] text-text-muted">Download snapshot or send backup to Telegram.</p>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex flex-wrap gap-2">
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                        <a href="/api/settings/backup" class="px-4 py-1.5 text-sm bg-surface border border-border text-text rounded hover:bg-card transition-colors flex items-center gap-2">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Download .db
-                        </a>
-                        <button hx-post="/api/settings/backup/run"
-                                hx-swap="none"
-                                hx-include="next [name='csrf_token'], previous [name='csrf_token'], [name='csrf_token']"
-                                hx-indicator="#backup-spinner"
-                                class="px-4 py-1.5 text-sm bg-accent text-base rounded hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50">
-                            <svg id="backup-spinner" class="w-4 h-4 animate-spin htmx-indicator" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                            </svg>
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                        <a href="/api/settings/backup" class="px-3 py-1.5 text-xs bg-surface border border-border text-text rounded hover:bg-card transition-colors">Download .db</a>
+                        <button hx-post="/api/settings/backup/run" hx-swap="none" hx-include="next [name='csrf_token'], previous [name='csrf_token'], [name='csrf_token']" hx-indicator="#backup-spinner" class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity inline-flex items-center gap-2">
+                            <svg id="backup-spinner" class="w-3.5 h-3.5 animate-spin htmx-indicator" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                             Backup & Send
                         </button>
                     </div>
                 </div>
             </section>
 
-            <section id="settings-controls" class="panel-soft p-4 md:p-5 space-y-4">
-                <div class="space-y-1">
-                    <h3 class="text-sm font-semibold text-text">System Controls</h3>
-                    <p class="text-xs text-text-muted">Session, device power actions and data cleanup controls.</p>
-                </div>
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-3">
-                    <form method="POST" action="/logout" class="bg-card/30 rounded-lg border border-border/40 p-3 flex items-center justify-between">
+            <section id="settings-controls" data-settings-section class="panel-soft p-4 space-y-3">
+                <h3 class="text-sm font-semibold text-text">System Controls</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-2">
+                    <form method="POST" action="/logout" class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                         <div>
-                            <p class="text-sm font-medium text-text">Logout Session</p>
-                            <p class="text-xs text-text-muted">Close current admin session.</p>
+                            <p class="text-xs text-text">Logout</p>
+                            <p class="text-[11px] text-text-muted">Close admin session.</p>
                         </div>
-                        <button type="submit" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors inline-flex items-center gap-1.5">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                            Logout
-                        </button>
+                        <button type="submit" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors">Run</button>
                     </form>
 
-                    <form hx-post="/api/system/restart" hx-target="#system-action-status" hx-swap="innerHTML" data-status-target="#system-action-status" data-saving-label="Dispatching restart action..." class="bg-card/30 rounded-lg border border-border/40 p-3 flex items-center justify-between" onsubmit="return confirm('Restart Raspberry Pi now?');">
-                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    <article class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
                         <div>
-                            <p class="text-sm font-medium text-text">Restart Device</p>
-                            <p class="text-xs text-text-muted">Reboot the Raspberry Pi.</p>
+                            <p class="text-xs text-text">Restart device</p>
+                            <p class="text-[11px] text-text-muted">Requires typed confirmation and countdown.</p>
                         </div>
-                        <button type="submit" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors inline-flex items-center gap-1.5">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 3 3 8 8 8"/></svg>
-                            Restart
-                        </button>
-                    </form>
+                        <button type="button" data-danger-open data-danger-action="restart" data-danger-word="restart" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors">Run</button>
+                    </article>
 
-                    <form hx-post="/api/system/shutdown" hx-target="#system-action-status" hx-swap="innerHTML" data-status-target="#system-action-status" data-saving-label="Dispatching shutdown action..." class="bg-card/30 rounded-lg border border-border/40 p-3 flex items-center justify-between" onsubmit="return confirm('Shutdown Raspberry Pi now?');">
-                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                        <input type="hidden" name="confirm" value="shutdown">
+                    <article class="rounded border border-danger/30 bg-danger/5 p-3 flex items-center justify-between gap-2">
                         <div>
-                            <p class="text-sm font-medium text-text">Shutdown Device</p>
-                            <p class="text-xs text-text-muted">Power off the Raspberry Pi.</p>
+                            <p class="text-xs text-text">Shutdown device</p>
+                            <p class="text-[11px] text-text-muted">Requires typed confirmation and countdown.</p>
                         </div>
-                        <button type="submit" class="px-3 py-1.5 text-xs rounded bg-danger/20 border border-danger/30 text-danger hover:bg-danger/30 transition-colors inline-flex items-center gap-1.5">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>
-                            Shutdown
-                        </button>
-                    </form>
+                        <button type="button" data-danger-open data-danger-action="shutdown" data-danger-word="shutdown" class="px-3 py-1.5 text-xs rounded bg-danger/20 border border-danger/30 text-danger hover:bg-danger/30 transition-colors">Run</button>
+                    </article>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <form hx-post="/api/alerts/clear" hx-swap="none" onsubmit="return confirm('Clear all alerts?');" class="bg-card/30 rounded-lg border border-border/40 p-3 flex items-center justify-between">
-                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <div id="danger-action-guard" class="hidden rounded-lg border border-danger/40 bg-danger/10 p-3 space-y-3" aria-live="polite">
+                    <div class="flex items-start justify-between gap-3">
                         <div>
-                            <p class="text-sm font-medium text-text">Clear Alerts</p>
-                            <p class="text-xs text-text-muted">Remove all alert entries.</p>
+                            <p class="text-xs font-semibold text-danger">Protected action gate</p>
+                            <p id="danger-action-copy" class="text-[11px] text-text-muted mt-1">Type the confirmation word to continue.</p>
                         </div>
-                        <button type="submit" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors">Clear</button>
-                    </form>
+                        <button type="button" data-danger-cancel class="text-[11px] px-2 py-1 rounded border border-border/50 text-text-muted hover:text-text hover:bg-card transition-colors">Cancel</button>
+                    </div>
 
-                    <form hx-post="/api/history/clear" hx-swap="none" onsubmit="return confirm('Clear all history logs?');" class="bg-card/30 rounded-lg border border-border/40 p-3 flex items-center justify-between">
+                    <form id="danger-action-form" hx-post="/api/system/restart" hx-target="#system-action-status" hx-swap="innerHTML" class="space-y-3">
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                        <input type="hidden" name="confirm_action" value="">
+                        <input type="hidden" name="countdown_ack" value="0">
                         <div>
-                            <p class="text-sm font-medium text-text">Clear History</p>
-                            <p class="text-xs text-text-muted">Remove all action log records.</p>
+                            <label for="danger-confirm-word" class="text-[11px] text-text-muted">Confirmation word</label>
+                            <input id="danger-confirm-word" type="text" name="confirm_word" autocomplete="off" placeholder="Type word here" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <p id="danger-confirm-hint" class="text-[11px] text-text-muted mt-1">Type the word exactly.</p>
                         </div>
-                        <button type="submit" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors">Clear</button>
+                        <div class="space-y-1">
+                            <div class="h-2 rounded bg-card/40 overflow-hidden">
+                                <div id="danger-countdown-bar" class="h-2 bg-danger/50 transition-all duration-200" style="width:0%"></div>
+                            </div>
+                            <p id="danger-countdown-copy" class="text-[11px] text-text-muted">Countdown not started.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="danger-action-submit" type="submit" disabled class="px-3 py-1.5 text-xs rounded bg-danger/20 border border-danger/40 text-danger disabled:opacity-40 disabled:cursor-not-allowed">Execute</button>
+                            <button type="button" data-danger-cancel class="px-3 py-1.5 text-xs rounded border border-border/50 text-text-muted hover:text-text hover:bg-card transition-colors">Cancel</button>
+                        </div>
                     </form>
                 </div>
-                <div id="system-action-status" class="text-xs text-text-muted" aria-live="polite"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <form hx-post="/api/alerts/clear" hx-swap="none" class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
+                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                        <div>
+                            <p class="text-xs text-text">Clear alerts</p>
+                            <p class="text-[11px] text-text-muted">Delete alert records.</p>
+                        </div>
+                        <button type="submit" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors">Run</button>
+                    </form>
+
+                    <form hx-post="/api/history/clear" hx-swap="none" class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
+                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                        <div>
+                            <p class="text-xs text-text">Clear history</p>
+                            <p class="text-[11px] text-text-muted">Delete audit/history records.</p>
+                        </div>
+                        <button type="submit" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors">Run</button>
+                    </form>
+                </div>
+
+                <div id="system-action-status" class="text-xs text-text-muted min-h-[2rem]" aria-live="polite"></div>
             </section>
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    var shell = document.getElementById('settings-shell');
+    if (!shell) return;
+
+    var navLinks = Array.from(shell.querySelectorAll('[data-settings-nav]'));
+    var sections = Array.from(shell.querySelectorAll('[data-settings-section]'));
+    var progressCopy = document.getElementById('settings-progress-copy');
+    var activeCopy = document.getElementById('settings-active-copy');
+
+    function setActiveSection(id) {
+        navLinks.forEach(function(link) {
+            var active = link.getAttribute('href') === '#' + id;
+            link.classList.toggle('bg-accent/20', active);
+            link.classList.toggle('text-text', active);
+            link.classList.toggle('border-accent/30', active);
+            link.classList.toggle('text-text-muted', !active);
+            link.setAttribute('aria-current', active ? 'true' : 'false');
+            if (active && activeCopy) activeCopy.textContent = 'Current: ' + link.textContent.trim();
+        });
+    }
+
+    if (progressCopy) progressCopy.textContent = sections.length + ' sections available';
+    if (sections[0]) setActiveSection(sections[0].id);
+
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) setActiveSection(entry.target.id);
+        });
+    }, { rootMargin: '-35% 0px -55% 0px', threshold: 0.1 });
+    sections.forEach(function(section) { observer.observe(section); });
+
+    function captureFormState(form) {
+        var data = new FormData(form);
+        var pairs = [];
+        data.forEach(function(value, key) { pairs.push(key + '=' + String(value)); });
+        pairs.sort();
+        return pairs.join('&');
+    }
+
+    function setFormBusy(form, busy) {
+        form.querySelectorAll('button, input, select, textarea').forEach(function(el) {
+            if (el.type === 'hidden') return;
+            el.disabled = busy;
+        });
+    }
+
+    function setFormState(form, state, message, allowRetry) {
+        var name = form.getAttribute('data-settings-form');
+        var pill = name ? shell.querySelector('[data-form-state-pill="' + name + '"]') : null;
+        var statusTargetSel = form.getAttribute('data-status-target');
+        var statusTarget = statusTargetSel ? document.querySelector(statusTargetSel) : null;
+
+        if (pill) {
+            pill.textContent = state;
+            pill.classList.remove('border-border/50', 'text-text-muted', 'border-yellow-400/50', 'text-yellow-400', 'border-green-400/40', 'text-green-400', 'border-danger/40', 'text-danger');
+            if (state === 'saving') pill.classList.add('border-yellow-400/50', 'text-yellow-400');
+            else if (state === 'applied') pill.classList.add('border-green-400/40', 'text-green-400');
+            else if (state === 'failed') pill.classList.add('border-danger/40', 'text-danger');
+            else pill.classList.add('border-border/50', 'text-text-muted');
+        }
+
+        if (statusTarget && message !== undefined) {
+            var levelClass = state === 'failed' ? 'text-danger' : (state === 'applied' ? 'text-green-400' : (state === 'saving' ? 'text-yellow-400' : 'text-text-muted'));
+            var retry = allowRetry ? '<button type="button" data-retry-form="' + (name || '') + '" class="ml-2 px-2 py-0.5 rounded border border-border/50 text-text-muted hover:text-text hover:bg-card transition-colors">Retry</button>' : '';
+            statusTarget.innerHTML = message ? ('<div class="text-xs py-2 ' + levelClass + '">' + message + retry + '</div>') : '';
+        }
+    }
+
+    function clearFieldErrors(form) {
+        form.querySelectorAll('[data-field-error]').forEach(function(el) { el.remove(); });
+        form.querySelectorAll('input,select,textarea').forEach(function(el) { el.classList.remove('border-danger'); });
+    }
+
+    function setFieldError(form, fieldName, message) {
+        var input = form.querySelector('[name="' + fieldName + '"]');
+        if (!input) return false;
+        input.classList.add('border-danger');
+        var p = document.createElement('p');
+        p.setAttribute('data-field-error', 'true');
+        p.className = 'text-xs text-danger mt-1';
+        p.textContent = message;
+        if (input.parentElement) input.parentElement.appendChild(p);
+        return true;
+    }
+
+    function applyFieldErrorFromResponse(form, text) {
+        var lowered = (text || '').toLowerCase();
+        if (!lowered) return false;
+        if (lowered.indexOf('threshold') >= 0) return setFieldError(form, 'threshold', 'Threshold is invalid.');
+        if (lowered.indexOf('cooldown') >= 0) return setFieldError(form, 'cooldown', 'Cooldown is invalid.');
+        if (lowered.indexOf('metric') >= 0) return setFieldError(form, 'metric', 'Metric value is invalid.');
+        if (lowered.indexOf('operator') >= 0) return setFieldError(form, 'operator', 'Operator value is invalid.');
+        if (lowered.indexOf('severity') >= 0) return setFieldError(form, 'severity', 'Severity value is invalid.');
+        if (lowered.indexOf('sse') >= 0) return setFieldError(form, 'sse_interval_sec', 'Allowed range: 2-60 seconds.');
+        if (lowered.indexOf('disk') >= 0) return setFieldError(form, 'disk_interval_min', 'Allowed range: 1-1440 minutes.');
+        if (lowered.indexOf('docker') >= 0) return setFieldError(form, 'docker_interval_sec', 'Allowed range: 5-300 seconds.');
+        if (lowered.indexOf('systemd') >= 0) return setFieldError(form, 'systemd_interval_sec', 'Allowed range: 5-300 seconds.');
+        return false;
+    }
+
+    function bindSettingsForm(form) {
+        var baseline = captureFormState(form);
+        form.setAttribute('data-form-baseline', baseline);
+        setFormState(form, 'idle', '', false);
+
+        var saveBtn = form.querySelector('[data-primary-save]');
+        var resetBtn = form.querySelector('[data-form-reset]');
+
+        function syncDirty() {
+            var dirty = captureFormState(form) !== form.getAttribute('data-form-baseline');
+            if (saveBtn) {
+                saveBtn.classList.toggle('ring', dirty);
+                saveBtn.classList.toggle('ring-accent', dirty);
+            }
+            if (resetBtn) resetBtn.classList.toggle('hidden', !dirty);
+            if (dirty) setFormState(form, 'idle', 'Unsaved changes.', false);
+        }
+
+        form.addEventListener('input', syncDirty);
+        form.addEventListener('change', syncDirty);
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                form.reset();
+                setTimeout(function() {
+                    clearFieldErrors(form);
+                    baseline = captureFormState(form);
+                    form.setAttribute('data-form-baseline', baseline);
+                    syncDirty();
+                    setFormState(form, 'idle', 'Changes reverted locally.', false);
+                }, 0);
+            });
+        }
+
+        form.addEventListener('submit', function() {
+            clearFieldErrors(form);
+            setFormBusy(form, true);
+            setFormState(form, 'saving', form.getAttribute('data-saving-label') || 'Applying settings...', false);
+        });
+
+        document.body.addEventListener('htmx:afterRequest', function(e) {
+            var trigger = e.detail && e.detail.elt;
+            if (!trigger || !form.contains(trigger)) return;
+            if (trigger.hasAttribute && trigger.hasAttribute('data-settings-ignore-state')) return;
+            setFormBusy(form, false);
+            if (e.detail.successful) {
+                baseline = captureFormState(form);
+                form.setAttribute('data-form-baseline', baseline);
+                syncDirty();
+                setFormState(form, 'applied', 'Settings applied successfully.', false);
+            }
+        });
+
+        document.body.addEventListener('htmx:responseError', function(e) {
+            var trigger = e.detail && e.detail.elt;
+            if (!trigger || !form.contains(trigger)) return;
+            if (trigger.hasAttribute && trigger.hasAttribute('data-settings-ignore-state')) return;
+            setFormBusy(form, false);
+            var xhr = e.detail && e.detail.xhr;
+            var text = xhr && xhr.responseText ? xhr.responseText : 'Request failed.';
+            var mapped = applyFieldErrorFromResponse(form, text);
+            setFormState(form, 'failed', mapped ? 'Validation failed. Fix highlighted fields.' : 'Save failed. You can retry safely.', true);
+        });
+    }
+
+    shell.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-retry-form]');
+        if (!btn) return;
+        var id = btn.getAttribute('data-retry-form');
+        var form = id ? shell.querySelector('form[data-settings-form="' + id + '"]') : null;
+        if (!form) return;
+        form.requestSubmit();
+    });
+
+    shell.querySelectorAll('form[data-settings-form]').forEach(bindSettingsForm);
+
+    var guardEl = document.getElementById('danger-action-guard');
+    var guardForm = document.getElementById('danger-action-form');
+    var guardCopy = document.getElementById('danger-action-copy');
+    var guardHint = document.getElementById('danger-confirm-hint');
+    var wordInput = document.getElementById('danger-confirm-word');
+    var submitBtn = document.getElementById('danger-action-submit');
+    var countdownBar = document.getElementById('danger-countdown-bar');
+    var countdownCopy = document.getElementById('danger-countdown-copy');
+    var expectedWord = '';
+    var countdownTimer = null;
+    var countdownSec = 3;
+    var remaining = 0;
+
+    function resetDangerGuard() {
+        if (countdownTimer) clearInterval(countdownTimer);
+        countdownTimer = null;
+        remaining = 0;
+        if (!guardEl || !guardForm) return;
+        guardEl.classList.add('hidden');
+        guardForm.querySelector('[name="confirm_action"]').value = '';
+        guardForm.querySelector('[name="countdown_ack"]').value = '0';
+        guardForm.setAttribute('hx-post', '/api/system/restart');
+        if (wordInput) wordInput.value = '';
+        if (submitBtn) submitBtn.disabled = true;
+        if (countdownBar) countdownBar.style.width = '0%';
+        if (countdownCopy) countdownCopy.textContent = 'Countdown not started.';
+        if (guardHint) guardHint.textContent = 'Type the word exactly.';
+    }
+
+    function setDangerCountdownState() {
+        if (!countdownBar || !countdownCopy || !submitBtn || !guardForm) return;
+        var done = remaining <= 0;
+        var pct = done ? 100 : (((countdownSec - remaining) / countdownSec) * 100);
+        countdownBar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+        if (done) {
+            countdownCopy.textContent = 'Countdown complete. You may execute now.';
+            guardForm.querySelector('[name="countdown_ack"]').value = '1';
+            submitBtn.disabled = false;
+        } else {
+            countdownCopy.textContent = 'Safety countdown: ' + remaining + 's';
+        }
+    }
+
+    function startDangerCountdown() {
+        if (!guardForm || !submitBtn) return;
+        if (countdownTimer) clearInterval(countdownTimer);
+        remaining = countdownSec;
+        guardForm.querySelector('[name="countdown_ack"]').value = '0';
+        submitBtn.disabled = true;
+        setDangerCountdownState();
+        countdownTimer = setInterval(function() {
+            remaining -= 1;
+            setDangerCountdownState();
+            if (remaining <= 0 && countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }, 1000);
+    }
+
+    if (guardEl && guardForm && wordInput) {
+        shell.addEventListener('click', function(e) {
+            var trigger = e.target.closest('[data-danger-open]');
+            if (trigger) {
+                var action = (trigger.getAttribute('data-danger-action') || '').toLowerCase();
+                expectedWord = (trigger.getAttribute('data-danger-word') || '').toLowerCase();
+                if (!action || !expectedWord) return;
+                guardEl.classList.remove('hidden');
+                guardForm.querySelector('[name="confirm_action"]').value = action;
+                guardForm.setAttribute('hx-post', action === 'shutdown' ? '/api/system/shutdown' : '/api/system/restart');
+                if (guardCopy) guardCopy.textContent = 'To ' + action + ' this device, type "' + expectedWord + '" and wait for the safety countdown.';
+                if (guardHint) guardHint.textContent = 'Expected word: "' + expectedWord + '"';
+                wordInput.focus();
+                if (countdownBar) countdownBar.style.width = '0%';
+                if (countdownCopy) countdownCopy.textContent = 'Countdown not started.';
+                guardForm.querySelector('[name="countdown_ack"]').value = '0';
+                if (submitBtn) submitBtn.disabled = true;
+                return;
+            }
+            if (e.target.closest('[data-danger-cancel]')) {
+                resetDangerGuard();
+            }
+        });
+
+        wordInput.addEventListener('input', function() {
+            var typed = (wordInput.value || '').trim().toLowerCase();
+            if (!typed) {
+                if (guardHint) guardHint.textContent = 'Type the word exactly.';
+                if (countdownTimer) clearInterval(countdownTimer);
+                countdownTimer = null;
+                if (countdownBar) countdownBar.style.width = '0%';
+                if (countdownCopy) countdownCopy.textContent = 'Countdown not started.';
+                guardForm.querySelector('[name="countdown_ack"]').value = '0';
+                if (submitBtn) submitBtn.disabled = true;
+                return;
+            }
+            if (typed !== expectedWord) {
+                if (guardHint) guardHint.textContent = 'Word does not match. Expected "' + expectedWord + '".';
+                if (countdownTimer) clearInterval(countdownTimer);
+                countdownTimer = null;
+                if (countdownBar) countdownBar.style.width = '0%';
+                if (countdownCopy) countdownCopy.textContent = 'Countdown blocked until word matches.';
+                guardForm.querySelector('[name="countdown_ack"]').value = '0';
+                if (submitBtn) submitBtn.disabled = true;
+                return;
+            }
+            if (guardHint) guardHint.textContent = 'Word confirmed. Waiting safety countdown...';
+            if (!countdownTimer && guardForm.querySelector('[name="countdown_ack"]').value !== '1') {
+                startDangerCountdown();
+            }
+        });
+
+        guardForm.addEventListener('htmx:afterRequest', function(e) {
+            if (!(e.detail && e.detail.successful)) return;
+            resetDangerGuard();
+        });
+    }
+})();
+</script>
 {{end}}
