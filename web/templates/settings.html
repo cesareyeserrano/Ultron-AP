@@ -1,42 +1,30 @@
 {{define "content"}}
-<div id="settings-shell" class="space-y-4">
-    <section class="panel-soft p-4 md:p-5">
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-                <h2 class="text-lg font-semibold text-text">Settings</h2>
-                <p class="text-xs text-text-muted">Compact control surface for alerts, notifications, performance, backups, and system actions.</p>
-            </div>
-            <div class="grid grid-cols-2 gap-2 text-[11px] text-text-muted min-w-[200px]">
-                <div class="rounded border border-border/40 bg-card/30 px-2 py-1">Runtime</div>
-                <div class="rounded border border-border/40 bg-card/30 px-2 py-1">Notifications</div>
-                <div class="rounded border border-border/40 bg-card/30 px-2 py-1">Backup</div>
-                <div class="rounded border border-border/40 bg-card/30 px-2 py-1">Control</div>
+<div id="settings-shell" class="space-y-5 w-full max-w-5xl mx-auto">
+    <section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+        <div class="flex flex-col gap-1">
+            <p class="text-[10px] uppercase tracking-wider text-text-muted">Control Plane</p>
+            <h2 class="text-lg font-semibold text-text">Settings</h2>
+            <p class="text-xs text-text-muted">Ajusta alertas, notificaciones, rendimiento y mantenimiento con enfoque seguro para servidor.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <div class="flex items-center gap-2 min-w-max">
+                <a href="#settings-alerts" class="timeline-chip timeline-chip-idle">Alerts</a>
+                <a href="#settings-telegram" class="timeline-chip timeline-chip-idle">Telegram</a>
+                <a href="#settings-email" class="timeline-chip timeline-chip-idle">Email</a>
+                <a href="#settings-performance" class="timeline-chip timeline-chip-idle">Performance</a>
+                <a href="#settings-backup" class="timeline-chip timeline-chip-idle">Backup</a>
+                <a href="#settings-maintenance" class="timeline-chip timeline-chip-idle">Maintenance</a>
+                <a href="#settings-controls" class="timeline-chip timeline-chip-idle">System</a>
             </div>
         </div>
     </section>
-
-    <div class="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
-        <aside class="lg:sticky lg:top-4 lg:self-start space-y-3">
-            <nav class="panel-soft p-2 space-y-1" aria-label="Settings sections">
-                <a href="#settings-alerts" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Alert Rules</a>
-                <a href="#settings-telegram" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Telegram</a>
-                <a href="#settings-email" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Email</a>
-                <a href="#settings-performance" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Performance</a>
-                <a href="#settings-backup" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Backup</a>
-                <a href="#settings-maintenance" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">Maintenance</a>
-                <a href="#settings-controls" data-settings-nav class="block text-xs px-2.5 py-2 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">System Controls</a>
-            </nav>
-            <div class="panel-soft p-3 space-y-1.5 text-xs">
-                <p class="text-text-muted uppercase tracking-wider text-[10px]">Navigation</p>
-                <p id="settings-progress-copy" class="text-text-muted">7 sections available</p>
-                <p id="settings-active-copy" class="text-text">Current: Alert Rules</p>
-            </div>
-        </aside>
-
-        <div class="space-y-4">
-            <section id="settings-alerts" data-settings-section class="panel-soft p-4 space-y-3">
-                <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-semibold text-text">Alert Rules</h3>
+    <div class="space-y-3">
+            <section id="settings-alerts" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-accent/20">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-accent/30 bg-accent/10 text-accent">01</span>
+                        <h3 class="text-sm md:text-[1rem] font-semibold text-text">Alert Rules</h3>
+                    </div>
                     <span data-form-state-pill="alerts-rule" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
                 <p class="text-xs text-text-muted">Define runtime thresholds and severity behavior.</p>
@@ -53,16 +41,16 @@
                         data-status-target="#alerts-rule-status"
                         data-saving-label="Saving alert rule..."
                         data-settings-form="alerts-rule"
-                        class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2"
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-w-4xl"
                     >
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                        <div class="xl:col-span-2">
+                        <div class="sm:col-span-2">
                             <label class="text-[11px] text-text-muted">Name</label>
-                            <input type="text" name="name" placeholder="High CPU" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="text" name="name" placeholder="High CPU" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Metric</label>
-                            <select name="metric" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <select name="metric" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <option value="cpu">CPU</option>
                                 <option value="ram">RAM</option>
                                 <option value="disk">Disk</option>
@@ -71,7 +59,7 @@
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Operator</label>
-                            <select name="operator" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <select name="operator" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <option value=">">&gt;</option>
                                 <option value=">=">&gt;=</option>
                                 <option value="<">&lt;</option>
@@ -81,11 +69,11 @@
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Threshold</label>
-                            <input type="number" name="threshold" step="0.1" min="0" required class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="number" name="threshold" step="0.1" min="0" required class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Severity</label>
-                            <select name="severity" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <select name="severity" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <option value="critical">Critical</option>
                                 <option value="warning">Warning</option>
                                 <option value="info">Info</option>
@@ -93,9 +81,9 @@
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Cooldown (min)</label>
-                            <input type="number" name="cooldown" value="15" min="0" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="number" name="cooldown" value="15" min="0" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
-                        <div class="sm:col-span-2 xl:col-span-2 flex items-end gap-2">
+                        <div class="sm:col-span-2 lg:col-span-3 flex items-end gap-2">
                             <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Add Rule</button>
                             <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
                         </div>
@@ -104,21 +92,24 @@
                 </div>
             </section>
 
-            <section id="settings-telegram" data-settings-section class="panel-soft p-4 space-y-3">
-                <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-semibold text-text">Telegram</h3>
+            <section id="settings-telegram" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">02</span>
+                        <h3 class="text-sm md:text-[1rem] font-semibold text-text">Telegram</h3>
+                    </div>
                     <span data-form-state-pill="telegram" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
-                <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" data-status-target="#telegram-status" data-saving-label="Saving Telegram settings..." data-settings-form="telegram" class="space-y-3">
+                <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" data-status-target="#telegram-status" data-saving-label="Saving Telegram settings..." data-settings-form="telegram" class="space-y-3 max-w-4xl">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] text-text-muted">Bot Token</label>
-                            <input type="password" name="bot_token" placeholder="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "bot_token"}}{{else}}Bot token{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="password" name="bot_token" placeholder="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "bot_token"}}{{else}}Bot token{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Chat ID</label>
-                            <input type="text" name="chat_id" value="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "chat_id"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="text" name="chat_id" value="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "chat_id"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
@@ -134,37 +125,40 @@
                 </form>
             </section>
 
-            <section id="settings-email" data-settings-section class="panel-soft p-4 space-y-3">
-                <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-semibold text-text">Email</h3>
+            <section id="settings-email" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">03</span>
+                        <h3 class="text-sm md:text-[1rem] font-semibold text-text">Email</h3>
+                    </div>
                     <span data-form-state-pill="email" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
-                <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" data-status-target="#email-status" data-saving-label="Saving email settings..." data-settings-form="email" class="space-y-3">
+                <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" data-status-target="#email-status" data-saving-label="Saving email settings..." data-settings-form="email" class="space-y-3 max-w-4xl">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                         <div>
                             <label class="text-[11px] text-text-muted">SMTP Host</label>
-                            <input type="text" name="smtp_host" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_host"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="text" name="smtp_host" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_host"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">SMTP Port</label>
-                            <input type="text" name="smtp_port" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_port"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="text" name="smtp_port" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_port"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">SMTP User</label>
-                            <input type="text" name="smtp_user" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_user"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="text" name="smtp_user" value="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_user"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">SMTP Password</label>
-                            <input type="password" name="smtp_password" placeholder="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_password"}}{{else}}Password{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="password" name="smtp_password" placeholder="{{if .Content.Email}}{{index .Content.Email.Fields "smtp_password"}}{{else}}Password{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">From</label>
-                            <input type="email" name="from" value="{{if .Content.Email}}{{index .Content.Email.Fields "from"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="email" name="from" value="{{if .Content.Email}}{{index .Content.Email.Fields "from"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">To</label>
-                            <input type="email" name="to" value="{{if .Content.Email}}{{index .Content.Email.Fields "to"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="email" name="to" value="{{if .Content.Email}}{{index .Content.Email.Fields "to"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
@@ -180,39 +174,42 @@
                 </form>
             </section>
 
-            <section id="settings-performance" data-settings-section class="panel-soft p-4 space-y-3">
-                <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-semibold text-text">Performance</h3>
+            <section id="settings-performance" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">04</span>
+                        <h3 class="text-sm md:text-[1rem] font-semibold text-text">Performance</h3>
+                    </div>
                     <span data-form-state-pill="performance" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
-                <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" data-status-target="#perf-status" data-saving-label="Applying performance profile..." data-settings-form="performance" class="space-y-3">
+                <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" data-status-target="#perf-status" data-saving-label="Applying performance profile..." data-settings-form="performance" class="space-y-3 max-w-4xl">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] text-text-muted">Dashboard refresh</label>
                             <div class="flex items-center gap-2 mt-1">
-                                <input type="number" name="sse_interval_sec" value="{{.Content.Perf.SSEIntervalSec}}" min="2" max="60" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                                <input type="number" name="sse_interval_sec" value="{{.Content.Perf.SSEIntervalSec}}" min="2" max="60" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <span class="text-[11px] text-text-muted">sec</span>
                             </div>
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Disk check</label>
                             <div class="flex items-center gap-2 mt-1">
-                                <input type="number" name="disk_interval_min" value="{{.Content.Perf.DiskIntervalMin}}" min="1" max="1440" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                                <input type="number" name="disk_interval_min" value="{{.Content.Perf.DiskIntervalMin}}" min="1" max="1440" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <span class="text-[11px] text-text-muted">min</span>
                             </div>
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Docker refresh</label>
                             <div class="flex items-center gap-2 mt-1">
-                                <input type="number" name="docker_interval_sec" value="{{.Content.Perf.DockerIntervalSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                                <input type="number" name="docker_interval_sec" value="{{.Content.Perf.DockerIntervalSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <span class="text-[11px] text-text-muted">sec</span>
                             </div>
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Services refresh</label>
                             <div class="flex items-center gap-2 mt-1">
-                                <input type="number" name="systemd_interval_sec" value="{{.Content.Perf.SystemdIntervalSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                                <input type="number" name="systemd_interval_sec" value="{{.Content.Perf.SystemdIntervalSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <span class="text-[11px] text-text-muted">sec</span>
                             </div>
                         </div>
@@ -225,14 +222,17 @@
                 </form>
             </section>
 
-            <section id="settings-backup" data-settings-section class="panel-soft p-4 space-y-3">
-                <div class="flex items-center gap-2">
-                    <h3 class="text-sm font-semibold text-text">Backup</h3>
+            <section id="settings-backup" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">05</span>
+                        <h3 class="text-sm md:text-[1rem] font-semibold text-text">Backup</h3>
+                    </div>
                     <span data-form-state-pill="backup" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
                 </div>
-                <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." data-settings-form="backup" class="space-y-3">
+                <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." data-settings-form="backup" class="space-y-3 max-w-4xl">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <label class="flex items-center gap-2 text-xs text-text">
                             <input type="checkbox" name="enabled" {{if .Content.Backup.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
                             Backup enabled
@@ -242,28 +242,28 @@
                             Encrypt artifact
                         </label>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] text-text-muted">Interval (hours)</label>
-                            <input type="number" name="interval_hours" value="{{.Content.Backup.IntervalHours}}" min="1" max="720" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="number" name="interval_hours" value="{{.Content.Backup.IntervalHours}}" min="1" max="720" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Retention (files)</label>
-                            <input type="number" name="retention_count" value="{{.Content.Backup.RetentionCount}}" min="1" max="200" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="number" name="retention_count" value="{{.Content.Backup.RetentionCount}}" min="1" max="200" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Upload timeout (sec)</label>
-                            <input type="number" name="upload_timeout_sec" value="{{.Content.Backup.UploadTimeoutSec}}" min="5" max="300" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="number" name="upload_timeout_sec" value="{{.Content.Backup.UploadTimeoutSec}}" min="5" max="300" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Max size (MB)</label>
-                            <input type="number" name="max_upload_size_mb" value="{{.Content.Backup.MaxUploadSizeMB}}" min="1" max="1024" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="number" name="max_upload_size_mb" value="{{.Content.Backup.MaxUploadSizeMB}}" min="1" max="1024" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] text-text-muted">Schedule cadence</label>
-                            <select name="schedule_mode" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <select name="schedule_mode" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <option value="interval" {{if eq .Content.Backup.ScheduleMode "interval"}}selected{{end}}>By interval (hours)</option>
                                 <option value="daily" {{if eq .Content.Backup.ScheduleMode "daily"}}selected{{end}}>Daily</option>
                                 <option value="weekly" {{if eq .Content.Backup.ScheduleMode "weekly"}}selected{{end}}>Weekly</option>
@@ -272,28 +272,28 @@
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Schedule hour</label>
-                            <input type="number" name="schedule_hour" value="{{.Content.Backup.ScheduleHour}}" min="0" max="23" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="number" name="schedule_hour" value="{{.Content.Backup.ScheduleHour}}" min="0" max="23" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Schedule minute</label>
-                            <input type="number" name="schedule_minute" value="{{.Content.Backup.ScheduleMinute}}" min="0" max="59" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="number" name="schedule_minute" value="{{.Content.Backup.ScheduleMinute}}" min="0" max="59" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] text-text-muted">Destination mode</label>
-                            <select name="destination_mode" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <select name="destination_mode" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <option value="local_only" {{if eq .Content.Backup.DestinationMode "local_only"}}selected{{end}}>Local only</option>
                                 <option value="local_plus_telegram" {{if eq .Content.Backup.DestinationMode "local_plus_telegram"}}selected{{end}}>Local + Telegram</option>
                             </select>
                         </div>
                         <div>
                             <label class="text-[11px] text-text-muted">Local path (optional)</label>
-                            <input type="text" name="local_path" value="{{.Content.Backup.LocalPath}}" placeholder="/var/lib/ultron-ap/backups" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="text" name="local_path" value="{{.Content.Backup.LocalPath}}" placeholder="/var/lib/ultron-ap/backups" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                         <div class="md:col-span-2">
                             <label class="text-[11px] text-text-muted">Encryption key reference</label>
-                            <input type="text" name="encryption_key_ref" value="{{.Content.Backup.EncryptionKeyRef}}" placeholder="env:ULTRON_BACKUP_KEY or kms://..." class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input type="text" name="encryption_key_ref" value="{{.Content.Backup.EncryptionKeyRef}}" placeholder="env:ULTRON_BACKUP_KEY or kms://..." class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -304,9 +304,12 @@
                 </form>
             </section>
 
-            <section id="settings-maintenance" data-settings-section class="panel-soft p-4 space-y-3">
-                <h3 class="text-sm font-semibold text-text">Maintenance</h3>
-                <div class="rounded-lg border border-border/40 bg-card/25 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <section id="settings-maintenance" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">06</span>
+                    <h3 class="text-sm md:text-[1rem] font-semibold text-text">Maintenance</h3>
+                </div>
+                <div class="rounded-lg border border-border/40 bg-card/25 p-3 max-w-4xl flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
                         <p class="text-xs text-text">Database backup export</p>
                         <p class="text-[11px] text-text-muted">Download snapshot or send backup to Telegram.</p>
@@ -322,9 +325,13 @@
                 </div>
             </section>
 
-            <section id="settings-controls" data-settings-section class="panel-soft p-4 space-y-3">
-                <h3 class="text-sm font-semibold text-text">System Controls</h3>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-2">
+            <section id="settings-controls" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-danger/30 bg-danger/5">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] px-2 py-0.5 rounded-full border border-danger/40 bg-danger/15 text-danger">07</span>
+                    <h3 class="text-sm md:text-[1rem] font-semibold text-text">System Controls</h3>
+                </div>
+                <p class="text-xs text-text-muted">Critical operations are protected with typed confirmation and an execution countdown.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 max-w-4xl">
                     <form method="POST" action="/logout" class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                         <div>
@@ -366,7 +373,7 @@
                         <input type="hidden" name="countdown_ack" value="0">
                         <div>
                             <label for="danger-confirm-word" class="text-[11px] text-text-muted">Confirmation word</label>
-                            <input id="danger-confirm-word" type="text" name="confirm_word" autocomplete="off" placeholder="Type word here" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded text-text">
+                            <input id="danger-confirm-word" type="text" name="confirm_word" autocomplete="off" placeholder="Type word here" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                             <p id="danger-confirm-hint" class="text-[11px] text-text-muted mt-1">Type the word exactly.</p>
                         </div>
                         <div class="space-y-1">
@@ -382,7 +389,7 @@
                     </form>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-4xl">
                     <form hx-post="/api/alerts/clear" hx-swap="none" class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                         <div>
@@ -404,7 +411,6 @@
 
                 <div id="system-action-status" class="text-xs text-text-muted min-h-[2rem]" aria-live="polite"></div>
             </section>
-        </div>
     </div>
 </div>
 
@@ -413,32 +419,59 @@
     var shell = document.getElementById('settings-shell');
     if (!shell) return;
 
-    var navLinks = Array.from(shell.querySelectorAll('[data-settings-nav]'));
     var sections = Array.from(shell.querySelectorAll('[data-settings-section]'));
-    var progressCopy = document.getElementById('settings-progress-copy');
-    var activeCopy = document.getElementById('settings-active-copy');
-
-    function setActiveSection(id) {
-        navLinks.forEach(function(link) {
-            var active = link.getAttribute('href') === '#' + id;
-            link.classList.toggle('bg-accent/20', active);
-            link.classList.toggle('text-text', active);
-            link.classList.toggle('border-accent/30', active);
-            link.classList.toggle('text-text-muted', !active);
-            link.setAttribute('aria-current', active ? 'true' : 'false');
-            if (active && activeCopy) activeCopy.textContent = 'Current: ' + link.textContent.trim();
-        });
+    function setAccordionOpen(section, open) {
+        var body = section.querySelector('[data-accordion-body]');
+        var toggle = section.querySelector('[data-accordion-toggle]');
+        var chevron = section.querySelector('[data-accordion-chevron]');
+        if (!body || !toggle) return;
+        body.classList.toggle('hidden', !open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (chevron) chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
     }
 
-    if (progressCopy) progressCopy.textContent = sections.length + ' sections available';
-    if (sections[0]) setActiveSection(sections[0].id);
+    sections.forEach(function(section, index) {
+        section.classList.remove('p-4', 'md:p-5', 'space-y-3');
+        section.classList.add('overflow-hidden');
 
-    var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-            if (entry.isIntersecting) setActiveSection(entry.target.id);
+        var children = Array.from(section.children);
+        var heading = children.length ? children[0] : null;
+        if (!heading) return;
+
+        var toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.setAttribute('data-accordion-toggle', 'true');
+        toggle.className = 'w-full px-4 py-3 md:px-5 md:py-4 bg-transparent hover:bg-card/25 transition-colors text-left flex items-center justify-between gap-3';
+
+        var headingWrap = document.createElement('div');
+        headingWrap.className = 'flex-1 min-w-0';
+        headingWrap.appendChild(heading);
+
+        var chevron = document.createElement('span');
+        chevron.setAttribute('data-accordion-chevron', 'true');
+        chevron.className = 'text-text-muted text-xs transition-all duration-200';
+        chevron.textContent = '▼';
+
+        toggle.appendChild(headingWrap);
+        toggle.appendChild(chevron);
+
+        var body = document.createElement('div');
+        body.setAttribute('data-accordion-body', 'true');
+        body.className = 'px-4 pb-4 md:px-5 md:pb-5 pt-1 space-y-3 border-t border-border/30';
+        children.slice(1).forEach(function(node) { body.appendChild(node); });
+
+        section.appendChild(toggle);
+        section.appendChild(body);
+
+        var shouldOpen = index === 0;
+        setAccordionOpen(section, shouldOpen);
+
+        toggle.addEventListener('click', function() {
+            var currentlyOpen = toggle.getAttribute('aria-expanded') === 'true';
+            sections.forEach(function(other) { if (other !== section) setAccordionOpen(other, false); });
+            setAccordionOpen(section, !currentlyOpen);
         });
-    }, { rootMargin: '-35% 0px -55% 0px', threshold: 0.1 });
-    sections.forEach(function(section) { observer.observe(section); });
+    });
 
     function captureFormState(form) {
         var data = new FormData(form);

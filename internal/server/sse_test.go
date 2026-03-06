@@ -193,6 +193,7 @@ func TestSSEEndpoint_SendsInitialData(t *testing.T) {
 	body := rec.Body.String()
 	assert.Contains(t, body, "event: metrics")
 	assert.Contains(t, body, "event: charts")
+	assert.Contains(t, body, "event: summary")
 }
 
 // --- Docker Detail Endpoint Tests ---

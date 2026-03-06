@@ -259,6 +259,12 @@ func (s *Server) buildSSEPayloadWithOptions(includeCharts bool, includeHeavy boo
 		writeSSEEvent(&buf, "charts", chartsHTML)
 	}
 
+	if includeHeavy {
+		// Summary event includes VPN online users and service/container snapshots.
+		summaryHTML := s.renderPartial("partials/sse-summary.html", dd)
+		writeSSEEvent(&buf, "summary", summaryHTML)
+	}
+
 	// Alert count event uses TTL cache and follows heavy cadence.
 	if includeHeavy && s.db != nil {
 		unackCount := s.cachedAlertCount()
