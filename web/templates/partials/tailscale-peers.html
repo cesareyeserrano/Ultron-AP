@@ -26,6 +26,7 @@
     {{end}}
     <div class="flex-1 min-w-0">
         <p class="text-sm text-text truncate">{{.FriendlyName}}</p>
+        <p class="text-xs text-text-muted truncate">{{.DeviceName}}</p>
         <p class="text-xs text-text-muted font-mono truncate">{{range .IPs}}{{.}} {{end}}</p>
     </div>
     <span class="text-xs text-text-muted shrink-0">{{.OS}}</span>

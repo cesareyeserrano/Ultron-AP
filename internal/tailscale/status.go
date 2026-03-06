@@ -11,6 +11,7 @@ import (
 type Peer struct {
 	Hostname     string
 	FriendlyName string
+	DeviceName   string
 	IPs          []string
 	OS           string
 	Online       bool
@@ -60,6 +61,7 @@ func GetStatus() (*Status, error) {
 		Self: Peer{
 			Hostname:     raw.Self.HostName,
 			FriendlyName: pickFriendlyName(raw.Self, raw.User),
+			DeviceName:   pickDeviceName(raw.Self),
 			IPs:          raw.Self.TailscaleIPs,
 			OS:           raw.Self.OS,
 			Online:       true, // self is always online
@@ -70,6 +72,7 @@ func GetStatus() (*Status, error) {
 		status.Peers = append(status.Peers, Peer{
 			Hostname:     p.HostName,
 			FriendlyName: pickFriendlyName(p, raw.User),
+			DeviceName:   pickDeviceName(p),
 			IPs:          p.TailscaleIPs,
 			OS:           p.OS,
 			Online:       p.Online,
@@ -104,4 +107,17 @@ func pickFriendlyName(peer rawPeer, users map[string]rawUser) string {
 		return peer.TailscaleIPs[0]
 	}
 	return "unknown"
+}
+
+func pickDeviceName(peer rawPeer) string {
+	if peer.HostName != "" && peer.HostName != "device-of-shared-to-user" {
+		return peer.HostName
+	}
+	if peer.OS != "" {
+		return peer.OS + " device"
+	}
+	if len(peer.TailscaleIPs) > 0 {
+		return peer.TailscaleIPs[0]
+	}
+	return "unknown device"
 }
