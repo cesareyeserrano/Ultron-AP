@@ -159,9 +159,3 @@ func (s *Server) handleTailscaleStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(html))
 }
-
-func (s *Server) handleDashboardSummary(w http.ResponseWriter, r *http.Request) {
-	html := s.renderPartial("partials/sse-summary.html", s.gatherDashboardData())
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(html))
-}

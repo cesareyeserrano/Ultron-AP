@@ -272,17 +272,3 @@ func TestWriteSSEEvent(t *testing.T) {
 	writeSSEEvent(b, "metrics", "<div>test</div>")
 	assert.Equal(t, "event: metrics\ndata: <div>test</div>\n\n", b.String())
 }
-
-func TestRenderSummary_TailscaleNilStatusDoesNotBreak(t *testing.T) {
-	srv, _ := setupSSETestServer(t)
-	dd := DashboardData{
-		Tailscale: TailscaleData{
-			Available: true,
-			Status:    nil,
-		},
-	}
-
-	out := srv.renderPartial("partials/sse-summary.html", dd)
-	assert.NotEmpty(t, out)
-	assert.Contains(t, out, "No VPN peers listed")
-}

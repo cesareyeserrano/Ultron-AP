@@ -32,32 +32,21 @@
             <span class="text-xs text-text-muted">online peers</span>
             <span class="text-xs text-text-muted ml-auto">{{if .Tailscale.Available}}{{tailscalePeerTotal .Tailscale}} total{{else}}not available{{end}}</span>
         </div>
-        <div class="rounded border border-border/40 bg-card/30 p-2">
-            <p class="text-xs text-text-muted mb-2">VPN users</p>
-            <div class="max-h-40 overflow-y-auto space-y-1">
-                {{if .Tailscale.Available}}
-                {{if .Tailscale.Status}}
-                {{if .Tailscale.Status.Peers}}
+        <details class="rounded border border-border/40 bg-card/30 p-2" data-default-open open>
+            <summary class="cursor-pointer text-xs text-text-muted">Show VPN users</summary>
+            <div class="mt-2 max-h-40 overflow-y-auto space-y-1">
+                {{if and .Tailscale.Available .Tailscale.Status (gt (len .Tailscale.Status.Peers) 0)}}
                 {{range .Tailscale.Status.Peers}}
-                <div class="grid grid-cols-[1fr_auto] items-center gap-2 py-1">
-                    <div class="min-w-0">
-                        <p class="text-xs text-text truncate">{{.FriendlyName}}</p>
-                        <p class="text-[11px] text-text-muted truncate">{{.DeviceName}}</p>
-                    </div>
-                    <span class="shrink-0 px-1.5 py-0.5 rounded text-[11px] {{if .Online}}bg-green-400/20 text-green-400{{else}}bg-surface text-text-muted{{end}}">{{if .Online}}online{{else}}offline{{end}}</span>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs text-text truncate">{{.FriendlyName}} <span class="text-text-muted">· {{.DeviceName}}</span></span>
+                    <span class="px-1.5 py-0.5 rounded {{if .Online}}bg-green-400/20 text-green-400{{else}}bg-surface text-text-muted{{end}}">{{if .Online}}online{{else}}offline{{end}}</span>
                 </div>
                 {{end}}
                 {{else}}
                 <p class="text-xs text-text-muted">No VPN peers listed</p>
                 {{end}}
-                {{else}}
-                <p class="text-xs text-text-muted">No VPN peers listed</p>
-                {{end}}
-                {{else}}
-                <p class="text-xs text-text-muted">No VPN peers listed</p>
-                {{end}}
             </div>
-        </div>
+        </details>
     </div>
 
     <div class="metric-tile">

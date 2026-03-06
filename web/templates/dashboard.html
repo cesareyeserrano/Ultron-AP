@@ -36,12 +36,7 @@
 
     <section>
         <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">Operational Indicators</h2>
-        <div
-            id="ops-summary"
-            hx-get="/api/dashboard/summary"
-            hx-trigger="load, every 10s"
-            hx-swap="innerHTML"
-        >
+        <div id="ops-summary" sse-swap="summary" hx-swap="innerHTML">
             {{template "partials/sse-summary.html" .Content}}
         </div>
     </section>
