@@ -12,7 +12,7 @@
 <div class="flex items-center gap-3 px-4 py-3 border-b border-border">
     <span class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
     <div class="flex-1 min-w-0">
-        <p class="text-sm font-medium text-text truncate">{{.Status.Self.Hostname}} <span class="text-xs text-text-muted font-normal">(this device)</span></p>
+        <p class="text-sm font-medium text-text truncate">{{.Status.Self.FriendlyName}} <span class="text-xs text-text-muted font-normal">(this device)</span></p>
         <p class="text-xs text-text-muted font-mono truncate">{{range .Status.Self.IPs}}{{.}} {{end}}</p>
     </div>
     <span class="text-xs text-text-muted shrink-0">{{.Status.Self.OS}}</span>
@@ -25,7 +25,7 @@
     <span class="w-2 h-2 rounded-full bg-border shrink-0"></span>
     {{end}}
     <div class="flex-1 min-w-0">
-        <p class="text-sm text-text truncate">{{.Hostname}}</p>
+        <p class="text-sm text-text truncate">{{.FriendlyName}}</p>
         <p class="text-xs text-text-muted font-mono truncate">{{range .IPs}}{{.}} {{end}}</p>
     </div>
     <span class="text-xs text-text-muted shrink-0">{{.OS}}</span>
