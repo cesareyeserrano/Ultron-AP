@@ -211,7 +211,7 @@ func (s *Server) startSSEBroadcast() {
 			tick++
 			// Metrics remain fast; charts and heavy sections use slower cadences.
 			chartsEvery := cadenceEvery(current, 15*time.Second)
-			heavyEvery := cadenceEvery(current, 30*time.Second) // docker/systemd/alerts
+			heavyEvery := cadenceEvery(current, 10*time.Second) // summary + docker/systemd/alerts
 			data := s.buildSSEPayloadWithOptions(
 				tick%chartsEvery == 0,
 				tick%heavyEvery == 0,
