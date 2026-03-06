@@ -36,21 +36,13 @@
 
     <section>
         <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">Operational Indicators</h2>
-        <div id="ops-summary">
-            {{template "partials/sse-summary.html" .Content}}
-        </div>
-    </section>
-
-    <section>
-        <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">VPN Peers (Live)</h2>
         <div
-            id="vpn-peers-live"
-            hx-get="/api/tailscale/status"
+            id="ops-summary"
+            hx-get="/api/dashboard/summary"
             hx-trigger="load, every 10s"
             hx-swap="innerHTML"
-            class="panel-soft overflow-hidden"
         >
-            {{template "partials/tailscale-peers.html" .Content.Tailscale}}
+            {{template "partials/sse-summary.html" .Content}}
         </div>
     </section>
 </div>
