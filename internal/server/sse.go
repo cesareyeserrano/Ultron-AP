@@ -57,14 +57,28 @@ type ProcessConsumer struct {
 	RSSBytes   uint64
 }
 
+var (
+	tailscaleStatusCacheMu sync.Mutex
+	tailscaleStatusCache   *tailscale.Status
+)
+
 func gatherTailscaleData() TailscaleData {
 	if !tailscale.Available() {
 		return TailscaleData{Available: false}
 	}
 	status, err := tailscale.GetStatus()
 	if err != nil {
+		tailscaleStatusCacheMu.Lock()
+		cached := tailscaleStatusCache
+		tailscaleStatusCacheMu.Unlock()
+		if cached != nil {
+			return TailscaleData{Available: true, Status: cached}
+		}
 		return TailscaleData{Available: true}
 	}
+	tailscaleStatusCacheMu.Lock()
+	tailscaleStatusCache = status
+	tailscaleStatusCacheMu.Unlock()
 	return TailscaleData{Available: true, Status: status}
 }
 
