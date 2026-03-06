@@ -34,11 +34,11 @@
         </div>
         <div class="rounded border border-border/40 bg-card/30 p-2">
             <p class="text-xs text-text-muted">VPN users</p>
-            <div class="mt-2 max-h-40 overflow-y-auto space-y-1">
+            <div class="mt-2 space-y-1">
                 {{if and .Tailscale.Available .Tailscale.Status (gt (len .Tailscale.Status.Peers) 0)}}
                 {{range .Tailscale.Status.Peers}}
-                <div class="flex items-center justify-between gap-2 text-xs text-text">
-                    <span class="min-w-0 truncate">{{.FriendlyName}}</span>
+                <div class="flex items-center justify-between gap-2 rounded bg-card/50 px-2 py-1.5">
+                    <span class="min-w-0 truncate text-sm text-text">{{.FriendlyName}}</span>
                     <span class="shrink-0 px-1.5 py-0.5 rounded {{if .Online}}bg-green-400/20 text-green-400{{else}}bg-surface text-text-muted{{end}}">{{if .Online}}online{{else}}offline{{end}}</span>
                 </div>
                 {{end}}
