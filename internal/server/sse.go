@@ -262,6 +262,11 @@ func cadenceEvery(current, target time.Duration) int {
 func (s *Server) buildSSEPayloadWithOptions(includeCharts bool, includeHeavy bool) []byte {
 	var buf bytes.Buffer
 	dd := s.gatherDashboardData()
+	if includeHeavy {
+		// Heavy summary refreshes must include VPN peer state; otherwise
+		// SSE swaps overwrite the initial page-load data with an empty list.
+		dd.Tailscale = gatherTailscaleData()
+	}
 
 	// Metrics event
 	metricsHTML := s.renderPartial("partials/sse-metrics.html", dd)
