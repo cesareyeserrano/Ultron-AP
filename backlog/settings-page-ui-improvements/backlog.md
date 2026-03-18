@@ -50,7 +50,7 @@
 - Done when:
   - Audit no longer reports stale proof for this feature.
 
-### AF-2 — Split oversized monitor test file
+### AF-2 — Split oversized monitor test file ✅
 - Source: `aitri audit --feature settings-page-ui-improvements`
 - Severity: Medium
 - Priority: P2
@@ -59,10 +59,11 @@
   - Split test cases into focused files by behavior (parsing, lifecycle, edge/error paths).
   - Keep test names and coverage equivalent.
 - Done when:
-  - No file in this test area exceeds 400 lines.
-  - Existing tests keep passing.
+  - No file in this test area exceeds 400 lines. ✅ (max 201)
+  - Existing tests keep passing. ✅
+- Resolution: Split into monitor_mock_test.go (127), monitor_health_test.go (84), monitor_test.go (201), monitor_detail_test.go (152).
 
-### AF-3 — Split oversized settings handler
+### AF-3 — Split oversized settings handler ✅
 - Source: `aitri audit --feature settings-page-ui-improvements`
 - Severity: Medium
 - Priority: P2
@@ -71,10 +72,11 @@
   - Extract cohesive sub-handlers/helpers into dedicated files (for example notifications, backup, performance).
   - Preserve route behavior and security checks.
 - Done when:
-  - `internal/server/handlers_settings.go` is <= 400 lines.
-  - Server tests and settings feature tests pass.
+  - `internal/server/handlers_settings.go` is <= 400 lines. ✅ (104 lines)
+  - Server tests and settings feature tests pass. ✅
+- Resolution: Extracted into handlers_alert_rules.go (146), handlers_notifications.go (119), handlers_performance.go (135), handlers_csrf.go (77).
 
-### AF-4 — Split oversized server helpers
+### AF-4 — Split oversized server helpers ✅
 - Source: `aitri audit --feature settings-page-ui-improvements`
 - Severity: Medium
 - Priority: P3
@@ -83,5 +85,6 @@
   - Separate helpers by domain (validation, response formatting, security utilities).
   - Keep backward-compatible call sites.
 - Done when:
-  - `internal/server/helpers.go` is <= 400 lines.
-  - No regression in `go test ./internal/server`.
+  - `internal/server/helpers.go` is <= 400 lines. ✅ (119 lines)
+  - No regression in `go test ./internal/server`. ✅
+- Resolution: Extracted into helpers_sparkline.go (143), helpers_services.go (216), helpers_tailscale.go (59).
