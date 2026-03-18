@@ -37,5 +37,8 @@ credentials.json
 # Tailwind CSS standalone CLI
 tailwindcss
 
+# Go build cache
+.gocache/
+
 # SDLC Studio (development artifacts)
 # sdlc-studio/

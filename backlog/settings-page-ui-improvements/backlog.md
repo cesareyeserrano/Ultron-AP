@@ -36,3 +36,52 @@
 - Trace: FR-3, AC-3
 - Acceptance Criteria:
   - Given an authenticated administrator has typed the required confirmation word for shutdown or restart, when the action is submitted, then a visible countdown cancel window is shown before execution and the action can be canceled during that window.
+
+## Audit Findings Backlog (2026-03-05)
+
+### AF-1 — Refresh stale proof evidence
+- Source: `aitri audit --feature settings-page-ui-improvements`
+- Severity: Medium
+- Priority: P1
+- Finding: Proof is stale because `tests.md` changed after the last `prove`.
+- Action:
+  - Run `aitri prove --feature settings-page-ui-improvements`.
+  - Re-check with `aitri audit --feature settings-page-ui-improvements`.
+- Done when:
+  - Audit no longer reports stale proof for this feature.
+
+### AF-2 — Split oversized monitor test file
+- Source: `aitri audit --feature settings-page-ui-improvements`
+- Severity: Medium
+- Priority: P2
+- Finding: `internal/docker/monitor_test.go` is 552 lines (threshold: 400).
+- Action:
+  - Split test cases into focused files by behavior (parsing, lifecycle, edge/error paths).
+  - Keep test names and coverage equivalent.
+- Done when:
+  - No file in this test area exceeds 400 lines.
+  - Existing tests keep passing.
+
+### AF-3 — Split oversized settings handler
+- Source: `aitri audit --feature settings-page-ui-improvements`
+- Severity: Medium
+- Priority: P2
+- Finding: `internal/server/handlers_settings.go` is 546 lines (threshold: 400).
+- Action:
+  - Extract cohesive sub-handlers/helpers into dedicated files (for example notifications, backup, performance).
+  - Preserve route behavior and security checks.
+- Done when:
+  - `internal/server/handlers_settings.go` is <= 400 lines.
+  - Server tests and settings feature tests pass.
+
+### AF-4 — Split oversized server helpers
+- Source: `aitri audit --feature settings-page-ui-improvements`
+- Severity: Medium
+- Priority: P3
+- Finding: `internal/server/helpers.go` is 486 lines (threshold: 400).
+- Action:
+  - Separate helpers by domain (validation, response formatting, security utilities).
+  - Keep backward-compatible call sites.
+- Done when:
+  - `internal/server/helpers.go` is <= 400 lines.
+  - No regression in `go test ./internal/server`.

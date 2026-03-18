@@ -50,9 +50,11 @@ func (s *Server) parseTemplates() {
 		"serviceRSS":            serviceRSS,
 		"countServicesState":    countServicesState,
 		"countContainersState":  countContainersState,
-		"tailscalePeerTotal":    tailscalePeerTotal,
-		"tailscalePeerOnline":   tailscalePeerOnline,
-		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			"tailscalePeerTotal":    tailscalePeerTotal,
+			"tailscalePeerOnline":   tailscalePeerOnline,
+			"tailscalePeerDevice":   tailscalePeerDeviceName,
+			"tailscalePeerDeviceChip": tailscalePeerDeviceChip,
+			"dict": func(values ...interface{}) (map[string]interface{}, error) {
 			if len(values)%2 != 0 {
 				return nil, fmt.Errorf("invalid dict call")
 			}
@@ -115,9 +117,11 @@ func (s *Server) parseTemplates() {
 		"serviceRSS":            serviceRSS,
 		"countServicesState":    countServicesState,
 		"countContainersState":  countContainersState,
-		"tailscalePeerTotal":    tailscalePeerTotal,
-		"tailscalePeerOnline":   tailscalePeerOnline,
-		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			"tailscalePeerTotal":    tailscalePeerTotal,
+			"tailscalePeerOnline":   tailscalePeerOnline,
+			"tailscalePeerDevice":   tailscalePeerDeviceName,
+			"tailscalePeerDeviceChip": tailscalePeerDeviceChip,
+			"dict": func(values ...interface{}) (map[string]interface{}, error) {
 			if len(values)%2 != 0 {
 				return nil, fmt.Errorf("invalid dict call")
 			}

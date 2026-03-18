@@ -1,0 +1,199 @@
+{
+  "project": "Ultron-AP",
+  "version": "1.0.0",
+  "module": "github.com/cesareyeserrano/ultron-ap",
+  "language": "Go",
+  "test_runner": "bash scripts/aitri-test.sh",
+  "test_files": [
+    "internal/alerts/engine_test.go",
+    "internal/auth/bruteforce_test.go",
+    "internal/auth/csrf_test.go",
+    "internal/config/config_test.go",
+    "internal/database/alerts_test.go",
+    "internal/database/auth_test.go",
+    "internal/database/notifications_test.go",
+    "internal/database/sqlite_test.go",
+    "internal/docker/monitor_test.go",
+    "internal/metrics/collector_test.go",
+    "internal/metrics/reader_test.go",
+    "internal/metrics/ringbuffer_test.go",
+    "internal/notify/dispatcher_test.go",
+    "internal/notify/email_test.go",
+    "internal/notify/telegram_test.go",
+    "internal/server/handlers_alerts_test.go",
+    "internal/server/handlers_auth_test.go",
+    "internal/server/handlers_docker_test.go",
+    "internal/server/handlers_history_test.go",
+    "internal/server/handlers_services_test.go",
+    "internal/server/handlers_settings_test.go",
+    "internal/server/middleware_test.go",
+    "internal/server/render_test.go",
+    "internal/server/server_test.go",
+    "internal/server/sse_test.go",
+    "internal/systemd/monitor_test.go",
+    "internal/tailscale/status_test.go"
+  ],
+  "entry_points": [
+    {
+      "path": "cmd/ultron-ap/main.go",
+      "description": "Binary entry point; loads config, initializes DB, starts Server"
+    },
+    {
+      "path": "cmd/ultron-helper/main.go",
+      "description": "Privileged helper binary; listens on Unix socket, executes host-level actions as root"
+    }
+  ],
+  "packages": [
+    {
+      "package": "internal/server",
+      "files": [
+        "server.go",
+        "handlers.go",
+        "handlers_auth.go",
+        "handlers_alerts.go",
+        "handlers_docker.go",
+        "handlers_history.go",
+        "handlers_services.go",
+        "handlers_settings.go",
+        "handlers_system.go",
+        "middleware.go",
+        "sse.go",
+        "render.go",
+        "templates.go",
+        "helpers.go",
+        "backup_crypto.go"
+      ],
+      "responsibility": "HTTP request handling, SSE broadcasting, authentication middleware, template rendering, backup encryption",
+      "key_types": ["Server", "sseBroker"],
+      "tests": [
+        "server_test.go",
+        "handlers_auth_test.go",
+        "handlers_alerts_test.go",
+        "handlers_docker_test.go",
+        "handlers_history_test.go",
+        "handlers_services_test.go",
+        "handlers_settings_test.go",
+        "middleware_test.go",
+        "sse_test.go",
+        "render_test.go"
+      ]
+    },
+    {
+      "package": "internal/metrics",
+      "files": ["collector.go", "reader.go", "ringbuffer.go", "models.go"],
+      "responsibility": "Read system metrics (CPU, RAM, Disk, Network, Temperature); maintain ring buffer for chart history; emit snapshots",
+      "key_types": ["Collector", "SystemReader", "RingBuffer", "Snapshot"],
+      "tests": ["collector_test.go", "reader_test.go", "ringbuffer_test.go"]
+    },
+    {
+      "package": "internal/docker",
+      "files": ["client.go", "monitor.go", "controls.go", "models.go"],
+      "responsibility": "Connect to Docker socket, poll container state and stats, execute start/stop/restart/logs",
+      "key_types": ["Monitor", "Client", "ContainerInfo"],
+      "tests": ["monitor_test.go"]
+    },
+    {
+      "package": "internal/systemd",
+      "files": ["monitor.go", "controls.go", "parser.go", "runner.go", "models.go"],
+      "responsibility": "Read Systemd unit state, execute service controls via privileged helper, parse output",
+      "key_types": ["Monitor", "ServiceInfo"],
+      "tests": ["monitor_test.go"]
+    },
+    {
+      "package": "internal/tailscale",
+      "files": ["status.go"],
+      "responsibility": "Read Tailscale VPN status and peer list from local CLI",
+      "key_types": ["Status", "Peer"],
+      "tests": ["status_test.go"]
+    },
+    {
+      "package": "internal/alerts",
+      "files": ["engine.go"],
+      "responsibility": "Evaluate threshold rules against metric snapshots and service state; fire/resolve alerts",
+      "key_types": ["Engine", "Rule", "Alert"],
+      "tests": ["engine_test.go"]
+    },
+    {
+      "package": "internal/notify",
+      "files": ["notifier.go", "dispatcher.go", "telegram.go", "email.go"],
+      "responsibility": "Dispatch alert notifications to configured Telegram and Email channels",
+      "key_types": ["Dispatcher", "TelegramNotifier", "EmailNotifier"],
+      "tests": ["dispatcher_test.go", "telegram_test.go", "email_test.go"]
+    },
+    {
+      "package": "internal/database",
+      "files": [
+        "sqlite.go",
+        "auth.go",
+        "alerts.go",
+        "notifications.go",
+        "actions.go",
+        "backup.go",
+        "secrets.go",
+        "performance.go"
+      ],
+      "responsibility": "SQLite data access layer for all persistent state: users/sessions, alerts, notification config, action history, backups, secrets",
+      "key_types": ["DB"],
+      "tests": ["sqlite_test.go", "auth_test.go", "alerts_test.go", "notifications_test.go"]
+    },
+    {
+      "package": "internal/auth",
+      "files": ["csrf.go", "bruteforce.go"],
+      "responsibility": "CSRF token generation and validation; brute-force login attempt tracking",
+      "key_types": ["CSRFManager", "BruteForceTracker"],
+      "tests": ["csrf_test.go", "bruteforce_test.go"]
+    },
+    {
+      "package": "internal/config",
+      "files": ["config.go"],
+      "responsibility": "Load and validate server configuration from environment variables",
+      "key_types": ["Config"],
+      "tests": ["config_test.go"]
+    },
+    {
+      "package": "internal/privileged",
+      "files": ["client.go"],
+      "responsibility": "Unix socket client; sends host-level action requests to the privileged helper binary",
+      "key_types": ["Client"]
+    }
+  ],
+  "web_layer": {
+    "path": "web/",
+    "embed": "web/embed.go (go:embed)",
+    "structure": {
+      "templates/": "Go html/template files for all pages and partials",
+      "static/css/": "Compiled Tailwind CSS",
+      "static/js/": "HTMX and minimal custom JS",
+      "static/": "Favicon, PNG assets"
+    },
+    "pages": [
+      "dashboard.html",
+      "docker.html",
+      "services.html",
+      "alerts.html",
+      "history.html",
+      "logs.html",
+      "settings.html",
+      "login.html"
+    ]
+  },
+  "build": {
+    "makefile_targets": {
+      "build": "Compile for host architecture",
+      "build-arm": "Cross-compile linux/arm64 binary",
+      "css": "Compile Tailwind CSS (requires tailwindcss binary)",
+      "test": "Run Go test suite"
+    },
+    "output_binary": "bin/ultron-ap",
+    "arm64_binary": "bin/ultron-ap-linux-arm64"
+  },
+  "configuration": {
+    "method": "Environment variables",
+    "variables": [
+      { "name": "ULTRON_ADMIN_PASS", "required": true, "description": "Initial admin password on first run" },
+      { "name": "ULTRON_PORT", "default": "8080", "description": "HTTP listen port" },
+      { "name": "ULTRON_DB_PATH", "description": "Path to SQLite database file" },
+      { "name": "ULTRON_HELPER_SOCKET", "default": "/run/ultron-helper.sock", "description": "Unix socket path for privileged helper" }
+    ]
+  }
+}

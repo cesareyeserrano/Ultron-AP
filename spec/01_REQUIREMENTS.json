@@ -1,0 +1,251 @@
+{
+  "project": "Ultron-AP",
+  "version": "1.0.0",
+  "source": "sdlc-studio/prd.md + sdlc-studio/stories + .aitri/product-spec.md",
+  "functional_requirements": [
+    {
+      "id": "FR-001",
+      "feature": "FT-001",
+      "title": "Real-time system metrics dashboard",
+      "description": "Display CPU usage (%), RAM (used/total), Disk per partition, Network traffic (bytes in/out per interface), and CPU temperature — all updating every 5 seconds via SSE without page reload.",
+      "acceptance_criteria": [
+        "Dashboard shows CPU usage percentage with 60-minute historical chart",
+        "Dashboard shows RAM used/total with percentage and chart",
+        "Dashboard shows disk usage per partition (used/total/percentage)",
+        "Dashboard shows network traffic (bytes in/out per second) per interface",
+        "Dashboard shows CPU temperature in Celsius with color indicator: green < 60°C, yellow 60–75°C, red > 75°C",
+        "Metrics update automatically every 5 seconds via SSE without page reload",
+        "Dashboard shows system uptime"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-002",
+      "feature": "FT-002",
+      "title": "Docker container monitor",
+      "description": "List all Docker containers with health indicators, per-container metrics, and auto-refresh every 10 seconds.",
+      "acceptance_criteria": [
+        "Lists all Docker containers (running, stopped, exited)",
+        "Shows per container: name, image, state, uptime, CPU%, memory used",
+        "Health indicator: green (running), grey (stopped), red (exited with error)",
+        "Data updates automatically every 10 seconds",
+        "Click on container shows expanded details (ports, volumes, environment)"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-003",
+      "feature": "FT-003",
+      "title": "Systemd service monitor",
+      "description": "List all active/enabled Systemd services with status indicators, auto-refresh every 30 seconds.",
+      "acceptance_criteria": [
+        "Lists all active/enabled Systemd services",
+        "Shows per service: name, state (active/inactive/failed), active since",
+        "Visual indicator: green (active), grey (inactive), red (failed)",
+        "Filter to show only services with errors",
+        "Data updates every 30 seconds"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-004",
+      "feature": "FT-004",
+      "title": "Threshold-based alert system",
+      "description": "Configurable alert rules for CPU, RAM, Disk, Temperature, and service state changes, with cooldown, severity levels, and SQLite persistence.",
+      "acceptance_criteria": [
+        "Configurable thresholds for CPU > X%, RAM > X%, Disk > X%, Temperature > X°C",
+        "Alerts when Docker container becomes unhealthy/exited",
+        "Alerts when Systemd service becomes failed",
+        "Alert history persisted in SQLite with timestamp and type",
+        "Alert panel with severity filters (critical, warning, info)",
+        "Configurable cooldown per alert rule to prevent spam (default: 15 min)",
+        "Severity levels: critical (red), warning (yellow), info (blue)"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-005",
+      "feature": "FT-005",
+      "title": "Telegram notifications",
+      "description": "Send critical and warning alerts via Telegram Bot API, with test button and mute options.",
+      "acceptance_criteria": [
+        "Configure Telegram Bot Token and Chat ID from the panel",
+        "Send critical and warning alerts via Telegram",
+        "Message includes: severity, affected metric/service, current value, configured threshold",
+        "Test button to verify Telegram connection",
+        "Option to mute notifications temporarily (1h, 4h, 24h)"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-006",
+      "feature": "FT-006",
+      "title": "Email notifications",
+      "description": "Send critical alert emails via configurable SMTP with test button and optional daily digest.",
+      "acceptance_criteria": [
+        "Configure SMTP settings (host, port, user, password, from, to)",
+        "Send emails for critical alerts",
+        "Email includes: problem summary, timestamp, current value vs threshold",
+        "Option to send daily digest with alert summary",
+        "Test button to verify SMTP configuration"
+      ],
+      "status": "implemented",
+      "priority": "should-have"
+    },
+    {
+      "id": "FR-007",
+      "feature": "FT-007",
+      "title": "Authentication",
+      "description": "Single-admin login with bcrypt passwords, secure session cookies, and brute-force protection.",
+      "acceptance_criteria": [
+        "Login screen with username and password",
+        "Single admin user configurable via env var or first-run setup",
+        "Secure cookie-based session with configurable expiry (default: 24h)",
+        "Brute-force protection: temporary lockout after 5 failed attempts (15 min)",
+        "Password hashed with bcrypt in the database",
+        "Logout button visible in header",
+        "All routes except /login and /health require authentication"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-008",
+      "feature": "FT-008",
+      "title": "Service controls",
+      "description": "Start, Stop, Restart for Docker containers and Systemd services from the dashboard, with confirmation modal, async execution, and audit trail.",
+      "acceptance_criteria": [
+        "Start, Stop, Restart buttons per Docker container",
+        "Start, Stop, Restart buttons per Systemd service",
+        "Confirmation before executing Stop/Restart (confirmation modal)",
+        "Visual feedback of action result (success/error with message)",
+        "Action log with timestamps (audit trail) persisted in SQLite",
+        "Actions execute asynchronously and report result"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-009",
+      "feature": "FT-009",
+      "title": "Dark mode UI",
+      "description": "Professional dark-mode interface with semantic color tokens, responsive layout, and consistent component patterns.",
+      "acceptance_criteria": [
+        "Dark visual identity with subtle elevation and border hierarchy",
+        "Semantic color tokens: ok (green), warn (yellow), critical (red), muted (grey)",
+        "Consistent card, badge, button, and empty/error state patterns across modules",
+        "Mobile-responsive layout with touch targets ≥ 44×44 px",
+        "WCAG 2.1 AA contrast for all status text on dark backgrounds"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-010",
+      "feature": "FT-010",
+      "title": "On-demand service logs",
+      "description": "View last 100 lines of logs for any Docker container or Systemd service without SSH.",
+      "acceptance_criteria": [
+        "Log viewer for Docker containers (last 100 lines)",
+        "Log viewer for Systemd services (last 100 lines)",
+        "Accessible from service row in one click"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-011",
+      "feature": "FT-011",
+      "title": "Privilege separation",
+      "description": "Web process runs unprivileged; host-level actions (service controls, system power) are delegated to a root-owned helper via Unix socket.",
+      "acceptance_criteria": [
+        "Web process runs with NoNewPrivileges=true",
+        "Host-level actions routed through Unix socket to privileged helper",
+        "Privileged helper validates all commands before execution",
+        "No direct privileged execution from the web layer"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-012",
+      "feature": "FT-012",
+      "title": "CSRF protection",
+      "description": "All state-changing requests require a valid CSRF token.",
+      "acceptance_criteria": [
+        "CSRF token generated per session",
+        "Token validated on all POST/PUT/DELETE requests",
+        "Missing or invalid token returns 403"
+      ],
+      "status": "implemented",
+      "priority": "must-have"
+    },
+    {
+      "id": "FR-013",
+      "feature": "FT-013",
+      "title": "Hardware integration (Pironman 5)",
+      "description": "Configure RGB lighting, fan modes, and OLED display for Pironman 5 enclosure from the settings panel.",
+      "acceptance_criteria": [
+        "RGB mode selection from settings",
+        "Fan mode configuration from settings",
+        "OLED display configuration from settings"
+      ],
+      "status": "implemented",
+      "priority": "nice-to-have"
+    },
+    {
+      "id": "FR-014",
+      "feature": "FT-014",
+      "title": "VPN status (Tailscale)",
+      "description": "Display Tailscale VPN peer connectivity status on the dashboard.",
+      "acceptance_criteria": [
+        "Show Tailscale node status",
+        "Show connected peers with name and IP",
+        "Status updates on dashboard load and SSE refresh"
+      ],
+      "status": "implemented",
+      "priority": "nice-to-have"
+    },
+    {
+      "id": "FR-015",
+      "feature": "FT-015",
+      "title": "Database backup",
+      "description": "Automated and manual encrypted backups of the SQLite database with configurable schedule.",
+      "acceptance_criteria": [
+        "Manual backup trigger from settings",
+        "Automated backup on configurable interval",
+        "Backup encrypted at rest",
+        "Backup download from settings panel"
+      ],
+      "status": "implemented",
+      "priority": "should-have"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-001",
+      "title": "Resource footprint",
+      "constraint": "~15 MB RAM at idle; minimal CPU impact on ARM Cortex-A (Raspberry Pi)"
+    },
+    {
+      "id": "NFR-002",
+      "title": "Zero runtime dependencies",
+      "constraint": "Single statically-linked Go binary; no Node.js, Python, or other runtimes required"
+    },
+    {
+      "id": "NFR-003",
+      "title": "ARM64 cross-compilation",
+      "constraint": "make build-arm must produce a working linux/arm64 binary"
+    },
+    {
+      "id": "NFR-004",
+      "title": "Metrics update latency",
+      "constraint": "Critical dashboard metrics visible within 5 seconds of change"
+    }
+  ]
+}

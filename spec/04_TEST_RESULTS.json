@@ -1,0 +1,133 @@
+{
+  "executed_at": "2026-03-18T22:31:54.273Z",
+  "test_runner": "bash scripts/aitri-test.sh",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-001",
+      "status": "pass",
+      "notes": "✔ TC-001: alert engine — threshold evaluation and cooldown"
+    },
+    {
+      "tc_id": "TC-002",
+      "status": "pass",
+      "notes": "✔ TC-002: authentication — brute-force protection"
+    },
+    {
+      "tc_id": "TC-003",
+      "status": "pass",
+      "notes": "✔ TC-003: authentication — CSRF token validation"
+    },
+    {
+      "tc_id": "TC-004",
+      "status": "pass",
+      "notes": "✔ TC-004: metrics — ring buffer retention"
+    },
+    {
+      "tc_id": "TC-005",
+      "status": "pass",
+      "notes": "✔ TC-005: metrics — collector produces valid snapshot"
+    },
+    {
+      "tc_id": "TC-006",
+      "status": "pass",
+      "notes": "✔ TC-006: docker monitor — container list and graceful unavailable"
+    },
+    {
+      "tc_id": "TC-007",
+      "status": "pass",
+      "notes": "✔ TC-007: systemd monitor — service list"
+    },
+    {
+      "tc_id": "TC-008",
+      "status": "pass",
+      "notes": "✔ TC-008: notifications — dispatcher routing"
+    },
+    {
+      "tc_id": "TC-009",
+      "status": "pass",
+      "notes": "✔ TC-009: database — user and session roundtrip"
+    },
+    {
+      "tc_id": "TC-010",
+      "status": "pass",
+      "notes": "✔ TC-010: database — alert create and list roundtrip"
+    },
+    {
+      "tc_id": "TC-011",
+      "status": "pass",
+      "notes": "✔ TC-011: server — middleware auth and CSRF rejection"
+    },
+    {
+      "tc_id": "TC-012",
+      "status": "pass",
+      "notes": "✔ TC-012: server — SSE endpoint content-type"
+    },
+    {
+      "tc_id": "TC-013",
+      "status": "pass",
+      "notes": "✔ TC-013: tailscale — graceful unavailable"
+    },
+    {
+      "tc_id": "TC-014",
+      "status": "pass",
+      "notes": "✔ TC-014: config — env vars and defaults"
+    },
+    {
+      "tc_id": "TC-015",
+      "status": "pass",
+      "notes": "✔ TC-015: service controls — start/stop/restart with CSRF enforcement"
+    },
+    {
+      "tc_id": "TC-016",
+      "status": "pass",
+      "notes": "✔ TC-016: dashboard rendering — sidebar, header, CSRF token in HTML"
+    },
+    {
+      "tc_id": "TC-017",
+      "status": "pass",
+      "notes": "✔ TC-017: action history and log viewer — render and filter"
+    },
+    {
+      "tc_id": "TC-018",
+      "status": "pass",
+      "notes": "✔ TC-018: privilege separation — auth middleware and secure cookie"
+    },
+    {
+      "tc_id": "TC-019",
+      "status": "pass",
+      "notes": "✔ TC-019: hardware settings — pironman settings page renders"
+    },
+    {
+      "tc_id": "TC-020",
+      "status": "pass",
+      "notes": "✔ TC-020: database backup — config save and outcome logging"
+    }
+  ],
+  "fr_coverage": [
+    { "fr_id": "FR-001", "tests_passing": 3, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-004", "TC-005", "TC-012"] },
+    { "fr_id": "FR-002", "tests_passing": 2, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-006", "TC-012"] },
+    { "fr_id": "FR-003", "tests_passing": 2, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-007", "TC-012"] },
+    { "fr_id": "FR-004", "tests_passing": 2, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-001", "TC-010"] },
+    { "fr_id": "FR-005", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-008"] },
+    { "fr_id": "FR-006", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-008"] },
+    { "fr_id": "FR-007", "tests_passing": 3, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-002", "TC-009", "TC-011"] },
+    { "fr_id": "FR-008", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-015"] },
+    { "fr_id": "FR-009", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-016"] },
+    { "fr_id": "FR-010", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-017"] },
+    { "fr_id": "FR-011", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-018"] },
+    { "fr_id": "FR-012", "tests_passing": 2, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-003", "TC-011"] },
+    { "fr_id": "FR-013", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-019"] },
+    { "fr_id": "FR-014", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-013"] },
+    { "fr_id": "FR-015", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-020"] },
+    { "fr_id": "NFR-002", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-014"] }
+  ],
+  "summary": {
+    "total": 20,
+    "passed": 20,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0
+  }
+}

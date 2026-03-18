@@ -1,0 +1,136 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    "discovery",
+    "ux",
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    2,
+    3,
+    4,
+    "discovery",
+    "ux",
+    5
+  ],
+  "projectName": "Ultron",
+  "createdAt": "2026-03-13T21:47:37.755Z",
+  "aitriVersion": "0.1.65",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-03-18T22:32:27.882Z",
+  "artifactHashes": {
+    "1": "8c994bf4be5139d547677cc7d36c52c69e5570029485fb4a15be87024588b08f",
+    "2": "8f9645eb69e72c2165b64deb309cf9f73b1e283c8121f84b2368609565354e4f",
+    "3": "948ad4cdfce6a0b50bca53a50174cdc43f24b6b383dbe41201aa6c2aaf36503a",
+    "4": "bcca06d67945070f139042248345869254eba8df238218cde1ead0418df7f0ae",
+    "5": "f63e62bf3caa4b170b68aa8affe1a199344adf7cd9577f49aeb93fe22ee028c0",
+    "discovery": "faec9ac75a8208fb6a5c4b55dfe88aa77ad56688a0c1327dc14f2ef7ab6056d5",
+    "ux": "cdb5b081561f62e470380c3f55c5b8db6b6189585e910a8a7644b4773058551b"
+  },
+  "events": [
+    {
+      "at": "2026-03-18T22:07:39.664Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 14
+    },
+    {
+      "at": "2026-03-18T22:11:51.207Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-03-18T22:16:05.415Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-03-18T22:16:32.131Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "at": "2026-03-18T22:17:01.117Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-03-18T22:19:34.747Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-03-18T22:23:12.078Z",
+      "event": "rejected",
+      "phase": 5,
+      "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
+    },
+    {
+      "at": "2026-03-18T22:24:24.646Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-03-18T22:28:32.779Z",
+      "event": "approved",
+      "phase": 5
+    },
+    {
+      "at": "2026-03-18T22:31:54.274Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-03-18T22:32:14.166Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "at": "2026-03-18T22:32:24.618Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-03-18T22:32:27.881Z",
+      "event": "approved",
+      "phase": 5
+    }
+  ],
+  "verifyPassed": true,
+  "verifyTimestamp": "2026-03-18T22:32:14.166Z",
+  "verifySummary": {
+    "total": 20,
+    "passed": 20,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0
+  },
+  "driftPhases": [],
+  "rejections": {
+    "5": {
+      "at": "2026-03-18T22:23:12.077Z",
+      "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
+    }
+  }
+}
