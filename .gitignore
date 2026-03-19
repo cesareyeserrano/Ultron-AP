@@ -42,3 +42,6 @@ tailwindcss
 
 # SDLC Studio (development artifacts)
 # sdlc-studio/
+deploy/raspberry-stable/ultron-ap
+deploy/raspberry-stable/ultron-ap-linux-arm64
+bin/
