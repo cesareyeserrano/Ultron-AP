@@ -578,7 +578,6 @@
 
         form.addEventListener('submit', function() {
             clearFieldErrors(form);
-            setFormBusy(form, true);
             setFormState(form, 'saving', form.getAttribute('data-saving-label') || 'Applying settings...', false);
         });
 

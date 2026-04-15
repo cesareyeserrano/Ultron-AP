@@ -335,6 +335,50 @@ func TestBackupConfigSave_PersistsAndApplies(t *testing.T) {
 	assert.Equal(t, 80, cfg.MaxUploadSizeMB)
 }
 
+func TestBackupConfigSave_EnabledWithoutOtherFields(t *testing.T) {
+	// Regression: checkbox-only submit (no other fields) must persist enabled=true.
+	// The bug was that setFormBusy() disabled checkboxes before HTMX serialized the
+	// form, causing the "enabled" field to be absent and saved as false.
+	srv, session := setupSSETestServer(t)
+
+	form := url.Values{
+		"csrf_token": {session.CSRFToken},
+		"enabled":    {"on"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/backup/config", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	cfg, err := srv.db.GetBackupConfig()
+	require.NoError(t, err)
+	assert.True(t, cfg.Enabled)
+}
+
+func TestBackupConfigSave_DisabledPersists(t *testing.T) {
+	// Regression: submitting without "enabled" (unchecked checkbox) must save false.
+	srv, session := setupSSETestServer(t)
+
+	form := url.Values{
+		"csrf_token": {session.CSRFToken},
+		// "enabled" intentionally absent — unchecked checkbox
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/backup/config", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	cfg, err := srv.db.GetBackupConfig()
+	require.NoError(t, err)
+	assert.False(t, cfg.Enabled)
+}
+
 func TestRuntimeDiagnosticsRouteNotFound(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 
