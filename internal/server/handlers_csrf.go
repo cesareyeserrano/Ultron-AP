@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/cesareyeserrano/ultron-ap/internal/auth"
 )
 
 func (s *Server) validateCSRF(w http.ResponseWriter, r *http.Request) bool {
@@ -25,7 +27,9 @@ func (s *Server) validateCSRF(w http.ResponseWriter, r *http.Request) bool {
 		csrfToken = r.Header.Get("X-CSRF-Token")
 	}
 
-	if csrfToken != session.CSRFToken {
+	// BG-002: use constant-time compare to match auth.ValidateToken and stay
+	// timing-safe if the token format ever shrinks or gains structure.
+	if !auth.ValidateToken(session.CSRFToken, csrfToken) {
 		s.auditLog(r, "security", "csrf_reject", r.URL.Path, "csrf token mismatch", false)
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return false

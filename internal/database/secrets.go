@@ -8,11 +8,18 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
+	"sync"
 )
 
 const encPrefix = "enc:v1:"
+
+// missingKeyWarnOnce guarantees the operator sees the "secrets at rest are plaintext"
+// warning exactly once per process start — enough to be noticed in logs without
+// spamming on every write path.
+var missingKeyWarnOnce sync.Once
 
 func secretKeyFromEnv() ([]byte, bool) {
 	raw := strings.TrimSpace(os.Getenv("ULTRON_SECRET_KEY"))
@@ -26,6 +33,14 @@ func secretKeyFromEnv() ([]byte, bool) {
 func encryptSecret(plain string) (string, error) {
 	key, ok := secretKeyFromEnv()
 	if !ok {
+		// BG-001: previously this fell back to plaintext silently, so an operator
+		// who forgot to set ULTRON_SECRET_KEY would persist Telegram bot tokens
+		// and SMTP passwords unencrypted with no signal. Keep the backward-compatible
+		// behavior (still writes plaintext so notification config continues to work),
+		// but surface a loud, once-per-process warning to the log.
+		missingKeyWarnOnce.Do(func() {
+			log.Println("SECURITY WARNING: ULTRON_SECRET_KEY is not set — notification secrets (Telegram bot token, SMTP password) will be stored in the database in plaintext. Set ULTRON_SECRET_KEY before persisting sensitive configuration.")
+		})
 		return plain, nil
 	}
 	block, err := aes.NewCipher(key)

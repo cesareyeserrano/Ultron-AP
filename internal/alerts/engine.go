@@ -110,11 +110,12 @@ func (e *Engine) run(ctx context.Context) {
 }
 
 func (e *Engine) evaluate() {
-	// Use background context for now since evaluate doesn't yet support passing context deep into DB methods.
-	// But adding the timeout here for future safety.
-	_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+	// BG-003: a previous revision built a context.WithTimeout here and then
+	// discarded it, leaving a misleading "10s protection" comment. The DB
+	// layer does not yet accept a context, so no timeout is actually applied
+	// today — removed to avoid giving false safety. If a slow query becomes a
+	// real issue, propagate a context through database.DB.ListEnabledAlertConfigs
+	// / CreateAlert / ListAlerts and reintroduce WithTimeout at that layer.
 	configs, err := e.db.ListEnabledAlertConfigs()
 	if err != nil {
 		log.Printf("alerts: failed to load configs: %v", err)

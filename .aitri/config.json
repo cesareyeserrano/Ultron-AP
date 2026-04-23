@@ -20,9 +20,9 @@
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "0.1.65",
+  "aitriVersion": "0.1.89",
   "artifactsDir": "spec",
-  "updatedAt": "2026-03-18T22:32:27.882Z",
+  "updatedAt": "2026-04-23T01:18:00.151Z",
   "artifactHashes": {
     "1": "8c994bf4be5139d547677cc7d36c52c69e5570029485fb4a15be87024588b08f",
     "2": "8f9645eb69e72c2165b64deb309cf9f73b1e283c8121f84b2368609565354e4f",
@@ -114,6 +114,15 @@
       "at": "2026-03-18T22:32:27.881Z",
       "event": "approved",
       "phase": 5
+    },
+    {
+      "at": "2026-04-23T01:14:10.326Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
     }
   ],
   "verifyPassed": true,
@@ -132,5 +141,16 @@
       "at": "2026-03-18T22:23:12.077Z",
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
-  }
+  },
+  "verifyRanAt": "2026-04-23T01:14:10.326Z",
+  "lastSession": {
+    "at": "2026-04-23T01:14:10.341Z",
+    "agent": "unknown",
+    "event": "verify-run",
+    "files_touched": [
+      ".aitri/config.json",
+      "spec/04_TEST_RESULTS.json"
+    ]
+  },
+  "auditLastAt": "2026-04-23T01:18:00.151Z"
 }
