@@ -1,133 +1,364 @@
 {
-  "executed_at": "2026-03-18T22:31:54.273Z",
+  "executed_at": "2026-04-27T14:59:46.091Z",
   "test_runner": "bash scripts/aitri-test.sh",
   "exit_code": 0,
   "results": [
     {
-      "tc_id": "TC-001",
+      "tc_id": "TC-001h",
       "status": "pass",
-      "notes": "✔ TC-001: alert engine — threshold evaluation and cooldown"
+      "notes": "✔ TC-001h: ring buffer retains last N samples in chronological order"
     },
     {
-      "tc_id": "TC-002",
+      "tc_id": "TC-001e",
       "status": "pass",
-      "notes": "✔ TC-002: authentication — brute-force protection"
+      "notes": "✔ TC-001e: ring buffer empty on creation"
     },
     {
-      "tc_id": "TC-003",
+      "tc_id": "TC-001f",
       "status": "pass",
-      "notes": "✔ TC-003: authentication — CSRF token validation"
+      "notes": "✔ TC-001f: collector Latest returns nil when empty"
     },
     {
-      "tc_id": "TC-004",
+      "tc_id": "TC-002h",
       "status": "pass",
-      "notes": "✔ TC-004: metrics — ring buffer retention"
+      "notes": "✔ TC-002h: docker monitor lists containers with name and state"
     },
     {
-      "tc_id": "TC-005",
+      "tc_id": "TC-002e",
       "status": "pass",
-      "notes": "✔ TC-005: metrics — collector produces valid snapshot"
+      "notes": "✔ TC-002e: container with empty name uses truncated ID"
     },
     {
-      "tc_id": "TC-006",
+      "tc_id": "TC-002f",
       "status": "pass",
-      "notes": "✔ TC-006: docker monitor — container list and graceful unavailable"
+      "notes": "✔ TC-002f: docker socket unavailable returns empty list, no panic"
     },
     {
-      "tc_id": "TC-007",
+      "tc_id": "TC-003h",
       "status": "pass",
-      "notes": "✔ TC-007: systemd monitor — service list"
+      "notes": "✔ TC-003h: systemd monitor lists services with name and state"
     },
     {
-      "tc_id": "TC-008",
+      "tc_id": "TC-003e",
       "status": "pass",
-      "notes": "✔ TC-008: notifications — dispatcher routing"
+      "notes": "✔ TC-003e: failed-services filter returns only failed"
     },
     {
-      "tc_id": "TC-009",
+      "tc_id": "TC-003f",
       "status": "pass",
-      "notes": "✔ TC-009: database — user and session roundtrip"
+      "notes": "✔ TC-003f: systemctl unavailable sets monitor unavailable, no panic"
     },
     {
-      "tc_id": "TC-010",
+      "tc_id": "TC-004h",
       "status": "pass",
-      "notes": "✔ TC-010: database — alert create and list roundtrip"
+      "notes": "✔ TC-004h: alert fires when metric crosses threshold"
     },
     {
-      "tc_id": "TC-011",
+      "tc_id": "TC-004e",
       "status": "pass",
-      "notes": "✔ TC-011: server — middleware auth and CSRF rejection"
+      "notes": "✔ TC-004e: alert respects cooldown window"
     },
     {
-      "tc_id": "TC-012",
+      "tc_id": "TC-004f",
       "status": "pass",
-      "notes": "✔ TC-012: server — SSE endpoint content-type"
+      "notes": "✔ TC-004f: below-threshold reading does not fire alert"
     },
     {
-      "tc_id": "TC-013",
+      "tc_id": "TC-005h",
       "status": "pass",
-      "notes": "✔ TC-013: tailscale — graceful unavailable"
+      "notes": "✔ TC-005h: telegram sender posts alert on success"
     },
     {
-      "tc_id": "TC-014",
+      "tc_id": "TC-005e",
       "status": "pass",
-      "notes": "✔ TC-014: config — env vars and defaults"
+      "notes": "✔ TC-005e: long telegram message is truncated"
     },
     {
-      "tc_id": "TC-015",
+      "tc_id": "TC-005f",
       "status": "pass",
-      "notes": "✔ TC-015: service controls — start/stop/restart with CSRF enforcement"
+      "notes": "✔ TC-005f: telegram API error returns error without panic"
     },
     {
-      "tc_id": "TC-016",
+      "tc_id": "TC-006h",
       "status": "pass",
-      "notes": "✔ TC-016: dashboard rendering — sidebar, header, CSRF token in HTML"
+      "notes": "✔ TC-006h: email sender sends MIME message via mock SMTP"
     },
     {
-      "tc_id": "TC-017",
+      "tc_id": "TC-006e",
       "status": "pass",
-      "notes": "✔ TC-017: action history and log viewer — render and filter"
+      "notes": "✔ TC-006e: email body composes severity, value and threshold"
     },
     {
-      "tc_id": "TC-018",
+      "tc_id": "TC-006f",
       "status": "pass",
-      "notes": "✔ TC-018: privilege separation — auth middleware and secure cookie"
+      "notes": "✔ TC-006f: SMTP error from server is surfaced without panic"
     },
     {
-      "tc_id": "TC-019",
+      "tc_id": "TC-007h",
       "status": "pass",
-      "notes": "✔ TC-019: hardware settings — pironman settings page renders"
+      "notes": "✔ TC-007h: user created and retrieved with bcrypt hash"
     },
     {
-      "tc_id": "TC-020",
+      "tc_id": "TC-007e",
       "status": "pass",
-      "notes": "✔ TC-020: database backup — config save and outcome logging"
+      "notes": "✔ TC-007e: brute-force tracker locks IP at limit"
+    },
+    {
+      "tc_id": "TC-007f",
+      "status": "pass",
+      "notes": "✔ TC-007f: login with wrong password is rejected"
+    },
+    {
+      "tc_id": "TC-008h",
+      "status": "pass",
+      "notes": "✔ TC-008h: service start succeeds with auth + CSRF + audit log"
+    },
+    {
+      "tc_id": "TC-008e",
+      "status": "pass",
+      "notes": "✔ TC-008e: docker stop logs the action with timestamp"
+    },
+    {
+      "tc_id": "TC-008f",
+      "status": "pass",
+      "notes": "✔ TC-008f: service start without CSRF returns 403"
+    },
+    {
+      "tc_id": "TC-009h",
+      "status": "pass",
+      "notes": "✔ TC-009h: dashboard renders sidebar, header, CSRF token"
+    },
+    {
+      "tc_id": "TC-009e",
+      "status": "pass",
+      "notes": "✔ TC-009e: history page renders empty state when no entries"
+    },
+    {
+      "tc_id": "TC-009f",
+      "status": "pass",
+      "notes": "✔ TC-009f: alerts page redirects to login when unauthenticated"
+    },
+    {
+      "tc_id": "TC-010h",
+      "status": "pass",
+      "notes": "✔ TC-010h: history page renders log entries"
+    },
+    {
+      "tc_id": "TC-010e",
+      "status": "pass",
+      "notes": "✔ TC-010e: history page filters by docker source"
+    },
+    {
+      "tc_id": "TC-010f",
+      "status": "pass",
+      "notes": "✔ TC-010f: history page invalid source falls back to all entries"
+    },
+    {
+      "tc_id": "TC-011h",
+      "status": "pass",
+      "notes": "✔ TC-011h: login sets Secure cookie behind HTTPS proxy"
+    },
+    {
+      "tc_id": "TC-011e",
+      "status": "pass",
+      "notes": "✔ TC-011e: login sets Secure cookie under direct TLS"
+    },
+    {
+      "tc_id": "TC-011f",
+      "status": "pass",
+      "notes": "✔ TC-011f: unauthenticated request to / redirects to /login"
+    },
+    {
+      "tc_id": "TC-012h",
+      "status": "pass",
+      "notes": "✔ TC-012h: CSRF GenerateToken returns 64 hex chars, unique"
+    },
+    {
+      "tc_id": "TC-012e",
+      "status": "pass",
+      "notes": "✔ TC-012e: CSRF ValidateToken accepts matching tokens"
+    },
+    {
+      "tc_id": "TC-012f",
+      "status": "pass",
+      "notes": "✔ TC-012f: CSRF ValidateToken rejects different/empty tokens"
+    },
+    {
+      "tc_id": "TC-013h",
+      "status": "pass",
+      "notes": "✔ TC-013h: settings page renders hardware configuration section"
+    },
+    {
+      "tc_id": "TC-013e",
+      "status": "pass",
+      "notes": "✔ TC-013e: settings page does not enable SSE on /settings"
+    },
+    {
+      "tc_id": "TC-013f",
+      "status": "pass",
+      "notes": "✔ TC-013f: settings page rejects unauthenticated access"
+    },
+    {
+      "tc_id": "TC-014h",
+      "status": "pass",
+      "notes": "✔ TC-014h: tailscale peer name prefers display name"
+    },
+    {
+      "tc_id": "TC-014e",
+      "status": "pass",
+      "notes": "✔ TC-014e: tailscale peer name falls back to hostname"
+    },
+    {
+      "tc_id": "TC-014f",
+      "status": "pass",
+      "notes": "✔ TC-014f: tailscale device-name resolution returns hostname when no metadata"
+    },
+    {
+      "tc_id": "TC-015h",
+      "status": "pass",
+      "notes": "✔ TC-015h: backup config save persists settings and applies schedule"
+    },
+    {
+      "tc_id": "TC-015e",
+      "status": "pass",
+      "notes": "✔ TC-015e: backup outcome is recorded in action_history"
+    },
+    {
+      "tc_id": "TC-015f",
+      "status": "pass",
+      "notes": "✔ TC-015f: backup config save without CSRF is rejected"
     }
   ],
   "fr_coverage": [
-    { "fr_id": "FR-001", "tests_passing": 3, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-004", "TC-005", "TC-012"] },
-    { "fr_id": "FR-002", "tests_passing": 2, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-006", "TC-012"] },
-    { "fr_id": "FR-003", "tests_passing": 2, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-007", "TC-012"] },
-    { "fr_id": "FR-004", "tests_passing": 2, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-001", "TC-010"] },
-    { "fr_id": "FR-005", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-008"] },
-    { "fr_id": "FR-006", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-008"] },
-    { "fr_id": "FR-007", "tests_passing": 3, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-002", "TC-009", "TC-011"] },
-    { "fr_id": "FR-008", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-015"] },
-    { "fr_id": "FR-009", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-016"] },
-    { "fr_id": "FR-010", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-017"] },
-    { "fr_id": "FR-011", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-018"] },
-    { "fr_id": "FR-012", "tests_passing": 2, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-003", "TC-011"] },
-    { "fr_id": "FR-013", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-019"] },
-    { "fr_id": "FR-014", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-013"] },
-    { "fr_id": "FR-015", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-020"] },
-    { "fr_id": "NFR-002", "tests_passing": 1, "tests_failing": 0, "tests_skipped": 0, "status": "pass", "covered_by": ["TC-014"] }
+    {
+      "fr_id": "FR-001",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-002",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-003",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-004",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-005",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-006",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-007",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-008",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-009",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-010",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-011",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-012",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-013",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-014",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-015",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
   ],
   "summary": {
-    "total": 20,
-    "passed": 20,
+    "total": 45,
+    "passed": 45,
     "failed": 0,
     "skipped": 0,
     "skipped_e2e": 0,
-    "skipped_no_marker": 0
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
   }
 }

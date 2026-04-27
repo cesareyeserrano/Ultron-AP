@@ -20,27 +20,19 @@
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "0.1.89",
+  "aitriVersion": "2.0.0-alpha.3",
   "artifactsDir": "spec",
-  "updatedAt": "2026-04-23T01:18:00.151Z",
+  "updatedAt": "2026-04-27T15:03:25.041Z",
   "artifactHashes": {
-    "1": "8c994bf4be5139d547677cc7d36c52c69e5570029485fb4a15be87024588b08f",
-    "2": "8f9645eb69e72c2165b64deb309cf9f73b1e283c8121f84b2368609565354e4f",
-    "3": "a19d25a7bfd65d2fcfd2e4cbc6e7b3bd18889b6f4d4666684e162d5ffbcffd4c",
-    "4": "26311c5374e22fc2f0f8ec1e4353a3d3317dd427e61ab2bd7342f6958a73639e",
-    "5": "f63e62bf3caa4b170b68aa8affe1a199344adf7cd9577f49aeb93fe22ee028c0",
-    "discovery": "faec9ac75a8208fb6a5c4b55dfe88aa77ad56688a0c1327dc14f2ef7ab6056d5",
-    "ux": "cdb5b081561f62e470380c3f55c5b8db6b6189585e910a8a7644b4773058551b"
+    "1": "56daf794722c06209814b3d1d697aaf5f6204406f4b06ea20dfd381646618c4f",
+    "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
+    "3": "01ef9973ed7d0d6b3f645d1aac8b8aeee4751ddd97fe7082810165716fc35da1",
+    "4": "8dbfb0b1610624ffb323e1fbf36d0aa89d51330ae692c072bb387d0b221fed64",
+    "5": "648618a873e11b8c446821b41c69340ec8aa24da4ba2585041a963cad0e7777a",
+    "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda",
+    "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-03-18T22:07:39.664Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 0,
-      "failed": 0,
-      "skipped": 14
-    },
     {
       "at": "2026-03-18T22:11:51.207Z",
       "event": "verify-run",
@@ -123,17 +115,87 @@
       "failed": 0,
       "skipped": 0,
       "manual": 0
+    },
+    {
+      "at": "2026-04-24T23:22:08.984Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-alpha.3",
+      "category": "blocking",
+      "target": "03_TEST_CASES.json",
+      "transform": "rename test_cases[*].requirement → requirement_id (16 TCs)",
+      "before_hash": "a19d25a7bfd65d2fcfd2e4cbc6e7b3bd18889b6f4d4666684e162d5ffbcffd4c",
+      "after_hash": "02efaf94e931c4517180d59763b47b3b1f35e5016957f6ff5e50c1cc2e4caee2"
+    },
+    {
+      "at": "2026-04-24T23:22:08.984Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-alpha.3",
+      "category": "blocking",
+      "target": "01_REQUIREMENTS.json",
+      "transform": "rewrite non_functional_requirements[*]: constraint → requirement (4)",
+      "before_hash": "8c994bf4be5139d547677cc7d36c52c69e5570029485fb4a15be87024588b08f",
+      "after_hash": "a6512b9e53c81f7a82309da6da9762e34ace3d5c1f02eafe9081933fd137fdad"
+    },
+    {
+      "at": "2026-04-24T23:22:08.984Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-alpha.3",
+      "category": "stateMissing",
+      "target": ".aitri#normalizeState",
+      "transform": "stamp normalizeState baseline (method=git) — Phase 4 was approved without one"
+    },
+    {
+      "at": "2026-04-27T14:56:55.294Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 45,
+      "manual": 0
+    },
+    {
+      "at": "2026-04-27T14:59:41.727Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-04-27T14:59:46.092Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-04-27T15:03:25.026Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
   "verifyTimestamp": "2026-03-18T22:32:14.166Z",
   "verifySummary": {
-    "total": 20,
-    "passed": 20,
+    "total": 45,
+    "passed": 45,
     "failed": 0,
     "skipped": 0,
     "skipped_e2e": 0,
-    "skipped_no_marker": 0
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
   },
   "driftPhases": [],
   "rejections": {
@@ -142,15 +204,30 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-04-23T01:14:10.326Z",
+  "verifyRanAt": "2026-04-27T14:59:46.092Z",
   "lastSession": {
-    "at": "2026-04-23T01:14:10.341Z",
+    "at": "2026-04-27T15:03:25.041Z",
     "agent": "unknown",
-    "event": "verify-run",
+    "event": "verify-complete",
     "files_touched": [
       ".aitri/config.json",
-      "spec/04_TEST_RESULTS.json"
+      "scripts/aitri-test.sh",
+      "spec/00_DISCOVERY.md",
+      "spec/01_REQUIREMENTS.json",
+      "spec/01_UX_SPEC.md",
+      "spec/02_SYSTEM_DESIGN.md",
+      "spec/03_TEST_CASES.json",
+      "spec/04_IMPLEMENTATION_MANIFEST.json",
+      "spec/04_TEST_RESULTS.json",
+      "spec/05_PROOF_OF_COMPLIANCE.json"
     ]
   },
-  "auditLastAt": "2026-04-23T01:18:00.151Z"
+  "auditLastAt": "2026-04-23T01:18:00.151Z",
+  "normalizeState": {
+    "baseRef": "9a9d4cf82f52587c2ce213179d55ea1c2b3308e0",
+    "method": "git",
+    "status": "resolved",
+    "lastRun": "2026-04-24T23:22:08.984Z"
+  },
+  "upgradeFindings": []
 }

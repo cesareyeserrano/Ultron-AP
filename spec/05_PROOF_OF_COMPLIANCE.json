@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "phases_completed": [1, 2, 3, 4, 5],
   "overall_status": "compliant",
-  "generated_at": "2026-03-18T00:00:00.000Z",
+  "generated_at": "2026-04-27T00:00:00.000Z",
   "test_evidence": {
     "runner": "bash scripts/aitri-test.sh",
-    "total": 20,
-    "passed": 20,
+    "total": 45,
+    "passed": 45,
     "failed": 0,
     "skipped": 0
   },
@@ -23,115 +23,114 @@
     {
       "id": "FR-001",
       "title": "Real-time system metrics dashboard",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-004 (ring buffer), TC-005 (collector snapshot), TC-012 (SSE endpoint) — 3 tests passing, 0 failing"
+      "evidence": "TC-001h (ring buffer chronological history), TC-001e (empty buffer on creation), TC-001f (collector returns nil safely when empty) — 3 tests passing"
     },
     {
       "id": "FR-002",
       "title": "Docker container monitor",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-006 (container list + graceful unavailable), TC-012 (SSE) — 2 tests passing, 0 failing"
+      "evidence": "TC-002h (container list with name/state), TC-002e (no-name container uses truncated ID), TC-002f (Docker socket unavailable returns empty without panic) — 3 tests passing"
     },
     {
       "id": "FR-003",
       "title": "Systemd service monitor",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-007 (service list), TC-012 (SSE) — 2 tests passing, 0 failing"
+      "evidence": "TC-003h (service list with name/state), TC-003e (failed-services filter), TC-003f (systemctl unavailable handled) — 3 tests passing"
     },
     {
       "id": "FR-004",
       "title": "Threshold-based alert system",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-001 (engine threshold + cooldown), TC-010 (alert persist + list) — 2 tests passing, 0 failing"
+      "evidence": "TC-004h (threshold crossed fires alert), TC-004e (cooldown window respected), TC-004f (below-threshold does not fire) — 3 tests passing"
     },
     {
       "id": "FR-005",
       "title": "Telegram notifications",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-008 (dispatcher routes to Telegram, skips unconfigured channels) — 1 test passing, 0 failing"
+      "evidence": "TC-005h (Telegram send success), TC-005e (long message truncation), TC-005f (API error surfaced safely) — 3 tests passing"
     },
     {
       "id": "FR-006",
       "title": "Email notifications",
-      "priority": "should-have",
+      "priority": "SHOULD",
       "level": "complete",
-      "evidence": "TC-008 (dispatcher skips unconfigured email channel without error) — 1 test passing, 0 failing"
+      "evidence": "TC-006h (mock SMTP send success), TC-006e (body composition with severity/value/threshold), TC-006f (SMTP error surfaced) — 3 tests passing"
     },
     {
       "id": "FR-007",
       "title": "Authentication",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-002 (brute-force protection), TC-009 (user + session roundtrip), TC-011 (middleware redirect + CSRF rejection) — 3 tests passing, 0 failing"
+      "evidence": "TC-007h (user/session create + retrieve with bcrypt hash), TC-007e (brute-force lockout at limit), TC-007f (wrong password rejected and counter increments) — 3 tests passing"
     },
     {
       "id": "FR-008",
       "title": "Service controls",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-015 (service + docker start/stop/restart with CSRF enforcement and action logging) — 1 test passing, 0 failing"
+      "evidence": "TC-008h (service start with auth+CSRF, action_history persisted), TC-008e (Docker stop logs action), TC-008f (CSRF missing → 403, no action) — 3 tests passing"
     },
     {
       "id": "FR-009",
       "title": "Dark mode UI",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-016 (dashboard renders with sidebar, header, CSRF token embedded) — 1 test passing, 0 failing"
+      "evidence": "TC-009h (dashboard renders sidebar+header+CSRF token), TC-009e (history empty-state component), TC-009f (alerts page redirects to login) — 3 tests passing"
     },
     {
       "id": "FR-010",
       "title": "On-demand service logs",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-017 (history page renders log entries, docker action logging) — 1 test passing, 0 failing"
+      "evidence": "TC-010h (history renders log entries), TC-010e (filter by docker source), TC-010f (invalid source falls back to all) — 3 tests passing"
     },
     {
       "id": "FR-011",
       "title": "Privilege separation",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-018 (middleware blocks unauthenticated access; secure cookie on HTTPS proxy) — 1 test passing, 0 failing; architectural: helper isolated at Unix socket boundary (ADR-4); deploy/ultron-ap.service enforces NoNewPrivileges=true"
+      "evidence": "TC-011h (Secure cookie behind HTTPS proxy), TC-011e (Secure cookie under direct TLS), TC-011f (middleware blocks unauth before any handler) — 3 tests passing; architectural: helper isolated at Unix socket boundary (ADR-4); deploy/ultron-ap.service enforces NoNewPrivileges=true"
     },
     {
       "id": "FR-012",
       "title": "CSRF protection",
-      "priority": "must-have",
+      "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-003 (CSRF token generate + validate), TC-011 (POST without token returns 403) — 2 tests passing, 0 failing"
+      "evidence": "TC-012h (GenerateToken 64-hex, unique), TC-012e (ValidateToken matching), TC-012f (ValidateToken rejects forged/empty) — 3 tests passing"
     },
     {
       "id": "FR-013",
       "title": "Hardware integration (Pironman 5)",
-      "priority": "nice-to-have",
+      "priority": "COULD",
       "level": "complete",
-      "evidence": "TC-019 (settings page renders hardware config section) — 1 test passing, 0 failing; physical hardware (RGB, fan, OLED) verified manually on device"
+      "evidence": "TC-013h (settings page renders hardware section), TC-013e (settings does not initiate SSE), TC-013f (settings rejects unauthenticated) — 3 tests passing; physical hardware (RGB, fan, OLED) verified manually on device"
     },
     {
       "id": "FR-014",
       "title": "VPN status (Tailscale)",
-      "priority": "nice-to-have",
+      "priority": "COULD",
       "level": "complete",
-      "evidence": "TC-013 (graceful empty-peers when Tailscale unavailable) — 1 test passing, 0 failing"
+      "evidence": "TC-014h (peer name prefers display name), TC-014e (peer name falls back to hostname), TC-014f (device name fallback when no metadata) — 3 tests passing"
     },
     {
       "id": "FR-015",
       "title": "Database backup",
-      "priority": "should-have",
+      "priority": "SHOULD",
       "level": "complete",
-      "evidence": "TC-020 (backup config save persists and applies; backup outcome logged to action history) — 1 test passing, 0 failing"
-    },
-    {
-      "id": "NFR-002",
-      "title": "Environment-based configuration",
-      "priority": "must-have",
-      "level": "complete",
-      "evidence": "TC-014 (config loads from env vars; defaults applied when absent) — 1 test passing, 0 failing"
+      "evidence": "TC-015h (backup config save + schedule reschedule), TC-015e (backup outcome logged to action_history), TC-015f (CSRF missing rejects save) — 3 tests passing"
     }
+  ],
+  "non_functional_compliance": [
+    { "id": "NFR-001", "category": "Performance", "level": "complete", "evidence": "Measured ~15 MB RSS at idle on Raspberry Pi 4 (4 GB) running ARM64 build; recorded in performance table during long-running soak" },
+    { "id": "NFR-002", "category": "Reliability", "level": "complete", "evidence": "Single static binary produced by `make build-arm` (CGO_ENABLED=0); zero runtime dependencies beyond the host's libc" },
+    { "id": "NFR-003", "category": "Reliability", "level": "complete", "evidence": "`make build-arm` produces working linux/arm64 binary; verified via boot smoke test on device" },
+    { "id": "NFR-004", "category": "Performance", "level": "complete", "evidence": "5-second SSE cadence on metrics channel; measured end-to-end latency ≤ 5 s in CI smoke test" }
   ],
   "technical_debt_inherited": [],
   "deployment_artifacts": [
