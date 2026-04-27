@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-alpha.3",
   "artifactsDir": "spec",
-  "updatedAt": "2026-04-27T16:06:02.902Z",
+  "updatedAt": "2026-04-27T16:22:01.784Z",
   "artifactHashes": {
     "1": "56daf794722c06209814b3d1d697aaf5f6204406f4b06ea20dfd381646618c4f",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,11 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-03-18T22:19:34.747Z",
-      "event": "completed",
-      "phase": 5
-    },
     {
       "at": "2026-03-18T22:23:12.078Z",
       "event": "rejected",
@@ -189,6 +184,15 @@
       "method": "git",
       "baseRefFrom": "8a4437af4784af7012262ea873e2b63acc56a687",
       "baseRefTo": "dd60094331ad493646b3a0ecb37a043906293dd9"
+    },
+    {
+      "at": "2026-04-27T16:22:01.749Z",
+      "event": "normalize-resolved",
+      "phase": null,
+      "files": 1,
+      "method": "git",
+      "baseRefFrom": "dd60094331ad493646b3a0ecb37a043906293dd9",
+      "baseRefTo": "4f440f7c745c869fd28c98fefbf37e8cd24f2cb0"
     }
   ],
   "verifyPassed": true,
@@ -212,19 +216,19 @@
   },
   "verifyRanAt": "2026-04-27T15:12:32.025Z",
   "lastSession": {
-    "at": "2026-04-27T16:06:02.902Z",
+    "at": "2026-04-27T16:22:01.783Z",
     "agent": "unknown",
     "event": "normalize --resolve",
     "files_touched": [
       ".aitri/config.json"
     ]
   },
-  "auditLastAt": "2026-04-23T01:18:00.151Z",
+  "auditLastAt": "2026-04-27T16:06:53.313Z",
   "normalizeState": {
-    "baseRef": "dd60094331ad493646b3a0ecb37a043906293dd9",
+    "baseRef": "4f440f7c745c869fd28c98fefbf37e8cd24f2cb0",
     "method": "git",
     "status": "resolved",
-    "lastRun": "2026-04-27T16:06:02.871Z"
+    "lastRun": "2026-04-27T16:22:01.747Z"
   },
   "upgradeFindings": []
 }
