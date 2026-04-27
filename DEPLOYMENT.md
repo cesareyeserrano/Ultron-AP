@@ -198,6 +198,7 @@ sudo systemctl start ultron-ap
 | `ULTRON_SMTP_USER` | No | — | SMTP username (FR-006) |
 | `ULTRON_SMTP_PASS` | No | — | SMTP password (FR-006) |
 | `ULTRON_SMTP_FROM` | No | — | Sender address (FR-006) |
+| `ULTRON_BACKUP_KEY` | Conditional | — | AES-256 key for encrypted backups; required when `BackupConfig.encrypt_enabled=1` and `encryption_key_ref="env:ULTRON_BACKUP_KEY"` |
 
 ---
 
