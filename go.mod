@@ -1,9 +1,10 @@
 module github.com/cesareyeserrano/ultron-ap
 
-go 1.25.7
+go 1.25.9
 
 require (
 	github.com/docker/docker v27.5.1+incompatible
+	github.com/docker/go-connections v0.6.0
 	github.com/shirou/gopsutil/v4 v4.26.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.48.0
@@ -16,7 +17,6 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ebitengine/purego v0.9.1 // indirect
