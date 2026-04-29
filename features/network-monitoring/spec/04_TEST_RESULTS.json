@@ -1,0 +1,521 @@
+{
+  "executed_at": "2026-04-29T21:51:54.985Z",
+  "test_runner": "go test ./... -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-NM-001h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-001h\" (e.g. test_TC_NM_001h_description) and add # @aitri-tc TC-NM-001h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-001f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-001f\" (e.g. test_TC_NM_001f_description) and add # @aitri-tc TC-NM-001f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-001e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-001e\" (e.g. test_TC_NM_001e_description) and add # @aitri-tc TC-NM-001e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-002h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-002h\" (e.g. test_TC_NM_002h_description) and add # @aitri-tc TC-NM-002h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-002f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-002f\" (e.g. test_TC_NM_002f_description) and add # @aitri-tc TC-NM-002f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-002e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NM_002e_CacheBypassLabelLetterLeading (0.00s)"
+    },
+    {
+      "tc_id": "TC-NM-003h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-003h\" (e.g. test_TC_NM_003h_description) and add # @aitri-tc TC-NM-003h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-003f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-003f\" (e.g. test_TC_NM_003f_description) and add # @aitri-tc TC-NM-003f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-003e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-003e\" (e.g. test_TC_NM_003e_description) and add # @aitri-tc TC-NM-003e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-004h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-004h\" (e.g. test_TC_NM_004h_description) and add # @aitri-tc TC-NM-004h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-004f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-004f\" (e.g. test_TC_NM_004f_description) and add # @aitri-tc TC-NM-004f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-004e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-004e\" (e.g. test_TC_NM_004e_description) and add # @aitri-tc TC-NM-004e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-005h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-005h\" (e.g. test_TC_NM_005h_description) and add # @aitri-tc TC-NM-005h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-005f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-005f\" (e.g. test_TC_NM_005f_description) and add # @aitri-tc TC-NM-005f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-005e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NM_005e_PickResolutionDayFor30dWindow (0.00s)"
+    },
+    {
+      "tc_id": "TC-NM-006h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-006h\" (e.g. test_TC_NM_006h_description) and add # @aitri-tc TC-NM-006h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-006f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-006f\" (e.g. test_TC_NM_006f_description) and add # @aitri-tc TC-NM-006f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-006e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-006e\" (e.g. test_TC_NM_006e_description) and add # @aitri-tc TC-NM-006e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-007h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-007h\" (e.g. test_TC_NM_007h_description) and add # @aitri-tc TC-NM-007h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-007f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-007f\" (e.g. test_TC_NM_007f_description) and add # @aitri-tc TC-NM-007f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-007e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-007e\" (e.g. test_TC_NM_007e_description) and add # @aitri-tc TC-NM-007e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-008h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-008h\" (e.g. test_TC_NM_008h_description) and add # @aitri-tc TC-NM-008h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-008f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-008f\" (e.g. test_TC_NM_008f_description) and add # @aitri-tc TC-NM-008f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-008e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-008e\" (e.g. test_TC_NM_008e_description) and add # @aitri-tc TC-NM-008e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-009h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-009h\" (e.g. test_TC_NM_009h_description) and add # @aitri-tc TC-NM-009h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-009f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-009f\" (e.g. test_TC_NM_009f_description) and add # @aitri-tc TC-NM-009f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-009e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-009e\" (e.g. test_TC_NM_009e_description) and add # @aitri-tc TC-NM-009e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-010h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NM_010h_BufferbloatGrade25msIsA (0.00s)"
+    },
+    {
+      "tc_id": "TC-NM-010f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NM_010f_BufferbloatGrade250msIsF (0.00s)"
+    },
+    {
+      "tc_id": "TC-NM-010e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NM_010e_BufferbloatGradeBoundary30ms (0.00s)"
+    },
+    {
+      "tc_id": "TC-NM-011h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-011h\" (e.g. test_TC_NM_011h_description) and add # @aitri-tc TC-NM-011h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-011f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-011f\" (e.g. test_TC_NM_011f_description) and add # @aitri-tc TC-NM-011f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-011e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NM_011e_PublicIPEchoAcceptsAllowListed (0.00s)"
+    },
+    {
+      "tc_id": "TC-NM-012h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-012h\" (e.g. test_TC_NM_012h_description) and add # @aitri-tc TC-NM-012h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-012f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-012f\" (e.g. test_TC_NM_012f_description) and add # @aitri-tc TC-NM-012f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-012e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NM_012e_NoPcapImports (0.00s)"
+    },
+    {
+      "tc_id": "TC-NM-013h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-013h\" (e.g. test_TC_NM_013h_description) and add # @aitri-tc TC-NM-013h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-013f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-013f\" (e.g. test_TC_NM_013f_description) and add # @aitri-tc TC-NM-013f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-013e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-013e\" (e.g. test_TC_NM_013e_description) and add # @aitri-tc TC-NM-013e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-014h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-014h\" (e.g. test_TC_NM_014h_description) and add # @aitri-tc TC-NM-014h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-014f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-014f\" (e.g. test_TC_NM_014f_description) and add # @aitri-tc TC-NM-014f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-014e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-014e\" (e.g. test_TC_NM_014e_description) and add # @aitri-tc TC-NM-014e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-015h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-015h\" (e.g. test_TC_NM_015h_description) and add # @aitri-tc TC-NM-015h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-015f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-015f\" (e.g. test_TC_NM_015f_description) and add # @aitri-tc TC-NM-015f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-015e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-015e\" (e.g. test_TC_NM_015e_description) and add # @aitri-tc TC-NM-015e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-016h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-016h\" (e.g. test_TC_NM_016h_description) and add # @aitri-tc TC-NM-016h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-016f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-016f\" (e.g. test_TC_NM_016f_description) and add # @aitri-tc TC-NM-016f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-016e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-016e\" (e.g. test_TC_NM_016e_description) and add # @aitri-tc TC-NM-016e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-017h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-017h\" (e.g. test_TC_NM_017h_description) and add # @aitri-tc TC-NM-017h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-017f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-017f\" (e.g. test_TC_NM_017f_description) and add # @aitri-tc TC-NM-017f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-017e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-017e\" (e.g. test_TC_NM_017e_description) and add # @aitri-tc TC-NM-017e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-018h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-018h\" (e.g. test_TC_NM_018h_description) and add # @aitri-tc TC-NM-018h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-018f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-018f\" (e.g. test_TC_NM_018f_description) and add # @aitri-tc TC-NM-018f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-018e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-018e\" (e.g. test_TC_NM_018e_description) and add # @aitri-tc TC-NM-018e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-019h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-019h\" (e.g. test_TC_NM_019h_description) and add # @aitri-tc TC-NM-019h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-019f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-019f\" (e.g. test_TC_NM_019f_description) and add # @aitri-tc TC-NM-019f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-019e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-019e\" (e.g. test_TC_NM_019e_description) and add # @aitri-tc TC-NM-019e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-020h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-020h\" (e.g. test_TC_NM_020h_description) and add # @aitri-tc TC-NM-020h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-020f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-020f\" (e.g. test_TC_NM_020f_description) and add # @aitri-tc TC-NM-020f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-020e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-020e\" (e.g. test_TC_NM_020e_description) and add # @aitri-tc TC-NM-020e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-021h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-021h\" (e.g. test_TC_NM_021h_description) and add # @aitri-tc TC-NM-021h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-021f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-021f\" (e.g. test_TC_NM_021f_description) and add # @aitri-tc TC-NM-021f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-021e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-021e\" (e.g. test_TC_NM_021e_description) and add # @aitri-tc TC-NM-021e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-022h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-022h\" (e.g. test_TC_NM_022h_description) and add # @aitri-tc TC-NM-022h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-022f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-022f\" (e.g. test_TC_NM_022f_description) and add # @aitri-tc TC-NM-022f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-022e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-022e\" (e.g. test_TC_NM_022e_description) and add # @aitri-tc TC-NM-022e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-023h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-023h\" (e.g. test_TC_NM_023h_description) and add # @aitri-tc TC-NM-023h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-023f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-023f\" (e.g. test_TC_NM_023f_description) and add # @aitri-tc TC-NM-023f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-023e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-023e\" (e.g. test_TC_NM_023e_description) and add # @aitri-tc TC-NM-023e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-024h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-024h\" (e.g. test_TC_NM_024h_description) and add # @aitri-tc TC-NM-024h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-024f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-024f\" (e.g. test_TC_NM_024f_description) and add # @aitri-tc TC-NM-024f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-024e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-024e\" (e.g. test_TC_NM_024e_description) and add # @aitri-tc TC-NM-024e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-025h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-025h\" (e.g. test_TC_NM_025h_description) and add # @aitri-tc TC-NM-025h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-025f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-025f\" (e.g. test_TC_NM_025f_description) and add # @aitri-tc TC-NM-025f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-025e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-025e\" (e.g. test_TC_NM_025e_description) and add # @aitri-tc TC-NM-025e above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-026h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-026h\" (e.g. test_TC_NM_026h_description) and add # @aitri-tc TC-NM-026h above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-026f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-026f\" (e.g. test_TC_NM_026f_description) and add # @aitri-tc TC-NM-026f above it. E2E tests may also require a browser environment."
+    },
+    {
+      "tc_id": "TC-NM-026e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-NM-026e\" (e.g. test_TC_NM_026e_description) and add # @aitri-tc TC-NM-026e above it. E2E tests may also require a browser environment."
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-016",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 15,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-017",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-018",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 3,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-019",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 18,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-020",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-021",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 3,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-022",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 9,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-023",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 6,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-024",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 3,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-025",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-026",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-027",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-028",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 3,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-029",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 3,
+      "tests_manual": 0,
+      "status": "partial"
+    }
+  ],
+  "summary": {
+    "total": 78,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 71,
+    "skipped_e2e": 26,
+    "skipped_no_marker": 45,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}

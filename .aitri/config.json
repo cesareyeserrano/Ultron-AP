@@ -1,55 +1,23 @@
 {
-  "currentPhase": 5,
+  "currentPhase": "ux",
   "approvedPhases": [
     "discovery",
-    "ux",
-    1,
-    2,
-    3,
-    4,
-    5
+    1
   ],
   "completedPhases": [
     1,
-    2,
-    3,
-    4,
-    "discovery",
-    "ux",
-    5
+    "discovery"
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "2.0.0-alpha.4",
+  "aitriVersion": "2.0.0-alpha.13",
   "artifactsDir": "spec",
-  "updatedAt": "2026-04-27T21:09:23.656Z",
+  "updatedAt": "2026-04-29T20:51:04.963Z",
   "artifactHashes": {
     "1": "56daf794722c06209814b3d1d697aaf5f6204406f4b06ea20dfd381646618c4f",
-    "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
-    "3": "01ef9973ed7d0d6b3f645d1aac8b8aeee4751ddd97fe7082810165716fc35da1",
-    "4": "8dbfb0b1610624ffb323e1fbf36d0aa89d51330ae692c072bb387d0b221fed64",
-    "5": "648618a873e11b8c446821b41c69340ec8aa24da4ba2585041a963cad0e7777a",
-    "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda",
-    "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
+    "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda"
   },
   "events": [
-    {
-      "at": "2026-03-18T22:32:14.166Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 20,
-      "failed": 0
-    },
-    {
-      "at": "2026-03-18T22:32:24.618Z",
-      "event": "completed",
-      "phase": 5
-    },
-    {
-      "at": "2026-03-18T22:32:27.881Z",
-      "event": "approved",
-      "phase": 5
-    },
     {
       "at": "2026-04-23T01:14:10.326Z",
       "event": "verify-run",
@@ -202,20 +170,25 @@
       "files": 0,
       "method": "git",
       "auto": true
+    },
+    {
+      "at": "2026-04-27T22:15:41.889Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-04-27T22:17:15.265Z",
+      "event": "approved",
+      "phase": 1
+    },
+    {
+      "at": "2026-04-27T22:17:19.269Z",
+      "event": "started",
+      "phase": "ux"
     }
   ],
-  "verifyPassed": true,
+  "verifyPassed": false,
   "verifyTimestamp": "2026-03-18T22:32:14.166Z",
-  "verifySummary": {
-    "total": 45,
-    "passed": 45,
-    "failed": 0,
-    "skipped": 0,
-    "skipped_e2e": 0,
-    "skipped_no_marker": 0,
-    "manual": 0,
-    "manual_verified": 0
-  },
   "driftPhases": [],
   "rejections": {
     "5": {
@@ -225,20 +198,13 @@
   },
   "verifyRanAt": "2026-04-27T17:28:08.971Z",
   "lastSession": {
-    "at": "2026-04-27T21:03:15.901Z",
+    "at": "2026-04-27T22:17:15.278Z",
     "agent": "unknown",
-    "event": "normalize --resolve",
+    "event": "approve requirements",
     "files_touched": [
-      ".aitri/config.json",
-      "spec/04_TEST_RESULTS.json"
+      ".aitri/config.json"
     ]
   },
   "auditLastAt": "2026-04-27T16:06:53.313Z",
-  "normalizeState": {
-    "baseRef": "ccff60c09cfec20c14201c68165cef70b183099b",
-    "method": "git",
-    "status": "resolved",
-    "lastRun": "2026-04-27T21:03:15.887Z"
-  },
   "upgradeFindings": []
 }

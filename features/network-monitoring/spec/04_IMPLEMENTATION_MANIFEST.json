@@ -1,0 +1,131 @@
+{
+  "files_created": [
+    { "path": "internal/network/network.go" },
+    { "path": "internal/network/breaker/breaker.go" },
+    { "path": "internal/network/store/store.go" },
+    { "path": "internal/network/aggregate/aggregate.go" },
+    { "path": "internal/network/aggregate/aggregate_test.go" },
+    { "path": "internal/network/probe/icmp/icmp.go" },
+    { "path": "internal/network/probe/dns/dns.go" },
+    { "path": "internal/network/probe/dns/dns_test.go" },
+    { "path": "internal/network/probe/wifi/wifi.go" },
+    { "path": "internal/network/probe/path/path.go" },
+    { "path": "internal/network/probe/speedtest/speedtest.go" },
+    { "path": "internal/network/probe/speedtest/speedtest_test.go" },
+    { "path": "internal/network/discover/lan/lan.go" },
+    { "path": "internal/network/discover/lan/boundary_test.go" },
+    { "path": "internal/network/api/api.go" },
+    { "path": "internal/network/api/validate.go" },
+    { "path": "internal/network/api/validate_test.go" },
+    { "path": "internal/network/alerts/alerts.go" }
+  ],
+  "files_modified": [],
+  "setup_commands": [],
+  "environment_variables": [],
+  "test_runner": "go test ./... -v",
+  "test_files": [
+    "internal/network/aggregate/aggregate_test.go",
+    "internal/network/probe/dns/dns_test.go",
+    "internal/network/probe/speedtest/speedtest_test.go",
+    "internal/network/api/validate_test.go",
+    "internal/network/discover/lan/boundary_test.go"
+  ],
+  "technical_debt": [
+    {
+      "fr_id": "FR-016",
+      "substitution": "ICMP probe Worker.Run returns ErrSkeleton. No pro-bing integration, no jitter EWMA, no loss window, no helper-fallback path.",
+      "reason": "Phase 4 vertical slice scope: pure-logic helpers covered. ICMP worker requires pro-bing dependency + helper integration; deferred to next iteration.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-017",
+      "substitution": "DNS Worker.Run returns ErrSkeleton. RandomCacheBypassLabel implemented and tested (TC-NM-002e), but the resolver loop, fail-rate window and jitter computation are not.",
+      "reason": "Phase 4 vertical slice covered the cache-bypass primitive; the loop wiring depends on the store layer which is also skeleton.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-018",
+      "substitution": "WAN uptime/outage tracking is not implemented — Service.Status() returns collector=down. No outage rule, no 30s gateway-vs-WAN disambiguation.",
+      "reason": "Phase 4 vertical slice scope: depends on FR-016 ICMP worker.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-019",
+      "substitution": "Network dashboard page registers HTTP routes that return 501 Not Implemented. No HTML templates, no HTMX swaps, no SSE wiring.",
+      "reason": "Phase 4 vertical slice scope: routing surface plumbed; renderers deferred.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-020",
+      "substitution": "Aggregator: PickResolution() implemented and tested (TC-NM-005e + 5 boundary sub-cases). Downsampler.RunOnce compaction job returns ErrSkeleton.",
+      "reason": "Resolution-band logic locked. Bucket writer requires persistence layer (FR-021) which is also skeleton.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-021",
+      "substitution": "store.Store implementation is a skeleton — every method returns ErrSkeleton. No single-writer goroutine, no batching, no migration 0007_network.sql.",
+      "reason": "Phase 4 vertical slice scope: kept SQLite I/O out to limit blast radius. Store interface and row types declared.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-022",
+      "substitution": "alerts.Adapter forwards to the parent Engine but no rule evaluation is implemented (no sustained-window logic, no cooldown tracking, no rule-kind dispatch).",
+      "reason": "Phase 4 vertical slice scope: adapter wires the dependency; rule logic deferred.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-023",
+      "substitution": "breaker.Breaker is a no-op — AllowSample/AllowSpeedtest always return true; ConsumeBytes is a no-op; State() returns the zero value. No CPU/RAM sampler, no token bucket, no priority pause cascade.",
+      "reason": "Phase 4 vertical slice scope: Class enum and State struct declared; budget logic deferred.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-024",
+      "substitution": "speedtest.Dispatcher.Run returns ErrSkeleton. No librespeed-cli invocation via helper, no JSON parsing, no scheduled trigger.",
+      "reason": "Phase 4 vertical slice scope: helper integration deferred. Result struct declared.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-025",
+      "substitution": "GradeBufferbloat() implemented and tested across A/B/C/D/F bands (TC-NM-010e + TC-NM-010h + TC-NM-010f). Wiring into Result population happens when FR-024 dispatcher is implemented.",
+      "reason": "Pure grading function locked; consumer (FR-024) deferred.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-026",
+      "substitution": "ValidatePublicIPEchoURL() implemented and tested (TC-NM-011e: rejects non-allow-listed hosts, non-HTTPS schemes, accepts the three allow-listed hosts). The cadence loop and event emission are not yet implemented.",
+      "reason": "SSRF defence at settings save is the highest-leverage piece; loop depends on store layer.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-027",
+      "substitution": "lan.Worker.Run returns ErrSkeleton. The package-boundary invariant (no gopacket/pcap imports) is asserted by TC-NM-012e. ARP reader, mDNS listener, virtual-interface filter not implemented.",
+      "reason": "Boundary test locks the security invariant immediately. Active discovery code deferred.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-028",
+      "substitution": "wifi.Worker.Run returns ErrSkeleton. No /proc/net/wireless parser, no `iw dev wlanX link` invocation via helper, no Not-Applicable detection.",
+      "reason": "Phase 4 vertical slice scope: parsers and helper invocation deferred.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-029",
+      "substitution": "path.Worker.Run returns ErrSkeleton. No traceroute invocation via helper, no hop-diff, no path_changed event emission.",
+      "reason": "Phase 4 vertical slice scope: helper invocation deferred.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "NFR-005",
+      "substitution": "Disk-growth and retention budgets not enforced — depends on FR-021 store and FR-020 aggregator compaction.",
+      "reason": "Will be enforced by aggregate.Downsampler + store retention sweep.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "NFR-008",
+      "substitution": "Structured slog lines not yet emitted from worker call sites (skeletons return ErrSkeleton without logging). Logger plumbed through Deps.",
+      "reason": "Call sites land with the worker implementations.",
+      "effort_to_fix": "low"
+    }
+  ]
+}

@@ -1,0 +1,170 @@
+{
+  "currentPhase": 4,
+  "approvedPhases": [
+    "ux",
+    2,
+    3,
+    1,
+    4
+  ],
+  "completedPhases": [
+    "ux",
+    2,
+    3,
+    1,
+    4
+  ],
+  "projectName": "network-monitoring",
+  "createdAt": "2026-04-27T22:06:23.438Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-04-29T21:51:55.010Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-04-28T03:03:15.754Z",
+      "event": "started",
+      "phase": 2
+    },
+    {
+      "at": "2026-04-28T03:15:24.533Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-04-28T03:15:28.741Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-04-28T03:15:33.622Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-04-28T03:38:10.072Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-04-28T03:38:13.964Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-04-28T03:38:18.061Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-04-28T12:46:26.576Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-04-28T12:46:32.196Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-04-28T12:46:44.564Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 78,
+      "manual": 0
+    },
+    {
+      "at": "2026-04-29T14:55:47.563Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 78,
+      "manual": 0
+    },
+    {
+      "at": "2026-04-29T17:45:15.426Z",
+      "event": "rejected",
+      "phase": 4,
+      "feedback": "Phase 4 fue aprobada como canario del pipeline Aitri sin código real (manifest documenta technical_debt: 'skeleton-only — feature pipeline used as Aitri canary, no real implementation'). Re-abrir para implementación real contra los 78 TCs definidos en 03_TEST_CASES.json."
+    },
+    {
+      "at": "2026-04-29T17:47:49.032Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-04-29T17:53:40.784Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-04-29T17:55:23.041Z",
+      "event": "approved",
+      "phase": 1,
+      "ideaArchived": true
+    },
+    {
+      "at": "2026-04-29T20:49:47.500Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-04-29T21:33:55.849Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-04-29T21:51:46.668Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-04-29T21:51:50.518Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 71,
+      "manual": 0
+    },
+    {
+      "at": "2026-04-29T21:51:54.986Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 71,
+      "manual": 0
+    }
+  ],
+  "artifactHashes": {
+    "1": "bb8c476864f6780b9bdff8ec23a4376894f9aabf90279f590ea6e626f2b0725a",
+    "2": "d286bb7c4432bf76244c1b1aceb430d40216ae47764beccfb682697c7d78552b",
+    "3": "6fd39d9291d3e241de9953d16b61ab15e36941a0184d53b38cb61ea569f22adc",
+    "4": "138d5de3b01ce902ba2e5f4aef6754fb25d7d778f0cfa42508c4d6e1ac5b1fb0",
+    "ux": "78a9cdefe6a137a3a80a33a98595cf38e5857b1f1b5ab227777c6036bbeafdbd"
+  },
+  "lastSession": {
+    "at": "2026-04-29T21:51:55.010Z",
+    "agent": "unknown",
+    "event": "verify-run",
+    "files_touched": [
+      ".aitri/config.json"
+    ]
+  },
+  "normalizeState": {
+    "baseRef": "d5ffe5a9c27e935db1752dcabb7c7e85324fe748",
+    "method": "git",
+    "status": "resolved",
+    "lastRun": "2026-04-29T21:51:46.667Z"
+  },
+  "verifyRanAt": "2026-04-29T21:51:54.986Z",
+  "rejections": {
+    "4": {
+      "at": "2026-04-29T17:45:15.425Z",
+      "feedback": "Phase 4 fue aprobada como canario del pipeline Aitri sin código real (manifest documenta technical_debt: 'skeleton-only — feature pipeline used as Aitri canary, no real implementation'). Re-abrir para implementación real contra los 78 TCs definidos en 03_TEST_CASES.json."
+    }
+  }
+}

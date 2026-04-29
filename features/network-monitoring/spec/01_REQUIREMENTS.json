@@ -1,0 +1,616 @@
+{
+  "project_name": "Ultron-AP — Network Monitoring (feature)",
+  "project_summary": {
+    "feature": "network-monitoring",
+    "scope": "Add continuous home-network observability (LAN + Internet uplink) to the existing Ultron-AP panel running on Raspberry Pi. Inherits auth (FR-007), privilege separation (FR-011), CSRF (FR-012), alert engine (FR-004), notification channels (FR-005, FR-006), dark-mode UI (FR-009), and SQLite persistence patterns from the parent project. Net new: probe collectors, network metrics surface, network-class alert rules, and an explicit resource-budget circuit breaker.",
+    "product_analysis": {
+      "north_star_kpi": "Time-to-diagnose a perceived network issue: when the operator opens the Network page, a likely-cause indicator (WAN/DNS/LAN/WiFi) is rendered within 5 seconds, backed by ≥7 days of history.",
+      "jtbd": "When my home network feels slow or unreliable, I hire Ultron to tell me which layer is at fault and whether it has been getting worse.",
+      "guardrail_metric": "Monitor overhead must not exceed: CPU avg ≤5% on the Pi, RAM ≤50 MB above pre-feature baseline, disk ≤500 MB per 30 days of history, and active probes (speedtest, etc.) ≤500 MB/day of WAN traffic by default. If breached, the collector self-throttles."
+    },
+    "idea_gaps": [],
+    "inherits_from_parent": [
+      "FR-001 dashboard pattern",
+      "FR-004 alert engine",
+      "FR-005/FR-006 notifications",
+      "FR-007 auth",
+      "FR-009 UI tokens",
+      "FR-011 privilege separation",
+      "FR-012 CSRF",
+      "FR-015 backup"
+    ]
+  },
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator (home network owner)",
+      "tech_level": "intermediate",
+      "goal": "Diagnose home-network slowness without leaving the panel and without subscribing to an external SaaS; see whether the ISP, the router, the WiFi or a specific device is at fault, with a 7-day history.",
+      "pain_point": "Perceived slowness during videocalls/streaming/gaming has no evidence trail; today the operator reboots the router blindly or runs ad-hoc speedtests that vanish after closing the tab."
+    }
+  ],
+  "no_go_zone": [
+    "No deep packet inspection or continuous packet capture — payload contents are never recorded.",
+    "No QoS, traffic shaping, parental control, or any active mutation of network behaviour — this feature observes only.",
+    "No intrusion detection, vulnerability scanning, or pentesting of LAN devices.",
+    "No multi-site / multi-tenant — a single home network managed by a single Ultron instance.",
+    "No agents installed on remote devices (phones, laptops, IoT) — all collection happens on the Pi or via read-only queries to the router if reachable.",
+    "No replacement of, or migration to, third-party stacks (Grafana, Prometheus, InfluxDB) inside Ultron — storage stays in SQLite next to existing data unless Phase 2 architecture explicitly justifies a change.",
+    "No active probe runs by default that materially saturate the WAN — speedtest-class probes are opt-in and scheduled outside peak hours, never continuous.",
+    "No alerting via channels not already supported by the parent project (Telegram, Email) — no SMS, no Slack, no PagerDuty in v1.",
+    "No anomaly detection / ML — only deterministic threshold + sustained-window rules in v1."
+  ],
+  "constraints": [
+    "Must run on linux/arm64 Raspberry Pi alongside existing Ultron-AP binary (NFR-002 of parent — single Go binary).",
+    "Must respect FR-011 privilege separation: any operation requiring CAP_NET_RAW (ICMP raw sockets, ARP scans) is delegated to the privileged helper via Unix socket with an allow-list.",
+    "Must reuse the existing SQLite database file and backup pipeline (FR-015) — no separate datastore.",
+    "Must reuse FR-004 alert engine for new network rules — no parallel alert pipeline.",
+    "All UI must satisfy FR-009 dark-mode tokens and WCAG AA contrast.",
+    "All state-changing endpoints must enforce FR-007 auth and FR-012 CSRF."
+  ],
+  "technology_preferences": [
+    "Go (parent project language) for collectors.",
+    "SQLite for samples + events; downsampled aggregates as separate tables.",
+    "Server-Sent Events for live updates (consistent with parent dashboard)."
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-016",
+      "title": "Active latency / jitter / loss probes to configurable targets",
+      "description": "Run periodic ICMP (or UDP fallback) probes against a configurable target list. Default targets: default gateway, 1.1.1.1, 8.8.8.8, the configured DNS resolver. Each probe records RTT in ms, computes jitter as the mean absolute deviation of RTT over the last N samples, and computes packet-loss percentage over a rolling window. Default cadence: one sample per target every 10 seconds.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "For each configured target, the API returns the current RTT in ms, jitter in ms, and loss% over the last 5 minutes.",
+        "When a target is unreachable for ≥3 consecutive probes, its loss% reflects 100% and an event of type 'target_unreachable' is recorded.",
+        "Probe cadence per target is configurable from 5s to 300s; the configured value is honoured within ±10% in steady state.",
+        "Privileged ICMP raw-socket access goes through the FR-011 helper; the web process never opens a raw socket directly.",
+        "Removing a target from configuration stops further probes within one cadence cycle and retains its prior history."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-017",
+      "title": "DNS resolution probes",
+      "description": "Periodically resolve a configurable set of (resolver, domain) pairs and record resolution time, response code, and failure flag. Default resolvers: system resolver, 1.1.1.1, 8.8.8.8. Default domains: a small fixed set including a likely-cached popular domain and a fresh randomised label to bypass caches.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "For each (resolver, domain) pair the API returns last resolution time in ms, last status (ok/timeout/nxdomain/servfail), and 1-hour failure rate.",
+        "When resolution fails, the failure is recorded with its status code and does not block other probes from running.",
+        "Cache-bypass probes use a randomised subdomain so cached answers do not mask resolver health.",
+        "Resolution timeout is configurable (default 2 s); a timeout is recorded as 'timeout' rather than crashing the worker."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-018",
+      "title": "WAN uptime and outage tracking",
+      "description": "Aggregate FR-016 probe results into a continuous WAN-up signal: WAN is considered up while at least one off-LAN target answers within the cadence window. Persist outage events with start, end, and duration. Compute uptime% over rolling 1h / 24h / 7d / 30d windows.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "When all off-LAN targets fail probes for ≥30 s the system records an outage_start event with that timestamp.",
+        "When at least one off-LAN target answers again, an outage_end event is recorded and the outage duration is computed.",
+        "The API returns uptime% over 1h / 24h / 7d / 30d windows; values are within ±0.1% of (samples_up / total_samples) for the window.",
+        "Outage events survive process restart and are visible after restart with original timestamps."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-019",
+      "title": "Network dashboard page",
+      "description": "New 'Network' page in the panel showing the current snapshot — per-target RTT/jitter/loss, WAN up/down indicator, current public IP, last outage, current Pi interface throughput, and a likely-cause hint when degraded. Updates over SSE without page reload.",
+      "priority": "MUST",
+      "type": "reporting",
+      "acceptance_criteria": [
+        "When the Network page loads with ≥7 days of collected data, current values for RTT, jitter, loss, throughput and WAN status are visible above the fold within 5 seconds on the Pi-served panel.",
+        "When the Network page is open and a new sample is persisted, the displayed values update via SSE within 5 s without a full page reload.",
+        "When WAN is currently down, the page shows a 'WAN down since HH:MM' indicator using the FR-009 'critical' (red) semantic token; in nominal state it shows 'ok' (green).",
+        "When data is missing for any panel section, that section renders an explicit empty state — never a stuck spinner or undefined values.",
+        "All status text on the page meets WCAG 2.1 AA contrast (≥4.5:1) on the dark background."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-020",
+      "title": "Historical charts with downsampling and retention",
+      "description": "Time-series charts for latency, jitter, loss, throughput, and DNS resolution time over selectable windows: last 60 minutes, 24 hours, 7 days, 30 days. The collector downsamples raw samples into per-minute, per-hour, and per-day aggregates so that charts render with bounded point counts regardless of window length.",
+      "priority": "MUST",
+      "type": "reporting",
+      "acceptance_criteria": [
+        "Each chart window renders with at most 600 points after downsampling, and chart render latency on the Pi-served panel is ≤2 s for the 30-day window with full retention.",
+        "Each downsampled bucket exposes min, mean, p95, max for latency-class metrics and sum for throughput-class metrics.",
+        "Retention is configurable per resolution; defaults: raw 7 days, 1-min 30 days, 1-hour 1 year. Records older than retention are deleted by a daily compaction job.",
+        "When zero data exists for the selected window the chart renders an explicit empty state, not a broken axis."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-021",
+      "title": "Network samples and events persistence",
+      "description": "Persist raw probe samples, downsampled aggregates, outage events, and IP-change events in the existing SQLite database, in tables namespaced under 'net_'. Storage is bounded by FR-020 retention and included in FR-015 backup.",
+      "priority": "MUST",
+      "type": "persistence",
+      "acceptance_criteria": [
+        "After process restart, the API returns the same uptime%, last outage, and chart history as before the restart for any window with persisted data.",
+        "After 30 days of running at default cadence with the default target set, total disk used by net_ tables is ≤500 MB.",
+        "When a probe write fails (disk full, locked DB), the failure is logged once per minute and the probe loop continues without crashing.",
+        "Network tables are included in the FR-015 SQLite backup file and restorable from it."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-022",
+      "title": "Network-class alert rules in the existing alert engine",
+      "description": "Extend the FR-004 alert engine with network rule types: sustained latency above threshold, sustained loss above threshold, WAN outage, DNS-resolver failure rate, and public-IP change. Each rule has a sustained-duration parameter to avoid flapping. Alerts route through the existing FR-005/FR-006 notification channels.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "When latency to any configured target exceeds the threshold for the configured sustained duration (default 5 minutes), the alert fires once and respects the existing 15-minute cooldown.",
+        "When packet loss to any configured target exceeds the threshold for the configured sustained duration, an alert is fired with the target name, current loss%, and threshold in the message body.",
+        "When WAN goes down (FR-018 outage_start) the alert fires immediately at 'critical' severity; when WAN comes back up an 'info' resolution alert is fired.",
+        "When the public IP changes (FR-026), an 'info' alert is fired containing old and new IP.",
+        "Network rules render in the existing alerts panel with the same severity colour tokens as parent rules and are mutable from the same settings UI patterns."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-023",
+      "title": "Resource-budget circuit breaker for the monitor",
+      "description": "The monitor enforces an explicit resource budget — CPU, RAM, disk-growth, and WAN-bandwidth used by probes — and self-throttles when the budget is exceeded. The current overhead and the active state of the breaker are visible in the UI.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "When 5-minute average CPU consumed by network workers exceeds the configured threshold (default 5%), probe cadences are halved until consumption returns below the threshold for 10 minutes.",
+        "When the resident memory of network workers exceeds the configured RAM budget (default 50 MB above pre-feature baseline), the lowest-priority probe class (top talkers, traceroute) is paused first.",
+        "When daily WAN traffic generated by active probes exceeds the configured budget (default 500 MB/day), all speedtest-class probes are blocked for the rest of the UTC day and an 'info' alert is fired.",
+        "The Network page shows current monitor CPU%, RAM MB, and last-24h probe-bandwidth used, plus a badge when the breaker is active.",
+        "Budget thresholds are configurable from the settings panel and persisted in SQLite."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-024",
+      "title": "On-demand bandwidth test (down/up)",
+      "description": "Allow the operator to run a bandwidth test on demand from the Network page; result records download Mbps, upload Mbps, idle latency, and loaded latency. Optionally schedule the test (default OFF) at most once per configurable interval, never inside a configurable peak-hours window.",
+      "priority": "SHOULD",
+      "type": "logic",
+      "acceptance_criteria": [
+        "When the operator clicks 'Run speedtest' the test starts within 2 s and a job-id is returned; final result appears in the UI within the test's natural duration plus 5 s.",
+        "Each speedtest result is persisted with timestamp, down Mbps, up Mbps, idle RTT, loaded RTT.",
+        "Scheduled speedtests are OFF by default; when enabled, they never run inside the configured peak-hours window.",
+        "If FR-023 has blocked speedtest-class probes for the day, the on-demand action returns a clear 'budget_exhausted' error and is not executed."
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-025",
+      "title": "Bufferbloat score (idle vs loaded latency)",
+      "description": "When a speedtest (FR-024) runs, also record idle latency before the test and loaded latency during down/up phases, and compute a bufferbloat grade based on added latency under load.",
+      "priority": "SHOULD",
+      "type": "reporting",
+      "acceptance_criteria": [
+        "Each speedtest result includes added_latency_down_ms and added_latency_up_ms relative to idle.",
+        "A grade A–F is assigned based on configurable thresholds; defaults: A ≤30 ms, B ≤60 ms, C ≤100 ms, D ≤200 ms, F >200 ms added latency.",
+        "The Network page shows the most recent bufferbloat grade with the appropriate FR-009 semantic colour."
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-026",
+      "title": "Public IP tracking and change events",
+      "description": "Resolve the current public IPv4 (and IPv6 when available) at a configurable cadence using a configurable echo endpoint; persist value and emit a public_ip_changed event when it differs from the previous value.",
+      "priority": "SHOULD",
+      "type": "logic",
+      "acceptance_criteria": [
+        "The API returns the current public IPv4 and the timestamp it was last verified.",
+        "When the public IP changes, a public_ip_changed event is recorded with old and new values and routes to FR-022 alerting.",
+        "If the echo endpoint is unreachable for ≥3 consecutive attempts, the system marks public IP as 'unknown' rather than reporting a stale value as current."
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-027",
+      "title": "LAN device discovery (passive, low-cost)",
+      "description": "Periodically enumerate LAN hosts using ARP table reads and mDNS listening on the LAN interface. Record hostname (when discoverable), MAC, IP, vendor (from OUI), first-seen and last-seen timestamps. Active subnet sweeps are NOT performed.",
+      "priority": "SHOULD",
+      "type": "logic",
+      "acceptance_criteria": [
+        "After 24 hours of running on a LAN with N devices, the device list contains an entry per MAC observed in ARP or mDNS, with last-seen within ±2 minutes of its actual last activity seen by the Pi.",
+        "Devices not seen for the configured stale window (default 7 days) are auto-pruned from the active list but kept in history.",
+        "The discovery worker performs no active subnet sweep — it only reads the kernel ARP table and listens to mDNS multicasts."
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-028",
+      "title": "WiFi link metrics (Pi-side)",
+      "description": "When the Pi is connected over WiFi (wlan interface up), record RSSI in dBm, link quality, negotiated PHY rate, channel, band (2.4/5/6 GHz), retries, and CRC errors using `iw dev` and `/proc/net/wireless`. When the Pi is Ethernet-only, this FR is dormant and reports a clear 'not_applicable' state in the UI.",
+      "priority": "COULD",
+      "type": "reporting",
+      "acceptance_criteria": [
+        "When wlan is up, the API returns RSSI, link quality, bitrate, channel, band, retries, and CRC errors at the configured cadence (default 30 s).",
+        "When the Pi is Ethernet-only the WiFi panel renders 'Not applicable — Pi is on Ethernet' rather than empty values.",
+        "Reading WiFi metrics does not require root; it uses unprivileged interfaces only."
+      ],
+      "implementation_level": "present"
+    },
+    {
+      "id": "FR-029",
+      "title": "Path tracking (periodic traceroute)",
+      "description": "Run a traceroute to one or two configurable targets at a low cadence (default once per hour). Persist hop count and the IP chain, and emit a path_changed event when the hop sequence differs from the prior result.",
+      "priority": "COULD",
+      "type": "logic",
+      "acceptance_criteria": [
+        "After at least two consecutive traceroute runs, the API returns the most recent path with hop_count and a list of hop IPs.",
+        "When the hop sequence differs from the previous run, a path_changed event is recorded; that event is visible in the events log within one cadence cycle.",
+        "Traceroute uses the FR-011 helper for any privileged socket and respects the FR-023 breaker."
+      ],
+      "implementation_level": "present"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-005",
+      "category": "Performance",
+      "requirement": "Steady-state monitor overhead must remain within: CPU 5-min average ≤5%, RSS ≤50 MB above pre-feature baseline, DB growth ≤500 MB / 30 days at default config, probe-generated WAN traffic ≤500 MB / day. Verified by FR-023 self-measurement.",
+      "acceptance_criteria": [
+        "Synthetic test running default config for 24 h reports values inside the budget.",
+        "When any threshold is breached, FR-023 throttling is observable in metrics."
+      ]
+    },
+    {
+      "id": "NFR-006",
+      "category": "Reliability",
+      "requirement": "Probe workers degrade gracefully on transient errors (target unreachable, DNS timeout, helper socket EAGAIN) using exponential backoff up to a 60 s cap; no single target failure stalls other probes.",
+      "acceptance_criteria": [
+        "Forcing one target to time out indefinitely does not delay any other target's cadence by more than ±10%.",
+        "Killing the helper socket transiently triggers reconnect with backoff and does not crash the web process."
+      ]
+    },
+    {
+      "id": "NFR-007",
+      "category": "Security",
+      "requirement": "All privileged net operations (ICMP raw, traceroute) run only via the FR-011 helper, and only commands matching an allow-list of binaries and argument shapes are executed.",
+      "acceptance_criteria": [
+        "Inspecting the helper allow-list shows explicit entries for ping/traceroute with restricted argument grammar.",
+        "Any privileged command outside the allow-list is rejected with a logged audit entry."
+      ]
+    },
+    {
+      "id": "NFR-008",
+      "category": "Observability",
+      "requirement": "Each probe run logs a single line to stdout in the form `[ts] PROBE target=<t> kind=<icmp|dns|st> status=<ok|fail|timeout> rtt_ms=<n>` at info level; debug level is configurable.",
+      "acceptance_criteria": [
+        "After 1 minute of running, journalctl shows ≥1 PROBE line per configured target.",
+        "Setting log level to warn suppresses PROBE info lines but still emits failures."
+      ]
+    },
+    {
+      "id": "NFR-009",
+      "category": "Security",
+      "requirement": "All network-feature endpoints inherit FR-007 authentication and FR-012 CSRF; no new public unauthenticated route is introduced. /health remains the only public route.",
+      "acceptance_criteria": [
+        "A request to any /api/network/* without a valid session returns 302 → /login (HTML) or 401 (JSON) per parent convention.",
+        "A POST to any /api/network/* without a valid CSRF token returns 403."
+      ]
+    },
+    {
+      "id": "NFR-010",
+      "category": "Reliability",
+      "requirement": "CI/CD inheritance — the network feature is built and tested by the parent project's existing pipeline; no new pipeline is introduced. (CI/CD operational NFR is therefore declared 'covered by parent' rather than re-stated.)",
+      "acceptance_criteria": [
+        "Adding the feature does not require changes to .github/workflows beyond adding new test files; existing make targets still produce a working linux/arm64 binary."
+      ]
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-016",
+      "requirement_id": "FR-016",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "continuous latency, jitter, and packet-loss measurements to a small set of targets",
+      "so_that": "I can tell whether a perceived slowness is the LAN, the gateway, or the WAN",
+      "acceptance_criteria": [
+        {
+          "id": "AC-016-001",
+          "given": "the default target set is configured and the collector has been running for at least 5 minutes",
+          "when": "I open /api/network/probes",
+          "then": "each target returns rtt_ms, jitter_ms and loss_pct for the last 5-minute window"
+        },
+        {
+          "id": "AC-016-002",
+          "given": "I disconnect the WAN cable and wait 60 seconds",
+          "when": "I query the same endpoint",
+          "then": "off-LAN targets show loss_pct=100 and an event 'target_unreachable' is recorded"
+        },
+        {
+          "id": "AC-016-003",
+          "given": "the operator changes a target's cadence from 10 s to 60 s",
+          "when": "the new config is saved",
+          "then": "the next 5 probe intervals for that target average 60 s ±10%"
+        }
+      ]
+    },
+    {
+      "id": "US-017",
+      "requirement_id": "FR-017",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "DNS resolution-time tracking against multiple resolvers",
+      "so_that": "I can tell whether DNS or the link itself is slow",
+      "acceptance_criteria": [
+        {
+          "id": "AC-017-001",
+          "given": "DNS probes are configured for 1.1.1.1 and 8.8.8.8",
+          "when": "I open /api/network/dns",
+          "then": "each (resolver, domain) entry returns last_ms and 1h failure_rate"
+        },
+        {
+          "id": "AC-017-002",
+          "given": "I block 1.1.1.1 at the firewall",
+          "when": "the next probe runs",
+          "then": "the result is recorded with status='timeout' and other resolvers continue probing without delay"
+        }
+      ]
+    },
+    {
+      "id": "US-018",
+      "requirement_id": "FR-018",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a continuous WAN up/down signal with outage history",
+      "so_that": "I can prove to the ISP exactly when and how long the link was down",
+      "acceptance_criteria": [
+        {
+          "id": "AC-018-001",
+          "given": "all off-LAN targets fail probes for 35 seconds",
+          "when": "the aggregator runs",
+          "then": "an outage_start event is recorded at the failure timestamp"
+        },
+        {
+          "id": "AC-018-002",
+          "given": "any off-LAN target answers again",
+          "when": "the aggregator runs",
+          "then": "an outage_end event is recorded with computed duration_seconds"
+        },
+        {
+          "id": "AC-018-003",
+          "given": "the system has been running 7 full days",
+          "when": "I query uptime over 7d",
+          "then": "the returned percentage equals samples_up/total_samples within ±0.1%"
+        }
+      ]
+    },
+    {
+      "id": "US-019",
+      "requirement_id": "FR-019",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a Network page with the current network snapshot and a likely-cause hint",
+      "so_that": "I can diagnose perceived slowness in seconds without opening multiple tabs",
+      "acceptance_criteria": [
+        {
+          "id": "AC-019-001",
+          "given": "I am authenticated and the collector has ≥5 minutes of data",
+          "when": "I open the Network page on the Pi-served panel",
+          "then": "RTT, jitter, loss, throughput and WAN status are visible above the fold within 5 seconds"
+        },
+        {
+          "id": "AC-019-002",
+          "given": "the Network page is open",
+          "when": "a new sample is persisted",
+          "then": "displayed values update via SSE within 5 s without a page reload"
+        },
+        {
+          "id": "AC-019-003",
+          "given": "WAN is currently down",
+          "when": "the page renders",
+          "then": "the WAN section shows a red 'WAN down since HH:MM' indicator using the FR-009 critical token"
+        }
+      ]
+    },
+    {
+      "id": "US-020",
+      "requirement_id": "FR-020",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "history charts for latency/jitter/loss/throughput over 1h, 24h, 7d, 30d",
+      "so_that": "I can see whether a problem is a one-off or a trend",
+      "acceptance_criteria": [
+        {
+          "id": "AC-020-001",
+          "given": "30 days of data exist",
+          "when": "I select the 30-day window",
+          "then": "the chart renders with ≤600 points and load completes within 2 s on the Pi-served panel"
+        },
+        {
+          "id": "AC-020-002",
+          "given": "no samples exist for the selected window",
+          "when": "the chart renders",
+          "then": "an explicit empty state is shown instead of a broken axis"
+        }
+      ]
+    },
+    {
+      "id": "US-021",
+      "requirement_id": "FR-021",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "network history persisted across restarts",
+      "so_that": "rebooting the Pi does not erase my evidence",
+      "acceptance_criteria": [
+        {
+          "id": "AC-021-001",
+          "given": "data has been collected for ≥1 hour",
+          "when": "the Ultron service is restarted",
+          "then": "the API returns identical uptime%, last outage and 1h chart history as before the restart"
+        },
+        {
+          "id": "AC-021-002",
+          "given": "the SQLite file is restored from a FR-015 backup",
+          "when": "the service starts",
+          "then": "the network history present in the backup is visible and queryable"
+        }
+      ]
+    },
+    {
+      "id": "US-022",
+      "requirement_id": "FR-022",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "Telegram/email alerts when the network degrades for a sustained window",
+      "so_that": "I am notified about real problems but not flapping noise",
+      "acceptance_criteria": [
+        {
+          "id": "AC-022-001",
+          "given": "a latency rule of >150 ms sustained 5 minutes is configured for target 1.1.1.1",
+          "when": "RTT exceeds 150 ms for 6 minutes",
+          "then": "exactly one Telegram alert is fired and respects the 15-min cooldown if the condition continues"
+        },
+        {
+          "id": "AC-022-002",
+          "given": "WAN goes down per FR-018",
+          "when": "outage_start is emitted",
+          "then": "a critical Telegram/email alert is fired immediately containing target list and timestamp"
+        },
+        {
+          "id": "AC-022-003",
+          "given": "the public IP changes per FR-026",
+          "when": "the change event is emitted",
+          "then": "an info alert is fired containing both old and new IPs"
+        }
+      ]
+    },
+    {
+      "id": "US-023",
+      "requirement_id": "FR-023",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "the monitor to never starve other Ultron functions or the WAN",
+      "so_that": "this feature is safe to leave running 24/7 on a small Pi",
+      "acceptance_criteria": [
+        {
+          "id": "AC-023-001",
+          "given": "5-minute average CPU of network workers reaches 6%",
+          "when": "the breaker evaluates",
+          "then": "all probe cadences halve and the Network page shows a 'breaker active' badge"
+        },
+        {
+          "id": "AC-023-002",
+          "given": "active-probe daily WAN budget is exhausted",
+          "when": "the operator triggers an on-demand speedtest",
+          "then": "the action returns 'budget_exhausted' and is not executed"
+        },
+        {
+          "id": "AC-023-003",
+          "given": "the operator opens the Network page",
+          "when": "the page renders",
+          "then": "current monitor CPU%, RAM MB and last-24h probe-bandwidth used are displayed"
+        }
+      ]
+    },
+    {
+      "id": "US-024",
+      "requirement_id": "FR-024",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "an on-demand speedtest button",
+      "so_that": "I can quickly verify down/up bandwidth when I suspect ISP throttling",
+      "acceptance_criteria": [
+        {
+          "id": "AC-024-001",
+          "given": "I click 'Run speedtest' and the budget allows it",
+          "when": "the test runs",
+          "then": "down Mbps, up Mbps, idle RTT and loaded RTT are persisted and displayed"
+        },
+        {
+          "id": "AC-024-002",
+          "given": "the FR-023 daily budget is exhausted",
+          "when": "I click 'Run speedtest'",
+          "then": "the UI shows a 'budget exhausted' message and no test is executed"
+        }
+      ]
+    },
+    {
+      "id": "US-025",
+      "requirement_id": "FR-025",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a bufferbloat grade for each speedtest",
+      "so_that": "I know whether my router's buffer behaves badly under load",
+      "acceptance_criteria": [
+        {
+          "id": "AC-025-001",
+          "given": "a speedtest completes",
+          "when": "the result is rendered",
+          "then": "added_latency_down_ms, added_latency_up_ms, and a grade A–F are shown"
+        }
+      ]
+    },
+    {
+      "id": "US-026",
+      "requirement_id": "FR-026",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "automatic detection of public-IP changes",
+      "so_that": "I am informed of unscheduled WAN-IP rotations and can update remote-access configs",
+      "acceptance_criteria": [
+        {
+          "id": "AC-026-001",
+          "given": "the public IP changes",
+          "when": "the next echo probe runs",
+          "then": "a public_ip_changed event with old/new IPs is recorded and routed to FR-022"
+        }
+      ]
+    },
+    {
+      "id": "US-027",
+      "requirement_id": "FR-027",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a passive list of LAN devices with first-seen / last-seen",
+      "so_that": "I can spot when a device disappears or a new one joins, without scanning the LAN actively",
+      "acceptance_criteria": [
+        {
+          "id": "AC-027-001",
+          "given": "the Pi has been on the LAN ≥24 h",
+          "when": "I open the devices list",
+          "then": "each MAC observed in ARP/mDNS appears with hostname (if any), IP, vendor and last-seen within ±2 minutes of its real last activity"
+        }
+      ]
+    },
+    {
+      "id": "US-028",
+      "requirement_id": "FR-028",
+      "as_a": "Raspberry Pi operator (Pi on WiFi)",
+      "i_want": "WiFi RSSI / SNR / retries visible from the panel",
+      "so_that": "I can tell whether WiFi degradation is the cause of slow throughput",
+      "acceptance_criteria": [
+        {
+          "id": "AC-028-001",
+          "given": "the Pi is on wlan and the worker is enabled",
+          "when": "I open the Network → WiFi panel",
+          "then": "RSSI, link quality, bitrate, channel, band, retries and CRC errors are shown and update at the configured cadence"
+        },
+        {
+          "id": "AC-028-002",
+          "given": "the Pi is Ethernet-only",
+          "when": "I open the WiFi panel",
+          "then": "a 'Not applicable — Pi is on Ethernet' state is rendered"
+        }
+      ]
+    },
+    {
+      "id": "US-029",
+      "requirement_id": "FR-029",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a periodic traceroute that flags path changes",
+      "so_that": "I can correlate latency spikes with ISP-side rerouting",
+      "acceptance_criteria": [
+        {
+          "id": "AC-029-001",
+          "given": "two traceroutes have completed",
+          "when": "I open the path panel",
+          "then": "the most recent path with hop_count and hop IPs is shown"
+        },
+        {
+          "id": "AC-029-002",
+          "given": "a hop changes between consecutive runs",
+          "when": "the second run completes",
+          "then": "a path_changed event is recorded and visible in the events log"
+        }
+      ]
+    }
+  ],
+  "original_brief": "## Feature\nNetwork Monitoring — observabilidad continua de la red doméstica (LAN + enlace a Internet) desde Ultron en el Raspberry Pi.\n\n## Problem / Why\nHoy no hay visibilidad sobre la salud de la red de la casa. Cuando algo va lento (videollamadas, streaming, juegos, IoT) no se sabe si el problema es el ISP, el router, el WiFi o un dispositivo concreto. Ultron ya está corriendo 24/7 en la red, así que es la pieza natural para medirla y guardar histórico.\n\n## Target Users\nUsuario único de Ultron (admin/dueño de la red doméstica). No hay multi-tenant.\n\n## New Behavior\nEl sistema debe medir, almacenar y exponer métricas de red de forma continua, balanceando exactitud contra coste de CPU/RAM/disco/ancho de banda en el Pi y en el propio enlace.\n\n### Métricas candidatas (a priorizar en discovery — no todas entran en v1)\n\n**Latencia y calidad del path**\n- RTT (latencia ICMP/UDP/TCP) a múltiples targets (gateway, DNS público, anycast tipo 1.1.1.1 / 8.8.8.8, un host del ISP).\n- **Jitter** (variación del RTT entre muestras consecutivas).\n- Pérdida de paquetes (% sobre ventana móvil).\n- MOS / R-factor estimado para voz (derivado de latencia + jitter + pérdida).\n- Hops y ruta (traceroute periódico, detección de cambios de ruta / asimetrías).\n- Path MTU / fragmentación.\n- TCP retransmits (si se puede leer de `/proc/net/netstat`).\n- Bufferbloat (latencia bajo carga vs. en reposo — estilo `flent` / `dslreports`).\n\n**Capacidad / ancho de banda**\n- Throughput de bajada y subida (speedtest periódico — Ookla, iperf3, librespeed).\n- Bytes/s en la interfaz del Pi (eth/wlan) — bandwidth real consumido.\n- Top talkers en la LAN (si el Pi puede inspeccionar tráfico que ve, sin DPI).\n- Saturación del enlace (uso vs. capacidad nominal).\n\n**Disponibilidad / continuidad**\n- Uptime del enlace WAN (% tiempo con Internet alcanzable).\n- Detección de caídas y duración de cada incidente.\n- IP pública actual y cambios de IP (eventos).\n- Estado del gateway (alcanzable sí/no).\n\n**DNS**\n- Tiempo de resolución a un set de dominios (dominio local del ISP, populares, propio).\n- Tasa de fallo / NXDOMAIN inesperados.\n- Diferencia entre DNS del ISP vs. público (1.1.1.1, 9.9.9.9).\n\n**WiFi** (si el Pi tiene radio o podemos consultar al router vía SNMP/SSH/API)\n- RSSI, SNR, calidad de señal.\n- Canal, banda (2.4/5/6 GHz), ancho de canal.\n- Tasa de PHY negociada, retries, errores CRC.\n- Clientes conectados, roaming events.\n\n**LAN / dispositivos**\n- Inventario de hosts activos (ARP/mDNS/NDP), aparición y desaparición.\n- Latencia intra-LAN al gateway y a hosts críticos.\n- Conteo de dispositivos activos a lo largo del día.\n\n**Sistema (coste de medir)**\n- CPU/RAM/IO consumidos por el propio monitor.\n- Ancho de banda consumido por las sondas (especialmente speedtests).\n- Espacio en disco del histórico.\n- Temperatura del Pi (las sondas suben CPU → calor).\n\n### Almacenamiento y consulta\n- Histórico consultable: tiempo real, últimas 24h, 7d, 30d con downsampling.\n- API para que otros componentes de Ultron / dashboards consuman métricas.\n- Alertas básicas cuando una métrica cruza umbral sostenido (latencia, pérdida, bufferbloat, caída WAN, cambio de IP pública).\n\n## Success Criteria\n- **Given** Ultron corriendo en el Pi, **When** consulto el dashboard/API, **Then** veo estado actual e histórico de las métricas clave (al menos: latencia, jitter, pérdida, throughput, uptime WAN) en los últimos 7 días.\n- **Given** una caída o degradación sostenida del enlace, **When** ocurre, **Then** queda registrada con timestamp y, si se configuró, dispara alerta.\n- **Given** el monitor en estado estable, **When** mido el coste, **Then** el overhead se mantiene dentro del presupuesto explícito definido en discovery (CPU promedio, RAM, IO, ancho de banda de sondas, espacio histórico).\n- El feature no degrada funciones existentes de Ultron ni el rendimiento percibido de la red durante uso normal (sondas activas como speedtest deben ser planificables / evitables en horas pico).\n\n## Out of Scope\n- Pentesting, detección de intrusos, inventario de seguridad.\n- Deep Packet Inspection / packet capture continuo.\n- QoS / traffic shaping / control parental.\n- Multi-site (solo una red doméstica).\n- Reemplazar herramientas tipo Grafana/Prometheus — se decide en arquitectura si se reusan o se hace algo nativo a Ultron.\n\n## Notes for Discovery\nEl usuario pidió explícitamente un **discovery detallado** antes de comprometerse a un alcance, evaluando coste vs. valor de cada métrica. Phase 1 debe entregar:\n1. Lista priorizada de métricas (must / should / could / won't para v1).\n2. Presupuesto de recursos (CPU, RAM, disco, BW de sondas) y método para medir si se respeta.\n3. Decisión sobre sondas activas (speedtest, iperf) vs. pasivas (lectura de contadores) — frecuencia, ventana, opt-in.\n4. Estrategia de retención e histórico.\n"
+}

@@ -1,0 +1,1876 @@
+{
+  "test_plan": {
+    "strategy": "Three layers — unit (collectors, breaker, aggregator, validators), integration (SQLite store + restart, helper allow-list, alert engine wiring, SSE), e2e (Playwright against the running Ultron-AP binary on a Pi-class harness with FR-007 session cookie). All probes use injectable Clock and a fake transport in unit tests; integration uses a temp SQLite file via os.tmpdir(); e2e runs against a Vagrant-Pi harness with a controlled fault injector (`scripts/netfault.sh` blocks a target via iptables).",
+    "coverage_goal": "80%",
+    "test_types": [
+      "unit",
+      "integration",
+      "e2e"
+    ]
+  },
+  "type_coverage_matrix": {
+    "FR-016": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-017": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-018": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-019": {
+      "unit": "SHOULD",
+      "integration": "SHOULD",
+      "e2e": "MUST"
+    },
+    "FR-020": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-021": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-022": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-023": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-024": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-025": {
+      "unit": "MUST",
+      "integration": "SHOULD",
+      "e2e": "SHOULD"
+    },
+    "FR-026": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-027": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-028": {
+      "unit": "MUST",
+      "integration": "SHOULD",
+      "e2e": "SHOULD"
+    },
+    "FR-029": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "NFR-005": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "-"
+    },
+    "NFR-006": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "-"
+    },
+    "NFR-007": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "NFR-008": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "-"
+    },
+    "NFR-009": {
+      "unit": "-",
+      "integration": "MUST",
+      "e2e": "MUST"
+    }
+  },
+  "test_cases": [
+    {
+      "id": "TC-NM-001h",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "ICMP probe — 5 minutes of samples produce rtt/jitter/loss for each target",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Helper running with `ping` allow-list entry",
+        "Default targets seeded: gateway, 1.1.1.1, 8.8.8.8, configured DNS"
+      ],
+      "given": "internal/network started 5 minutes ago with default 4 targets and cadence_s=10; control transport always returns rtt=12.0±1.5 ms",
+      "when": "GET /api/network/probes with a valid session cookie",
+      "then": "HTTP 200, JSON array length=4, each item has rtt_ms in [10.0,14.0], jitter_ms in [0.5,3.0], loss_pct=0.0, status='ok', ts within last 15 s",
+      "steps": [
+        "Boot service with seeded targets and fake ICMP transport",
+        "Advance fake clock 5 minutes feeding 30 samples per target",
+        "Issue authenticated GET /api/network/probes",
+        "Assert response shape and value bounds"
+      ],
+      "expected_result": "HTTP 200; rtt_ms within [10,14], jitter_ms within [0.5,3], loss_pct=0.0, status='ok' for all 4 targets",
+      "test_data": {
+        "targets": [
+          "192.168.1.1",
+          "1.1.1.1",
+          "8.8.8.8",
+          "1.0.0.1"
+        ],
+        "cadence_s": 10
+      }
+    },
+    {
+      "id": "TC-NM-001f",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-002",
+      "title": "ICMP probe — unreachable target reports loss=100% and emits target_unreachable event",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Helper running"
+      ],
+      "given": "target host=10.255.255.1 with fake transport returning timeout for 3 consecutive probes",
+      "when": "internal/network runs the worker for 35 seconds at cadence_s=10",
+      "then": "GET /api/network/probes returns the target with loss_pct=100.0 and status='timeout'; SELECT FROM net_events WHERE kind='target_unreachable' returns ≥1 row referencing host=10.255.255.1",
+      "steps": [
+        "Configure single failing target",
+        "Run worker for 35 s under fake clock",
+        "Query API and DB"
+      ],
+      "expected_result": "API: loss_pct=100.0, status='timeout'. DB: ≥1 net_events row kind='target_unreachable' with payload_json containing the target host.",
+      "test_data": {
+        "target_host": "10.255.255.1"
+      }
+    },
+    {
+      "id": "TC-NM-001e",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-003",
+      "title": "ICMP probe — cadence change from 10s to 60s honored within ±10% over next 5 cycles",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "running ICMP worker with cadence_s=10 and a fake ticker; PATCH stores cadence_s=60",
+      "when": "the orchestrator reloads target config and 5 cycles complete under fake clock",
+      "then": "the 5 inter-probe intervals have mean=60.0 s and each interval is in [54.0, 66.0] s",
+      "steps": [
+        "Start worker with cadence_s=10",
+        "PATCH target cadence_s=60",
+        "Drive 5 ticks via fake clock",
+        "Assert interval bounds"
+      ],
+      "expected_result": "5 intervals all within [54,66] s; mean within [58.5,61.5] s.",
+      "test_data": {
+        "cadence_before_s": 10,
+        "cadence_after_s": 60
+      }
+    },
+    {
+      "id": "TC-NM-002h",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-001",
+      "title": "DNS probe — resolver+domain returns last_ms and 1h fail_rate",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "DNS probes seeded with (1.1.1.1, www.test) and (8.8.8.8, www.test); fake resolver returns A=93.184.216.34 in 18 ms for both",
+      "when": "60 minutes of probes have run under fake clock and GET /api/network/dns is issued",
+      "then": "HTTP 200, body contains 2 entries; each has last_ms in [15,25], status='ok', fail_rate_1h=0.0",
+      "steps": [
+        "Seed DNS pairs",
+        "Run 60-min cycle with stub resolver",
+        "GET /api/network/dns"
+      ],
+      "expected_result": "HTTP 200; last_ms within [15,25] ms; status='ok'; fail_rate_1h=0.0 for both entries.",
+      "test_data": {
+        "domain": "www.test",
+        "expected_a": "93.184.216.34"
+      }
+    },
+    {
+      "id": "TC-NM-002f",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-002",
+      "title": "DNS probe — blocked resolver records timeout while others continue",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "iptables-style fake firewall available"
+      ],
+      "given": "resolver=1.1.1.1 stubbed to drop packets, resolver=8.8.8.8 stubbed to answer in 18 ms",
+      "when": "the worker runs for 3 cycles at cadence_s=10",
+      "then": "1.1.1.1 entry status='timeout' and last_ms is the configured timeout (2000), 8.8.8.8 entry status='ok' last_ms in [15,25]; cadence skew between the two ≤±10%",
+      "steps": [
+        "Apply fake drop on 1.1.1.1",
+        "Run 3 cycles",
+        "Assert per-resolver state"
+      ],
+      "expected_result": "1.1.1.1: status='timeout' last_ms=2000. 8.8.8.8: status='ok' last_ms within [15,25]. Inter-target cadence skew ≤10%.",
+      "test_data": {
+        "timeout_ms": 2000
+      }
+    },
+    {
+      "id": "TC-NM-002e",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-001",
+      "title": "DNS probe — cache-bypass label is randomised per request",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "100 successive cache-bypass DNS probe calls with the same domain config base='test.example'",
+      "when": "the prober builds the FQDN for each call",
+      "then": "100 distinct subdomain labels are produced; each matches regex ^[a-z0-9]{8,16}\\.test\\.example$",
+      "steps": [
+        "Invoke prober 100 times",
+        "Collect generated FQDNs",
+        "Assert uniqueness and pattern"
+      ],
+      "expected_result": "len(set(fqdns)) == 100 and all match ^[a-z0-9]{8,16}\\.test\\.example$.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-003h",
+      "requirement_id": "FR-018",
+      "user_story_id": "US-018",
+      "ac_id": "AC-018-001",
+      "title": "WAN uptime — outage_start written when all off-LAN targets fail ≥30 s",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "fake transport: gateway=ok; 1.1.1.1, 8.8.8.8 and DNS resolver all timeout; clock advances 35 s",
+      "when": "the aggregator runs at t=35s",
+      "then": "SELECT * FROM net_events WHERE kind='outage' returns 1 row with ts within ±2 s of fail-start; ts_end IS NULL",
+      "steps": [
+        "Seed 4 targets",
+        "Set 3 off-LAN to timeout",
+        "Advance clock 35 s",
+        "Query DB"
+      ],
+      "expected_result": "1 net_events row kind='outage', ts_end IS NULL, ts within ±2 s of failure start.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-003f",
+      "requirement_id": "FR-018",
+      "user_story_id": "US-018",
+      "ac_id": "AC-018-002",
+      "title": "WAN uptime — outage_end written and duration computed when WAN returns",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "A previous outage_start row exists"
+      ],
+      "given": "outage_start row at t=0; at t=120s one off-LAN target answers ok",
+      "when": "the aggregator runs at t=120s",
+      "then": "the same net_events row's ts_end is set to within ±2 s of t=120s and payload_json.duration_s=120 (±2)",
+      "steps": [
+        "Open outage at t=0",
+        "Restore one target at t=120 s",
+        "Assert ts_end + duration_s"
+      ],
+      "expected_result": "ts_end within ±2 s of t=120 s; duration_s=120 ±2.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-003e",
+      "requirement_id": "FR-018",
+      "user_story_id": "US-018",
+      "ac_id": "AC-018-003",
+      "title": "WAN uptime — 7-day window reports samples_up/total_samples within ±0.1%",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "in-memory series with samples_up=60345 and total_samples=60480 over a synthetic 7-day window",
+      "when": "uptime calculator computes the percentage",
+      "then": "result equals 99.7768% (±0.1)",
+      "steps": [
+        "Build synthetic series",
+        "Call calculator",
+        "Compare to expected"
+      ],
+      "expected_result": "99.7768% ± 0.1.",
+      "test_data": {
+        "samples_up": 60345,
+        "total_samples": 60480
+      }
+    },
+    {
+      "id": "TC-NM-004h",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Network page renders snapshot above-the-fold within 5 s with ≥7 days of data (e2e)",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Authenticated browser session",
+        "Pi-class harness with 7 days of seeded samples"
+      ],
+      "given": "navigator at /login → POST credentials → 302 / and 200 /network",
+      "when": "the browser issues GET /network",
+      "then": "DOMContentLoaded fires in ≤5000 ms; selectors '[data-testid=wan-status]', '[data-testid=public-ip]', '[data-testid=target-tile]' (≥4), '[data-testid=throughput-sparkline]' all visible above the 800 px fold",
+      "steps": [
+        "Login",
+        "Goto /network",
+        "Wait until DOMContentLoaded",
+        "Assert selectors visible within 800 px from top"
+      ],
+      "expected_result": "All 4 testids visible above 800 px fold; load timing ≤5000 ms.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-004f",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Network page renders 'collector down' banner with Retry when /api/network/health=down",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Auth session",
+        "/api/network/health stubbed to {collector:'down'}"
+      ],
+      "given": "GET /api/network/health returns 200 {collector:'down', last_sample_ts: '2026-04-27T10:00:00Z'}",
+      "when": "the browser opens /network",
+      "then": "selector '[data-testid=collector-down-banner]' is visible with text matching /Network collector not running — last sample 10:00/, and a button '[data-testid=collector-retry]' is enabled",
+      "steps": [
+        "Stub health endpoint",
+        "Open /network",
+        "Assert banner + retry"
+      ],
+      "expected_result": "Banner visible with 'last sample 10:00' substring; Retry button enabled.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-004e",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-002",
+      "title": "SSE pushes a new sample and tile updates within 5 s without reload",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Network page open",
+        "DevTools navigation counter=0"
+      ],
+      "given": "current rtt_ms displayed for target_id=1 is 12.0",
+      "when": "test harness pushes SSE event sample {target_id:1, rtt_ms:42.0, ts:now}",
+      "then": "tile '[data-testid=target-tile-1] [data-testid=rtt]' shows '42 ms' within 5000 ms; navigation counter remains 0",
+      "steps": [
+        "Subscribe to /api/network/events",
+        "Inject sample event",
+        "Assert tile text and no nav"
+      ],
+      "expected_result": "Tile text becomes '42 ms' ≤5 s; window.performance.navigation count unchanged.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-005h",
+      "requirement_id": "FR-020",
+      "user_story_id": "US-020",
+      "ac_id": "AC-020-001",
+      "title": "30-day chart returns ≤600 points and renders ≤2 s",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "30 days of seeded aggregates_day rows"
+      ],
+      "given": "GET /api/network/series?target_id=1&metric=rtt&window=30d",
+      "when": "client requests the 30-day window",
+      "then": "JSON points.length ≤600; chart canvas '[data-testid=latency-chart]' has data-rendered='true' attribute set within 2000 ms after fetch",
+      "steps": [
+        "Fetch series",
+        "Render chart",
+        "Measure render duration"
+      ],
+      "expected_result": "points.length ≤600; data-rendered='true' set within 2000 ms.",
+      "test_data": {
+        "window": "30d",
+        "metric": "rtt"
+      }
+    },
+    {
+      "id": "TC-NM-005f",
+      "requirement_id": "FR-020",
+      "user_story_id": "US-020",
+      "ac_id": "AC-020-002",
+      "title": "Empty window renders explicit empty state, not broken axis",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "No samples in last 60 minutes"
+      ],
+      "given": "GET /api/network/series?target_id=99&metric=rtt&window=1h returns {points:[],resolution:'minute'}",
+      "when": "the chart component receives empty points",
+      "then": "selector '[data-testid=latency-chart-empty]' is visible with text 'No samples in selected window'; the canvas has aria-hidden='true'",
+      "steps": [
+        "Fetch empty series",
+        "Assert empty state visibility and aria"
+      ],
+      "expected_result": "Empty state visible with required text; canvas hidden.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-005e",
+      "requirement_id": "FR-020",
+      "user_story_id": "US-020",
+      "ac_id": "AC-020-001",
+      "title": "Aggregator picks 'day' resolution for 30d window even with raw data present",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "ResolutionPicker(window=30d, max_points=600)",
+      "when": "the picker decides which table to read",
+      "then": "the chosen resolution is 'day' (≤30 points), not 'hour' (≤720 points) and not 'minute' (≤43200 points)",
+      "steps": [
+        "Call picker with window=30d max=600",
+        "Assert resolution name"
+      ],
+      "expected_result": "ResolutionPicker returns 'day'.",
+      "test_data": {
+        "window": "30d",
+        "max_points": 600
+      }
+    },
+    {
+      "id": "TC-NM-006h",
+      "requirement_id": "FR-021",
+      "user_story_id": "US-021",
+      "ac_id": "AC-021-001",
+      "title": "Persistence — uptime% identical before and after process restart",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Temp SQLite file via os.tmpdir()"
+      ],
+      "given": "1 hour of samples accumulated; GET /api/network/uptime?window=1h returns uptime_pct=99.83",
+      "when": "service stops cleanly, restarts pointing at the same DB file, then GET /api/network/uptime?window=1h again",
+      "then": "the second response equals the first to 4 decimals (uptime_pct=99.83) and last_outage matches byte-for-byte",
+      "steps": [
+        "Capture pre-restart response",
+        "Stop service",
+        "Start service same DB",
+        "Capture post-restart response",
+        "Compare"
+      ],
+      "expected_result": "uptime_pct equal; last_outage object equal.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-006f",
+      "requirement_id": "FR-021",
+      "user_story_id": "US-021",
+      "ac_id": "AC-021-002",
+      "title": "Persistence — disk-locked write error logs once/min and worker keeps running",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "sqlite handle wrapped in fault injector"
+      ],
+      "given": "fault injector returns SQLITE_BUSY on every InsertSample for 90 seconds",
+      "when": "the writer attempts 90 inserts at 1/sec",
+      "then": "stdout contains exactly 2 log lines matching /writer: SQLITE_BUSY/ in 90 s (one-per-minute throttling); the worker goroutine has not exited (Status().workers[0].state=='running')",
+      "steps": [
+        "Engage fault for 90 s",
+        "Drive 90 inserts",
+        "Count log lines",
+        "Check worker state"
+      ],
+      "expected_result": "2 log lines; Status().workers[0].state=='running'; no goroutine leak.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-006e",
+      "requirement_id": "FR-021",
+      "user_story_id": "US-021",
+      "ac_id": "AC-021-002",
+      "title": "Persistence — net_* tables included in FR-015 backup file",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "FR-015 backup runner reachable in test"
+      ],
+      "given": "DB has net_samples row id=42 and net_events row id=7",
+      "when": "FR-015 'backup now' runs, the resulting encrypted file is decrypted and opened as a SQLite DB",
+      "then": "SELECT id FROM net_samples WHERE id=42 returns 1 row; SELECT id FROM net_events WHERE id=7 returns 1 row",
+      "steps": [
+        "Insert known rows",
+        "Trigger backup",
+        "Decrypt + open",
+        "Query"
+      ],
+      "expected_result": "Both rows present in the restored backup.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-007h",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Latency rule — fires once when sustained, respects 15-min cooldown",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Telegram channel stubbed"
+      ],
+      "given": "rule {kind:'latency', target_id:1, threshold:150, sustained_s:300, cooldown_s:900}; samples for target_id=1 return rtt_ms=200 for 360 s",
+      "when": "the alert engine evaluates the rule once per 30 s ticks for 20 minutes",
+      "then": "exactly 1 Telegram-stub send call recorded in the first 6 minutes; 0 additional sends until t=21 min (cooldown)",
+      "steps": [
+        "Configure rule and stubs",
+        "Drive 20-min synthetic stream",
+        "Count send calls"
+      ],
+      "expected_result": "Telegram stub: send_calls=1 within first 6 minutes; 0 between 6–21 minutes.",
+      "test_data": {
+        "threshold": 150,
+        "sustained_s": 300,
+        "cooldown_s": 900
+      }
+    },
+    {
+      "id": "TC-NM-007f",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-002",
+      "title": "WAN-down rule — critical alert fires immediately on outage_start",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Telegram + SMTP stubs"
+      ],
+      "given": "WAN-down rule enabled; outage_start event emitted at t=0",
+      "when": "the alert engine processes the event",
+      "then": "Telegram stub send_calls=1 with severity='critical' within 1000 ms; SMTP stub send_calls=1 with severity='critical' within 1000 ms",
+      "steps": [
+        "Enable rule",
+        "Emit outage_start",
+        "Inspect stubs"
+      ],
+      "expected_result": "Both stubs received exactly 1 critical alert within 1 s.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-007e",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Latency rule — flapping (200 ms for 60 s, 50 ms for 60 s, repeat) does NOT fire",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "rule sustained_s=300; sample stream alternates 200 and 50 ms every 60 s for 30 minutes",
+      "when": "the rule evaluator processes the stream",
+      "then": "fire_count=0 because no 5-min run is sustained above threshold",
+      "steps": [
+        "Generate flapping stream",
+        "Run evaluator",
+        "Assert counter"
+      ],
+      "expected_result": "fire_count=0.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-008h",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-001",
+      "title": "Breaker — engages when 5-min CPU ≥6%, halves cadences, sets visible badge",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "CPU sampler injectable; default cadence_s=10"
+      ],
+      "given": "fake CPU sampler returns 6.5% mean over a 5-min window",
+      "when": "the breaker tick runs",
+      "then": "Breaker.State().Active=true with reason='cpu_high'; effective cadence for ICMP class becomes 20 s; GET /api/network/cost JSON contains breaker.active=true",
+      "steps": [
+        "Inject 6.5% CPU",
+        "Run breaker tick",
+        "Inspect state and cadence and API"
+      ],
+      "expected_result": "Active=true reason='cpu_high'; cadence doubled to 20 s; /api/network/cost shows active=true.",
+      "test_data": {
+        "cpu_pct": 6.5
+      }
+    },
+    {
+      "id": "TC-NM-008f",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-002",
+      "title": "Breaker — speedtest blocked when daily budget exhausted (returns budget_exhausted)",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Today's WAN budget already spent (counter=600 MB > 500 MB)"
+      ],
+      "given": "authenticated session; /api/network/cost reports probe_bw_24h_mb=600",
+      "when": "POST /api/network/speedtests/run with valid CSRF",
+      "then": "HTTP 429 with body {error:{code:'budget_exhausted', message: any non-empty string}}; net_speedtests has 0 new rows",
+      "steps": [
+        "Set budget counter to 600 MB",
+        "POST speedtests/run",
+        "Assert response and DB delta"
+      ],
+      "expected_result": "HTTP 429, code='budget_exhausted'; no new net_speedtests row.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-008e",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-003",
+      "title": "Breaker — Network page footer shows current CPU%, RAM MB, 24h probe BW",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "Auth session",
+        "Cost endpoint stubbed {cpu_pct_5m:3.1, rss_mb:32, probe_bw_24h_mb:120}"
+      ],
+      "given": "navigator at /network",
+      "when": "the page renders the MonitorCostCard",
+      "then": "selector '[data-testid=monitor-cost-cpu]' text='3.1%'; '[data-testid=monitor-cost-ram]' text='32 MB'; '[data-testid=monitor-cost-bw]' text='120 MB / 24h'",
+      "steps": [
+        "Stub /api/network/cost",
+        "Open /network",
+        "Assert texts"
+      ],
+      "expected_result": "Three testids show exact strings '3.1%', '32 MB', '120 MB / 24h'.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-009h",
+      "requirement_id": "FR-024",
+      "user_story_id": "US-024",
+      "ac_id": "AC-024-001",
+      "title": "On-demand speedtest — happy path persists row and renders in history",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "librespeed-cli stub returning {down:300.5, up:80.1, idle:11, loaded_down:55, loaded_up:60}",
+        "Budget < 100 MB used"
+      ],
+      "given": "auth session; navigator at /network; SpeedtestHistoryTable empty",
+      "when": "user clicks '[data-testid=run-speedtest]', confirms modal '[data-testid=run-speedtest-confirm]', and waits for SSE event",
+      "then": "first row of '[data-testid=speedtest-history]' shows '300.5 / 80.1 Mbps'; SELECT * FROM net_speedtests returns 1 row with status='ok'",
+      "steps": [
+        "Click run",
+        "Confirm modal",
+        "Await SSE 'speedtest_done'",
+        "Assert history row + DB"
+      ],
+      "expected_result": "History row text contains '300.5 / 80.1 Mbps'; net_speedtests has 1 row status='ok'.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-009f",
+      "requirement_id": "FR-024",
+      "user_story_id": "US-024",
+      "ac_id": "AC-024-002",
+      "title": "On-demand speedtest — already-running returns 409 conflict",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "A speedtest job already in 'running' state"
+      ],
+      "given": "auth session; existing job_id=abc currently running",
+      "when": "POST /api/network/speedtests/run with valid CSRF",
+      "then": "HTTP 409 with body {error:{code:'already_running', message: any non-empty}}",
+      "steps": [
+        "Start first job",
+        "Without waiting issue second POST",
+        "Assert HTTP 409 and code"
+      ],
+      "expected_result": "HTTP 409, error.code='already_running'.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-009e",
+      "requirement_id": "FR-024",
+      "user_story_id": "US-024",
+      "ac_id": "AC-024-001",
+      "title": "On-demand speedtest — librespeed-cli missing reports speedtest_unavailable",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "Helper reports binary missing"
+      ],
+      "given": "helper.CheckBinary('librespeed-cli') returns ErrNotFound",
+      "when": "POST /api/network/speedtests/run with valid CSRF",
+      "then": "HTTP 503 with body {error:{code:'speedtest_unavailable', message:/install with INSTALL_SPEEDTEST=1/i}}",
+      "steps": [
+        "Stub helper missing",
+        "POST run",
+        "Assert HTTP 503 + code + hint"
+      ],
+      "expected_result": "HTTP 503; error.code='speedtest_unavailable'; message contains 'INSTALL_SPEEDTEST=1'.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-010h",
+      "requirement_id": "FR-025",
+      "user_story_id": "US-025",
+      "ac_id": "AC-025-001",
+      "title": "Bufferbloat grade — 25 ms added latency under load → grade A",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "speedtest result {idle_rtt_ms:10, loaded_rtt_down_ms:35, loaded_rtt_up_ms:30}",
+      "when": "the grader computes added_latency_down and added_latency_up and grade",
+      "then": "added_latency_down_ms=25 (=35-10), added_latency_up_ms=20 (=30-10), bufferbloat_grade='A'",
+      "steps": [
+        "Call grader with input",
+        "Assert outputs"
+      ],
+      "expected_result": "added_down=25, added_up=20, grade='A'.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-010f",
+      "requirement_id": "FR-025",
+      "user_story_id": "US-025",
+      "ac_id": "AC-025-001",
+      "title": "Bufferbloat grade — 250 ms added → grade F",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "speedtest result {idle_rtt_ms:10, loaded_rtt_down_ms:260, loaded_rtt_up_ms:280}",
+      "when": "the grader runs",
+      "then": "added_latency_down_ms=250, added_latency_up_ms=270, bufferbloat_grade='F'",
+      "steps": [
+        "Call grader",
+        "Assert grade='F'"
+      ],
+      "expected_result": "grade='F' for added latency 250/270.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-010e",
+      "requirement_id": "FR-025",
+      "user_story_id": "US-025",
+      "ac_id": "AC-025-001",
+      "title": "Bufferbloat grade — exactly 30 ms added is boundary case for A→B",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "added_down=30, added_up=30",
+      "when": "the grader applies the documented rule (A ≤30)",
+      "then": "bufferbloat_grade='A'",
+      "steps": [
+        "Call grader at boundary",
+        "Assert grade='A'"
+      ],
+      "expected_result": "grade='A' (≤30 inclusive).",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-011h",
+      "requirement_id": "FR-026",
+      "user_story_id": "US-026",
+      "ac_id": "AC-026-001",
+      "title": "Public-IP change — event recorded and routed to alerts",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Echo endpoint stub"
+      ],
+      "given": "previous public_ip='1.2.3.4'; echo stub now returns '5.6.7.8'",
+      "when": "the public-IP probe runs once",
+      "then": "1 net_events row kind='public_ip_changed' payload_json contains old='1.2.3.4' new='5.6.7.8'; alerts.engine received 1 'info' event with same payload",
+      "steps": [
+        "Set last value",
+        "Stub new value",
+        "Run probe",
+        "Inspect DB and alert stub"
+      ],
+      "expected_result": "Event row + alert stub call both contain old and new IPs.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-011f",
+      "requirement_id": "FR-026",
+      "user_story_id": "US-026",
+      "ac_id": "AC-026-001",
+      "title": "Public-IP — echo unreachable for 3 attempts marks 'unknown', no false change",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "previous public_ip='1.2.3.4'; echo stub returns 502 Bad Gateway",
+      "when": "the probe runs 3 consecutive cycles",
+      "then": "/api/network/cost nor change events fire; GET /api/network/probes (or settings) reports public_ip status='unknown'; SELECT count(*) FROM net_events WHERE kind='public_ip_changed' is unchanged",
+      "steps": [
+        "Stub 502",
+        "Run 3 cycles",
+        "Assert no event written + status unknown"
+      ],
+      "expected_result": "0 new public_ip_changed events; status reported as 'unknown'.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-011e",
+      "requirement_id": "FR-026",
+      "user_story_id": "US-026",
+      "ac_id": "AC-026-001",
+      "title": "Public-IP echo — non-allow-listed URL rejected at settings save",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "settings PUT body public_ip_echo_url='http://attacker.example/exfil?host=secret'",
+      "when": "the validator runs",
+      "then": "validator returns error code='invalid_echo_url'; settings row remains unchanged",
+      "steps": [
+        "PUT bad URL",
+        "Inspect validator response",
+        "Read DB"
+      ],
+      "expected_result": "Validation error 'invalid_echo_url'; DB unchanged.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-012h",
+      "requirement_id": "FR-027",
+      "user_story_id": "US-027",
+      "ac_id": "AC-027-001",
+      "title": "LAN devices — every observed MAC appears with last_seen within ±2 min",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "/proc/net/arp stubbed"
+      ],
+      "given": "ARP fixture lists 5 MACs at simulated t=0; mDNS listener silent; clock advanced to t=24h",
+      "when": "the discovery worker has been running with fixture refreshing every 60 s",
+      "then": "GET /api/network/devices returns 5 entries; each entry's last_seen is within ±120 s of the most recent fixture timestamp",
+      "steps": [
+        "Seed ARP fixture",
+        "Run worker for 24 h fake-clock",
+        "GET /api/network/devices"
+      ],
+      "expected_result": "Length=5; each last_seen within ±120 s of last fixture refresh.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-012f",
+      "requirement_id": "FR-027",
+      "user_story_id": "US-027",
+      "ac_id": "AC-027-001",
+      "title": "LAN devices — stale device pruned from active list after 7 days, kept in history",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "device MAC='aa:bb:cc:dd:ee:01' first_seen=t-30d, last_seen=t-8d",
+      "when": "the daily compaction job runs",
+      "then": "GET /api/network/devices does NOT include that MAC; SELECT * FROM net_devices WHERE mac='aa:bb:cc:dd:ee:01' still returns the row (history preserved)",
+      "steps": [
+        "Insert stale device",
+        "Run compaction",
+        "Assert API and DB"
+      ],
+      "expected_result": "API list does not include MAC; DB row still present.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-012e",
+      "requirement_id": "FR-027",
+      "user_story_id": "US-027",
+      "ac_id": "AC-027-001",
+      "title": "LAN devices — package boundary forbids gopacket import (no pcap)",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "compiled binary",
+      "when": "test inspects 'go list -deps ./internal/network/discover/lan'",
+      "then": "the dependency list does NOT contain any package whose path matches /(gopacket|libpcap|pcap)/i",
+      "steps": [
+        "go list -deps",
+        "Filter regex",
+        "Assert empty"
+      ],
+      "expected_result": "Zero matches for gopacket/libpcap/pcap in transitive deps.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-013h",
+      "requirement_id": "FR-028",
+      "user_story_id": "US-028",
+      "ac_id": "AC-028-001",
+      "title": "WiFi panel — wlan0 up reports RSSI, link quality, bitrate, channel, retries",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "/proc/net/wireless stub returning fixture line",
+        "iw stub returning known fields"
+      ],
+      "given": "wlan0 fixture: rssi=-58, quality=70/70, bitrate=130 Mbps, channel=36, band='5GHz', retries=12, crc_errors=0",
+      "when": "GET /api/network/wifi",
+      "then": "HTTP 200 body {applicable:true, rssi_dbm:-58, link_quality:1.0, bitrate_mbps:130, channel:36, band:'5GHz', retries:12, crc_errors:0}",
+      "steps": [
+        "Stub wireless+iw",
+        "GET /api/network/wifi",
+        "Assert fields"
+      ],
+      "expected_result": "Body matches the listed object exactly.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-013f",
+      "requirement_id": "FR-028",
+      "user_story_id": "US-028",
+      "ac_id": "AC-028-002",
+      "title": "WiFi panel — Ethernet-only Pi returns applicable=false",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "No wlanX interface present"
+      ],
+      "given": "host has only eth0 up",
+      "when": "GET /api/network/wifi",
+      "then": "HTTP 200 body {applicable:false}; e2e UI test shows '[data-testid=wifi-not-applicable]' with text matching /Pi is on Ethernet/i",
+      "steps": [
+        "Disable wlan",
+        "GET /api/network/wifi",
+        "Open /network/wifi in browser",
+        "Assert text"
+      ],
+      "expected_result": "JSON applicable=false; UI shows 'Pi is on Ethernet'.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-013e",
+      "requirement_id": "FR-028",
+      "user_story_id": "US-028",
+      "ac_id": "AC-028-001",
+      "title": "WiFi panel — does NOT require root (no helper call when /proc/net/wireless suffices)",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "fixture provides /proc/net/wireless contents fully sufficient for required fields",
+      "when": "the WiFi sampler runs",
+      "then": "helper.Call counter remains 0; sampler returns the expected struct",
+      "steps": [
+        "Run sampler",
+        "Assert helper call counter"
+      ],
+      "expected_result": "helper.Call invocation count = 0.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-014h",
+      "requirement_id": "FR-029",
+      "user_story_id": "US-029",
+      "ac_id": "AC-029-001",
+      "title": "Path — two consecutive runs return current path with hop_count and hop list",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "traceroute stub via helper"
+      ],
+      "given": "stub path: ['10.0.0.1','100.64.0.1','203.0.113.1','1.1.1.1'] for two consecutive runs",
+      "when": "GET /api/network/path/1",
+      "then": "HTTP 200 body has hop_count=4 and hops list of 4 IPs equal to fixture",
+      "steps": [
+        "Run 2 traceroutes via stub",
+        "GET /api/network/path/1",
+        "Assert"
+      ],
+      "expected_result": "hop_count=4, hops match fixture exactly.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-014f",
+      "requirement_id": "FR-029",
+      "user_story_id": "US-029",
+      "ac_id": "AC-029-002",
+      "title": "Path — change between runs records path_changed event",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "first run hops=A,B,C,D; second run hops=A,B,X,D",
+      "when": "the second run completes",
+      "then": "SELECT * FROM net_events WHERE kind='path_changed' returns 1 new row with payload_json.from=[A,B,C,D] and to=[A,B,X,D]",
+      "steps": [
+        "Run 2 traces",
+        "Inspect DB"
+      ],
+      "expected_result": "1 new path_changed row; payload_json carries old and new paths.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-014e",
+      "requirement_id": "FR-029",
+      "user_story_id": "US-029",
+      "ac_id": "AC-029-001",
+      "title": "Path — traceroute call goes through helper allow-list with bounded args",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "the path worker building helper command for target 1.1.1.1",
+      "when": "the args are inspected before send",
+      "then": "the args list is exactly ['-n','-m','30','1.1.1.1'] — no shell metacharacters, no extra flags; helper allow-list grammar accepts it",
+      "steps": [
+        "Build args",
+        "Inspect",
+        "Validate against allow-list grammar"
+      ],
+      "expected_result": "Args strictly match allow-list pattern.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-015h",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-002",
+      "title": "Component state — TargetTile shows skeleton during loading",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "Auth session",
+        "/api/network/probes throttled to respond after 800 ms"
+      ],
+      "given": "navigator at /network",
+      "when": "the page begins fetching probes",
+      "then": "selector '[data-testid=target-tile-skeleton]' is visible during the first 600 ms after request start; replaced by '[data-testid=target-tile-rtt]' after response",
+      "steps": [
+        "Throttle endpoint",
+        "Open /network",
+        "Assert skeleton visible then replaced"
+      ],
+      "expected_result": "Skeleton visible during loading; replaced by rtt value after response.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-015f",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-002",
+      "title": "Component state — TargetTile error has actionable Retry text",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "/api/network/probes returns 503 thrice"
+      ],
+      "given": "navigator at /network",
+      "when": "probes endpoint returns 503",
+      "then": "selector '[data-testid=target-tile-error]' visible with text matching /probe failing/i and a button '[data-testid=target-tile-retry]' enabled",
+      "steps": [
+        "Stub 503",
+        "Open page",
+        "Assert error + retry"
+      ],
+      "expected_result": "Error text contains 'probe failing'; Retry button enabled.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-015e",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-002",
+      "title": "Component state — TargetTile empty state shown when no samples yet",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "/api/network/probes returns []"
+      ],
+      "given": "navigator at /network with no samples",
+      "when": "the page renders",
+      "then": "selector '[data-testid=target-tile-empty]' visible with text matching /awaiting first sample/i",
+      "steps": [
+        "Stub empty array",
+        "Open page",
+        "Assert empty text"
+      ],
+      "expected_result": "Empty state visible with 'awaiting first sample' substring.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-016h",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Component state — WanStatusBadge loading shows skeleton bar",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "/api/network/uptime delayed 800 ms"
+      ],
+      "given": "page open during initial fetch",
+      "when": "uptime endpoint pending",
+      "then": "selector '[data-testid=wan-status-skeleton]' visible until response arrives, then replaced by '[data-testid=wan-status-ok|wan-status-down]'",
+      "steps": [
+        "Throttle uptime",
+        "Open page",
+        "Assert skeleton then status"
+      ],
+      "expected_result": "Skeleton then ok/down badge.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-016f",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-003",
+      "title": "Component state — WanStatusBadge critical (down) state",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "/api/network/uptime stubbed last_outage open at 10:00"
+      ],
+      "given": "page open at 10:42",
+      "when": "WanStatusBadge renders",
+      "then": "selector '[data-testid=wan-status-down]' visible with text matching /WAN down since 10:00/; computed background-color is '#F85149' (status.critical token)",
+      "steps": [
+        "Stub outage open",
+        "Open page",
+        "Assert text + computed bg color"
+      ],
+      "expected_result": "Text 'WAN down since 10:00'; bg color #F85149.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-016e",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Component state — WanStatusBadge collector unreachable error state",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "/api/network/uptime returns 502"
+      ],
+      "given": "page open",
+      "when": "uptime endpoint errors",
+      "then": "selector '[data-testid=wan-status-error]' visible with text matching /collector unreachable/i and a Retry button enabled",
+      "steps": [
+        "Stub 502",
+        "Open page",
+        "Assert"
+      ],
+      "expected_result": "Error text contains 'collector unreachable'; Retry enabled.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-017h",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-002",
+      "title": "Component state — LikelyCauseChip empty state during baseline collection",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "First 60 s after start"
+      ],
+      "given": "service started <60 s ago",
+      "when": "LikelyCauseChip renders",
+      "then": "selector '[data-testid=likely-cause-empty]' visible with text matching /collecting baseline/i",
+      "steps": [
+        "Open page during cold-start",
+        "Assert"
+      ],
+      "expected_result": "'collecting baseline' text shown.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-017f",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-002",
+      "title": "Component state — LikelyCauseChip error when /api/network/cost fails",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [
+        "/api/network/cost returns 500"
+      ],
+      "given": "page open",
+      "when": "cost endpoint 500s",
+      "then": "selector '[data-testid=likely-cause-error]' visible with text 'Cost telemetry unavailable' and Retry button",
+      "steps": [
+        "Stub 500",
+        "Open",
+        "Assert"
+      ],
+      "expected_result": "Error text + Retry visible.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-017e",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-002",
+      "title": "Component state — LikelyCauseChip 'Healthy' green when all metrics nominal",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "All probes ok, gateway loss=0, DNS p95<50 ms"
+      ],
+      "given": "page open",
+      "when": "chip evaluates rules",
+      "then": "selector '[data-testid=likely-cause-ok]' visible with text 'Healthy'; computed color is '#3FB950' (status.ok)",
+      "steps": [
+        "Seed nominal data",
+        "Open page",
+        "Assert"
+      ],
+      "expected_result": "Text 'Healthy'; color #3FB950.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-018h",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Component state — AlertRulesTable empty state guides user",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "GET /api/network/rules returns []"
+      ],
+      "given": "auth session at /network/settings",
+      "when": "rules section renders",
+      "then": "selector '[data-testid=alert-rules-empty]' visible with text matching /No network rules — using defaults/",
+      "steps": [
+        "Stub empty rules",
+        "Open settings",
+        "Assert"
+      ],
+      "expected_result": "Empty text matches.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-018f",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Component state — AlertRulesTable error when GET /api/network/rules 503",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "GET returns 503",
+      "when": "table renders",
+      "then": "selector '[data-testid=alert-rules-error]' visible with Retry; text contains 'Could not load rules'",
+      "steps": [
+        "Stub 503",
+        "Open settings",
+        "Assert"
+      ],
+      "expected_result": "Error + retry visible; text matches.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-018e",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Component state — AlertRulesTable loading skeleton row count = 3",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "low",
+      "preconditions": [
+        "GET delayed 600 ms"
+      ],
+      "given": "page open",
+      "when": "table is in loading state",
+      "then": "exactly 3 elements match '[data-testid=alert-rules-skeleton-row]'",
+      "steps": [
+        "Throttle endpoint",
+        "Open page",
+        "Count selectors"
+      ],
+      "expected_result": "3 skeleton rows during loading.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-019h",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Mobile 375px — Network overview tiles stack 1-col, sticky speedtest CTA",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Viewport 375×812"
+      ],
+      "given": "auth session, /network",
+      "when": "page renders at 375px",
+      "then": "all 4 '[data-testid=target-tile]' have computed style flex-direction column / one tile per row (each tile width >340 px); '[data-testid=run-speedtest]' has CSS position:sticky and bottom:0",
+      "steps": [
+        "Set viewport 375x812",
+        "Open /network",
+        "Assert layout + sticky CTA"
+      ],
+      "expected_result": "Tiles single column ≥340 px wide; Run speedtest sticky bottom.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-019f",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Mobile 375px — sub-tabs collapse to horizontal scroll strip",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "viewport 375; '[data-testid=network-tabs]'",
+      "when": "tabs render",
+      "then": "computed style overflow-x='auto' and total scrollWidth > clientWidth; no tab is hidden behind clipping",
+      "steps": [
+        "Resize",
+        "Open /network",
+        "Inspect computed styles"
+      ],
+      "expected_result": "overflow-x=auto; scrollWidth > clientWidth.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-019e",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Mobile 375px — DevicesTable becomes card list, no horizontal scroll",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "≥3 devices in fixture"
+      ],
+      "given": "viewport 375; /network/devices",
+      "when": "page renders",
+      "then": "every '[data-testid=device-row]' has computed display='block' and width=100%; document.body.scrollWidth==375 (no horizontal scroll)",
+      "steps": [
+        "Resize",
+        "Open page",
+        "Assert"
+      ],
+      "expected_result": "Card list rendering; body scrollWidth=375.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-020h",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Design tokens — body text contrast against canvas ≥4.5:1",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "/network rendered",
+      "when": "test reads computed colors of '[data-testid=target-tile-rtt]' and '[data-testid=page]'",
+      "then": "WCAG contrast ratio between rtt color (#E5ECF3) and canvas (#0B0F14) computes to ≥4.5:1 (expected 13.4:1)",
+      "steps": [
+        "Open page",
+        "Read computed styles",
+        "Compute WCAG ratio"
+      ],
+      "expected_result": "Contrast ≥4.5:1; spec value 13.4:1 ±0.5.",
+      "test_data": {
+        "fg": "#E5ECF3",
+        "bg": "#0B0F14"
+      }
+    },
+    {
+      "id": "TC-NM-020f",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Design tokens — interactive elements ≥44×44 px touch targets at 375px",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Viewport 375"
+      ],
+      "given": "page /network at 375px viewport",
+      "when": "test enumerates every <button> and <a role=button> inside '[data-testid=page]'",
+      "then": "every element has bounding-rect width≥44 AND height≥44; assertion lists no offenders",
+      "steps": [
+        "Resize 375",
+        "Open page",
+        "Enumerate clickable elements",
+        "Assert dimensions"
+      ],
+      "expected_result": "Zero elements below 44×44.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-020e",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "Design tokens — tabular numerals enabled on numeric values",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "low",
+      "preconditions": [],
+      "given": "page /network",
+      "when": "test reads computed font-feature-settings of '[data-testid=target-tile-rtt]'",
+      "then": "computed font-feature-settings contains '\"tnum\"' or '\"tnum\" 1'",
+      "steps": [
+        "Open page",
+        "Read computed styles",
+        "Match"
+      ],
+      "expected_result": "font-feature-settings includes tnum.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-021h",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Auth — POST /api/network/targets without session redirects to login",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "no session cookie",
+      "when": "POST /api/network/targets with valid body and CSRF",
+      "then": "HTTP 302 with Location: /login (HTML accept) OR HTTP 401 with body {error:{code:'unauthorized'}} (JSON accept)",
+      "steps": [
+        "Issue both Accept variants",
+        "Assert response per variant"
+      ],
+      "expected_result": "HTML→302 /login; JSON→401 unauthorized.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-021f",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Security — POST /api/network/targets without CSRF token returns 403",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Valid session cookie present"
+      ],
+      "given": "auth session; request omits X-CSRF-Token",
+      "when": "POST /api/network/targets with valid body but no CSRF",
+      "then": "HTTP 403 with body {error:{code:'csrf_invalid'}}; SELECT count(*) FROM net_targets unchanged",
+      "steps": [
+        "Issue request without CSRF",
+        "Assert 403",
+        "Assert no DB change"
+      ],
+      "expected_result": "HTTP 403 csrf_invalid; targets table count unchanged.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-021e",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Security — Cross-session CSRF token rejected (token from session A used on session B)",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "two sessions A and B each with their own CSRF token",
+      "when": "POST /api/network/targets with cookie=B and X-CSRF-Token=A",
+      "then": "HTTP 403 with body {error:{code:'csrf_invalid'}}",
+      "steps": [
+        "Mint both sessions",
+        "Cross tokens",
+        "POST",
+        "Assert 403"
+      ],
+      "expected_result": "HTTP 403 csrf_invalid.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-022h",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Input validation — host field rejects shell metacharacters",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Auth session, valid CSRF"
+      ],
+      "given": "POST /api/network/targets with host='1.1.1.1; DROP TABLE net_samples;--'",
+      "when": "the request hits the validator",
+      "then": "HTTP 422 with body {error:{code:'invalid_host'}}; SELECT count(*) FROM net_targets unchanged; SELECT name FROM sqlite_master WHERE name='net_samples' returns 1 (table not dropped)",
+      "steps": [
+        "POST malicious host",
+        "Assert 422",
+        "Verify schema intact"
+      ],
+      "expected_result": "HTTP 422 invalid_host; net_samples table still exists.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-022f",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Input validation — host max-length 254 rejected",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "POST with host = 'a' * 254 + '.test'",
+      "when": "validator runs",
+      "then": "HTTP 422 with body {error:{code:'invalid_host'}}",
+      "steps": [
+        "Build long host",
+        "POST",
+        "Assert 422"
+      ],
+      "expected_result": "HTTP 422 invalid_host.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-022e",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Input validation — null host returns 422 not 500",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "POST with body {host: null, label:'x', kind:'icmp', cadence_s:10}",
+      "when": "validator runs",
+      "then": "HTTP 422 with body {error:{code:'invalid_host'}} (NOT 500)",
+      "steps": [
+        "POST null",
+        "Assert 422 + code"
+      ],
+      "expected_result": "HTTP 422; never 500.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-023h",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Helper allow-list — ping with allowed args succeeds",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "helper allow-list compiled; request {bin:'ping', args:['-c','3','-W','1','-i','0.5','1.1.1.1']}",
+      "when": "the validator runs",
+      "then": "validator returns Allowed=true",
+      "steps": [
+        "Call validator with valid request",
+        "Assert true"
+      ],
+      "expected_result": "Allowed=true.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-023f",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Helper allow-list — ping with unsafe '-D' flag rejected",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "request {bin:'ping', args:['-D','-c','3','1.1.1.1']}",
+      "when": "the validator runs",
+      "then": "validator returns Allowed=false reason='disallowed_flag:-D' and helper writes 1 audit log line",
+      "steps": [
+        "Call validator",
+        "Assert false + reason + audit"
+      ],
+      "expected_result": "Allowed=false; reason 'disallowed_flag:-D'; 1 audit line.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-023e",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Helper allow-list — entirely unknown binary rejected",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "request {bin:'nmap', args:['-sS','1.1.1.1']}",
+      "when": "the validator runs",
+      "then": "Allowed=false reason='binary_not_allowlisted'; 1 audit line",
+      "steps": [
+        "Call validator",
+        "Assert"
+      ],
+      "expected_result": "Allowed=false; reason='binary_not_allowlisted'.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-024h",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-001",
+      "title": "Reliability — one failing target does not delay other targets >±10%",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "4 targets at cadence_s=10; target_id=2 always times out",
+      "when": "30 minutes of fake-clock simulation",
+      "then": "for targets 1,3,4 the inter-probe interval mean is 10.0 s and each interval is in [9.0, 11.0] s",
+      "steps": [
+        "Run sim",
+        "Compute per-target intervals",
+        "Assert bounds"
+      ],
+      "expected_result": "Other targets within ±10%; mean=10.0 s.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-024f",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-001",
+      "title": "Reliability — helper socket flap does not crash web process",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "helper socket killed and restarted 3 times within 60 s",
+      "when": "web process keeps running probes via helper",
+      "then": "process PID unchanged; reconnect attempts logged with backoff sequence [1s,2s,4s,8s,16s,32s,60s,60s,...]; no panic",
+      "steps": [
+        "Kill+restart helper 3×",
+        "Inspect PID + logs"
+      ],
+      "expected_result": "Web PID stable; backoff sequence visible; no panic.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-024e",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-001",
+      "title": "Reliability — worker panic recovers via recover()+restart with bounded counter",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ICMP worker test injected to panic on 4th tick",
+      "when": "the orchestrator runs 10 ticks",
+      "then": "worker is restarted exactly once; max-restart counter=1; on panic count exceeding 5/min the orchestrator emits 'breaker_engaged' event with reason='worker_panic_storm'",
+      "steps": [
+        "Inject panic",
+        "Run",
+        "Assert counter and event"
+      ],
+      "expected_result": "1 restart logged; orchestrator did not panic.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-025h",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Observability — each probe emits 1 PROBE log line at info level",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "log level=info; 4 default targets; cadence_s=10",
+      "when": "service runs for 60 seconds and stdout is captured",
+      "then": "stdout contains ≥24 lines matching regex /^\\[\\d+\\] PROBE target=[^ ]+ kind=(icmp|dns|st) status=(ok|fail|timeout) rtt_ms=[0-9.]+/ (≥6 cycles × 4 targets)",
+      "steps": [
+        "Capture stdout",
+        "Filter regex",
+        "Count"
+      ],
+      "expected_result": "≥24 PROBE lines; format matches regex.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-025f",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Observability — log level=warn suppresses PROBE info lines but keeps failures",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "log level=warn; mix of ok and timeout outcomes",
+      "when": "service runs 60 s and stdout captured",
+      "then": "0 lines match status=ok; ≥1 line matches status=timeout",
+      "steps": [
+        "Run",
+        "Capture",
+        "Count by status"
+      ],
+      "expected_result": "ok lines=0; timeout lines≥1.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-025e",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Observability — labels are escaped before logging (no shell-injection in logs)",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "target with label='evil\\nPROBE target=fake status=ok rtt_ms=0.0'",
+      "when": "the writer logs a probe outcome for that target",
+      "then": "the produced log line has no embedded newline (the original \\n is rendered as the literal sequence '\\\\n' or escaped); only one PROBE line per probe is in stdout",
+      "steps": [
+        "Insert hostile label",
+        "Capture stdout",
+        "Assert single line + escaping"
+      ],
+      "expected_result": "1 line per probe; embedded newline does not produce a fake second PROBE line.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-026h",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-001",
+      "title": "Performance — 24h soak with default config keeps disk usage ≤500 MB",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Soak harness with fake clock x86 acceleration"
+      ],
+      "given": "default config (4 targets cadence_s=10, default DNS pairs, LAN discovery on, retention defaults)",
+      "when": "harness simulates 24 hours of probing",
+      "then": "size of net_* tables on disk (page_count * page_size) is ≤500 MB and free-space alert threshold is not crossed",
+      "steps": [
+        "Run 24h sim",
+        "Query SQLite page stats",
+        "Assert size"
+      ],
+      "expected_result": "net_* tables size ≤500 MB.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-026f",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-001",
+      "title": "Performance — daily compaction enforces retention=7d for raw samples",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "10 days of synthetic raw samples in net_samples (oldest at t-10d)",
+      "when": "the daily compaction job runs",
+      "then": "SELECT count(*) FROM net_samples WHERE ts < (now - 7d*86400000) returns 0; rows for ts within last 7d are unchanged",
+      "steps": [
+        "Insert 10d data",
+        "Run compaction",
+        "Count old/new rows"
+      ],
+      "expected_result": "Old rows = 0; recent rows preserved.",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NM-026e",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-001",
+      "title": "Performance — chart query for 30d window completes ≤2 s with 365d aggregates_day",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "aggregates_day populated 365 days × 10 targets"
+      ],
+      "given": "synthetic 365d×10 dataset",
+      "when": "GET /api/network/series?target_id=1&metric=rtt&window=30d",
+      "then": "wall-clock duration ≤2000 ms on a 4-core x86 dev box; on Pi-class (single core) ≤4000 ms is acceptable",
+      "steps": [
+        "Issue request, time it",
+        "Assert wall-clock"
+      ],
+      "expected_result": "≤2000 ms on dev box (≤4000 ms on Pi).",
+      "test_data": {}
+    }
+  ]
+}
