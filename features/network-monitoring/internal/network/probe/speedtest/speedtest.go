@@ -8,6 +8,7 @@ package speedtest
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 )
 
 // ErrSkeleton signals that a function is declared but not yet implemented.
@@ -87,3 +88,23 @@ type skeletonDispatcher struct{}
 func (s *skeletonDispatcher) Run(context.Context, Trigger) (Result, error) {
 	return Result{}, ErrSkeleton
 }
+
+// RunGuard mediates the FR-024 "only one speedtest at a time" invariant.
+// TryAcquire returns true exactly once between Release calls; concurrent
+// callers see false, which the HTTP layer translates to 409 already_running.
+//
+// @aitri-trace FR-ID: FR-024
+type RunGuard struct {
+	running atomic.Bool
+}
+
+// TryAcquire returns true iff no speedtest is currently in flight. The
+// caller MUST Release when finished. A second TryAcquire while held
+// returns false.
+//
+// @aitri-trace FR-ID: FR-024, TC-ID: TC-NM-009f
+func (g *RunGuard) TryAcquire() bool { return g.running.CompareAndSwap(false, true) }
+
+// Release marks the guarded operation finished. Idempotent — calling
+// Release without a prior TryAcquire is a no-op.
+func (g *RunGuard) Release() { g.running.Store(false) }

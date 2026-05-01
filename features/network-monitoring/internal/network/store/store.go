@@ -92,6 +92,24 @@ type Target struct {
 	MetaJSON string
 }
 
+// BackupTables returns the canonical list of net_* tables that the FR-015
+// backup runner must include. The list is the contract: any new net_* table
+// must be added here in the same change that creates it, otherwise the
+// backup would silently drop it.
+//
+// @aitri-trace FR-ID: FR-021, TC-ID: TC-NM-006e
+func BackupTables() []string {
+	return []string{
+		"net_samples",
+		"net_speedtests",
+		"net_events",
+		"net_targets",
+		"net_devices",
+		"net_alert_rules",
+		"net_settings",
+	}
+}
+
 // Store is the persistence surface used by the orchestrator and HTTP handlers.
 //
 // @aitri-trace FR-ID: FR-021

@@ -42,6 +42,24 @@ type Breaker interface {
 	State() State
 }
 
+// CPUHighThresholdPct is the 5-minute CPU usage above which the breaker
+// engages the cpu_high condition. FR-023 budgets a 5% baseline; the
+// threshold leaves a 1-point slack for harmless transients.
+const CPUHighThresholdPct = 6.0
+
+// Decide is the pure decision function for the CPU-high condition: it
+// returns the State a stateful Tick would produce given the current 5-minute
+// CPU mean. Strictly greater-than the threshold, so 6.0 itself does not
+// engage — only sustained excess does.
+//
+// @aitri-trace FR-ID: FR-023, TC-ID: TC-NM-008h
+func Decide(cpuPct5m float64) State {
+	if cpuPct5m > CPUHighThresholdPct {
+		return State{Active: true, Reason: "cpu_high", CPUPct: cpuPct5m}
+	}
+	return State{CPUPct: cpuPct5m}
+}
+
 // New returns a no-op Breaker that allows everything. Real budget logic lives
 // in a future build phase.
 func New() Breaker { return &noopBreaker{} }

@@ -10,9 +10,9 @@
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "2.0.0-alpha.13",
+  "aitriVersion": "2.0.0-alpha.14",
   "artifactsDir": "spec",
-  "updatedAt": "2026-04-29T20:51:04.963Z",
+  "updatedAt": "2026-04-30T20:56:49.888Z",
   "artifactHashes": {
     "1": "56daf794722c06209814b3d1d697aaf5f6204406f4b06ea20dfd381646618c4f",
     "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda"

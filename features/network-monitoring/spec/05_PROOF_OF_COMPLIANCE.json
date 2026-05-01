@@ -1,0 +1,227 @@
+{
+  "project": "Ultron-AP — Network Monitoring (feature)",
+  "version": "0.1.0-alpha",
+  "phases_completed": [1, 2, 3, 4, 5],
+  "overall_status": "partial",
+  "deployment_target": "Raspberry Pi via systemd (parent monolith). No Dockerfile or container artefacts — see DEPLOYMENT.md and 01_REQUIREMENTS.json rejection history (3/18/2026) for the deliberate decision against containerised deployment of this feature.",
+  "requirement_compliance": [
+    {
+      "id": "FR-016",
+      "title": "Multi-target reachability/latency probes",
+      "level": "partial",
+      "evidence": "Helper allow-list validator implemented (internal/network/helper/allowlist.go) and pinned by TC-NM-023h/f/e (3 passing). 12 of 15 TCs skipped — ICMP Worker.Run is skeleton (technical_debt: pro-bing integration, jitter EWMA, loss window, helper-fallback path)."
+    },
+    {
+      "id": "FR-017",
+      "title": "DNS resolver health probes",
+      "level": "partial",
+      "evidence": "RandomCacheBypassLabel implemented and pinned by TC-NM-002e (1 passing, 2 sub-cases). Resolver loop, fail-rate window and jitter computation are skeleton (technical_debt: depends on FR-021 store)."
+    },
+    {
+      "id": "FR-018",
+      "title": "WAN uptime aggregation and outage events",
+      "level": "partial",
+      "evidence": "UptimePct() pure calculator implemented (internal/network/uptime.go) and pinned by TC-NM-003e (7-day window 60345/60480 → 99.7768% ±0.1) plus 5 edge-case sub-tests. Outage detection, gateway-vs-WAN disambiguation and net_events writer are skeleton (technical_debt: depends on FR-016 ICMP worker)."
+    },
+    {
+      "id": "FR-019",
+      "title": "Network dashboard (UI)",
+      "level": "partial",
+      "evidence": "fr_coverage status='manual' (18 manual TCs, 0 automated, 0 failing) — UI tests are documented as automation:'manual' in 03_TEST_CASES.json because the feature has no Playwright harness in this repo (Pi-systemd target, no browser tests). HTTP routes registered but return 501 (technical_debt: HTML templates, HTMX swaps and SSE wiring deferred). The 18 manual TCs remain the acceptance bar and can be verified via `aitri tc verify` once the UI lands."
+    },
+    {
+      "id": "FR-020",
+      "title": "Historical charts with downsampling and retention",
+      "level": "partial",
+      "evidence": "PickResolution() pinned by TC-NM-005e (1 passing TC + 5 boundary sub-cases: 1h→raw, 6h→minute, 7d→hour, 30d→day, 365d→day). 2 chart-render TCs are manual (deferred to UI iteration). Downsampler.RunOnce compaction job is skeleton (technical_debt: depends on FR-021 store)."
+    },
+    {
+      "id": "FR-021",
+      "title": "Network samples and events persistence",
+      "level": "partial",
+      "evidence": "BackupTables() contract pinned by TC-NM-006e (1 passing) — guarantees net_samples, net_speedtests, net_events, net_targets, net_devices, net_alert_rules, net_settings are included in the FR-015 backup. Store implementation methods are skeleton (technical_debt: single-writer goroutine, batching, migration 0007_network.sql)."
+    },
+    {
+      "id": "FR-022",
+      "title": "Network-class alert rules in the existing alert engine",
+      "level": "partial",
+      "evidence": "IsSustainedAbove() pure evaluator pinned by TC-NM-007e (2 tests: flapping does not fire, clean run does fire). 3 manual TCs (UI table states) deferred. Adapter forwards to parent Engine but rule-kind dispatch and cooldown tracking are skeleton (technical_debt: medium effort)."
+    },
+    {
+      "id": "FR-023",
+      "title": "Resource-budget circuit breaker for the monitor",
+      "level": "partial",
+      "evidence": "Decide() pure CPU-high decision function pinned by TC-NM-008h (2 tests: engages at 6.5%, stays open at ≤6%). Constant CPUHighThresholdPct=6.0 with strict greater-than semantics. State() snapshot type and Class enum locked. 1 manual TC (UI cost card) deferred. Token bucket, RAM sampler and priority pause cascade are skeleton (technical_debt: high effort)."
+    },
+    {
+      "id": "FR-024",
+      "title": "On-demand bandwidth test (down/up)",
+      "level": "partial",
+      "evidence": "RunGuard primitive pinned by TC-NM-009f (1 test: second TryAcquire while held returns false → maps to HTTP 409 already_running; release path verified). 1 manual TC (e2e click→modal→SSE→history row) deferred to UI iteration. librespeed-cli invocation through helper, JSON parsing and scheduled trigger are skeleton (technical_debt: medium effort)."
+    },
+    {
+      "id": "FR-025",
+      "title": "Bufferbloat score (idle vs loaded latency)",
+      "level": "partial",
+      "evidence": "GradeBufferbloat() pinned by TC-NM-010e/h/f (3 tests covering A/B/C/D/F bands and the 30 ms / 250 ms boundaries, plus negative-input clamp). Wiring into Result population happens when FR-024 dispatcher lands (technical_debt: low effort — pure logic locked)."
+    },
+    {
+      "id": "FR-026",
+      "title": "Public IP tracking and change events",
+      "level": "partial",
+      "evidence": "ValidatePublicIPEchoURL() pinned by TC-NM-011e (1 passing TC with 5 reject + 4 accept sub-cases) — closes the SSRF surface at settings save. Cadence loop and event emission are skeleton (technical_debt: low effort)."
+    },
+    {
+      "id": "FR-027",
+      "title": "LAN device discovery (passive, low-cost)",
+      "level": "partial",
+      "evidence": "Package boundary invariant (no gopacket/pcap imports anywhere in lan transitive deps) pinned by TC-NM-012e (1 passing). ARP reader, mDNS listener and virtual-interface filter are skeleton (technical_debt: high effort)."
+    },
+    {
+      "id": "FR-028",
+      "title": "WiFi link metrics (Pi-side)",
+      "level": "partial",
+      "evidence": "ParseProcWireless() pinned by TC-NM-013e (2 tests: parses fixture without helper.Call → applicable=true with rssi=-58, link_quality=70, retries=12; returns ErrProcWirelessNotApplicable for header-only input). Confirms FR-028 no-root invariant. iw helper invocation and Worker.Run lifecycle are skeleton (technical_debt: medium effort)."
+    },
+    {
+      "id": "FR-029",
+      "title": "Path tracking (periodic traceroute)",
+      "level": "partial",
+      "evidence": "BuildTracerouteArgs() pinned by TC-NM-014e (2 tests: returns exact ['-n','-m','30','1.1.1.1'] for valid IPv4; rejects 5 unsafe inputs including shell metacharacters, hostnames and flag-shaped strings via ErrInvalidTracerouteTarget). Helper allow-list grammar accepts exactly this shape. Worker.Run, hop-diff and path_changed event are skeleton (technical_debt: medium effort)."
+    },
+    {
+      "id": "NFR-005",
+      "title": "Performance — CPU/RSS/disk/WAN budgets",
+      "level": "partial",
+      "evidence": "FR-023 Decide() locks the CPU-high threshold (>6% engages). Token bucket, RSS sampler and disk-growth retention sweep are skeleton (technical_debt: depends on FR-021 store and FR-020 compaction). No 24h soak harness in this iteration — TC-NM-026h declared integration but not yet implemented."
+    },
+    {
+      "id": "NFR-006",
+      "title": "Reliability — graceful degradation and isolation",
+      "level": "functionally_present",
+      "evidence": "Per-class worker isolation, exponential backoff and recover()+restart pattern are declared in 02_SYSTEM_DESIGN.md but no test exercises them yet (TC-NM-024 series defined as integration, currently skipped). Pattern is structurally present in the package layout (one goroutine per probe class) but the failure-injection paths are not wired."
+    },
+    {
+      "id": "NFR-007",
+      "title": "Security — privileged ops via FR-011 helper allow-list",
+      "level": "partial",
+      "evidence": "Helper allow-list validator pinned by TC-NM-023h/f/e (3 passing) — covers the binary/flag closed-set check. Traceroute argv producer (BuildTracerouteArgs) is the single source for traceroute calls and pinned by TC-NM-014e. Helper RPC client and audit-log write path are skeleton (technical_debt)."
+    },
+    {
+      "id": "NFR-008",
+      "title": "Observability — structured probe log lines",
+      "level": "partial",
+      "evidence": "Logger plumbed via Deps in network.go. Structured slog emission at probe call sites is not yet wired because workers are skeletons (technical_debt: low effort — lands with worker implementations). Log-format regex pinned in TC-NM-025h (currently skipped)."
+    },
+    {
+      "id": "NFR-009",
+      "title": "Security — auth+CSRF inheritance, no new public route",
+      "level": "functionally_present",
+      "evidence": "internal/network/api.Register attaches /network/* and /api/network/* to the parent mux only — the parent's FR-007 session and FR-012 CSRF middleware front the mux, so all new routes inherit those gates. No public unauthenticated route is introduced. Validation (TC-NM-021h/f/e in spec) currently skipped — wiring tested only at the routing-surface level."
+    },
+    {
+      "id": "NFR-010",
+      "title": "CI/CD inheritance — parent pipeline builds/tests this feature",
+      "level": "complete",
+      "evidence": ".github/workflows/security-gate.yml triggers on push and pull_request to main, sets up Go from go.mod, runs `go test ./...` (the manifest test_runner) and govulncheck. The new package set under internal/network/* is included transitively. No new pipeline introduced — NFR-010 satisfied by inheritance."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-016",
+      "substitution": "ICMP probe Worker.Run returns ErrSkeleton. No pro-bing integration, no jitter EWMA, no loss window, no helper-fallback path.",
+      "reason": "Phase 4 vertical slice scope: pure-logic helpers covered. ICMP worker requires pro-bing dependency + helper integration; deferred to next iteration.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-017",
+      "substitution": "DNS Worker.Run returns ErrSkeleton. RandomCacheBypassLabel implemented and tested (TC-NM-002e), but the resolver loop, fail-rate window and jitter computation are not.",
+      "reason": "Phase 4 vertical slice covered the cache-bypass primitive; the loop wiring depends on the store layer which is also skeleton.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-018",
+      "substitution": "WAN uptime/outage tracking is not implemented — Service.Status() returns collector=down. No outage rule, no 30s gateway-vs-WAN disambiguation. (UptimePct() pure calculator was added in Phase 5 prep — pins the math but does not change the worker debt.)",
+      "reason": "Phase 4 vertical slice scope: depends on FR-016 ICMP worker.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-019",
+      "substitution": "Network dashboard page registers HTTP routes that return 501 Not Implemented. No HTML templates, no HTMX swaps, no SSE wiring.",
+      "reason": "Phase 4 vertical slice scope: routing surface plumbed; renderers deferred.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-020",
+      "substitution": "Aggregator: PickResolution() implemented and tested (TC-NM-005e + 5 boundary sub-cases). Downsampler.RunOnce compaction job returns ErrSkeleton.",
+      "reason": "Resolution-band logic locked. Bucket writer requires persistence layer (FR-021) which is also skeleton.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-021",
+      "substitution": "store.Store implementation is a skeleton — every method returns ErrSkeleton. No single-writer goroutine, no batching, no migration 0007_network.sql. (BackupTables() metadata contract was added in Phase 5 prep — pins the table list but does not change the writer/reader debt.)",
+      "reason": "Phase 4 vertical slice scope: kept SQLite I/O out to limit blast radius. Store interface and row types declared.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-022",
+      "substitution": "alerts.Adapter forwards to the parent Engine but no rule-kind dispatch or cooldown tracking. (IsSustainedAbove() sustained-window evaluator was added in Phase 5 prep.)",
+      "reason": "Phase 4 vertical slice scope: adapter wires the dependency; rule logic deferred.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-023",
+      "substitution": "breaker.Breaker is a no-op — AllowSample/AllowSpeedtest always return true; ConsumeBytes is a no-op; State() returns the zero value. No CPU/RAM sampler, no token bucket, no priority pause cascade. (Decide() pure CPU-high decision was added in Phase 5 prep.)",
+      "reason": "Phase 4 vertical slice scope: Class enum and State struct declared; budget logic deferred.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-024",
+      "substitution": "speedtest.Dispatcher.Run returns ErrSkeleton. No librespeed-cli invocation via helper, no JSON parsing, no scheduled trigger. (RunGuard primitive was added in Phase 5 prep — pins the single-run invariant.)",
+      "reason": "Phase 4 vertical slice scope: helper integration deferred. Result struct declared.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-025",
+      "substitution": "GradeBufferbloat() implemented and tested across A/B/C/D/F bands (TC-NM-010e + TC-NM-010h + TC-NM-010f). Wiring into Result population happens when FR-024 dispatcher is implemented.",
+      "reason": "Pure grading function locked; consumer (FR-024) deferred.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-026",
+      "substitution": "ValidatePublicIPEchoURL() implemented and tested (TC-NM-011e). The cadence loop and event emission are not yet implemented.",
+      "reason": "SSRF defence at settings save is the highest-leverage piece; loop depends on store layer.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-027",
+      "substitution": "lan.Worker.Run returns ErrSkeleton. The package-boundary invariant (no gopacket/pcap imports) is asserted by TC-NM-012e. ARP reader, mDNS listener, virtual-interface filter not implemented.",
+      "reason": "Boundary test locks the security invariant immediately. Active discovery code deferred.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-028",
+      "substitution": "wifi.Worker.Run returns ErrSkeleton. No iw dev wlanX link invocation via helper, no Not-Applicable detection at the worker level. (ParseProcWireless() pure parser was added in Phase 5 prep.)",
+      "reason": "Phase 4 vertical slice scope: helper invocation deferred.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-029",
+      "substitution": "path.Worker.Run returns ErrSkeleton. No traceroute invocation via helper, no hop-diff, no path_changed event emission. (BuildTracerouteArgs() bounded-args producer was added in Phase 5 prep.)",
+      "reason": "Phase 4 vertical slice scope: helper invocation deferred.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "NFR-005",
+      "substitution": "Disk-growth and retention budgets not enforced — depends on FR-021 store and FR-020 aggregator compaction.",
+      "reason": "Will be enforced by aggregate.Downsampler + store retention sweep.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "NFR-008",
+      "substitution": "Structured slog lines not yet emitted from worker call sites (skeletons return ErrSkeleton without logging). Logger plumbed through Deps.",
+      "reason": "Call sites land with the worker implementations.",
+      "effort_to_fix": "low"
+    }
+  ]
+}

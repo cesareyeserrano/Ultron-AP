@@ -57,3 +57,25 @@ func TestTC_NM_010e_BufferbloatGradeNegativeClamps(t *testing.T) {
 		t.Fatalf("GradeBufferbloat(-1.5) = %q, want %q (negatives clamp to A)", got, "A")
 	}
 }
+
+// TestTC_NM_009f_RunGuardRefusesSecondAcquire asserts the FR-024 single-run
+// invariant: while a speedtest is in flight, a second TryAcquire returns
+// false (the HTTP layer translates this to 409 already_running). The
+// integration-level TC-NM-009f drives this through POST /api/network/
+// speedtests/run; here we pin the underlying guard.
+//
+// @aitri-tc TC-NM-009f
+func TestTC_NM_009f_RunGuardRefusesSecondAcquire(t *testing.T) {
+	t.Parallel()
+	var g RunGuard
+	if !g.TryAcquire() {
+		t.Fatal("first TryAcquire returned false, want true")
+	}
+	if g.TryAcquire() {
+		t.Fatal("second TryAcquire while held returned true, want false (409 already_running)")
+	}
+	g.Release()
+	if !g.TryAcquire() {
+		t.Fatal("TryAcquire after Release returned false, want true (guard must reset)")
+	}
+}

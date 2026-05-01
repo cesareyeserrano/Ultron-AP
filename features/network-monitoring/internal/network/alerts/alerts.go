@@ -8,6 +8,7 @@ package alerts
 import (
 	"context"
 	"errors"
+	"time"
 )
 
 // ErrSkeleton signals that a function is declared but not yet implemented.
@@ -55,4 +56,40 @@ func (a *Adapter) Emit(ctx context.Context, ruleID string, payload map[string]an
 		return ErrSkeleton
 	}
 	return a.engine.Emit(ctx, ruleID, payload)
+}
+
+// SamplePoint is a (timestamp, value) tuple consumed by rule evaluators.
+type SamplePoint struct {
+	TS    time.Time
+	Value float64
+}
+
+// IsSustainedAbove returns true iff the input contains a contiguous run
+// whose duration is ≥ sustained AND every value in that run is > threshold.
+// It is the pure-logic core of the FR-022 latency/loss rules: flapping
+// streams (which alternate above/below threshold) cannot fire, while clean
+// runs do. The evaluator never looks past the boundary of a single run, so
+// it costs O(n).
+//
+// @aitri-trace FR-ID: FR-022, TC-ID: TC-NM-007e
+func IsSustainedAbove(samples []SamplePoint, threshold float64, sustained time.Duration) bool {
+	if len(samples) == 0 || sustained <= 0 {
+		return false
+	}
+	var runStart time.Time
+	inRun := false
+	for _, s := range samples {
+		if s.Value > threshold {
+			if !inRun {
+				runStart = s.TS
+				inRun = true
+			}
+			if s.TS.Sub(runStart) >= sustained {
+				return true
+			}
+		} else {
+			inRun = false
+		}
+	}
+	return false
 }

@@ -1,11 +1,12 @@
 {
   "test_plan": {
-    "strategy": "Three layers — unit (collectors, breaker, aggregator, validators), integration (SQLite store + restart, helper allow-list, alert engine wiring, SSE), e2e (Playwright against the running Ultron-AP binary on a Pi-class harness with FR-007 session cookie). All probes use injectable Clock and a fake transport in unit tests; integration uses a temp SQLite file via os.tmpdir(); e2e runs against a Vagrant-Pi harness with a controlled fault injector (`scripts/netfault.sh` blocks a target via iptables).",
+    "strategy": "Four layers — unit (collectors, breaker, aggregator, validators), integration (SQLite store + restart, helper allow-list, alert engine wiring, SSE, HTTP API responses), e2e (browser-driven UI checks: data-testid selectors, computed CSS, viewport behaviour, WCAG contrast — Playwright when available), manual (e2e TCs marked automation:\"manual\" while no e2e runner is wired in this Pi-only repo; assertions remain the acceptance bar and can be verified via `aitri tc verify`). All probes use injectable Clock and a fake transport in unit tests; integration uses a temp SQLite file via os.tmpdir().",
     "coverage_goal": "80%",
     "test_types": [
       "unit",
       "integration",
-      "e2e"
+      "e2e",
+      "manual"
     ]
   },
   "type_coverage_matrix": {
@@ -335,6 +336,7 @@
       "ac_id": "AC-019-001",
       "title": "Network page renders snapshot above-the-fold within 5 s with ≥7 days of data (e2e)",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "happy_path",
       "priority": "high",
       "preconditions": [
@@ -360,6 +362,7 @@
       "ac_id": "AC-019-001",
       "title": "Network page renders 'collector down' banner with Retry when /api/network/health=down",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "negative",
       "priority": "high",
       "preconditions": [
@@ -384,6 +387,7 @@
       "ac_id": "AC-019-002",
       "title": "SSE pushes a new sample and tile updates within 5 s without reload",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "edge_case",
       "priority": "high",
       "preconditions": [
@@ -408,6 +412,7 @@
       "ac_id": "AC-020-001",
       "title": "30-day chart returns ≤600 points and renders ≤2 s",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "happy_path",
       "priority": "high",
       "preconditions": [
@@ -434,6 +439,7 @@
       "ac_id": "AC-020-002",
       "title": "Empty window renders explicit empty state, not broken axis",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "negative",
       "priority": "medium",
       "preconditions": [
@@ -647,7 +653,7 @@
       "user_story_id": "US-023",
       "ac_id": "AC-023-002",
       "title": "Breaker — speedtest blocked when daily budget exhausted (returns budget_exhausted)",
-      "type": "e2e",
+      "type": "integration",
       "scenario": "negative",
       "priority": "high",
       "preconditions": [
@@ -671,6 +677,7 @@
       "ac_id": "AC-023-003",
       "title": "Breaker — Network page footer shows current CPU%, RAM MB, 24h probe BW",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "edge_case",
       "priority": "medium",
       "preconditions": [
@@ -695,6 +702,7 @@
       "ac_id": "AC-024-001",
       "title": "On-demand speedtest — happy path persists row and renders in history",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "happy_path",
       "priority": "high",
       "preconditions": [
@@ -1089,6 +1097,7 @@
       "ac_id": "AC-019-002",
       "title": "Component state — TargetTile shows skeleton during loading",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "happy_path",
       "priority": "medium",
       "preconditions": [
@@ -1113,6 +1122,7 @@
       "ac_id": "AC-019-002",
       "title": "Component state — TargetTile error has actionable Retry text",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "negative",
       "priority": "medium",
       "preconditions": [
@@ -1136,6 +1146,7 @@
       "ac_id": "AC-019-002",
       "title": "Component state — TargetTile empty state shown when no samples yet",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "edge_case",
       "priority": "medium",
       "preconditions": [
@@ -1159,6 +1170,7 @@
       "ac_id": "AC-019-001",
       "title": "Component state — WanStatusBadge loading shows skeleton bar",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "happy_path",
       "priority": "medium",
       "preconditions": [
@@ -1182,6 +1194,7 @@
       "ac_id": "AC-019-003",
       "title": "Component state — WanStatusBadge critical (down) state",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "negative",
       "priority": "high",
       "preconditions": [
@@ -1205,6 +1218,7 @@
       "ac_id": "AC-019-001",
       "title": "Component state — WanStatusBadge collector unreachable error state",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "edge_case",
       "priority": "medium",
       "preconditions": [
@@ -1228,6 +1242,7 @@
       "ac_id": "AC-019-002",
       "title": "Component state — LikelyCauseChip empty state during baseline collection",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "happy_path",
       "priority": "medium",
       "preconditions": [
@@ -1250,6 +1265,7 @@
       "ac_id": "AC-019-002",
       "title": "Component state — LikelyCauseChip error when /api/network/cost fails",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "negative",
       "priority": "low",
       "preconditions": [
@@ -1273,6 +1289,7 @@
       "ac_id": "AC-019-002",
       "title": "Component state — LikelyCauseChip 'Healthy' green when all metrics nominal",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "edge_case",
       "priority": "medium",
       "preconditions": [
@@ -1296,6 +1313,7 @@
       "ac_id": "AC-022-001",
       "title": "Component state — AlertRulesTable empty state guides user",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "happy_path",
       "priority": "medium",
       "preconditions": [
@@ -1319,6 +1337,7 @@
       "ac_id": "AC-022-001",
       "title": "Component state — AlertRulesTable error when GET /api/network/rules 503",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "negative",
       "priority": "medium",
       "preconditions": [],
@@ -1340,6 +1359,7 @@
       "ac_id": "AC-022-001",
       "title": "Component state — AlertRulesTable loading skeleton row count = 3",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "edge_case",
       "priority": "low",
       "preconditions": [
@@ -1363,6 +1383,7 @@
       "ac_id": "AC-019-001",
       "title": "Mobile 375px — Network overview tiles stack 1-col, sticky speedtest CTA",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "happy_path",
       "priority": "high",
       "preconditions": [
@@ -1386,6 +1407,7 @@
       "ac_id": "AC-019-001",
       "title": "Mobile 375px — sub-tabs collapse to horizontal scroll strip",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "negative",
       "priority": "medium",
       "preconditions": [],
@@ -1407,6 +1429,7 @@
       "ac_id": "AC-019-001",
       "title": "Mobile 375px — DevicesTable becomes card list, no horizontal scroll",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "edge_case",
       "priority": "medium",
       "preconditions": [
@@ -1430,6 +1453,7 @@
       "ac_id": "AC-019-001",
       "title": "Design tokens — body text contrast against canvas ≥4.5:1",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "happy_path",
       "priority": "high",
       "preconditions": [],
@@ -1454,6 +1478,7 @@
       "ac_id": "AC-019-001",
       "title": "Design tokens — interactive elements ≥44×44 px touch targets at 375px",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "negative",
       "priority": "high",
       "preconditions": [
@@ -1478,6 +1503,7 @@
       "ac_id": "AC-019-001",
       "title": "Design tokens — tabular numerals enabled on numeric values",
       "type": "e2e",
+      "automation": "manual",
       "scenario": "edge_case",
       "priority": "low",
       "preconditions": [],
