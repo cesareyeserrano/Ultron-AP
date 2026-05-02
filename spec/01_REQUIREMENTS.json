@@ -279,13 +279,48 @@
       "i_want": "to see CPU, RAM, disk, network and temperature on a single dashboard updating every 5 seconds",
       "so_that": "I can assess host health at a glance without SSH",
       "acceptance_criteria": [
-        { "id": "AC-001-001", "given": "I open the dashboard with at least 60 minutes of metric history collected", "when": "the page renders", "then": "CPU usage percentage and a 60-minute historical chart are visible above the fold" },
-        { "id": "AC-001-002", "given": "the host has RAM telemetry available", "when": "the dashboard renders", "then": "RAM used/total, percentage, and chart are visible" },
-        { "id": "AC-001-003", "given": "the host has multiple disk partitions", "when": "the dashboard renders", "then": "each partition shows used/total/percentage" },
-        { "id": "AC-001-004", "given": "the host has at least one network interface", "when": "the dashboard renders", "then": "bytes in/out per second are shown per interface" },
-        { "id": "AC-001-005", "given": "the host reports CPU temperature", "when": "the value is read", "then": "the indicator is green below 60°C, yellow 60–75°C, red above 75°C" },
-        { "id": "AC-001-006", "given": "an authenticated client is connected to the dashboard", "when": "5 seconds pass after the previous push", "then": "metrics refresh via SSE without a page reload" },
-        { "id": "AC-001-007", "given": "the host has been running for some time", "when": "the dashboard renders", "then": "system uptime is shown" }
+        {
+          "id": "AC-001-001",
+          "given": "I open the dashboard with at least 60 minutes of metric history collected",
+          "when": "the page renders",
+          "then": "CPU usage percentage and a 60-minute historical chart are visible above the fold"
+        },
+        {
+          "id": "AC-001-002",
+          "given": "the host has RAM telemetry available",
+          "when": "the dashboard renders",
+          "then": "RAM used/total, percentage, and chart are visible"
+        },
+        {
+          "id": "AC-001-003",
+          "given": "the host has multiple disk partitions",
+          "when": "the dashboard renders",
+          "then": "each partition shows used/total/percentage"
+        },
+        {
+          "id": "AC-001-004",
+          "given": "the host has at least one network interface",
+          "when": "the dashboard renders",
+          "then": "bytes in/out per second are shown per interface"
+        },
+        {
+          "id": "AC-001-005",
+          "given": "the host reports CPU temperature",
+          "when": "the value is read",
+          "then": "the indicator is green below 60°C, yellow 60–75°C, red above 75°C"
+        },
+        {
+          "id": "AC-001-006",
+          "given": "an authenticated client is connected to the dashboard",
+          "when": "5 seconds pass after the previous push",
+          "then": "metrics refresh via SSE without a page reload"
+        },
+        {
+          "id": "AC-001-007",
+          "given": "the host has been running for some time",
+          "when": "the dashboard renders",
+          "then": "system uptime is shown"
+        }
       ]
     },
     {
@@ -295,11 +330,36 @@
       "i_want": "to see all Docker containers with state, resource usage and details",
       "so_that": "I can detect unhealthy containers without using docker CLI",
       "acceptance_criteria": [
-        { "id": "AC-002-001", "given": "Docker is reachable and at least one container exists", "when": "the Docker page renders", "then": "all containers (running, stopped, exited) are listed" },
-        { "id": "AC-002-002", "given": "a container is in the list", "when": "its row is rendered", "then": "name, image, state, uptime, CPU% and memory used appear" },
-        { "id": "AC-002-003", "given": "a container has a health-relevant state", "when": "the row is rendered", "then": "the indicator is green (running), grey (stopped), or red (exited with error)" },
-        { "id": "AC-002-004", "given": "the Docker page is open", "when": "10 seconds pass", "then": "data refreshes automatically" },
-        { "id": "AC-002-005", "given": "a user clicks a container row", "when": "the row expands", "then": "ports, volumes and environment variable names are revealed" }
+        {
+          "id": "AC-002-001",
+          "given": "Docker is reachable and at least one container exists",
+          "when": "the Docker page renders",
+          "then": "all containers (running, stopped, exited) are listed"
+        },
+        {
+          "id": "AC-002-002",
+          "given": "a container is in the list",
+          "when": "its row is rendered",
+          "then": "name, image, state, uptime, CPU% and memory used appear"
+        },
+        {
+          "id": "AC-002-003",
+          "given": "a container has a health-relevant state",
+          "when": "the row is rendered",
+          "then": "the indicator is green (running), grey (stopped), or red (exited with error)"
+        },
+        {
+          "id": "AC-002-004",
+          "given": "the Docker page is open",
+          "when": "10 seconds pass",
+          "then": "data refreshes automatically"
+        },
+        {
+          "id": "AC-002-005",
+          "given": "a user clicks a container row",
+          "when": "the row expands",
+          "then": "ports, volumes and environment variable names are revealed"
+        }
       ]
     },
     {
@@ -309,11 +369,36 @@
       "i_want": "to see Systemd services and their state",
       "so_that": "I can identify failed services without running systemctl",
       "acceptance_criteria": [
-        { "id": "AC-003-001", "given": "Systemd is available", "when": "the Services page renders", "then": "all active/enabled units are listed" },
-        { "id": "AC-003-002", "given": "a service is in the list", "when": "its row is rendered", "then": "name, state (active/inactive/failed) and active-since are shown" },
-        { "id": "AC-003-003", "given": "a service has a current state", "when": "the row is rendered", "then": "the indicator is green (active), grey (inactive) or red (failed)" },
-        { "id": "AC-003-004", "given": "the user enables the failures filter", "when": "the list re-renders", "then": "only failed services are shown" },
-        { "id": "AC-003-005", "given": "the Services page is open", "when": "30 seconds pass", "then": "data refreshes automatically" }
+        {
+          "id": "AC-003-001",
+          "given": "Systemd is available",
+          "when": "the Services page renders",
+          "then": "all active/enabled units are listed"
+        },
+        {
+          "id": "AC-003-002",
+          "given": "a service is in the list",
+          "when": "its row is rendered",
+          "then": "name, state (active/inactive/failed) and active-since are shown"
+        },
+        {
+          "id": "AC-003-003",
+          "given": "a service has a current state",
+          "when": "the row is rendered",
+          "then": "the indicator is green (active), grey (inactive) or red (failed)"
+        },
+        {
+          "id": "AC-003-004",
+          "given": "the user enables the failures filter",
+          "when": "the list re-renders",
+          "then": "only failed services are shown"
+        },
+        {
+          "id": "AC-003-005",
+          "given": "the Services page is open",
+          "when": "30 seconds pass",
+          "then": "data refreshes automatically"
+        }
       ]
     },
     {
@@ -323,13 +408,48 @@
       "i_want": "alerts when CPU/RAM/Disk/Temp cross thresholds or services fail",
       "so_that": "I'm proactively notified instead of catching problems by chance",
       "acceptance_criteria": [
-        { "id": "AC-004-001", "given": "an admin configures a threshold rule (CPU > X%, RAM > X%, Disk > X%, Temperature > X°C)", "when": "the rule is saved", "then": "it is evaluated on every snapshot" },
-        { "id": "AC-004-002", "given": "a Docker container becomes unhealthy or exits with error", "when": "the engine evaluates state", "then": "a Docker alert is fired" },
-        { "id": "AC-004-003", "given": "a Systemd service transitions to failed", "when": "the engine evaluates state", "then": "a service alert is fired" },
-        { "id": "AC-004-004", "given": "an alert fires", "when": "the engine persists it", "then": "it appears in SQLite with timestamp and type" },
-        { "id": "AC-004-005", "given": "the Alerts panel is open", "when": "the user filters by severity", "then": "only critical/warning/info entries matching the filter are shown" },
-        { "id": "AC-004-006", "given": "a rule has fired within its cooldown window (default 15 min)", "when": "the same condition repeats", "then": "no duplicate alert is fired" },
-        { "id": "AC-004-007", "given": "an alert is recorded", "when": "it is rendered", "then": "its severity is critical (red), warning (yellow) or info (blue)" }
+        {
+          "id": "AC-004-001",
+          "given": "an admin configures a threshold rule (CPU > X%, RAM > X%, Disk > X%, Temperature > X°C)",
+          "when": "the rule is saved",
+          "then": "it is evaluated on every snapshot"
+        },
+        {
+          "id": "AC-004-002",
+          "given": "a Docker container becomes unhealthy or exits with error",
+          "when": "the engine evaluates state",
+          "then": "a Docker alert is fired"
+        },
+        {
+          "id": "AC-004-003",
+          "given": "a Systemd service transitions to failed",
+          "when": "the engine evaluates state",
+          "then": "a service alert is fired"
+        },
+        {
+          "id": "AC-004-004",
+          "given": "an alert fires",
+          "when": "the engine persists it",
+          "then": "it appears in SQLite with timestamp and type"
+        },
+        {
+          "id": "AC-004-005",
+          "given": "the Alerts panel is open",
+          "when": "the user filters by severity",
+          "then": "only critical/warning/info entries matching the filter are shown"
+        },
+        {
+          "id": "AC-004-006",
+          "given": "a rule has fired within its cooldown window (default 15 min)",
+          "when": "the same condition repeats",
+          "then": "no duplicate alert is fired"
+        },
+        {
+          "id": "AC-004-007",
+          "given": "an alert is recorded",
+          "when": "it is rendered",
+          "then": "its severity is critical (red), warning (yellow) or info (blue)"
+        }
       ]
     },
     {
@@ -339,11 +459,36 @@
       "i_want": "Telegram notifications for critical/warning alerts",
       "so_that": "I learn about incidents on my phone within seconds",
       "acceptance_criteria": [
-        { "id": "AC-005-001", "given": "the admin opens settings", "when": "they enter a Bot Token and Chat ID", "then": "the Telegram channel is configured" },
-        { "id": "AC-005-002", "given": "Telegram is configured", "when": "a critical or warning alert fires", "then": "a Telegram message is sent" },
-        { "id": "AC-005-003", "given": "a Telegram message is sent", "when": "it is composed", "then": "it includes severity, affected metric/service, current value and configured threshold" },
-        { "id": "AC-005-004", "given": "the admin clicks the test button", "when": "the send call returns", "then": "the result confirms whether the bot can reach the chat" },
-        { "id": "AC-005-005", "given": "the admin selects a mute window (1h, 4h, 24h)", "when": "alerts fire during the window", "then": "no Telegram messages are sent until the window expires" }
+        {
+          "id": "AC-005-001",
+          "given": "the admin opens settings",
+          "when": "they enter a Bot Token and Chat ID",
+          "then": "the Telegram channel is configured"
+        },
+        {
+          "id": "AC-005-002",
+          "given": "Telegram is configured",
+          "when": "a critical or warning alert fires",
+          "then": "a Telegram message is sent"
+        },
+        {
+          "id": "AC-005-003",
+          "given": "a Telegram message is sent",
+          "when": "it is composed",
+          "then": "it includes severity, affected metric/service, current value and configured threshold"
+        },
+        {
+          "id": "AC-005-004",
+          "given": "the admin clicks the test button",
+          "when": "the send call returns",
+          "then": "the result confirms whether the bot can reach the chat"
+        },
+        {
+          "id": "AC-005-005",
+          "given": "the admin selects a mute window (1h, 4h, 24h)",
+          "when": "alerts fire during the window",
+          "then": "no Telegram messages are sent until the window expires"
+        }
       ]
     },
     {
@@ -353,11 +498,36 @@
       "i_want": "email notifications for critical alerts and an optional daily digest",
       "so_that": "I have an audit trail in my inbox even when offline from Telegram",
       "acceptance_criteria": [
-        { "id": "AC-006-001", "given": "the admin enters SMTP host, port, user, password, from and to", "when": "the form is saved", "then": "the SMTP channel is configured" },
-        { "id": "AC-006-002", "given": "SMTP is configured", "when": "a critical alert fires", "then": "an email is sent" },
-        { "id": "AC-006-003", "given": "an email is sent", "when": "it is composed", "then": "it includes problem summary, timestamp and current-value-vs-threshold" },
-        { "id": "AC-006-004", "given": "daily digest is enabled", "when": "the digest hour is reached", "then": "a single email summarising the last 24h of alerts is sent" },
-        { "id": "AC-006-005", "given": "the admin clicks the SMTP test button", "when": "the send call returns", "then": "the result confirms whether SMTP credentials work" }
+        {
+          "id": "AC-006-001",
+          "given": "the admin enters SMTP host, port, user, password, from and to",
+          "when": "the form is saved",
+          "then": "the SMTP channel is configured"
+        },
+        {
+          "id": "AC-006-002",
+          "given": "SMTP is configured",
+          "when": "a critical alert fires",
+          "then": "an email is sent"
+        },
+        {
+          "id": "AC-006-003",
+          "given": "an email is sent",
+          "when": "it is composed",
+          "then": "it includes problem summary, timestamp and current-value-vs-threshold"
+        },
+        {
+          "id": "AC-006-004",
+          "given": "daily digest is enabled",
+          "when": "the digest hour is reached",
+          "then": "a single email summarising the last 24h of alerts is sent"
+        },
+        {
+          "id": "AC-006-005",
+          "given": "the admin clicks the SMTP test button",
+          "when": "the send call returns",
+          "then": "the result confirms whether SMTP credentials work"
+        }
       ]
     },
     {
@@ -367,13 +537,48 @@
       "i_want": "secure single-admin login with brute-force protection",
       "so_that": "the panel is not accessible to anyone on the LAN",
       "acceptance_criteria": [
-        { "id": "AC-007-001", "given": "an unauthenticated user navigates to /login", "when": "the page renders", "then": "a username and password form is shown" },
-        { "id": "AC-007-002", "given": "the admin password is set via env var or first-run setup", "when": "the credentials match", "then": "login succeeds" },
-        { "id": "AC-007-003", "given": "login succeeds", "when": "the session cookie is issued", "then": "it expires after 24h by default and is HttpOnly" },
-        { "id": "AC-007-004", "given": "an IP submits 5 failed login attempts", "when": "the 6th attempt is made", "then": "it is locked for 15 minutes" },
-        { "id": "AC-007-005", "given": "the admin password is stored", "when": "it is read from the DB", "then": "it is a bcrypt hash, never plaintext" },
-        { "id": "AC-007-006", "given": "an authenticated user is on any page", "when": "the header renders", "then": "a logout button is visible" },
-        { "id": "AC-007-007", "given": "an unauthenticated client", "when": "it requests any route except /login or /health", "then": "the response is 302 redirect to /login" }
+        {
+          "id": "AC-007-001",
+          "given": "an unauthenticated user navigates to /login",
+          "when": "the page renders",
+          "then": "a username and password form is shown"
+        },
+        {
+          "id": "AC-007-002",
+          "given": "the admin password is set via env var or first-run setup",
+          "when": "the credentials match",
+          "then": "login succeeds"
+        },
+        {
+          "id": "AC-007-003",
+          "given": "login succeeds",
+          "when": "the session cookie is issued",
+          "then": "it expires after 24h by default and is HttpOnly"
+        },
+        {
+          "id": "AC-007-004",
+          "given": "an IP submits 5 failed login attempts",
+          "when": "the 6th attempt is made",
+          "then": "it is locked for 15 minutes"
+        },
+        {
+          "id": "AC-007-005",
+          "given": "the admin password is stored",
+          "when": "it is read from the DB",
+          "then": "it is a bcrypt hash, never plaintext"
+        },
+        {
+          "id": "AC-007-006",
+          "given": "an authenticated user is on any page",
+          "when": "the header renders",
+          "then": "a logout button is visible"
+        },
+        {
+          "id": "AC-007-007",
+          "given": "an unauthenticated client",
+          "when": "it requests any route except /login or /health",
+          "then": "the response is 302 redirect to /login"
+        }
       ]
     },
     {
@@ -383,12 +588,42 @@
       "i_want": "Start/Stop/Restart actions on containers and services from the panel",
       "so_that": "I can recover from issues without SSH",
       "acceptance_criteria": [
-        { "id": "AC-008-001", "given": "a Docker container row is rendered", "when": "the row's controls are shown", "then": "Start, Stop and Restart buttons are present" },
-        { "id": "AC-008-002", "given": "a Systemd service row is rendered", "when": "the row's controls are shown", "then": "Start, Stop and Restart buttons are present" },
-        { "id": "AC-008-003", "given": "the user clicks Stop or Restart", "when": "the action is about to execute", "then": "a confirmation modal must be acknowledged first" },
-        { "id": "AC-008-004", "given": "an action returns", "when": "the response is rendered", "then": "an explicit success or error state with message is shown" },
-        { "id": "AC-008-005", "given": "any action executes", "when": "it completes", "then": "an audit-trail entry with timestamp is persisted in SQLite" },
-        { "id": "AC-008-006", "given": "an action is dispatched", "when": "it runs", "then": "it executes asynchronously and reports the result without blocking the UI" }
+        {
+          "id": "AC-008-001",
+          "given": "a Docker container row is rendered",
+          "when": "the row's controls are shown",
+          "then": "Start, Stop and Restart buttons are present"
+        },
+        {
+          "id": "AC-008-002",
+          "given": "a Systemd service row is rendered",
+          "when": "the row's controls are shown",
+          "then": "Start, Stop and Restart buttons are present"
+        },
+        {
+          "id": "AC-008-003",
+          "given": "the user clicks Stop or Restart",
+          "when": "the action is about to execute",
+          "then": "a confirmation modal must be acknowledged first"
+        },
+        {
+          "id": "AC-008-004",
+          "given": "an action returns",
+          "when": "the response is rendered",
+          "then": "an explicit success or error state with message is shown"
+        },
+        {
+          "id": "AC-008-005",
+          "given": "any action executes",
+          "when": "it completes",
+          "then": "an audit-trail entry with timestamp is persisted in SQLite"
+        },
+        {
+          "id": "AC-008-006",
+          "given": "an action is dispatched",
+          "when": "it runs",
+          "then": "it executes asynchronously and reports the result without blocking the UI"
+        }
       ]
     },
     {
@@ -398,11 +633,36 @@
       "i_want": "a dark, responsive UI with consistent components",
       "so_that": "the panel is comfortable to read at night and on mobile",
       "acceptance_criteria": [
-        { "id": "AC-009-001", "given": "any page is rendered", "when": "it is viewed", "then": "body text contrast against background is ≥ 4.5:1" },
-        { "id": "AC-009-002", "given": "a status badge renders", "when": "it shows ok/warn/critical/muted", "then": "it uses the corresponding semantic colour token" },
-        { "id": "AC-009-003", "given": "any module is rendered", "when": "card, badge, button, empty or error states are shown", "then": "they follow the same component pattern across all modules" },
-        { "id": "AC-009-004", "given": "the panel is viewed at 375px viewport width", "when": "any interactive element is rendered", "then": "its touch target is at least 44×44 px" },
-        { "id": "AC-009-005", "given": "any status text on dark background", "when": "contrast is measured", "then": "it meets WCAG 2.1 AA (≥ 4.5:1 for body, ≥ 3:1 for large)" }
+        {
+          "id": "AC-009-001",
+          "given": "any page is rendered",
+          "when": "it is viewed",
+          "then": "body text contrast against background is ≥ 4.5:1"
+        },
+        {
+          "id": "AC-009-002",
+          "given": "a status badge renders",
+          "when": "it shows ok/warn/critical/muted",
+          "then": "it uses the corresponding semantic colour token"
+        },
+        {
+          "id": "AC-009-003",
+          "given": "any module is rendered",
+          "when": "card, badge, button, empty or error states are shown",
+          "then": "they follow the same component pattern across all modules"
+        },
+        {
+          "id": "AC-009-004",
+          "given": "the panel is viewed at 375px viewport width",
+          "when": "any interactive element is rendered",
+          "then": "its touch target is at least 44×44 px"
+        },
+        {
+          "id": "AC-009-005",
+          "given": "any status text on dark background",
+          "when": "contrast is measured",
+          "then": "it meets WCAG 2.1 AA (≥ 4.5:1 for body, ≥ 3:1 for large)"
+        }
       ]
     },
     {
@@ -412,9 +672,24 @@
       "i_want": "the last 100 log lines for any container or service",
       "so_that": "I can debug failures without SSH",
       "acceptance_criteria": [
-        { "id": "AC-010-001", "given": "a Docker container row is rendered", "when": "the user opens its log drawer", "then": "the last 100 lines from the container are shown" },
-        { "id": "AC-010-002", "given": "a Systemd service row is rendered", "when": "the user opens its log drawer", "then": "the last 100 lines from journalctl are shown" },
-        { "id": "AC-010-003", "given": "any service or container row is visible", "when": "the user clicks the log icon", "then": "the drawer opens in a single click without page navigation" }
+        {
+          "id": "AC-010-001",
+          "given": "a Docker container row is rendered",
+          "when": "the user opens its log drawer",
+          "then": "the last 100 lines from the container are shown"
+        },
+        {
+          "id": "AC-010-002",
+          "given": "a Systemd service row is rendered",
+          "when": "the user opens its log drawer",
+          "then": "the last 100 lines from journalctl are shown"
+        },
+        {
+          "id": "AC-010-003",
+          "given": "any service or container row is visible",
+          "when": "the user clicks the log icon",
+          "then": "the drawer opens in a single click without page navigation"
+        }
       ]
     },
     {
@@ -424,10 +699,30 @@
       "i_want": "the web process to run unprivileged with host actions delegated to a root helper",
       "so_that": "a web compromise cannot directly run host commands",
       "acceptance_criteria": [
-        { "id": "AC-011-001", "given": "the systemd unit for the web process", "when": "it is inspected", "then": "NoNewPrivileges=true is set" },
-        { "id": "AC-011-002", "given": "any host-level action is requested", "when": "the handler executes", "then": "it routes the request through the privileged helper Unix socket" },
-        { "id": "AC-011-003", "given": "the helper receives a request", "when": "it executes", "then": "it validates the command against an allow-list before running it" },
-        { "id": "AC-011-004", "given": "the web layer", "when": "any handler runs", "then": "no privileged command is executed directly from the web process" }
+        {
+          "id": "AC-011-001",
+          "given": "the systemd unit for the web process",
+          "when": "it is inspected",
+          "then": "NoNewPrivileges=true is set"
+        },
+        {
+          "id": "AC-011-002",
+          "given": "any host-level action is requested",
+          "when": "the handler executes",
+          "then": "it routes the request through the privileged helper Unix socket"
+        },
+        {
+          "id": "AC-011-003",
+          "given": "the helper receives a request",
+          "when": "it executes",
+          "then": "it validates the command against an allow-list before running it"
+        },
+        {
+          "id": "AC-011-004",
+          "given": "the web layer",
+          "when": "any handler runs",
+          "then": "no privileged command is executed directly from the web process"
+        }
       ]
     },
     {
@@ -437,9 +732,24 @@
       "i_want": "all state-changing requests to be CSRF-protected",
       "so_that": "a malicious origin cannot trigger actions on my session",
       "acceptance_criteria": [
-        { "id": "AC-012-001", "given": "an authenticated session is established", "when": "the page renders", "then": "a per-session CSRF token is embedded" },
-        { "id": "AC-012-002", "given": "a POST/PUT/DELETE request is made", "when": "the middleware runs", "then": "the CSRF token is required and validated" },
-        { "id": "AC-012-003", "given": "a state-changing request lacks a valid CSRF token", "when": "the middleware evaluates it", "then": "the response is 403 Forbidden" }
+        {
+          "id": "AC-012-001",
+          "given": "an authenticated session is established",
+          "when": "the page renders",
+          "then": "a per-session CSRF token is embedded"
+        },
+        {
+          "id": "AC-012-002",
+          "given": "a POST/PUT/DELETE request is made",
+          "when": "the middleware runs",
+          "then": "the CSRF token is required and validated"
+        },
+        {
+          "id": "AC-012-003",
+          "given": "a state-changing request lacks a valid CSRF token",
+          "when": "the middleware evaluates it",
+          "then": "the response is 403 Forbidden"
+        }
       ]
     },
     {
@@ -449,9 +759,24 @@
       "i_want": "RGB / fan / OLED settings exposed from the panel",
       "so_that": "I can tune the enclosure without editing config files",
       "acceptance_criteria": [
-        { "id": "AC-013-001", "given": "the settings page is open", "when": "the hardware section renders", "then": "an RGB mode selector is present" },
-        { "id": "AC-013-002", "given": "the settings page is open", "when": "the hardware section renders", "then": "a fan mode selector is present" },
-        { "id": "AC-013-003", "given": "the settings page is open", "when": "the hardware section renders", "then": "an OLED display configuration is present" }
+        {
+          "id": "AC-013-001",
+          "given": "the settings page is open",
+          "when": "the hardware section renders",
+          "then": "an RGB mode selector is present"
+        },
+        {
+          "id": "AC-013-002",
+          "given": "the settings page is open",
+          "when": "the hardware section renders",
+          "then": "a fan mode selector is present"
+        },
+        {
+          "id": "AC-013-003",
+          "given": "the settings page is open",
+          "when": "the hardware section renders",
+          "then": "an OLED display configuration is present"
+        }
       ]
     },
     {
@@ -461,9 +786,24 @@
       "i_want": "Tailscale node and peer status on the dashboard",
       "so_that": "I can confirm VPN connectivity without leaving the panel",
       "acceptance_criteria": [
-        { "id": "AC-014-001", "given": "Tailscale is installed and running", "when": "the dashboard fetches status", "then": "the local node status is shown" },
-        { "id": "AC-014-002", "given": "Tailscale reports peers", "when": "the dashboard renders", "then": "each connected peer is listed with name and IP" },
-        { "id": "AC-014-003", "given": "the dashboard is open", "when": "an SSE refresh occurs", "then": "Tailscale status updates without a page reload" }
+        {
+          "id": "AC-014-001",
+          "given": "Tailscale is installed and running",
+          "when": "the dashboard fetches status",
+          "then": "the local node status is shown"
+        },
+        {
+          "id": "AC-014-002",
+          "given": "Tailscale reports peers",
+          "when": "the dashboard renders",
+          "then": "each connected peer is listed with name and IP"
+        },
+        {
+          "id": "AC-014-003",
+          "given": "the dashboard is open",
+          "when": "an SSE refresh occurs",
+          "then": "Tailscale status updates without a page reload"
+        }
       ]
     },
     {
@@ -473,11 +813,32 @@
       "i_want": "manual and scheduled encrypted backups of the SQLite DB",
       "so_that": "I can restore configuration after disk failure",
       "acceptance_criteria": [
-        { "id": "AC-015-001", "given": "the settings page is open", "when": "the user clicks 'backup now'", "then": "an immediate backup file is created" },
-        { "id": "AC-015-002", "given": "an interval is configured", "when": "the interval elapses", "then": "a backup is created automatically" },
-        { "id": "AC-015-003", "given": "a backup is created", "when": "it is written to disk", "then": "it is encrypted at rest" },
-        { "id": "AC-015-004", "given": "the settings page lists prior backups", "when": "the user clicks download", "then": "the encrypted backup file is delivered to the browser" }
+        {
+          "id": "AC-015-001",
+          "given": "the settings page is open",
+          "when": "the user clicks 'backup now'",
+          "then": "an immediate backup file is created"
+        },
+        {
+          "id": "AC-015-002",
+          "given": "an interval is configured",
+          "when": "the interval elapses",
+          "then": "a backup is created automatically"
+        },
+        {
+          "id": "AC-015-003",
+          "given": "a backup is created",
+          "when": "it is written to disk",
+          "then": "it is encrypted at rest"
+        },
+        {
+          "id": "AC-015-004",
+          "given": "the settings page lists prior backups",
+          "when": "the user clicks download",
+          "then": "the encrypted backup file is delivered to the browser"
+        }
       ]
     }
-  ]
+  ],
+  "original_brief": "# Project Idea\n\nUltron-AP is a professional monitoring and management dashboard for the Raspberry Pi. It solves the problem of operators needing reliable, low-friction, real-time visibility into system health without requiring SSH access or heavyweight tooling. The primary user is a Raspberry Pi operator/admin who needs to understand critical system state and act quickly — restarting containers, viewing logs, configuring alerts — from a single web interface.\n\nThe project provides real-time monitoring of CPU, RAM, Disk, Network, and temperature via SSE; Docker and Systemd service controls; a threshold-based alert engine with Telegram and Email notifications; hardware integration with Pironman 5; and security features including CSRF protection, bcrypt sessions, brute-force protection, and a full action audit trail. A privilege-separation model keeps the web process unprivileged while delegating host-level actions to a root-owned helper over a Unix socket.\n\nBuilt with a zero-runtime-dependency philosophy using Go, HTMX, Tailwind CSS, and SQLite. Targets ARM64 (Raspberry Pi) with a ~15MB RAM footprint.\n"
 }
