@@ -69,7 +69,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -77,8 +77,10 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-05-03T23:51:27.561Z",
-      "updated_at": "2026-05-03T23:51:27.561Z",
-      "resolution": null
+      "updated_at": "2026-05-04T00:05:58.085Z",
+      "resolution": null,
+      "close_commit_sha": "aab4850a00b948ad03ed6cf917c9c7c987a6d436",
+      "close_at": "2026-05-04T00:05:58.085Z"
     },
     {
       "id": "BG-005",
@@ -89,7 +91,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -97,8 +99,10 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-05-03T23:51:27.600Z",
-      "updated_at": "2026-05-03T23:51:27.600Z",
-      "resolution": null
+      "updated_at": "2026-05-04T00:05:58.129Z",
+      "resolution": null,
+      "close_commit_sha": "aab4850a00b948ad03ed6cf917c9c7c987a6d436",
+      "close_at": "2026-05-04T00:05:58.129Z"
     },
     {
       "id": "BG-006",
@@ -109,7 +113,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -117,8 +121,10 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-05-03T23:51:27.640Z",
-      "updated_at": "2026-05-03T23:51:27.640Z",
-      "resolution": null
+      "updated_at": "2026-05-04T00:05:58.171Z",
+      "resolution": null,
+      "close_commit_sha": "aab4850a00b948ad03ed6cf917c9c7c987a6d436",
+      "close_at": "2026-05-04T00:05:58.171Z"
     },
     {
       "id": "BG-007",
@@ -129,7 +135,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -137,8 +143,10 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-05-03T23:51:27.691Z",
-      "updated_at": "2026-05-03T23:51:27.691Z",
-      "resolution": null
+      "updated_at": "2026-05-04T00:05:58.214Z",
+      "resolution": null,
+      "close_commit_sha": "aab4850a00b948ad03ed6cf917c9c7c987a6d436",
+      "close_at": "2026-05-04T00:05:58.214Z"
     }
   ]
 }
