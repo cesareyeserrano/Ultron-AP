@@ -452,6 +452,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /services", s.requireAuth(http.HandlerFunc(s.handleServicesPage)))
 	mux.Handle("GET /alerts", s.requireAuth(http.HandlerFunc(s.handleAlertsPage)))
 	mux.Handle("GET /history", s.requireAuth(http.HandlerFunc(s.handleHistoryPage)))
+	mux.Handle("GET /network", s.requireAuth(http.HandlerFunc(s.handleNetworkPage)))
 	mux.Handle("GET /logs", s.requireAuth(http.HandlerFunc(s.handleLogsPage)))
 	mux.Handle("GET /settings", s.requireAuth(http.HandlerFunc(s.handleSettings)))
 

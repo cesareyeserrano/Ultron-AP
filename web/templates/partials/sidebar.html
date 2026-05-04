@@ -56,6 +56,16 @@
                 </a>
             </li>
             <li>
+                <a href="/network" class="nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                    {{if eq .ActivePage "network"}}active-link bg-card text-accent border border-accent/30{{else}}text-text-muted hover:bg-card hover:text-text border border-transparent{{end}}" hx-boost="true">
+                    <!-- Lucide: Activity -->
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    <span class="whitespace-nowrap truncate sidebar-label">Network</span>
+                </a>
+            </li>
+            <li>
                 <a href="/history" class="nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
                     {{if eq .ActivePage "history"}}active-link bg-card text-accent border border-accent/30{{else}}text-text-muted hover:bg-card hover:text-text border border-transparent{{end}}" hx-boost="true">
                     <!-- Lucide: ClipboardList -->
