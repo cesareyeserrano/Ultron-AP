@@ -108,3 +108,33 @@ func TestPruneNetSamples(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, got, 1)
 }
+
+func TestInsertNetEvent_AndRecent(t *testing.T) {
+	db := newTestNetDB(t)
+	require.NoError(t, db.InsertNetEvent(NetEvent{
+		TS:     time.Date(2026, 5, 3, 12, 0, 0, 0, time.UTC),
+		Kind:   "wan_down",
+		Detail: "3 consecutive failures to 1.1.1.1",
+	}))
+	require.NoError(t, db.InsertNetEvent(NetEvent{
+		TS:     time.Date(2026, 5, 3, 12, 5, 0, 0, time.UTC),
+		Kind:   "wan_up",
+		Detail: "recovered on 1.1.1.1 (rtt=45ms)",
+	}))
+
+	evs, err := db.RecentNetEvents(10)
+	require.NoError(t, err)
+	require.Len(t, evs, 2)
+	// newest first
+	assert.Equal(t, "wan_up", evs[0].Kind)
+	assert.Equal(t, "wan_down", evs[1].Kind)
+}
+
+func TestInsertNetEvent_DefaultTS(t *testing.T) {
+	db := newTestNetDB(t)
+	require.NoError(t, db.InsertNetEvent(NetEvent{Kind: "wan_up"}))
+	evs, err := db.RecentNetEvents(1)
+	require.NoError(t, err)
+	require.Len(t, evs, 1)
+	assert.False(t, evs[0].TS.IsZero(), "missing TS should default to now")
+}

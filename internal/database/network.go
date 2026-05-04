@@ -67,6 +67,56 @@ func (db *DB) PruneNetSamples(days int) (int64, error) {
 	return n, nil
 }
 
+// NetEvent is one structured network event row (e.g. WAN outage transitions,
+// path changes, public IP changes — for now only WAN up/down).
+type NetEvent struct {
+	ID     int64
+	TS     time.Time
+	Kind   string // "wan_down" | "wan_up"
+	Detail string
+}
+
+// InsertNetEvent appends an event row.
+func (db *DB) InsertNetEvent(e NetEvent) error {
+	if e.TS.IsZero() {
+		e.TS = time.Now()
+	}
+	_, err := db.Exec(
+		`INSERT INTO NetEvent (ts, kind, detail) VALUES (?, ?, ?)`,
+		e.TS.UnixMilli(), e.Kind, e.Detail,
+	)
+	if err != nil {
+		return fmt.Errorf("insert net event: %w", err)
+	}
+	return nil
+}
+
+// RecentNetEvents returns up to limit most-recent events, newest first.
+func (db *DB) RecentNetEvents(limit int) ([]NetEvent, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	rows, err := db.Query(
+		`SELECT id, ts, kind, detail FROM NetEvent ORDER BY ts DESC LIMIT ?`,
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query recent net events: %w", err)
+	}
+	defer rows.Close()
+	var out []NetEvent
+	for rows.Next() {
+		var e NetEvent
+		var ts int64
+		if err := rows.Scan(&e.ID, &ts, &e.Kind, &e.Detail); err != nil {
+			return nil, err
+		}
+		e.TS = time.UnixMilli(ts)
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
 func scanNetSamples(rows *sql.Rows) ([]NetSample, error) {
 	defer rows.Close()
 	var out []NetSample

@@ -17,6 +17,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
@@ -89,8 +90,21 @@ func main() {
 
 	// Start network ICMP probes (unprivileged, requires net.ipv4.ping_group_range
 	// on Linux). Snapshots are read by the dashboard; each sample is also
-	// persisted to NetSample for the historical chart (FR-021).
+	// persisted to NetSample for the historical chart (FR-021). The WAN monitor
+	// observes the same stream to detect WAN_DOWN/WAN_UP transitions (FR-018).
 	netTargets := defaultNetTargets()
+	publicLabel, gatewayLabel := pickWANLabels(netTargets)
+	wan := wanmonitor.New(publicLabel, gatewayLabel, 3, func(e wanmonitor.Event) {
+		log.Printf("WAN %s: %s", e.Kind, e.Detail)
+		if err := db.InsertNetEvent(database.NetEvent{
+			TS:     e.TS,
+			Kind:   e.Kind,
+			Detail: e.Detail,
+		}); err != nil {
+			log.Printf("net event insert failed: %v", err)
+		}
+	})
+
 	lastLoggedProbeErr := map[string]string{}
 	gateway := gatewayprobe.New(5*time.Second, func(snap gatewayprobe.Snapshot) {
 		var rtt *float64
@@ -107,6 +121,8 @@ func main() {
 		}); err != nil {
 			log.Printf("net sample insert failed: %v", err)
 		}
+		// Feed the WAN monitor.
+		wan.Observe(snap)
 		// Log the first occurrence of a probe error per target and re-log
 		// only when the message text changes, so a steady-state failure
 		// doesn't spam the journal every 5 seconds.
@@ -117,12 +133,14 @@ func main() {
 	}, netTargets)
 	gateway.Start(context.Background())
 	defer gateway.Stop()
-	log.Printf("Network probes started (interval=5s, targets=%d, persist=NetSample)", len(netTargets))
+	log.Printf("Network probes started (interval=5s, targets=%d, persist=NetSample, wan=%s↔%s)",
+		len(netTargets), gatewayLabel, publicLabel)
 
 	// Create server and apply the persisted performance config (SSE interval + any
 	// remaining fields not yet applied above).
 	srv := server.New(cfg, db, reader, collector, dockerMon, systemdMon, alertEng)
 	srv.SetGatewayProbe(gateway)
+	srv.SetWANMonitor(wan)
 	srv.ApplyPerformanceConfig(perf)
 	backupCfg, err := db.GetBackupConfig()
 	if err != nil {
@@ -159,6 +177,30 @@ func main() {
 	}
 
 	log.Println("Server exited cleanly")
+}
+
+// pickWANLabels chooses which target label is the LAN gateway and which is
+// the public-internet reference for the WAN monitor. Convention:
+// - The first target whose Host is "" (auto-resolved gateway) is the gateway.
+// - The next non-empty-Host target is the public reference.
+// Falls back to the first two labels in order if the convention is not met.
+func pickWANLabels(targets []gatewayprobe.Target) (publicLabel, gatewayLabel string) {
+	for _, t := range targets {
+		if gatewayLabel == "" && t.Host == "" {
+			gatewayLabel = t.Label
+			continue
+		}
+		if publicLabel == "" && t.Host != "" {
+			publicLabel = t.Label
+		}
+	}
+	if gatewayLabel == "" && len(targets) > 0 {
+		gatewayLabel = targets[0].Label
+	}
+	if publicLabel == "" && len(targets) > 1 {
+		publicLabel = targets[1].Label
+	}
+	return publicLabel, gatewayLabel
 }
 
 // defaultNetTargets returns the network probe target list, parsing

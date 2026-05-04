@@ -16,6 +16,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 	"github.com/cesareyeserrano/ultron-ap/internal/tailscale"
 )
@@ -44,6 +45,7 @@ type DashboardData struct {
 	Uptime         string
 	Tailscale      TailscaleData
 	Network        []*gatewayprobe.Snapshot
+	WAN            *wanmonitor.Snapshot
 	Version        string
 }
 
@@ -430,6 +432,11 @@ func (s *Server) gatherDashboardData() DashboardData {
 
 	if s.gateway != nil {
 		dd.Network = s.gateway.Snapshots()
+	}
+
+	if s.wan != nil {
+		snap := s.wan.Snapshot()
+		dd.WAN = &snap
 	}
 
 	if s.systemd != nil {

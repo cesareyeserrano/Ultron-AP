@@ -80,7 +80,18 @@
 </div>
 {{if .Network}}
 <div class="mt-3">
-    <p class="text-[11px] text-text-muted mb-1.5 uppercase tracking-wider">Network probes</p>
+    <div class="flex items-center justify-between mb-1.5 gap-2">
+        <p class="text-[11px] text-text-muted uppercase tracking-wider">Network probes</p>
+        {{if .WAN}}
+            {{if eq (printf "%s" .WAN.State) "up"}}
+                <span class="text-[11px] px-2 py-0.5 rounded border border-green-400/40 bg-green-400/10 text-green-400 font-mono">WAN up</span>
+            {{else if eq (printf "%s" .WAN.State) "down"}}
+                <span class="text-[11px] px-2 py-0.5 rounded border border-danger/50 bg-danger/10 text-danger font-mono" title="{{if .WAN.LastEvent}}{{.WAN.LastEvent.Detail}}{{end}}">WAN DOWN</span>
+            {{else}}
+                <span class="text-[11px] px-2 py-0.5 rounded border border-border/50 bg-card/50 text-text-muted font-mono">WAN ?</span>
+            {{end}}
+        {{end}}
+    </div>
     <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {{range .Network}}
         <div class="metric-tile">

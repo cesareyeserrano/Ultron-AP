@@ -102,6 +102,15 @@ CREATE TABLE IF NOT EXISTS NetSample (
 );
 CREATE INDEX IF NOT EXISTS idx_net_sample_ts ON NetSample(ts);
 CREATE INDEX IF NOT EXISTS idx_net_sample_target_ts ON NetSample(target, ts);
+
+CREATE TABLE IF NOT EXISTS NetEvent (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	ts INTEGER NOT NULL,
+	kind TEXT NOT NULL,
+	detail TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_net_event_ts ON NetEvent(ts);
+CREATE INDEX IF NOT EXISTS idx_net_event_kind_ts ON NetEvent(kind, ts);
 `
 
 type DB struct {

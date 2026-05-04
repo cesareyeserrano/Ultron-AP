@@ -22,6 +22,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
@@ -73,6 +74,7 @@ type Server struct {
 	backupRescheduleCh  chan struct{}
 	privileged          *privileged.Client
 	gateway             *gatewayprobe.Probe
+	wan                 *wanmonitor.Monitor
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -510,6 +512,12 @@ func (s *Server) startRetentionJob() {
 // rendered on the dashboard. Optional — Server works without one.
 func (s *Server) SetGatewayProbe(p *gatewayprobe.Probe) {
 	s.gateway = p
+}
+
+// SetWANMonitor attaches the WAN up/down detector whose snapshot is shown
+// as a status badge on the dashboard. Optional.
+func (s *Server) SetWANMonitor(m *wanmonitor.Monitor) {
+	s.wan = m
 }
 
 func (s *Server) Start() error {
