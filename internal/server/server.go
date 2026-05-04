@@ -21,6 +21,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
@@ -71,6 +72,7 @@ type Server struct {
 	backupMaxUploadMB   atomic.Int64
 	backupRescheduleCh  chan struct{}
 	privileged          *privileged.Client
+	gateway             *gatewayprobe.Probe
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -502,6 +504,12 @@ func (s *Server) startRetentionJob() {
 			timer.Reset(24 * time.Hour)
 		}
 	}()
+}
+
+// SetGatewayProbe attaches a gateway ICMP probe whose latest snapshot is
+// rendered on the dashboard. Optional — Server works without one.
+func (s *Server) SetGatewayProbe(p *gatewayprobe.Probe) {
+	s.gateway = p
 }
 
 func (s *Server) Start() error {

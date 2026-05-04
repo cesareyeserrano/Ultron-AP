@@ -15,6 +15,7 @@ import (
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 	"github.com/cesareyeserrano/ultron-ap/internal/tailscale"
 )
@@ -42,6 +43,7 @@ type DashboardData struct {
 	SystemdAvail   bool
 	Uptime         string
 	Tailscale      TailscaleData
+	Gateway        *gatewayprobe.Snapshot
 	Version        string
 }
 
@@ -424,6 +426,10 @@ func (s *Server) gatherDashboardData() DashboardData {
 	if s.docker != nil {
 		dd.DockerAvail = s.docker.Available()
 		dd.Containers = s.docker.Containers()
+	}
+
+	if s.gateway != nil {
+		dd.Gateway = s.gateway.Latest()
 	}
 
 	if s.systemd != nil {

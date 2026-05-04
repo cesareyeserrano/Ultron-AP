@@ -15,6 +15,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
@@ -85,9 +86,17 @@ func main() {
 	alertEng.Start(context.Background())
 	defer alertEng.Stop()
 
+	// Start gateway ICMP probe (unprivileged, requires net.ipv4.ping_group_range
+	// on Linux). Snapshot is read by the dashboard.
+	gateway := gatewayprobe.New(5 * time.Second)
+	gateway.Start(context.Background())
+	defer gateway.Stop()
+	log.Printf("Gateway probe started (interval=5s)")
+
 	// Create server and apply the persisted performance config (SSE interval + any
 	// remaining fields not yet applied above).
 	srv := server.New(cfg, db, reader, collector, dockerMon, systemdMon, alertEng)
+	srv.SetGatewayProbe(gateway)
 	srv.ApplyPerformanceConfig(perf)
 	backupCfg, err := db.GetBackupConfig()
 	if err != nil {

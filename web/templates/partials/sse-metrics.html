@@ -46,7 +46,7 @@
     Waiting for first telemetry sample...
 </div>
 {{end}}
-<div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+<div class="grid grid-cols-2 lg:grid-cols-6 gap-3">
     <div class="metric-tile {{if .Metrics}}{{if ge .Metrics.CPU.TotalPercent 90.0}}metric-critical{{else if ge .Metrics.CPU.TotalPercent 75.0}}metric-warning{{end}}{{end}}">
         <p class="text-xs text-text-muted mb-1">CPU</p>
         {{if .Metrics}}<p class="text-2xl font-mono font-bold text-accent">{{formatPercent .Metrics.CPU.TotalPercent}}</p>
@@ -76,6 +76,23 @@
         <p class="text-xs text-text-muted mb-1">Temp</p>
         {{if .Metrics}}<p class="text-2xl font-mono font-bold {{tempColor .Metrics.Temperature}}">{{formatTemp .Metrics.Temperature}}</p>
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+    </div>
+    <div class="metric-tile">
+        <p class="text-xs text-text-muted mb-1">Gateway RTT</p>
+        {{if .Gateway}}
+            {{if eq (printf "%s" .Gateway.Status) "ok"}}
+                <p class="text-2xl font-mono font-bold text-accent">{{printf "%.1f ms" .Gateway.RTTMs}}</p>
+                <p class="text-xs text-text-muted">{{.Gateway.Target}}</p>
+            {{else if eq (printf "%s" .Gateway.Status) "init"}}
+                <p class="text-2xl font-mono font-bold text-text-muted">--</p>
+                <p class="text-xs text-text-muted">probing...</p>
+            {{else}}
+                <p class="text-2xl font-mono font-bold text-yellow-400">{{.Gateway.Status}}</p>
+                <p class="text-xs text-text-muted">{{if .Gateway.Target}}{{.Gateway.Target}}{{else}}no gateway{{end}}</p>
+            {{end}}
+        {{else}}
+            <p class="text-2xl font-mono font-bold text-text-muted">--</p>
+        {{end}}
     </div>
 </div>
 {{end}}
