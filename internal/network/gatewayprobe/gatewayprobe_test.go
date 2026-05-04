@@ -1,6 +1,7 @@
 package gatewayprobe
 
 import (
+	"context"
 	"math"
 	"testing"
 	"time"
@@ -95,6 +96,28 @@ func TestNew_PreservesTargetOrder(t *testing.T) {
 func TestNew_NilSinkAccepted(t *testing.T) {
 	// Nil sink must not panic — used in tests and in setups without persistence.
 	_ = New(time.Second, nil, []Target{{Label: "gw"}})
+}
+
+func TestNew_DefaultsKindToICMPWhenZero(t *testing.T) {
+	p := New(time.Second, nil, []Target{
+		{Label: "gateway"},                            // Kind unset
+		{Label: "dns-cf", Host: "1.1.1.1", Kind: KindDNS},
+	})
+	snaps := p.Snapshots()
+	if got := snaps[0].Kind; got != KindICMP {
+		t.Errorf("snaps[0].Kind = %q, want %q (default)", got, KindICMP)
+	}
+	if got := snaps[1].Kind; got != KindDNS {
+		t.Errorf("snaps[1].Kind = %q, want %q", got, KindDNS)
+	}
+}
+
+func TestLookupDNS_UnreachableResolverErrors(t *testing.T) {
+	// 192.0.2.x is TEST-NET-1 (RFC 5737) — guaranteed unroutable, will timeout.
+	_, err := lookupDNS(context.Background(), "192.0.2.1", "example.com", 200*time.Millisecond)
+	if err == nil {
+		t.Fatal("expected timeout error from unroutable resolver")
+	}
 }
 
 // --- jitter / loss math ---

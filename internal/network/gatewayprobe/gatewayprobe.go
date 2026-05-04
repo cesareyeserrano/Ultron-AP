@@ -1,6 +1,6 @@
-// Package gatewayprobe runs ICMP echo against a small list of network targets
-// (default gateway, public anycast resolvers, etc.) on a fixed cadence and
-// exposes the latest sample per target plus rolling jitter and loss metrics.
+// Package gatewayprobe runs network probes (ICMP echo or DNS resolution)
+// against a small list of targets on a fixed cadence and exposes the latest
+// sample per target plus rolling jitter and loss metrics.
 //
 // Uses unprivileged ICMP sockets (SOCK_DGRAM with IPPROTO_ICMP), which on
 // Linux requires net.ipv4.ping_group_range to include the running user's GID.
@@ -44,6 +44,14 @@ const (
 	StatusError     Status = "error"
 )
 
+// Kind identifies the probe backend used against a target.
+type Kind string
+
+const (
+	KindICMP Kind = "icmp" // unprivileged SOCK_DGRAM ICMP echo
+	KindDNS  Kind = "dns"  // DNS resolution against a configured resolver
+)
+
 // Tunables for the rolling window. Exported as constants (not yet config) so
 // tests can reference them without import surface.
 const (
@@ -51,19 +59,29 @@ const (
 	jitterAlpha   = 0.2 // EWMA factor for jitter
 )
 
-// Target is one configured probe destination. If Host is empty, the worker
-// resolves the default IPv4 gateway from /proc/net/route at each iteration —
-// useful for the "gateway" target on hosts where the LAN may change.
+// Target is one configured probe destination.
+//
+// For Kind=KindICMP (default if zero):
+//   - Host is the destination IP/hostname; if empty, the worker resolves
+//     the default IPv4 gateway from /proc/net/route at each iteration.
+//
+// For Kind=KindDNS:
+//   - Host is the resolver address (e.g. "1.1.1.1") — port 53 implied.
+//   - QueryName is the FQDN to resolve each iteration. If empty, defaults
+//     to "cloudflare.com" (a stable, always-resolvable fixture).
 type Target struct {
-	Label string
-	Host  string
+	Label     string
+	Host      string
+	Kind      Kind
+	QueryName string
 }
 
 // Snapshot is the latest probe result for one target. Returned by Snapshots().
 type Snapshot struct {
 	Label     string
+	Kind      Kind
 	Status    Status
-	Target    string  // resolved IP at probe time
+	Target    string  // resolved IP / resolver address at probe time
 	RTT       time.Duration
 	RTTMs     float64 // milliseconds, pre-formatted for templates
 	JitterMs  float64 // EWMA of |Δ RTT|
@@ -118,8 +136,11 @@ func New(interval time.Duration, sink Sink, targets []Target) *Probe {
 		stop:     make(chan struct{}),
 	}
 	for _, t := range targets {
+		if t.Kind == "" {
+			t.Kind = KindICMP
+		}
 		ts := &targetState{cfg: t}
-		ts.snap.Store(&Snapshot{Label: t.Label, Status: StatusInit, Target: t.Host})
+		ts.snap.Store(&Snapshot{Label: t.Label, Kind: t.Kind, Status: StatusInit, Target: t.Host})
 		p.states = append(p.states, ts)
 	}
 	return p
@@ -169,11 +190,12 @@ func (p *Probe) runTarget(ctx context.Context, st *targetState) {
 func (p *Probe) probeOnce(ctx context.Context, st *targetState) {
 	now := time.Now()
 	host := st.cfg.Host
-	if host == "" {
+	if st.cfg.Kind == KindICMP && host == "" {
 		gw, err := DefaultGateway()
 		if err != nil {
 			snap := &Snapshot{
 				Label:     st.cfg.Label,
+				Kind:      st.cfg.Kind,
 				Status:    StatusNoGateway,
 				LastProbe: now,
 				LastError: err.Error(),
@@ -185,7 +207,15 @@ func (p *Probe) probeOnce(ctx context.Context, st *targetState) {
 		host = gw
 	}
 
-	rtt, err := pingICMP(ctx, host, p.timeout)
+	var rtt time.Duration
+	var err error
+	switch st.cfg.Kind {
+	case KindDNS:
+		rtt, err = lookupDNS(ctx, host, st.cfg.QueryName, p.timeout)
+	default: // KindICMP
+		rtt, err = pingICMP(ctx, host, p.timeout)
+	}
+
 	if err != nil {
 		status := StatusError
 		if isTimeout(err) {
@@ -193,6 +223,7 @@ func (p *Probe) probeOnce(ctx context.Context, st *targetState) {
 		}
 		snap := &Snapshot{
 			Label:     st.cfg.Label,
+			Kind:      st.cfg.Kind,
 			Status:    status,
 			Target:    host,
 			LastProbe: now,
@@ -206,6 +237,7 @@ func (p *Probe) probeOnce(ctx context.Context, st *targetState) {
 	rttMs := float64(rtt.Microseconds()) / 1000.0
 	snap := &Snapshot{
 		Label:     st.cfg.Label,
+		Kind:      st.cfg.Kind,
 		Status:    StatusOK,
 		Target:    host,
 		RTT:       rtt,
@@ -214,6 +246,30 @@ func (p *Probe) probeOnce(ctx context.Context, st *targetState) {
 	}
 	st.recordSuccess(snap, rttMs)
 	p.publish(st, snap)
+}
+
+// lookupDNS resolves queryName via the resolver at resolverAddr (port 53
+// implied) and returns the wall-clock duration of the lookup. The resolver
+// is contacted directly via UDP; we don't fall back to /etc/resolv.conf so
+// the measurement reflects the configured target only.
+func lookupDNS(ctx context.Context, resolverAddr, queryName string, timeout time.Duration) (time.Duration, error) {
+	if queryName == "" {
+		queryName = "cloudflare.com"
+	}
+	r := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
+			d := net.Dialer{Timeout: timeout}
+			return d.DialContext(ctx, network, resolverAddr+":53")
+		},
+	}
+	cctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	start := time.Now()
+	if _, err := r.LookupHost(cctx, queryName); err != nil {
+		return 0, err
+	}
+	return time.Since(start), nil
 }
 
 func (p *Probe) publish(st *targetState, snap *Snapshot) {

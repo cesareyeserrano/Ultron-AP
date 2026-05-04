@@ -136,10 +136,14 @@ func main() {
 			v := snap.RTTMs
 			rtt = &v
 		}
+		kind := string(snap.Kind)
+		if kind == "" {
+			kind = "icmp"
+		}
 		if err := db.InsertNetSample(database.NetSample{
 			TS:     snap.LastProbe,
 			Target: snap.Target,
-			Kind:   "icmp",
+			Kind:   kind,
 			RTTMs:  rtt,
 			Status: string(snap.Status),
 		}); err != nil {
@@ -227,16 +231,26 @@ func pickWANLabels(targets []gatewayprobe.Target) (publicLabel, gatewayLabel str
 	return publicLabel, gatewayLabel
 }
 
-// defaultNetTargets returns the network probe target list, parsing
-// ULTRON_NET_TARGETS (comma-separated label=host pairs, e.g.
-// "gateway,cloudflare=1.1.1.1,google=8.8.8.8") if set. Empty host means
-// "default gateway lookup at probe time". Defaults to gateway + 1.1.1.1.
+// defaultNetTargets returns the network probe target list. Defaults to one
+// auto-resolved gateway (ICMP), one public ICMP target (1.1.1.1), and one
+// DNS target that resolves cloudflare.com against 1.1.1.1.
+//
+// ULTRON_NET_TARGETS overrides via comma-separated entries. Each entry is:
+//
+//	[<kind>:]<label>[=<host>[/<query_name>]]
+//
+// Examples:
+//
+//	gateway                                — ICMP, auto-resolve gateway
+//	cloudflare=1.1.1.1                     — ICMP to 1.1.1.1
+//	dns:cloudflare-dns=1.1.1.1/cloudflare.com — DNS via 1.1.1.1
 func defaultNetTargets() []gatewayprobe.Target {
 	raw := strings.TrimSpace(os.Getenv("ULTRON_NET_TARGETS"))
 	if raw == "" {
 		return []gatewayprobe.Target{
-			{Label: "gateway"},
-			{Label: "cloudflare", Host: "1.1.1.1"},
+			{Label: "gateway", Kind: gatewayprobe.KindICMP},
+			{Label: "cloudflare", Host: "1.1.1.1", Kind: gatewayprobe.KindICMP},
+			{Label: "dns", Host: "1.1.1.1", Kind: gatewayprobe.KindDNS, QueryName: "cloudflare.com"},
 		}
 	}
 	var out []gatewayprobe.Target
@@ -245,11 +259,24 @@ func defaultNetTargets() []gatewayprobe.Target {
 		if part == "" {
 			continue
 		}
-		label, host, _ := strings.Cut(part, "=")
-		out = append(out, gatewayprobe.Target{
-			Label: strings.TrimSpace(label),
-			Host:  strings.TrimSpace(host),
-		})
+		t := gatewayprobe.Target{Kind: gatewayprobe.KindICMP}
+		// Optional kind prefix: "dns:label=..." or just "label=...".
+		if kindPart, rest, found := strings.Cut(part, ":"); found && rest != "" {
+			switch strings.TrimSpace(kindPart) {
+			case "dns":
+				t.Kind = gatewayprobe.KindDNS
+				part = rest
+			case "icmp":
+				t.Kind = gatewayprobe.KindICMP
+				part = rest
+			}
+		}
+		label, hostAndQuery, _ := strings.Cut(part, "=")
+		t.Label = strings.TrimSpace(label)
+		host, query, _ := strings.Cut(hostAndQuery, "/")
+		t.Host = strings.TrimSpace(host)
+		t.QueryName = strings.TrimSpace(query)
+		out = append(out, t)
 	}
 	return out
 }
