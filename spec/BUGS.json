@@ -253,7 +253,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "fr": "FR-018",
       "tc_reference": null,
       "phase_detected": null,
@@ -261,8 +261,12 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-05-04T00:35:24.152Z",
-      "updated_at": "2026-05-04T00:35:24.152Z",
-      "resolution": null
+      "updated_at": "2026-05-04T02:31:49.772Z",
+      "resolution": null,
+      "fix_commit_sha": "dbfb919f1113eb3be0c8dde8392a1989efe9c48a",
+      "fix_at": "2026-05-04T02:31:49.619Z",
+      "close_commit_sha": "dbfb919f1113eb3be0c8dde8392a1989efe9c48a",
+      "close_at": "2026-05-04T02:31:49.772Z"
     },
     {
       "id": "BG-013",
