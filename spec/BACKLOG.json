@@ -48,6 +48,55 @@
       "problem": "handlers_auth.go:154 ignores tmpl.Execute error. Wrap errors with log.Printf and unify template error handling across handlers.",
       "status": "open",
       "createdAt": "2026-04-23T01:23:49.169Z"
+    },
+    {
+      "id": "BL-007",
+      "title": "Surface missing ULTRON_SECRET_KEY at startup, not lazily",
+      "priority": "P1",
+      "problem": "internal/database/secrets.go:33-44 — plaintext-storage warning is sync.Once-gated and only fires on first secret use, possibly long after process start. Log the warning unconditionally during cmd/ultron-ap startup, and expose it on /healthz.",
+      "status": "open",
+      "createdAt": "2026-05-03T23:51:43.718Z"
+    },
+    {
+      "id": "BL-008",
+      "title": "Validate backup LocalPath against an allowed directory",
+      "priority": "P1",
+      "problem": "internal/database/sqlite.go:205-215 — Backup(dstPath) does not validate the path. SQL escaping is correct, but operator-controlled path can overwrite arbitrary files writable by the daemon. Reject non-absolute paths, .. segments, paths outside a configured backup root; check writability.",
+      "status": "closed",
+      "createdAt": "2026-05-03T23:51:43.749Z",
+      "closedAt": "2026-05-03T23:59:36.332Z"
+    },
+    {
+      "id": "BL-009",
+      "title": "Persist brute-force lockout to SQLite + background cleanup",
+      "priority": "P2",
+      "problem": "internal/auth/bruteforce.go:29-62 — attempts/locks are in-memory only; restart wipes them. Cleanup is lazy, only on next login attempt. Move to SQLite, run cleanupExpiredBruteForceAttempts on a 5-minute ticker.",
+      "status": "open",
+      "createdAt": "2026-05-03T23:51:43.781Z"
+    },
+    {
+      "id": "BL-010",
+      "title": "Bind action execution and audit log into one transaction",
+      "priority": "P2",
+      "problem": "internal/database/actions.go:21-27 — LogAction is a standalone insert. If a Docker action succeeds but the log write fails, audit trail is incomplete. Wrap action + LogAction in one sql.Tx.",
+      "status": "open",
+      "createdAt": "2026-05-03T23:51:43.815Z"
+    },
+    {
+      "id": "BL-011",
+      "title": "Filter helper log output before returning to web process",
+      "priority": "P2",
+      "problem": "cmd/ultron-helper/main.go:190-232 — dmesg/ps/journalctl raw output is shipped to the unprivileged web process. ps can include secrets in argv; journal can leak env. Cap byte size, strip sensitive ps fields, define per-source redaction policy.",
+      "status": "open",
+      "createdAt": "2026-05-03T23:51:43.847Z"
+    },
+    {
+      "id": "BL-012",
+      "title": "Promote CSP from Report-Only to enforced + add report endpoint",
+      "priority": "P3",
+      "problem": "internal/server/middleware.go:63 — CSP runs Report-Only with no /api/csp-report endpoint. Add the endpoint, log violations one release cycle, then flip the header to enforced.",
+      "status": "open",
+      "createdAt": "2026-05-03T23:51:43.879Z"
     }
   ]
 }
