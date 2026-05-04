@@ -229,7 +229,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "high",
-      "status": "open",
+      "status": "closed",
       "fr": "FR-016",
       "tc_reference": null,
       "phase_detected": null,
@@ -237,8 +237,12 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-05-04T00:35:24.120Z",
-      "updated_at": "2026-05-04T00:35:24.120Z",
-      "resolution": null
+      "updated_at": "2026-05-04T02:21:19.006Z",
+      "resolution": null,
+      "fix_commit_sha": "94767f35ae3a0799ae751e59bc36a076565953ba",
+      "fix_at": "2026-05-04T02:21:18.853Z",
+      "close_commit_sha": "94767f35ae3a0799ae751e59bc36a076565953ba",
+      "close_at": "2026-05-04T02:21:19.006Z"
     },
     {
       "id": "BG-012",
