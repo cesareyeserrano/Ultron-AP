@@ -103,6 +103,30 @@ func main() {
 		}); err != nil {
 			log.Printf("net event insert failed: %v", err)
 		}
+		// Surface the transition through the existing alert pipeline so it
+		// reaches Telegram/Email notifiers (FR-022 MVP slice).
+		var severity, message string
+		switch e.Kind {
+		case "wan_down":
+			severity = "critical"
+			message = "WAN down — " + e.Detail
+		case "wan_up":
+			severity = "info"
+			message = "WAN recovered — " + e.Detail
+		default:
+			return
+		}
+		alert := &database.Alert{
+			Severity:  severity,
+			Message:   message,
+			Source:    "wan",
+			CreatedAt: e.TS,
+		}
+		if err := db.CreateAlert(alert); err != nil {
+			log.Printf("wan alert create failed: %v", err)
+			return
+		}
+		dispatcher.Dispatch(alert)
 	})
 
 	lastLoggedProbeErr := map[string]string{}
