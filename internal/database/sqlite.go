@@ -91,6 +91,17 @@ CREATE TABLE IF NOT EXISTS ActionLog (
 	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (user_id) REFERENCES User(id)
 );
+
+CREATE TABLE IF NOT EXISTS NetSample (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	ts INTEGER NOT NULL,
+	target TEXT NOT NULL,
+	kind TEXT NOT NULL,
+	rtt_ms REAL,
+	status TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_net_sample_ts ON NetSample(ts);
+CREATE INDEX IF NOT EXISTS idx_net_sample_target_ts ON NetSample(target, ts);
 `
 
 type DB struct {

@@ -87,11 +87,34 @@ func main() {
 	defer alertEng.Stop()
 
 	// Start gateway ICMP probe (unprivileged, requires net.ipv4.ping_group_range
-	// on Linux). Snapshot is read by the dashboard.
-	gateway := gatewayprobe.New(5 * time.Second)
+	// on Linux). Snapshot is read by the dashboard; each sample is also persisted
+	// to NetSample for the historical chart (FR-021).
+	var lastLoggedProbeErr string
+	gateway := gatewayprobe.New(5*time.Second, func(snap gatewayprobe.Snapshot) {
+		var rtt *float64
+		if snap.Status == gatewayprobe.StatusOK {
+			v := snap.RTTMs
+			rtt = &v
+		}
+		if err := db.InsertNetSample(database.NetSample{
+			TS:     snap.LastProbe,
+			Target: snap.Target,
+			Kind:   "icmp",
+			RTTMs:  rtt,
+			Status: string(snap.Status),
+		}); err != nil {
+			log.Printf("net sample insert failed: %v", err)
+		}
+		// Log the first occurrence of a probe error and any time the error message changes,
+		// so we don't spam the journal but still see what's wrong.
+		if snap.Status != gatewayprobe.StatusOK && snap.LastError != "" && snap.LastError != lastLoggedProbeErr {
+			log.Printf("gateway probe error (status=%s target=%s): %s", snap.Status, snap.Target, snap.LastError)
+			lastLoggedProbeErr = snap.LastError
+		}
+	})
 	gateway.Start(context.Background())
 	defer gateway.Stop()
-	log.Printf("Gateway probe started (interval=5s)")
+	log.Printf("Gateway probe started (interval=5s, persist=NetSample)")
 
 	// Create server and apply the persisted performance config (SSE interval + any
 	// remaining fields not yet applied above).

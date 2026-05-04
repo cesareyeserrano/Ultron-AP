@@ -2,6 +2,7 @@ package gatewayprobe
 
 import (
 	"testing"
+	"time"
 )
 
 func TestDecodeProcGatewayHex(t *testing.T) {
@@ -59,7 +60,7 @@ func TestStrconvParseUint(t *testing.T) {
 }
 
 func TestNew_HasInitialSnapshot(t *testing.T) {
-	p := New(0) // 0 → defaults to 5s
+	p := New(0, nil) // 0 → defaults to 5s
 	snap := p.Latest()
 	if snap == nil {
 		t.Fatal("Latest() is nil before Start")
@@ -67,4 +68,9 @@ func TestNew_HasInitialSnapshot(t *testing.T) {
 	if snap.Status != StatusInit {
 		t.Errorf("initial status = %q, want %q", snap.Status, StatusInit)
 	}
+}
+
+func TestNew_NilSinkAccepted(t *testing.T) {
+	// Nil sink must not panic — used in tests and in setups without persistence.
+	_ = New(time.Second, nil)
 }

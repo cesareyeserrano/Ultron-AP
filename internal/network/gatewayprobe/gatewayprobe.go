@@ -49,23 +49,31 @@ type Snapshot struct {
 	LastError string
 }
 
+// Sink is the optional persistence callback invoked once per probe iteration
+// with the snapshot just stored. Errors are the sink's concern — a failing
+// sink must not stop the probe.
+type Sink func(s Snapshot)
+
 // Probe periodically pings the default gateway and stores the latest sample.
 type Probe struct {
 	interval time.Duration
 	timeout  time.Duration
 	snap     atomic.Pointer[Snapshot]
+	sink     Sink
 	stop     chan struct{}
 	done     chan struct{}
 }
 
 // New returns a Probe that will sample every interval. Call Start to begin.
-func New(interval time.Duration) *Probe {
+// sink may be nil — pass non-nil to also persist each sample.
+func New(interval time.Duration, sink Sink) *Probe {
 	if interval <= 0 {
 		interval = 5 * time.Second
 	}
 	p := &Probe{
 		interval: interval,
 		timeout:  2 * time.Second,
+		sink:     sink,
 		stop:     make(chan struct{}),
 		done:     make(chan struct{}),
 	}
@@ -111,13 +119,21 @@ func (p *Probe) run(ctx context.Context) {
 
 func (p *Probe) probeOnce(ctx context.Context) {
 	now := time.Now()
+	var snap *Snapshot
+	defer func() {
+		if snap != nil && p.sink != nil {
+			p.sink(*snap)
+		}
+	}()
+
 	gw, err := DefaultGateway()
 	if err != nil {
-		p.snap.Store(&Snapshot{
+		snap = &Snapshot{
 			Status:    StatusNoGateway,
 			LastProbe: now,
 			LastError: err.Error(),
-		})
+		}
+		p.snap.Store(snap)
 		return
 	}
 	rtt, err := pingICMP(ctx, gw, p.timeout)
@@ -126,21 +142,23 @@ func (p *Probe) probeOnce(ctx context.Context) {
 		if isTimeout(err) {
 			status = StatusTimeout
 		}
-		p.snap.Store(&Snapshot{
+		snap = &Snapshot{
 			Status:    status,
 			Target:    gw,
 			LastProbe: now,
 			LastError: err.Error(),
-		})
+		}
+		p.snap.Store(snap)
 		return
 	}
-	p.snap.Store(&Snapshot{
+	snap = &Snapshot{
 		Status:    StatusOK,
 		Target:    gw,
 		RTT:       rtt,
 		RTTMs:     float64(rtt.Microseconds()) / 1000.0,
 		LastProbe: now,
-	})
+	}
+	p.snap.Store(snap)
 }
 
 func isTimeout(err error) bool {
@@ -180,12 +198,12 @@ func pingICMP(ctx context.Context, target string, timeout time.Duration) (time.D
 		return 0, fmt.Errorf("resolve %s: %w", target, err)
 	}
 
-	id := os.Getpid() & 0xffff
+	// On Linux unprivileged ICMP the kernel substitutes Echo.ID with the
+	// socket's source port; we leave it zero and don't rely on it on read.
 	msg := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
 		Code: 0,
 		Body: &icmp.Echo{
-			ID:   id,
 			Seq:  1,
 			Data: []byte("ultron-ap"),
 		},
@@ -222,8 +240,11 @@ func pingICMP(ctx context.Context, target string, timeout time.Duration) (time.D
 		if parsed.Type != ipv4.ICMPTypeEchoReply {
 			continue
 		}
-		echo, ok := parsed.Body.(*icmp.Echo)
-		if !ok || echo.ID != id {
+		// Don't filter by Echo.ID: on Linux unprivileged ICMP (SOCK_DGRAM,
+		// IPPROTO_ICMP) the kernel rewrites the request's ID to the socket's
+		// source port and only delivers matching replies to this socket — so
+		// any echo reply we receive here is by definition ours.
+		if _, ok := parsed.Body.(*icmp.Echo); !ok {
 			continue
 		}
 		return time.Since(start), nil
