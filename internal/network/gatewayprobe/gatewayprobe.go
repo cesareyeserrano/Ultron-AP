@@ -1,15 +1,18 @@
-// Package gatewayprobe runs a single ICMP echo against the default gateway on
-// a fixed cadence and exposes the latest sample via Latest().
+// Package gatewayprobe runs ICMP echo against a small list of network targets
+// (default gateway, public anycast resolvers, etc.) on a fixed cadence and
+// exposes the latest sample per target plus rolling jitter and loss metrics.
 //
-// MVP scope: one target (default gateway), in-memory snapshot only, no
-// persistence, no alerts. Uses unprivileged ICMP sockets (SOCK_DGRAM with
-// IPPROTO_ICMP), which on Linux requires net.ipv4.ping_group_range to include
-// the running user's GID.
+// Uses unprivileged ICMP sockets (SOCK_DGRAM with IPPROTO_ICMP), which on
+// Linux requires net.ipv4.ping_group_range to include the running user's GID.
 //
-// This is the runtime-wired counterpart to features/network-monitoring's
+// Each target runs its own goroutine and ticker; samples are independent.
+// Per-target rolling state holds the last historyWindow samples for loss%
+// and an EWMA for jitter. Snapshots() returns one *Snapshot per registered
+// target in registration order.
+//
+// This package is the runtime-wired counterpart to the features/network-monitoring
 // skeleton ICMP worker (FR-016). The feature subtree lives under internal/
-// (Go's internal rule) so it cannot be imported from cmd/; this package
-// provides the same behavior at a path the main binary can consume.
+// (Go's internal rule) so it cannot be imported from cmd/.
 package gatewayprobe
 
 import (
@@ -18,9 +21,11 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -32,79 +37,123 @@ import (
 type Status string
 
 const (
-	StatusInit       Status = "init"
-	StatusOK         Status = "ok"
-	StatusTimeout    Status = "timeout"
-	StatusNoGateway  Status = "no-gateway"
-	StatusError      Status = "error"
+	StatusInit      Status = "init"
+	StatusOK        Status = "ok"
+	StatusTimeout   Status = "timeout"
+	StatusNoGateway Status = "no-gateway"
+	StatusError     Status = "error"
 )
 
-// Snapshot is the latest probe result. Always non-nil after construction.
+// Tunables for the rolling window. Exported as constants (not yet config) so
+// tests can reference them without import surface.
+const (
+	historyWindow = 20  // sliding window for loss%
+	jitterAlpha   = 0.2 // EWMA factor for jitter
+)
+
+// Target is one configured probe destination. If Host is empty, the worker
+// resolves the default IPv4 gateway from /proc/net/route at each iteration —
+// useful for the "gateway" target on hosts where the LAN may change.
+type Target struct {
+	Label string
+	Host  string
+}
+
+// Snapshot is the latest probe result for one target. Returned by Snapshots().
 type Snapshot struct {
+	Label     string
 	Status    Status
-	Target    string
+	Target    string  // resolved IP at probe time
 	RTT       time.Duration
-	RTTMs     float64 // RTT pre-formatted in milliseconds for templates.
+	RTTMs     float64 // milliseconds, pre-formatted for templates
+	JitterMs  float64 // EWMA of |Δ RTT|
+	LossPct   float64 // % of failures over the last historyWindow samples (0..100)
 	LastProbe time.Time
 	LastError string
 }
 
 // Sink is the optional persistence callback invoked once per probe iteration
-// with the snapshot just stored. Errors are the sink's concern — a failing
-// sink must not stop the probe.
+// per target with the snapshot just stored. nil = no persistence.
 type Sink func(s Snapshot)
 
-// Probe periodically pings the default gateway and stores the latest sample.
+// Probe runs N targets in parallel.
 type Probe struct {
 	interval time.Duration
 	timeout  time.Duration
-	snap     atomic.Pointer[Snapshot]
 	sink     Sink
+	states   []*targetState
 	stop     chan struct{}
-	done     chan struct{}
+	doneOnce sync.Once
+	wg       sync.WaitGroup
 }
 
-// New returns a Probe that will sample every interval. Call Start to begin.
-// sink may be nil — pass non-nil to also persist each sample.
-func New(interval time.Duration, sink Sink) *Probe {
+// targetState owns the per-target rolling history and the latest snapshot.
+type targetState struct {
+	cfg  Target
+	snap atomic.Pointer[Snapshot]
+
+	mu sync.Mutex
+	// rttHistory is a ring buffer of RTT in ms. NaN signals a failed sample
+	// for loss% accounting. Length is fixed at historyWindow once filled.
+	rttHistory     []float64
+	jitterEWMA     float64
+	haveJitterBase bool
+	prevRTT        float64
+}
+
+// New constructs a multi-target Probe. targets is the order-preserving list of
+// destinations to probe. sink may be nil. interval defaults to 5s if <= 0.
+func New(interval time.Duration, sink Sink, targets []Target) *Probe {
 	if interval <= 0 {
 		interval = 5 * time.Second
+	}
+	if len(targets) == 0 {
+		// Conservative default: ping the gateway only.
+		targets = []Target{{Label: "gateway"}}
 	}
 	p := &Probe{
 		interval: interval,
 		timeout:  2 * time.Second,
 		sink:     sink,
 		stop:     make(chan struct{}),
-		done:     make(chan struct{}),
 	}
-	p.snap.Store(&Snapshot{Status: StatusInit})
+	for _, t := range targets {
+		ts := &targetState{cfg: t}
+		ts.snap.Store(&Snapshot{Label: t.Label, Status: StatusInit, Target: t.Host})
+		p.states = append(p.states, ts)
+	}
 	return p
 }
 
-// Latest returns the most recent snapshot. Never nil.
-func (p *Probe) Latest() *Snapshot { return p.snap.Load() }
-
-// Start begins the probe loop. Safe to call once.
-func (p *Probe) Start(ctx context.Context) {
-	go p.run(ctx)
-}
-
-// Stop signals the probe loop to exit and waits for it.
-func (p *Probe) Stop() {
-	select {
-	case <-p.stop:
-		// already stopped
-	default:
-		close(p.stop)
+// Snapshots returns the latest snapshot for each registered target, in
+// registration order. The returned pointers are immutable; do not mutate them.
+func (p *Probe) Snapshots() []*Snapshot {
+	out := make([]*Snapshot, len(p.states))
+	for i, st := range p.states {
+		out[i] = st.snap.Load()
 	}
-	<-p.done
+	return out
 }
 
-func (p *Probe) run(ctx context.Context) {
-	defer close(p.done)
+// Start spawns one goroutine per target. Safe to call once.
+func (p *Probe) Start(ctx context.Context) {
+	for _, st := range p.states {
+		p.wg.Add(1)
+		go p.runTarget(ctx, st)
+	}
+}
+
+// Stop signals all per-target loops to exit and waits for them.
+func (p *Probe) Stop() {
+	p.doneOnce.Do(func() { close(p.stop) })
+	p.wg.Wait()
+}
+
+func (p *Probe) runTarget(ctx context.Context, st *targetState) {
+	defer p.wg.Done()
 	t := time.NewTicker(p.interval)
 	defer t.Stop()
-	p.probeOnce(ctx)
+	p.probeOnce(ctx, st)
 	for {
 		select {
 		case <-ctx.Done():
@@ -112,54 +161,119 @@ func (p *Probe) run(ctx context.Context) {
 		case <-p.stop:
 			return
 		case <-t.C:
-			p.probeOnce(ctx)
+			p.probeOnce(ctx, st)
 		}
 	}
 }
 
-func (p *Probe) probeOnce(ctx context.Context) {
+func (p *Probe) probeOnce(ctx context.Context, st *targetState) {
 	now := time.Now()
-	var snap *Snapshot
-	defer func() {
-		if snap != nil && p.sink != nil {
-			p.sink(*snap)
+	host := st.cfg.Host
+	if host == "" {
+		gw, err := DefaultGateway()
+		if err != nil {
+			snap := &Snapshot{
+				Label:     st.cfg.Label,
+				Status:    StatusNoGateway,
+				LastProbe: now,
+				LastError: err.Error(),
+			}
+			st.recordFailure(snap)
+			p.publish(st, snap)
+			return
 		}
-	}()
-
-	gw, err := DefaultGateway()
-	if err != nil {
-		snap = &Snapshot{
-			Status:    StatusNoGateway,
-			LastProbe: now,
-			LastError: err.Error(),
-		}
-		p.snap.Store(snap)
-		return
+		host = gw
 	}
-	rtt, err := pingICMP(ctx, gw, p.timeout)
+
+	rtt, err := pingICMP(ctx, host, p.timeout)
 	if err != nil {
 		status := StatusError
 		if isTimeout(err) {
 			status = StatusTimeout
 		}
-		snap = &Snapshot{
+		snap := &Snapshot{
+			Label:     st.cfg.Label,
 			Status:    status,
-			Target:    gw,
+			Target:    host,
 			LastProbe: now,
 			LastError: err.Error(),
 		}
-		p.snap.Store(snap)
+		st.recordFailure(snap)
+		p.publish(st, snap)
 		return
 	}
-	snap = &Snapshot{
+
+	rttMs := float64(rtt.Microseconds()) / 1000.0
+	snap := &Snapshot{
+		Label:     st.cfg.Label,
 		Status:    StatusOK,
-		Target:    gw,
+		Target:    host,
 		RTT:       rtt,
-		RTTMs:     float64(rtt.Microseconds()) / 1000.0,
+		RTTMs:     rttMs,
 		LastProbe: now,
 	}
-	p.snap.Store(snap)
+	st.recordSuccess(snap, rttMs)
+	p.publish(st, snap)
 }
+
+func (p *Probe) publish(st *targetState, snap *Snapshot) {
+	st.snap.Store(snap)
+	if p.sink != nil {
+		p.sink(*snap)
+	}
+}
+
+// recordFailure appends a NaN to the history and refreshes loss%. Jitter is
+// not updated on failure (no RTT to compare against).
+func (s *targetState) recordFailure(snap *Snapshot) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.appendRTTLocked(math.NaN())
+	snap.LossPct = s.lossPctLocked()
+	snap.JitterMs = s.jitterEWMA
+}
+
+// recordSuccess appends the RTT and refreshes loss% + jitter EWMA.
+func (s *targetState) recordSuccess(snap *Snapshot, rttMs float64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.appendRTTLocked(rttMs)
+	if s.haveJitterBase {
+		delta := math.Abs(rttMs - s.prevRTT)
+		s.jitterEWMA = jitterAlpha*delta + (1-jitterAlpha)*s.jitterEWMA
+	} else {
+		s.haveJitterBase = true
+		s.jitterEWMA = 0
+	}
+	s.prevRTT = rttMs
+	snap.LossPct = s.lossPctLocked()
+	snap.JitterMs = s.jitterEWMA
+}
+
+func (s *targetState) appendRTTLocked(v float64) {
+	if len(s.rttHistory) < historyWindow {
+		s.rttHistory = append(s.rttHistory, v)
+		return
+	}
+	// Shift left by one — historyWindow is small (20) so cost is negligible.
+	copy(s.rttHistory, s.rttHistory[1:])
+	s.rttHistory[len(s.rttHistory)-1] = v
+}
+
+func (s *targetState) lossPctLocked() float64 {
+	if len(s.rttHistory) == 0 {
+		return 0
+	}
+	failed := 0
+	for _, v := range s.rttHistory {
+		if math.IsNaN(v) {
+			failed++
+		}
+	}
+	return float64(failed) / float64(len(s.rttHistory)) * 100.0
+}
+
+// --- low-level ICMP + gateway lookup (unchanged from BG-008/BG-010) ---
 
 func isTimeout(err error) bool {
 	var ne net.Error

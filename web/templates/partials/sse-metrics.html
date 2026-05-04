@@ -46,7 +46,7 @@
     Waiting for first telemetry sample...
 </div>
 {{end}}
-<div class="grid grid-cols-2 lg:grid-cols-6 gap-3">
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
     <div class="metric-tile {{if .Metrics}}{{if ge .Metrics.CPU.TotalPercent 90.0}}metric-critical{{else if ge .Metrics.CPU.TotalPercent 75.0}}metric-warning{{end}}{{end}}">
         <p class="text-xs text-text-muted mb-1">CPU</p>
         {{if .Metrics}}<p class="text-2xl font-mono font-bold text-accent">{{formatPercent .Metrics.CPU.TotalPercent}}</p>
@@ -77,22 +77,27 @@
         {{if .Metrics}}<p class="text-2xl font-mono font-bold {{tempColor .Metrics.Temperature}}">{{formatTemp .Metrics.Temperature}}</p>
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
     </div>
-    <div class="metric-tile">
-        <p class="text-xs text-text-muted mb-1">Gateway RTT</p>
-        {{if .Gateway}}
-            {{if eq (printf "%s" .Gateway.Status) "ok"}}
-                <p class="text-2xl font-mono font-bold text-accent">{{printf "%.1f ms" .Gateway.RTTMs}}</p>
-                <p class="text-xs text-text-muted">{{.Gateway.Target}}</p>
-            {{else if eq (printf "%s" .Gateway.Status) "init"}}
+</div>
+{{if .Network}}
+<div class="mt-3">
+    <p class="text-[11px] text-text-muted mb-1.5 uppercase tracking-wider">Network probes</p>
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        {{range .Network}}
+        <div class="metric-tile">
+            <p class="text-xs text-text-muted mb-1">{{.Label}}</p>
+            {{if eq (printf "%s" .Status) "ok"}}
+                <p class="text-2xl font-mono font-bold text-accent">{{printf "%.1f ms" .RTTMs}}</p>
+                <p class="text-xs text-text-muted font-mono">jitter {{printf "%.1f" .JitterMs}}ms · loss {{printf "%.0f" .LossPct}}% · {{.Target}}</p>
+            {{else if eq (printf "%s" .Status) "init"}}
                 <p class="text-2xl font-mono font-bold text-text-muted">--</p>
-                <p class="text-xs text-text-muted">probing...</p>
+                <p class="text-xs text-text-muted">probing {{if .Target}}{{.Target}}{{else}}{{.Label}}{{end}}...</p>
             {{else}}
-                <p class="text-2xl font-mono font-bold text-yellow-400">{{.Gateway.Status}}</p>
-                <p class="text-xs text-text-muted">{{if .Gateway.Target}}{{.Gateway.Target}}{{else}}no gateway{{end}}</p>
+                <p class="text-2xl font-mono font-bold text-yellow-400">{{.Status}}</p>
+                <p class="text-xs text-text-muted">loss {{printf "%.0f" .LossPct}}% · {{if .Target}}{{.Target}}{{else}}no target{{end}}</p>
             {{end}}
-        {{else}}
-            <p class="text-2xl font-mono font-bold text-text-muted">--</p>
+        </div>
         {{end}}
     </div>
 </div>
+{{end}}
 {{end}}

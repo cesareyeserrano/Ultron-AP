@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -86,10 +87,11 @@ func main() {
 	alertEng.Start(context.Background())
 	defer alertEng.Stop()
 
-	// Start gateway ICMP probe (unprivileged, requires net.ipv4.ping_group_range
-	// on Linux). Snapshot is read by the dashboard; each sample is also persisted
-	// to NetSample for the historical chart (FR-021).
-	var lastLoggedProbeErr string
+	// Start network ICMP probes (unprivileged, requires net.ipv4.ping_group_range
+	// on Linux). Snapshots are read by the dashboard; each sample is also
+	// persisted to NetSample for the historical chart (FR-021).
+	netTargets := defaultNetTargets()
+	lastLoggedProbeErr := map[string]string{}
 	gateway := gatewayprobe.New(5*time.Second, func(snap gatewayprobe.Snapshot) {
 		var rtt *float64
 		if snap.Status == gatewayprobe.StatusOK {
@@ -105,16 +107,17 @@ func main() {
 		}); err != nil {
 			log.Printf("net sample insert failed: %v", err)
 		}
-		// Log the first occurrence of a probe error and any time the error message changes,
-		// so we don't spam the journal but still see what's wrong.
-		if snap.Status != gatewayprobe.StatusOK && snap.LastError != "" && snap.LastError != lastLoggedProbeErr {
-			log.Printf("gateway probe error (status=%s target=%s): %s", snap.Status, snap.Target, snap.LastError)
-			lastLoggedProbeErr = snap.LastError
+		// Log the first occurrence of a probe error per target and re-log
+		// only when the message text changes, so a steady-state failure
+		// doesn't spam the journal every 5 seconds.
+		if snap.Status != gatewayprobe.StatusOK && snap.LastError != "" && lastLoggedProbeErr[snap.Label] != snap.LastError {
+			log.Printf("net probe error (label=%s status=%s target=%s): %s", snap.Label, snap.Status, snap.Target, snap.LastError)
+			lastLoggedProbeErr[snap.Label] = snap.LastError
 		}
-	})
+	}, netTargets)
 	gateway.Start(context.Background())
 	defer gateway.Stop()
-	log.Printf("Gateway probe started (interval=5s, persist=NetSample)")
+	log.Printf("Network probes started (interval=5s, targets=%d, persist=NetSample)", len(netTargets))
 
 	// Create server and apply the persisted performance config (SSE interval + any
 	// remaining fields not yet applied above).
@@ -156,6 +159,33 @@ func main() {
 	}
 
 	log.Println("Server exited cleanly")
+}
+
+// defaultNetTargets returns the network probe target list, parsing
+// ULTRON_NET_TARGETS (comma-separated label=host pairs, e.g.
+// "gateway,cloudflare=1.1.1.1,google=8.8.8.8") if set. Empty host means
+// "default gateway lookup at probe time". Defaults to gateway + 1.1.1.1.
+func defaultNetTargets() []gatewayprobe.Target {
+	raw := strings.TrimSpace(os.Getenv("ULTRON_NET_TARGETS"))
+	if raw == "" {
+		return []gatewayprobe.Target{
+			{Label: "gateway"},
+			{Label: "cloudflare", Host: "1.1.1.1"},
+		}
+	}
+	var out []gatewayprobe.Target
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		label, host, _ := strings.Cut(part, "=")
+		out = append(out, gatewayprobe.Target{
+			Label: strings.TrimSpace(label),
+			Host:  strings.TrimSpace(host),
+		})
+	}
+	return out
 }
 
 func bootstrapAdmin(cfg *config.Config, db *database.DB) error {

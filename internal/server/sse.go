@@ -43,7 +43,7 @@ type DashboardData struct {
 	SystemdAvail   bool
 	Uptime         string
 	Tailscale      TailscaleData
-	Gateway        *gatewayprobe.Snapshot
+	Network        []*gatewayprobe.Snapshot
 	Version        string
 }
 
@@ -429,7 +429,7 @@ func (s *Server) gatherDashboardData() DashboardData {
 	}
 
 	if s.gateway != nil {
-		dd.Gateway = s.gateway.Latest()
+		dd.Network = s.gateway.Snapshots()
 	}
 
 	if s.systemd != nil {
