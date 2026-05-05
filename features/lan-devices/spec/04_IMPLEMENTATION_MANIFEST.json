@@ -1,0 +1,80 @@
+{
+  "feature": "lan-devices",
+  "phase": 4,
+  "stack": "Go 1.x (parent ultron-ap monolith) + html/template + HTMX + SQLite (modernc.org/sqlite). No new runtime dependencies introduced by this feature.",
+  "files_created": [
+    "../../internal/network/landevices/orchestrator.go",
+    "../../internal/network/landevices/orchestrator_test.go",
+    "../../internal/network/landevices/subnet/subnet.go",
+    "../../internal/network/landevices/subnet/subnet_test.go",
+    "../../internal/network/landevices/sweep/sweep.go",
+    "../../internal/network/landevices/sweep/sweep_test.go",
+    "../../internal/network/landevices/arp/arp.go",
+    "../../internal/network/landevices/arp/arp_test.go",
+    "../../internal/network/landevices/oui/oui.go",
+    "../../internal/network/landevices/oui/oui_test.go",
+    "../../internal/network/landevices/oui/data.csv",
+    "../../internal/network/landevices/store/store.go",
+    "../../internal/network/landevices/store/store_test.go",
+    "../../internal/server/handlers_landevices.go",
+    "../../internal/server/handlers_landevices_test.go",
+    "../../web/templates/partials/lan-devices.html"
+  ],
+  "files_modified": [
+    "../../internal/database/sqlite.go",
+    "../../internal/server/server.go",
+    "../../internal/server/templates.go",
+    "../../web/templates/network.html",
+    "../../cmd/ultron-ap/main.go"
+  ],
+  "setup_commands": [],
+  "environment_variables": [],
+  "technical_debt": [
+    {
+      "fr_id": "FR-037",
+      "substitution": "TC-LD-008h e2e headless-browser test replaced with HTTP-level integration test that GETs /network/lan-devices/fragment and asserts on rendered HTML structure (table presence, 5 seeded rows, online label) instead of driving a real browser.",
+      "reason": "The project has no headless-browser test stack (no chromedp, no Playwright). Adding one for a single TC would add a heavy dev-dependency. The HTTP integration test exercises the same handler + template path the browser would render.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-037",
+      "substitution": "TC-LD-008e axe-core contrast scan not executed. The partial uses parent FR-009 design tokens (text-green-500 / text-neutral-400 over bg-card) which the parent's existing /network page already passes WCAG AA contrast for in both themes.",
+      "reason": "axe-core requires a headless browser. Same dependency-cost reasoning as TC-LD-008h.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-033",
+      "substitution": "internal/network/landevices/oui/data.csv ships a curated subset of the IEEE OUI registry rather than the full ~50k-entry list. Known prefixes used by the spec (B8:27:EB Raspberry Pi, etc.) resolve correctly; unknown prefixes fall back to 'Unknown' as required by FR-033 AC-003.",
+      "reason": "Ship a small, deterministic subset for v1; per NFR-012 a refresh script can pull the full registry on a deliberate rebuild without changing the runtime.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "NFR-012",
+      "substitution": "tools/oui/refresh.sh (documented OUI refresh script) not yet shipped.",
+      "reason": "Out of scope for the application binary; bundled CSV satisfies the runtime contract. Refresh tooling is a follow-up.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "NFR-014",
+      "substitution": "24-hour synthetic resource-budget run on Pi hardware not executed in this Phase 4 session.",
+      "reason": "Long-running validation belongs to deployment verification, not unit/integration tests. FR-038 self-throttle logic + its unit/integration tests cover the trigger condition; field validation is the operator's deployment step.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-038",
+      "substitution": "API status field 'last_sweep_duration_ms' / 'current_cadence_ms' wire-format conversion implemented in the handler (handlers_landevices.go), not on the orchestrator's Status type.",
+      "reason": "The orchestrator's Status struct holds time.Duration values which marshal to nanoseconds by default. The API handler converts to milliseconds so the wire contract matches 02_SYSTEM_DESIGN.md without churning the orchestrator's internal type.",
+      "effort_to_fix": "low"
+    }
+  ],
+  "test_runner": "go test -C ../.. ./internal/network/landevices/... ./internal/server/ -run TC_LD -v",
+  "test_files": [
+    "../../internal/network/landevices/orchestrator_test.go",
+    "../../internal/network/landevices/subnet/subnet_test.go",
+    "../../internal/network/landevices/sweep/sweep_test.go",
+    "../../internal/network/landevices/arp/arp_test.go",
+    "../../internal/network/landevices/oui/oui_test.go",
+    "../../internal/network/landevices/store/store_test.go",
+    "../../internal/server/handlers_landevices_test.go"
+  ]
+}

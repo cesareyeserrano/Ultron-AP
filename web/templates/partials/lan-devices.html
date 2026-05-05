@@ -1,0 +1,44 @@
+{{define "partials/lan-devices.html"}}
+<div id="lan-devices-fragment" hx-get="/network/lan-devices/fragment" hx-trigger="every 30s" hx-swap="outerHTML">
+    {{if .HasDevices}}
+    <div class="overflow-x-auto rounded-lg border border-border/50 bg-card/30">
+        <table class="w-full text-sm">
+            <thead class="bg-card/50 text-text-muted text-xs uppercase tracking-wider">
+                <tr>
+                    <th class="text-left px-3 py-2 font-normal">IP</th>
+                    <th class="text-left px-3 py-2 font-normal">MAC</th>
+                    <th class="text-left px-3 py-2 font-normal">Vendor</th>
+                    <th class="text-left px-3 py-2 font-normal">Online</th>
+                    <th class="text-left px-3 py-2 font-normal">Last seen</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border/30">
+                {{range .Devices}}
+                <tr>
+                    <td class="px-3 py-2 font-mono text-xs">{{.IP}}</td>
+                    <td class="px-3 py-2 font-mono text-xs">{{.MAC}}</td>
+                    <td class="px-3 py-2">{{.Vendor}}</td>
+                    <td class="px-3 py-2">
+                        {{if .Online}}
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-green-500" aria-hidden="true"></span>
+                            <span class="text-xs text-green-500">online</span>
+                        </span>
+                        {{else}}
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-neutral-400" aria-hidden="true"></span>
+                            <span class="text-xs text-neutral-400">offline</span>
+                        </span>
+                        {{end}}
+                    </td>
+                    <td class="px-3 py-2 text-xs text-text-muted" title="first seen {{.FirstSeenLabel}}">{{.LastSeenLabel}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="text-sm text-text-muted text-center py-6">{{.EmptyMessage}} <span class="font-mono" data-countdown-ms="{{.NextSweepCountMS}}">{{.NextSweepCountMS}}ms</span></p>
+    {{end}}
+</div>
+{{end}}

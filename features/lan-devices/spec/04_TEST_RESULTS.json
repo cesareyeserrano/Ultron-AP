@@ -1,0 +1,301 @@
+{
+  "executed_at": "2026-05-05T21:33:47.322Z",
+  "test_runner": "go test -C ../.. ./internal/network/landevices/... ./internal/server/ -run TC_LD -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-LD-001h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_001h_Detect_HappyPath_192_168_1_42_24 (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-001f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_001f_Detect_NoDefaultRoute (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-001e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_001e_Detect_ClampSlash16ToHostSlash24 (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-002h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_002h_Sweep_EmitsExactly254AndCompletesUnder3Seconds (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-002f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_002f_TryCycle_OverrunIncrementsCounter (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-002e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-002e\" (e.g. test_TC_LD_002e_description) and add # @aitri-tc TC-LD-002e above it."
+    },
+    {
+      "tc_id": "TC-LD-003h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_003h_Pair_HappyPath_FiveResolvedEntries (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-003f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_003f_Pair_DegradedMode_MissingARPFile (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-003e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_003e_Pair_IgnoresStaleEntries (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-004h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_004h_Vendor_RaspberryPi (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-004f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_004f_Vendor_LAABitReturnsLocallyAdministered (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-004e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_004e_Vendor_UnknownPrefixReturnsUnknown (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-005h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_005h_ApplySweep_FirstObservation_InsertsWithFirstEqualsLast (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-005f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_005f_ApplySweep_DHCPRenewal_PreservesFirstSeen (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-005e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_005e_ApplySweep_FirstSeenSurvivesRestart (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-006h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_006h_ApplySweep_SingleMiss_StaysOnline (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-006f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_006f_ApplySweep_ThreeConsecutiveMisses_FlipsOffline (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-006e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_006e_ApplySweep_OfflineDeviceRecoversOnReappearance (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-007h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_007h_List_OrderingOnlineFirstThenLastSeenDesc (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-007f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_007f_LANDevicesAPI_UnauthenticatedReturns401 (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-007e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_007e_LANDevicesAPI_LatencyP99Under100ms (0.01s)"
+    },
+    {
+      "tc_id": "TC-LD-008h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_008h_LANDevicesFragment_HappyPathRendersTable (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-008f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_008f_LANDevicesFragment_EmptyStateOmitsTable (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-008e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-008e\" (e.g. test_TC_LD_008e_description) and add # @aitri-tc TC-LD-008e above it."
+    },
+    {
+      "tc_id": "TC-LD-009h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_009h_AdjustCadence_TwoOverBudgetCyclesTriggerThrottle (0.01s)"
+    },
+    {
+      "tc_id": "TC-LD-009f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_009f_AdjustCadence_RestoresAfter30MinInBudget (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-009e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_009e_AdjustCadence_CapsAtMaxCadence (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-010h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-010h\" (e.g. test_TC_LD_010h_description) and add # @aitri-tc TC-LD-010h above it."
+    },
+    {
+      "tc_id": "TC-LD-010f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-010f\" (e.g. test_TC_LD_010f_description) and add # @aitri-tc TC-LD-010f above it."
+    },
+    {
+      "tc_id": "TC-LD-010e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_010e_Pair_UnprivilegedRead_NoHelperIPC (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-011h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_011h_Vendor_NoNetworkLookups (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-011f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_011f_Vendor_MalformedInputs (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-011e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-011e\" (e.g. test_TC_LD_011e_description) and add # @aitri-tc TC-LD-011e above it."
+    },
+    {
+      "tc_id": "TC-LD-012h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_012h_Schema_IdempotentAndColumnsMatch (0.00s)"
+    },
+    {
+      "tc_id": "TC-LD-012f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-012f\" (e.g. test_TC_LD_012f_description) and add # @aitri-tc TC-LD-012f above it."
+    },
+    {
+      "tc_id": "TC-LD-012e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_012e_ApplySweep_RowsBoundedByDistinctMACs (0.01s)"
+    },
+    {
+      "tc_id": "TC-LD-013h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-013h\" (e.g. test_TC_LD_013h_description) and add # @aitri-tc TC-LD-013h above it."
+    },
+    {
+      "tc_id": "TC-LD-013f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-013f\" (e.g. test_TC_LD_013f_description) and add # @aitri-tc TC-LD-013f above it."
+    },
+    {
+      "tc_id": "TC-LD-013e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_LD_013e_Sweep_WorstCaseAllRespond_Under3s (0.01s)"
+    },
+    {
+      "tc_id": "TC-LD-014h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-014h\" (e.g. test_TC_LD_014h_description) and add # @aitri-tc TC-LD-014h above it."
+    },
+    {
+      "tc_id": "TC-LD-014f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-014f\" (e.g. test_TC_LD_014f_description) and add # @aitri-tc TC-LD-014f above it."
+    },
+    {
+      "tc_id": "TC-LD-014e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-LD-014e\" (e.g. test_TC_LD_014e_description) and add # @aitri-tc TC-LD-014e above it."
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-030",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-031",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 3,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-032",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-033",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-034",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-035",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-036",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-037",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 4,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-038",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 42,
+    "passed": 31,
+    "failed": 0,
+    "skipped": 11,
+    "skipped_e2e": 4,
+    "skipped_no_marker": 7,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}

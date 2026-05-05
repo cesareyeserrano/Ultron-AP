@@ -33,7 +33,10 @@ func ipnet(t *testing.T, cidr string) *net.IPNet {
 }
 
 // TC-LD-001h
-func TestDetect_HappyPath_192_168_1_42_24(t *testing.T) {
+//
+// @aitri-tc TC-LD-001h
+func TestTC_LD_001h_Detect_HappyPath_192_168_1_42_24(t *testing.T) {
+	// @aitri-tc TC-LD-001h
 	routePath := writeRouteFile(t, "eth0\t00000000\t0101A8C0\t0003\t0\t0\t100\t00000000\t0\t0\t0\n")
 
 	resolver := func(name string) ([]net.Addr, error) {
@@ -52,7 +55,10 @@ func TestDetect_HappyPath_192_168_1_42_24(t *testing.T) {
 }
 
 // TC-LD-001f
-func TestDetect_NoDefaultRoute(t *testing.T) {
+//
+// @aitri-tc TC-LD-001f
+func TestTC_LD_001f_Detect_NoDefaultRoute(t *testing.T) {
+	// @aitri-tc TC-LD-001f
 	// Only a non-default route present
 	routePath := writeRouteFile(t, "eth0\t0001A8C0\t00000000\t0001\t0\t0\t100\t00FFFFFF\t0\t0\t0\n")
 
@@ -67,7 +73,10 @@ func TestDetect_NoDefaultRoute(t *testing.T) {
 }
 
 // TC-LD-001e
-func TestDetect_ClampSlash16ToHostSlash24(t *testing.T) {
+//
+// @aitri-tc TC-LD-001e
+func TestTC_LD_001e_Detect_ClampSlash16ToHostSlash24(t *testing.T) {
+	// @aitri-tc TC-LD-001e
 	routePath := writeRouteFile(t, "eth0\t00000000\t0101320A\t0003\t0\t0\t100\t00000000\t0\t0\t0\n")
 
 	resolver := func(name string) ([]net.Addr, error) {

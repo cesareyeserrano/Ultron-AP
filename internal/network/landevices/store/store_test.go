@@ -30,7 +30,10 @@ func newTestStoreThreshold(t *testing.T, threshold int) (*Store, *database.DB) {
 }
 
 // TC-LD-005h
-func TestApplySweep_FirstObservation_InsertsWithFirstEqualsLast(t *testing.T) {
+//
+// @aitri-tc TC-LD-005h
+func TestTC_LD_005h_ApplySweep_FirstObservation_InsertsWithFirstEqualsLast(t *testing.T) {
+	// @aitri-tc TC-LD-005h
 	s, _ := newTestStore(t)
 	now := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
 
@@ -49,7 +52,10 @@ func TestApplySweep_FirstObservation_InsertsWithFirstEqualsLast(t *testing.T) {
 }
 
 // TC-LD-005f — DHCP renewal: same MAC, new IP → ip updates, first_seen preserved
-func TestApplySweep_DHCPRenewal_PreservesFirstSeen(t *testing.T) {
+//
+// @aitri-tc TC-LD-005f
+func TestTC_LD_005f_ApplySweep_DHCPRenewal_PreservesFirstSeen(t *testing.T) {
+	// @aitri-tc TC-LD-005f
 	s, _ := newTestStore(t)
 	t0 := time.Date(2026, 5, 5, 10, 0, 0, 0, time.UTC)
 	t1 := t0.Add(1 * time.Hour)
@@ -69,7 +75,10 @@ func TestApplySweep_DHCPRenewal_PreservesFirstSeen(t *testing.T) {
 }
 
 // TC-LD-005e — first_seen survives DB close + re-open
-func TestApplySweep_FirstSeenSurvivesRestart(t *testing.T) {
+//
+// @aitri-tc TC-LD-005e
+func TestTC_LD_005e_ApplySweep_FirstSeenSurvivesRestart(t *testing.T) {
+	// @aitri-tc TC-LD-005e
 	dbPath := filepath.Join(t.TempDir(), "test.db")
 	db, err := database.New(dbPath)
 	require.NoError(t, err)
@@ -92,7 +101,10 @@ func TestApplySweep_FirstSeenSurvivesRestart(t *testing.T) {
 }
 
 // TC-LD-006h — single miss tolerated; device stays online
-func TestApplySweep_SingleMiss_StaysOnline(t *testing.T) {
+//
+// @aitri-tc TC-LD-006h
+func TestTC_LD_006h_ApplySweep_SingleMiss_StaysOnline(t *testing.T) {
+	// @aitri-tc TC-LD-006h
 	s, _ := newTestStoreThreshold(t, 3)
 	t0 := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
 	mac := "aa:bb:cc:11:22:33"
@@ -111,7 +123,10 @@ func TestApplySweep_SingleMiss_StaysOnline(t *testing.T) {
 }
 
 // TC-LD-006f — N consecutive misses flip offline; last_seen freezes
-func TestApplySweep_ThreeConsecutiveMisses_FlipsOffline(t *testing.T) {
+//
+// @aitri-tc TC-LD-006f
+func TestTC_LD_006f_ApplySweep_ThreeConsecutiveMisses_FlipsOffline(t *testing.T) {
+	// @aitri-tc TC-LD-006f
 	s, _ := newTestStoreThreshold(t, 3)
 	t0 := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
 	mac := "aa:bb:cc:11:22:33"
@@ -130,7 +145,10 @@ func TestApplySweep_ThreeConsecutiveMisses_FlipsOffline(t *testing.T) {
 }
 
 // TC-LD-006e — recovery from offline
-func TestApplySweep_OfflineDeviceRecoversOnReappearance(t *testing.T) {
+//
+// @aitri-tc TC-LD-006e
+func TestTC_LD_006e_ApplySweep_OfflineDeviceRecoversOnReappearance(t *testing.T) {
+	// @aitri-tc TC-LD-006e
 	s, _ := newTestStoreThreshold(t, 3)
 	t0 := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
 	mac := "aa:bb:cc:11:22:33"
@@ -157,7 +175,10 @@ func TestApplySweep_OfflineDeviceRecoversOnReappearance(t *testing.T) {
 }
 
 // TC-LD-007h — List returns online first, then last_seen DESC
-func TestList_OrderingOnlineFirstThenLastSeenDesc(t *testing.T) {
+//
+// @aitri-tc TC-LD-007h
+func TestTC_LD_007h_List_OrderingOnlineFirstThenLastSeenDesc(t *testing.T) {
+	// @aitri-tc TC-LD-007h
 	s, _ := newTestStoreThreshold(t, 3)
 	t0 := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
 
@@ -182,7 +203,10 @@ func TestList_OrderingOnlineFirstThenLastSeenDesc(t *testing.T) {
 }
 
 // TC-LD-012e — table size grows with distinct MACs, not sweep count
-func TestApplySweep_RowsBoundedByDistinctMACs(t *testing.T) {
+//
+// @aitri-tc TC-LD-012e
+func TestTC_LD_012e_ApplySweep_RowsBoundedByDistinctMACs(t *testing.T) {
+	// @aitri-tc TC-LD-012e
 	s, _ := newTestStoreThreshold(t, 100) // never flip offline within the test
 	t0 := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
 	five := []Observation{
@@ -201,7 +225,10 @@ func TestApplySweep_RowsBoundedByDistinctMACs(t *testing.T) {
 }
 
 // TC-LD-012h — schema is idempotent and lan_devices columns match expected
-func TestSchema_IdempotentAndColumnsMatch(t *testing.T) {
+//
+// @aitri-tc TC-LD-012h
+func TestTC_LD_012h_Schema_IdempotentAndColumnsMatch(t *testing.T) {
+	// @aitri-tc TC-LD-012h
 	dbPath := filepath.Join(t.TempDir(), "test.db")
 	db1, err := database.New(dbPath)
 	require.NoError(t, err)

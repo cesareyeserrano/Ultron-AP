@@ -1,62 +1,25 @@
 {
-  "currentPhase": 4,
+  "currentPhase": 5,
   "approvedPhases": [
     1,
     2,
-    3
+    3,
+    4,
+    5
   ],
   "completedPhases": [
     1,
     2,
-    3
+    3,
+    4,
+    5
   ],
   "projectName": "lan-devices",
   "createdAt": "2026-05-05T17:27:43.037Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-05T18:15:25.376Z",
+  "updatedAt": "2026-05-05T21:34:04.881Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-05T17:29:36.165Z",
-      "event": "started",
-      "phase": 1
-    },
-    {
-      "at": "2026-05-05T17:32:56.845Z",
-      "event": "completed",
-      "phase": 1
-    },
-    {
-      "at": "2026-05-05T17:37:18.654Z",
-      "event": "approved",
-      "phase": 1,
-      "ideaArchived": true
-    },
-    {
-      "at": "2026-05-05T17:37:26.138Z",
-      "event": "started",
-      "phase": 2
-    },
-    {
-      "at": "2026-05-05T17:39:15.740Z",
-      "event": "completed",
-      "phase": 2
-    },
-    {
-      "at": "2026-05-05T17:46:29.681Z",
-      "event": "approved",
-      "phase": 2
-    },
-    {
-      "at": "2026-05-05T17:46:32.958Z",
-      "event": "started",
-      "phase": 3
-    },
-    {
-      "at": "2026-05-05T17:52:20.143Z",
-      "event": "completed",
-      "phase": 3
-    },
     {
       "at": "2026-05-05T18:03:49.700Z",
       "event": "approved",
@@ -66,19 +29,165 @@
       "at": "2026-05-05T18:15:25.376Z",
       "event": "started",
       "phase": 4
+    },
+    {
+      "at": "2026-05-05T19:26:02.951Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-05T20:01:24.363Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-05T20:02:13.310Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-05T20:06:52.786Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-05T20:06:56.211Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 42,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T20:37:26.553Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 42,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T20:42:11.444Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T20:42:15.112Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T20:42:22.337Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-05T21:02:55.934Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-05T21:05:38.871Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-05T21:25:54.939Z",
+      "event": "approved",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-05T21:33:16.819Z",
+      "event": "approved",
+      "phase": 4,
+      "afterDrift": true
+    },
+    {
+      "at": "2026-05-05T21:33:47.322Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T21:33:50.367Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-05T21:33:58.375Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-05T21:34:04.821Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-05T21:34:04.868Z",
+      "event": "approved",
+      "phase": 5
     }
   ],
   "artifactHashes": {
     "1": "07873b045472fe2aece0a8e2007c3d9b517fb2a0653945abd66674fc17d00ee9",
     "2": "ea1dd8f23b4accca9eb75bb1b8c116162442afce873d2ab30ede0f118a369dec",
-    "3": "5eaad7de4b3ed2194f7fc79ca7fe7cd08691f349d29e75afff25a0289878985a"
+    "3": "5eaad7de4b3ed2194f7fc79ca7fe7cd08691f349d29e75afff25a0289878985a",
+    "4": "872fa6400842b0a6e39e930c56566b46f04494d48c496ccf4d98675f489132b9",
+    "5": "3f8a40815fae33dda77d769cb844b25d712854c348f105498d4efe7f90339276"
   },
   "lastSession": {
-    "at": "2026-05-05T18:03:49.715Z",
+    "at": "2026-05-05T21:34:04.881Z",
     "agent": "unknown",
-    "event": "approve tests",
+    "event": "approve deploy",
     "files_touched": [
-      ".aitri/config.json"
+      ".aitri/config.json",
+      "cmd/ultron-ap/main.go",
+      "features/lan-devices/.aitri",
+      "internal/network/landevices/arp/arp_test.go",
+      "internal/network/landevices/orchestrator_test.go",
+      "internal/network/landevices/oui/oui_test.go",
+      "internal/network/landevices/store/store_test.go",
+      "internal/network/landevices/subnet/subnet_test.go",
+      "internal/network/landevices/sweep/sweep_test.go",
+      "internal/server/server.go",
+      "internal/server/templates.go",
+      "web/templates/network.html"
     ]
+  },
+  "verifyRanAt": "2026-05-05T21:33:47.322Z",
+  "verifyPassed": true,
+  "normalizeState": {
+    "baseRef": "76572bdb2d4d79d0f487edc11a4f4b4540d5cb6a",
+    "method": "git",
+    "status": "resolved",
+    "lastRun": "2026-05-05T21:33:16.819Z"
+  },
+  "verifySummary": {
+    "total": 42,
+    "passed": 31,
+    "failed": 0,
+    "skipped": 11,
+    "skipped_e2e": 4,
+    "skipped_no_marker": 7,
+    "manual": 0,
+    "manual_verified": 0
   }
 }

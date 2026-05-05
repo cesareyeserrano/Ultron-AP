@@ -30,7 +30,10 @@ func newTestOrch(t *testing.T, cadence time.Duration, clock func() time.Time) *O
 
 // TC-LD-009h — two consecutive over-budget cycles trigger 2× cadence and
 // SelfThrottled flag becomes true.
-func TestAdjustCadence_TwoOverBudgetCyclesTriggerThrottle(t *testing.T) {
+//
+// @aitri-tc TC-LD-009h
+func TestTC_LD_009h_AdjustCadence_TwoOverBudgetCyclesTriggerThrottle(t *testing.T) {
+	// @aitri-tc TC-LD-009h
 	now := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
 	o := newTestOrch(t, 5*time.Minute, func() time.Time { return now })
 
@@ -47,7 +50,10 @@ func TestAdjustCadence_TwoOverBudgetCyclesTriggerThrottle(t *testing.T) {
 
 // TC-LD-009f — RestoreWindow of in-budget cycles after throttling restores
 // the configured cadence and clears the flag.
-func TestAdjustCadence_RestoresAfter30MinInBudget(t *testing.T) {
+//
+// @aitri-tc TC-LD-009f
+func TestTC_LD_009f_AdjustCadence_RestoresAfter30MinInBudget(t *testing.T) {
+	// @aitri-tc TC-LD-009f
 	clock := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
 	o := newTestOrch(t, 5*time.Minute, func() time.Time { return clock })
 
@@ -72,7 +78,10 @@ func TestAdjustCadence_RestoresAfter30MinInBudget(t *testing.T) {
 }
 
 // TC-LD-009e — cadence cap at MaxCadence even after repeated throttle events.
-func TestAdjustCadence_CapsAtMaxCadence(t *testing.T) {
+//
+// @aitri-tc TC-LD-009e
+func TestTC_LD_009e_AdjustCadence_CapsAtMaxCadence(t *testing.T) {
+	// @aitri-tc TC-LD-009e
 	now := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
 	o := newTestOrch(t, 20*time.Minute, func() time.Time { return now })
 
@@ -91,7 +100,10 @@ func TestAdjustCadence_CapsAtMaxCadence(t *testing.T) {
 
 // TC-LD-002f — overrun counter increments when a cycle is in flight and
 // the cadence ticker fires.
-func TestTryCycle_OverrunIncrementsCounter(t *testing.T) {
+//
+// @aitri-tc TC-LD-002f
+func TestTC_LD_002f_TryCycle_OverrunIncrementsCounter(t *testing.T) {
+	// @aitri-tc TC-LD-002f
 	now := time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC)
 	o := newTestOrch(t, 1*time.Second, func() time.Time { return now })
 

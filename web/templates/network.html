@@ -2,6 +2,14 @@
 <div class="space-y-6">
     <h2 class="sr-only">Network</h2>
 
+    <!-- LAN devices -->
+    <div class="space-y-2">
+        <h3 class="text-xs uppercase tracking-wider text-text-muted">LAN devices</h3>
+        <div hx-get="/network/lan-devices/fragment" hx-trigger="load, every 30s" hx-swap="outerHTML">
+            <p class="text-sm text-text-muted text-center py-6">Loading…</p>
+        </div>
+    </div>
+
     <!-- WAN status banner -->
     <div class="flex flex-wrap items-center justify-between gap-3">
         <p class="text-sm text-text-muted">WAN reachability state machine and recent uplink transitions. Per-target latency sparklines now live on the home dashboard.</p>

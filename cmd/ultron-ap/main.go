@@ -17,6 +17,8 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/landevices"
+	landevicesstore "github.com/cesareyeserrano/ultron-ap/internal/network/landevices/store"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
@@ -170,9 +172,23 @@ func main() {
 
 	// Create server and apply the persisted performance config (SSE interval + any
 	// remaining fields not yet applied above).
+	// LAN devices feature (FR-030..FR-038): periodic ICMP sweep of the local
+	// /24, ARP-cache pairing, OUI vendor lookup, persistence + state machine.
+	landevicesStore := landevicesstore.New(db.DB)
+	landevicesOrch := landevices.New(landevices.Config{
+		Store:     landevicesStore,
+		RoutePath: "/proc/net/route",
+		ArpPath:   "/proc/net/arp",
+		Logger:    log.Printf,
+	})
+	landevicesOrch.Start(context.Background())
+	defer landevicesOrch.Stop()
+	log.Printf("LAN devices orchestrator started (default cadence=%s)", landevices.BaseCadence)
+
 	srv := server.New(cfg, db, reader, collector, dockerMon, systemdMon, alertEng)
 	srv.SetGatewayProbe(gateway)
 	srv.SetWANMonitor(wan)
+	srv.SetLANDevices(landevicesOrch, landevicesStore)
 	srv.ApplyPerformanceConfig(perf)
 	backupCfg, err := db.GetBackupConfig()
 	if err != nil {

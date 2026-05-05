@@ -84,6 +84,7 @@ func (s *Server) parseTemplates() {
 		"partials/alerts-list.html",
 		"partials/alert-rules-table.html",
 		"partials/tailscale-peers.html",
+		"partials/lan-devices.html",
 	}
 
 	for _, name := range partials {

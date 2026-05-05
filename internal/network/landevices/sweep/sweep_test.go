@@ -35,7 +35,10 @@ func (f *fakeTransport) Probe(ctx context.Context, ip string, timeout time.Durat
 }
 
 // TC-LD-002h
-func TestSweep_EmitsExactly254AndCompletesUnder3Seconds(t *testing.T) {
+//
+// @aitri-tc TC-LD-002h
+func TestTC_LD_002h_Sweep_EmitsExactly254AndCompletesUnder3Seconds(t *testing.T) {
+	// @aitri-tc TC-LD-002h
 	transport := &fakeTransport{
 		replies: map[string]bool{
 			"192.168.1.1":  true,
@@ -58,7 +61,10 @@ func TestSweep_EmitsExactly254AndCompletesUnder3Seconds(t *testing.T) {
 }
 
 // TC-LD-013e — worst case: all 254 hosts respond, still under 3 s wall-clock
-func TestSweep_WorstCaseAllRespond_Under3s(t *testing.T) {
+//
+// @aitri-tc TC-LD-013e
+func TestTC_LD_013e_Sweep_WorstCaseAllRespond_Under3s(t *testing.T) {
+	// @aitri-tc TC-LD-013e
 	replies := map[string]bool{}
 	for i := 1; i <= 254; i++ {
 		replies[ipFromOctet(i)] = true

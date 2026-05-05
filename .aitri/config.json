@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-alpha.27",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-05T17:27:43.054Z",
+  "updatedAt": "2026-05-05T21:34:17.381Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -220,8 +220,8 @@
   "normalizeState": {
     "baseRef": "fac1ff7ddc682b5eba53f7d98a57acfe21ebd2cb",
     "method": "git",
-    "status": "resolved",
-    "lastRun": "2026-05-05T17:25:10.863Z"
+    "status": "pending",
+    "lastRun": "2026-05-05T21:34:17.380Z"
   },
   "verifySummary": {
     "total": 45,

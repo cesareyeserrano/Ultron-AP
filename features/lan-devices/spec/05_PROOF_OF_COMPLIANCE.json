@@ -1,0 +1,131 @@
+{
+  "project": "Ultron-AP — LAN Devices (feature)",
+  "version": "1.0.0",
+  "phases_completed": [1, 2, 3, 4, 5],
+  "overall_status": "partial",
+  "deployment_target": "Raspberry Pi via systemd (parent monolith). No Dockerfile or container artefacts — see DEPLOYMENT.md and the project-level rejection history (2026-03-18) for the deliberate decision against containerised deployment.",
+  "requirement_compliance": [
+    {
+      "id": "FR-030",
+      "title": "Auto-detect local IPv4 subnet from default-route interface",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. Implemented in internal/network/landevices/subnet/subnet.go with injectable /proc/net/route reader and net.InterfaceByName resolver. TC-LD-001h (happy path 192.168.1.42/24 → /24, eth0, ok), TC-LD-001f (no-default-route status), TC-LD-001e (clamp /16 to host /24) all green. Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-031",
+      "title": "Periodic ICMP sweep across local /24 with rate-limit",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 3 skipped (3 of the skipped are e2e-tier or no-marker — orchestrator-level integration is covered). Implemented in internal/network/landevices/sweep/sweep.go using a Transport seam (production: pro-bing via the same ping_group_range path as gatewayprobe). TC-LD-002h (≥250 packets, <3s wall-clock), TC-LD-013e (worst-case all-respond <3s), TC-LD-002f (overrun counter increments) all green. Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-032",
+      "title": "Read ARP cache and pair responding hosts with MAC addresses",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. Implemented in internal/network/landevices/arp/arp.go with /proc/net/arp parser; flag 0x2 only, degraded mode on read failure. TC-LD-003h (5 hosts paired), TC-LD-003f (degraded mode on missing file), TC-LD-003e (stale entries ignored), TC-LD-010e (no helper IPC) all green. Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-033",
+      "title": "OUI vendor lookup from a bundled IEEE prefix table",
+      "level": "partial",
+      "evidence": "fr_coverage: 5 passing, 0 failing, 1 skipped. go:embed of internal/network/landevices/oui/data.csv into a 24-bit-prefix→vendor map; LAA-bit handled. TC-LD-004h (Raspberry Pi prefix), TC-LD-004f (LAA → Locally administered), TC-LD-004e (unknown → Unknown), TC-LD-011h (no-network resolution), TC-LD-011f (malformed inputs) all green. Technical debt declared: bundled CSV ships a curated subset of the IEEE registry, not the full ~50k-entry list — known prefixes resolve correctly, unknowns fall back to 'Unknown' as required by AC-003."
+    },
+    {
+      "id": "FR-034",
+      "title": "Persist observed devices to SQLite",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 5 passing, 0 failing, 1 skipped. Implemented in internal/network/landevices/store/store.go with single-transaction ApplySweep upsert path (mac PK, first_seen preserved on DHCP renewal). Schema integrated into parent's database.New() migration path. TC-LD-005h (first-observation insert), TC-LD-005f (DHCP renewal preserves first_seen), TC-LD-005e (first_seen survives restart), TC-LD-012h (schema idempotent), TC-LD-012e (rows bounded by distinct MACs) all green. Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-035",
+      "title": "Online/offline state machine with miss tolerance",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. State machine implemented in store.ApplySweep — single transactional pass increments missed_sweeps for absent rows, flips online when threshold crossed. Default N=3, configurable 1–10. TC-LD-006h (one miss then return → stays online), TC-LD-006f (N misses → offline), TC-LD-006e (return after offline → online) all green. Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-036",
+      "title": "JSON API endpoint listing LAN devices",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. GET /api/network/lan-devices implemented in internal/server/handlers_landevices.go; protected by parent FR-007 auth middleware. TC-LD-007h (online-first then last_seen DESC, RFC3339 timestamps), TC-LD-007f (unauthenticated → 401), TC-LD-007e (p99 <100 ms over 100 sequential requests on a 30-row LAN) all green. Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-037",
+      "title": "Render LAN device table on /network page",
+      "level": "partial",
+      "evidence": "fr_coverage: 2 passing, 0 failing, 4 skipped. Server-rendered HTMX fragment at GET /network/lan-devices/fragment plus a section in web/templates/network.html that hx-gets the fragment every 30s. TC-LD-008h (5-row table renders) and TC-LD-008f (empty-state message replaces table) green via HTTP-level integration tests. Technical debt declared: TC-LD-008h's full e2e (headless browser, 5s page-load budget) substituted with HTTP-level integration; TC-LD-008e axe-core contrast scan deferred — both because the project has no headless-browser test stack."
+    },
+    {
+      "id": "FR-038",
+      "title": "Self-throttle sweep on resource-budget breach",
+      "level": "partial",
+      "evidence": "fr_coverage: 4 passing, 0 failing, 2 skipped. adjustCadence in internal/network/landevices/orchestrator.go: 2 consecutive >3 s wall-clock cycles → 2× cadence (capped at 1800 s); 30 min of in-budget cycles → restore to baseline. TC-LD-009h (throttle triggers), TC-LD-009f (restore after 30 min in-budget), TC-LD-009e (cap at MaxCadence) all green. Technical debt: status field 'last_sweep_duration_ms'/'current_cadence_ms' wire-format conversion done in handler rather than on the orchestrator's Status type. NFR-014 24-hour synthetic resource-budget run not executed in CI — operator deployment validation."
+    },
+    {
+      "id": "NFR-011",
+      "title": "Security / Privilege — no new privileged path",
+      "level": "production_ready",
+      "evidence": "Verified by package-level inspection: lan-devices imports only sweep (which uses the same pro-bing ping_group_range path as gatewayprobe), arp (reads /proc/net/arp directly), oui (in-memory map), store (SQLite). No imports of internal/privileged. DEPLOYMENT.md documents the post-deploy `getcap` smoke check (must return empty)."
+    },
+    {
+      "id": "NFR-012",
+      "title": "Distribution / Dependencies — embedded OUI table",
+      "level": "partial",
+      "evidence": "internal/network/landevices/oui/oui.go uses go:embed to bundle data.csv at build time; resolved in-memory at process start. TC-LD-011h verifies vendor resolution works with no network access. Technical debt declared: tools/oui/refresh.sh script to pull the full IEEE registry on a deliberate rebuild is not yet shipped — the curated CSV satisfies the runtime contract."
+    },
+    {
+      "id": "NFR-013",
+      "title": "Persistence / Storage — reuse parent SQLite + backup",
+      "level": "production_ready",
+      "evidence": "Schema appended to internal/database/sqlite.go's existing schema constant — picked up by the parent's migration path on first start. The lan_devices table is automatically captured by the parent's existing Backup() (VACUUM INTO) — confirmed by the existing FR-015 backup tests continuing to pass."
+    },
+    {
+      "id": "NFR-014",
+      "title": "Performance / Resource Budget",
+      "level": "partial",
+      "evidence": "FR-038 adjustCadence locks the >3 s wall-clock trigger and the 30 min restore window. TC-LD-013e confirms a worst-case-all-respond /24 sweep stays under 3 s. Technical debt declared: 24-hour synthetic CPU/RSS soak test not executed in CI — long-running validation is out of unit/integration scope and belongs to operator deployment verification."
+    },
+    {
+      "id": "NFR-015",
+      "title": "UX / Accessibility",
+      "level": "partial",
+      "evidence": "web/templates/partials/lan-devices.html uses parent FR-009 design tokens exclusively (text-green-500 / text-neutral-400 over bg-card/30) — no new CSS, no new JS framework. Empty/error states are explicit. Technical debt declared: axe-core automated contrast audit (TC-LD-008e) deferred — same headless-browser-stack reason as TC-LD-008h. The tokens used are the parent's audited tokens, so contrast is inherited from the parent's existing /network page audit."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-037",
+      "substitution": "TC-LD-008h e2e headless-browser test replaced with HTTP-level integration test that GETs /network/lan-devices/fragment and asserts on rendered HTML structure (table presence, 5 seeded rows, online label) instead of driving a real browser.",
+      "reason": "The project has no headless-browser test stack (no chromedp, no Playwright). Adding one for a single TC would add a heavy dev-dependency. The HTTP integration test exercises the same handler + template path the browser would render.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-037",
+      "substitution": "TC-LD-008e axe-core contrast scan not executed. The partial uses parent FR-009 design tokens (text-green-500 / text-neutral-400 over bg-card) which the parent's existing /network page already passes WCAG AA contrast for in both themes.",
+      "reason": "axe-core requires a headless browser. Same dependency-cost reasoning as TC-LD-008h.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-033",
+      "substitution": "internal/network/landevices/oui/data.csv ships a curated subset of the IEEE OUI registry rather than the full ~50k-entry list. Known prefixes used by the spec (B8:27:EB Raspberry Pi, etc.) resolve correctly; unknown prefixes fall back to 'Unknown' as required by FR-033 AC-003.",
+      "reason": "Ship a small, deterministic subset for v1; per NFR-012 a refresh script can pull the full registry on a deliberate rebuild without changing the runtime.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "NFR-012",
+      "substitution": "tools/oui/refresh.sh (documented OUI refresh script) not yet shipped.",
+      "reason": "Out of scope for the application binary; bundled CSV satisfies the runtime contract. Refresh tooling is a follow-up.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "NFR-014",
+      "substitution": "24-hour synthetic resource-budget run on Pi hardware not executed in this Phase 4 session.",
+      "reason": "Long-running validation belongs to deployment verification, not unit/integration tests. FR-038 self-throttle logic + its unit/integration tests cover the trigger condition; field validation is the operator's deployment step.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-038",
+      "substitution": "API status field 'last_sweep_duration_ms' / 'current_cadence_ms' wire-format conversion implemented in the handler (handlers_landevices.go), not on the orchestrator's Status type.",
+      "reason": "The orchestrator's Status struct holds time.Duration values which marshal to nanoseconds by default. The API handler converts to milliseconds so the wire contract matches 02_SYSTEM_DESIGN.md without churning the orchestrator's internal type.",
+      "effort_to_fix": "low"
+    }
+  ]
+}

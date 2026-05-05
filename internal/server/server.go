@@ -22,6 +22,8 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/landevices"
+	landevicesstore "github.com/cesareyeserrano/ultron-ap/internal/network/landevices/store"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
@@ -75,6 +77,8 @@ type Server struct {
 	privileged          *privileged.Client
 	gateway             *gatewayprobe.Probe
 	wan                 *wanmonitor.Monitor
+	landevices          *landevices.Orchestrator
+	landevicesStore     *landevicesstore.Store
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -482,6 +486,11 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/system/restart", s.requireAuth(http.HandlerFunc(s.handleSystemRestart)))
 	mux.Handle("POST /api/system/shutdown", s.requireAuth(http.HandlerFunc(s.handleSystemShutdown)))
 	mux.Handle("POST /api/history/clear", s.requireAuth(http.HandlerFunc(s.handleHistoryClear)))
+
+	// LAN devices feature (FR-036, FR-037)
+	mux.Handle("GET /api/network/lan-devices", s.requireAuth(http.HandlerFunc(s.handleLANDevicesAPI)))
+	mux.Handle("GET /api/network/lan-devices/status", s.requireAuth(http.HandlerFunc(s.handleLANDevicesStatus)))
+	mux.Handle("GET /network/lan-devices/fragment", s.requireAuth(http.HandlerFunc(s.handleLANDevicesFragment)))
 }
 
 // startRetentionJob runs a daily cleanup of old ActionLog and Alert records.

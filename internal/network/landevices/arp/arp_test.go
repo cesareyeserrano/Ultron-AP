@@ -20,7 +20,10 @@ func writeARPFile(t *testing.T, body string) string {
 }
 
 // TC-LD-003h
-func TestPair_HappyPath_FiveResolvedEntries(t *testing.T) {
+//
+// @aitri-tc TC-LD-003h
+func TestTC_LD_003h_Pair_HappyPath_FiveResolvedEntries(t *testing.T) {
+	// @aitri-tc TC-LD-003h
 	body := `192.168.1.1      0x1         0x2         a1:b2:c3:d4:e5:f6     *        eth0
 192.168.1.20     0x1         0x2         11:22:33:44:55:66     *        eth0
 192.168.1.21     0x1         0x2         AA:BB:CC:DD:EE:01     *        eth0
@@ -43,7 +46,10 @@ func TestPair_HappyPath_FiveResolvedEntries(t *testing.T) {
 }
 
 // TC-LD-003f
-func TestPair_DegradedMode_MissingARPFile(t *testing.T) {
+//
+// @aitri-tc TC-LD-003f
+func TestTC_LD_003f_Pair_DegradedMode_MissingARPFile(t *testing.T) {
+	// @aitri-tc TC-LD-003f
 	cache, err := ReadCache(filepath.Join(t.TempDir(), "does-not-exist"))
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrARPUnavailable))
@@ -59,7 +65,10 @@ func TestPair_DegradedMode_MissingARPFile(t *testing.T) {
 }
 
 // TC-LD-003e — stale entries (flag 0x0) ignored
-func TestPair_IgnoresStaleEntries(t *testing.T) {
+//
+// @aitri-tc TC-LD-003e
+func TestTC_LD_003e_Pair_IgnoresStaleEntries(t *testing.T) {
+	// @aitri-tc TC-LD-003e
 	body := `192.168.1.1      0x1         0x2         a1:b2:c3:d4:e5:f6     *        eth0
 192.168.1.10     0x1         0x0         00:00:00:00:00:00     *        eth0
 192.168.1.20     0x1         0x2         11:22:33:44:55:66     *        eth0
@@ -95,7 +104,10 @@ func TestPair_IgnoresStaleEntries(t *testing.T) {
 // TC-LD-010e (NFR-011 edge): non-root reads /proc/net/arp without escalation.
 // We can't truly drop privileges in a unit test, but we can assert no helper
 // IPC is invoked (the implementation only uses os.Open).
-func TestPair_UnprivilegedRead_NoHelperIPC(t *testing.T) {
+//
+// @aitri-tc TC-LD-010e
+func TestTC_LD_010e_Pair_UnprivilegedRead_NoHelperIPC(t *testing.T) {
+	// @aitri-tc TC-LD-010e
 	body := "192.168.1.1      0x1         0x2         a1:b2:c3:d4:e5:f6     *        eth0\n"
 	path := writeARPFile(t, body)
 	_, err := ReadCache(path)
