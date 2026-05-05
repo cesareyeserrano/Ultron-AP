@@ -78,37 +78,15 @@
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
     </div>
 </div>
-{{if .Network}}
-<div class="mt-3">
-    <div class="flex items-center justify-between mb-1.5 gap-2">
-        <p class="text-[11px] text-text-muted uppercase tracking-wider">Network probes</p>
-        {{if .WAN}}
-            {{if eq (printf "%s" .WAN.State) "up"}}
-                <span class="text-[11px] px-2 py-0.5 rounded border border-green-400/40 bg-green-400/10 text-green-400 font-mono">WAN up</span>
-            {{else if eq (printf "%s" .WAN.State) "down"}}
-                <span class="text-[11px] px-2 py-0.5 rounded border border-danger/50 bg-danger/10 text-danger font-mono" title="{{if .WAN.LastEvent}}{{.WAN.LastEvent.Detail}}{{end}}">WAN DOWN</span>
-            {{else}}
-                <span class="text-[11px] px-2 py-0.5 rounded border border-border/50 bg-card/50 text-text-muted font-mono">WAN ?</span>
-            {{end}}
-        {{end}}
-    </div>
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        {{range .Network}}
-        <div class="metric-tile">
-            <p class="text-xs text-text-muted mb-1">{{.Label}}</p>
-            {{if eq (printf "%s" .Status) "ok"}}
-                <p class="text-2xl font-mono font-bold text-accent">{{printf "%.1f ms" .RTTMs}}</p>
-                <p class="text-xs text-text-muted font-mono">jitter {{printf "%.1f" .JitterMs}}ms · loss {{printf "%.0f" .LossPct}}% · {{.Target}}</p>
-            {{else if eq (printf "%s" .Status) "init"}}
-                <p class="text-2xl font-mono font-bold text-text-muted">--</p>
-                <p class="text-xs text-text-muted">probing {{if .Target}}{{.Target}}{{else}}{{.Label}}{{end}}...</p>
-            {{else}}
-                <p class="text-2xl font-mono font-bold text-yellow-400">{{.Status}}</p>
-                <p class="text-xs text-text-muted">loss {{printf "%.0f" .LossPct}}% · {{if .Target}}{{.Target}}{{else}}no target{{end}}</p>
-            {{end}}
-        </div>
-        {{end}}
-    </div>
+{{if and .Network .WAN}}
+<div class="mt-3 flex justify-end">
+    {{if eq (printf "%s" .WAN.State) "up"}}
+        <span class="text-[11px] px-2 py-0.5 rounded border border-green-400/40 bg-green-400/10 text-green-400 font-mono">WAN up</span>
+    {{else if eq (printf "%s" .WAN.State) "down"}}
+        <span class="text-[11px] px-2 py-0.5 rounded border border-danger/50 bg-danger/10 text-danger font-mono" title="{{if .WAN.LastEvent}}{{.WAN.LastEvent.Detail}}{{end}}">WAN DOWN</span>
+    {{else}}
+        <span class="text-[11px] px-2 py-0.5 rounded border border-border/50 bg-card/50 text-text-muted font-mono">WAN ?</span>
+    {{end}}
 </div>
 {{end}}
 {{end}}

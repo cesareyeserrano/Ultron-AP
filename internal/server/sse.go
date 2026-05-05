@@ -45,6 +45,7 @@ type DashboardData struct {
 	Uptime         string
 	Tailscale      TailscaleData
 	Network        []*gatewayprobe.Snapshot
+	NetworkTargets []NetworkTargetView
 	WAN            *wanmonitor.Snapshot
 	Version        string
 }
@@ -432,6 +433,7 @@ func (s *Server) gatherDashboardData() DashboardData {
 
 	if s.gateway != nil {
 		dd.Network = s.gateway.Snapshots()
+		dd.NetworkTargets = s.gatherNetworkTargetViews(chartPoints)
 	}
 
 	if s.wan != nil {

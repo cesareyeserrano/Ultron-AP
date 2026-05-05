@@ -141,3 +141,57 @@ func tempSeriesStroke(values []float64) string {
 		return "var(--color-green-400)"
 	}
 }
+
+// Latency probe thresholds (ms / loss %). Tuned for a home network: a few ms
+// to the gateway is normal, sub-100 ms to most internet targets is fine.
+const (
+	latencyWarnRTTMs   = 80.0
+	latencyCritRTTMs   = 200.0
+	latencyWarnLossPct = 0.0  // any loss bumps to warn
+	latencyCritLossPct = 10.0 // sustained loss bumps to crit
+)
+
+func latencyState(rttMs, lossPct float64, status string) string {
+	s := strings.ToLower(strings.TrimSpace(status))
+	switch s {
+	case "", "init":
+		return "muted"
+	case "ok":
+		// fall through to numeric checks
+	default:
+		return "crit"
+	}
+	if lossPct >= latencyCritLossPct || rttMs >= latencyCritRTTMs {
+		return "crit"
+	}
+	if lossPct > latencyWarnLossPct || rttMs >= latencyWarnRTTMs {
+		return "warn"
+	}
+	return "ok"
+}
+
+func latencySeriesClass(rttMs, lossPct float64, status string) string {
+	switch latencyState(rttMs, lossPct, status) {
+	case "crit":
+		return "text-danger"
+	case "warn":
+		return "text-yellow-400"
+	case "ok":
+		return "text-green-400"
+	default:
+		return "text-text-muted"
+	}
+}
+
+func latencySeriesStroke(rttMs, lossPct float64, status string) string {
+	switch latencyState(rttMs, lossPct, status) {
+	case "crit":
+		return "var(--color-danger)"
+	case "warn":
+		return "var(--color-yellow-400)"
+	case "ok":
+		return "var(--color-green-400)"
+	default:
+		return "var(--color-accent)"
+	}
+}
