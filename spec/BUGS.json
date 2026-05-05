@@ -363,6 +363,26 @@
       "fix_at": "2026-05-05T14:41:15.732Z",
       "close_commit_sha": "6b65e21e6f0a98f0782b6f38f2b2dee278180df1",
       "close_at": "2026-05-05T14:41:15.806Z"
+    },
+    {
+      "id": "BG-017",
+      "title": "Recurring SQLITE_BUSY on net sample inserts (~10/min sustained)",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "medium",
+      "status": "open",
+      "fr": null,
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-05-05T14:41:27.976Z",
+      "updated_at": "2026-05-05T14:41:27.976Z",
+      "resolution": null
     }
   ]
 }

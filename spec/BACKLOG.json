@@ -121,6 +121,46 @@
       "problem": "internal/server/handlers_notifications.go:90 — json.Unmarshal error ignored in handleNotificationTest. If stored config is corrupted, the test sender uses zero-valued cfg fields and the user sees a confusing 'test failed' message instead of 'config corrupted'. Capture err, log it, return a clearer error to the UI. Reclassified from BG-007 (audit overstated impact — no data loss, just UX/observability).",
       "status": "open",
       "createdAt": "2026-05-04T00:05:55.657Z"
+    },
+    {
+      "id": "BL-016",
+      "title": "Feature: lan-devices — discover & track LAN devices via ICMP sweep + ip neigh",
+      "priority": "P2",
+      "problem": "Pi runs on eth0 in 192.168.1.0/24; gateway/cloudflare/dns probes already cover WAN reachability. Add per-device discovery: 5-min ICMP sweep over /24 + read ip neigh + OUI vendor lookup → device list (IP, MAC, vendor, online/offline, last_seen) persisted in SQLite. No apt installs (uses unprivileged ICMP already enabled via ping_group_range). UI lives at /network. v1 scope: no per-device WiFi signal (router-cooperation required, not feasible from a guest host) and no per-device bandwidth. mDNS hostname enrichment is a v2 follow-up. Cost: ~250 ARP packets in 3s every 5min, negligible Pi/network impact.",
+      "status": "open",
+      "createdAt": "2026-05-05T14:42:16.143Z"
+    },
+    {
+      "id": "BL-017",
+      "title": "Feature: insights-engine — declarative rules engine producing real-time verdicts across all modules",
+      "priority": "P1",
+      "problem": "Today Ultron tells you WHAT is happening (CPU 90%, RTT 200ms) but not WHAT IT MEANS. Build a declarative rules engine: each rule = condition over telemetry vars + verdict + severity + recommendation. Reusable across system/network/services/devices. Examples: cpu>=90 AND temp>=75 → 'thermal throttling probable, kill heavy loads'; gateway ok AND cloudflare fail → 'LAN ok, ISP/WAN down'; ram>=90 AND swap>0 → 'memory pressure, inspect processes'. Verdicts surface in dashboard's Operational Indicators section and SSE-stream. Highest-leverage piece: every future module gains diagnostic capability for free by adding rules. Pairs with /help page (BL-018) which becomes the documentation surface for verdict definitions in two voices (technical + non-technical).",
+      "status": "open",
+      "createdAt": "2026-05-05T14:42:23.242Z"
+    },
+    {
+      "id": "BL-018",
+      "title": "Feature: help-page — glossary & rule-verdict documentation in technical + non-technical voices",
+      "priority": "P2",
+      "problem": "/help (or /glossary) page documenting Ultron terminology and the verdicts produced by the insights-engine (BL-017). Each entry has two voices: technical (what the metric measures, thresholds, source code path) and non-technical (what it means for the user in plain language). Verdicts from BL-017 deep-link here. Bootstrap content: gateway/cloudflare/dns probe semantics, WAN state machine, jitter/loss/RTT, CPU/RAM/temp thresholds, services/containers health states, VPN peers.",
+      "status": "open",
+      "createdAt": "2026-05-05T14:42:33.339Z"
+    },
+    {
+      "id": "BL-019",
+      "title": "Task: ui-audit — analysis pass over all Ultron pages, output prioritized punch-list",
+      "priority": "P2",
+      "problem": "Analysis (NOT build) task. Walk every page (dashboard, network, services, docker, alerts, history, logs, settings, login) and produce a prioritized punch-list of: (1) layout inconsistencies, (2) card-disposition / visual-hierarchy issues, (3) duplicated info, (4) missing pickers / poor input ergonomics (esp. settings), (5) responsive breakpoints. Out of scope: visual redesign. Goal: feed concrete tickets into the settings-revamp feature and any focused UI cleanups. Output: backlog/ui-audit-2026-Q2.md (markdown punch-list, no code).",
+      "status": "open",
+      "createdAt": "2026-05-05T14:42:37.321Z"
+    },
+    {
+      "id": "BL-020",
+      "title": "Feature: settings-revamp — typed pickers, validation, structure (extends settings-page-ui-improvements)",
+      "priority": "P2",
+      "problem": "Settings page is the weakest UI in Ultron: raw inputs, no pickers, minimal validation, weak hierarchy. The existing backlog/settings-page-ui-improvements/ folder already has the seed (mobile-first layout, dangerous-action confirmation with countdown, design-token reuse). This BL extends it with: typed input pickers (time, intervals, thresholds, color-coded severity selectors), client+server validation with inline error states, sectioned navigation, search/filter for settings, and exposure of insights-engine (BL-017) rule thresholds as first-class settings once that ships. Sequenced AFTER ui-audit (BL-019) so concrete prioritization comes from the audit punch-list.",
+      "status": "open",
+      "createdAt": "2026-05-05T14:42:44.857Z"
     }
   ]
 }
