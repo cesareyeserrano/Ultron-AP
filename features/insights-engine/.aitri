@@ -1,0 +1,183 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "insights-engine",
+  "createdAt": "2026-05-05T22:07:04.650Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-05-05T22:58:44.615Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-05-05T22:09:33.520Z",
+      "event": "started",
+      "phase": 1
+    },
+    {
+      "at": "2026-05-05T22:14:45.236Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-05-05T22:16:01.530Z",
+      "event": "approved",
+      "phase": 1,
+      "ideaArchived": true
+    },
+    {
+      "at": "2026-05-05T22:16:04.102Z",
+      "event": "started",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-05T22:19:58.846Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-05T22:25:56.052Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-05T22:25:56.102Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-05T22:30:41.150Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-05T22:31:23.543Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-05T22:31:23.594Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-05T22:50:25.577Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-05T22:55:11.698Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-05T22:55:13.388Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 31,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T22:55:42.703Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 31,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T22:55:46.168Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 31,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T22:56:08.678Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T22:56:11.791Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-05T22:56:21.742Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-05T22:58:44.554Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-05T22:58:44.602Z",
+      "event": "approved",
+      "phase": 5
+    }
+  ],
+  "artifactHashes": {
+    "1": "3b5131bd8c2c70cabc0712f852c0210749a52ca4250c148d9fa202ce87e5f0a2",
+    "2": "4e93ef759201bac31572f222334532fcdc243f9f2141847bfd9fade6f53fd5c3",
+    "3": "e0b2985c9b00248193b0421bb85403fe84517ec64f2939e206679925fc2729b3",
+    "4": "a41ddffd8db2e2455d203dd92b57ab363e1f3566560dfa3dfd1758373b60e093",
+    "5": "0deabf395b516aeb12ac3746ee39fb1106cad6e54f50e5f78c5379e5d4ea4ab7"
+  },
+  "lastSession": {
+    "at": "2026-05-05T22:58:44.615Z",
+    "agent": "unknown",
+    "event": "approve deploy",
+    "files_touched": [
+      ".aitri/config.json",
+      "cmd/ultron-ap/main.go",
+      "internal/database/sqlite.go",
+      "internal/server/server.go",
+      "internal/server/sse.go",
+      "internal/server/templates.go",
+      "web/static/css/app.css",
+      "web/templates/dashboard.html"
+    ]
+  },
+  "normalizeState": {
+    "baseRef": "f94530f6b422b484019e43806555aa461541025e",
+    "method": "git",
+    "status": "resolved",
+    "lastRun": "2026-05-05T22:55:11.697Z"
+  },
+  "verifyRanAt": "2026-05-05T22:56:08.678Z",
+  "verifyPassed": true,
+  "verifySummary": {
+    "total": 31,
+    "passed": 31,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}

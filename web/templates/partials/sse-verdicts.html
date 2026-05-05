@@ -1,0 +1,24 @@
+{{define "partials/sse-verdicts.html"}}
+<section id="operational-indicators" class="space-y-2">
+    <h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-2">Operational Indicators</h2>
+    {{if .HasVerdicts}}
+    <div class="space-y-2">
+        {{range .Verdicts}}
+        <div class="verdict-card rounded-lg border {{.BadgeClass}} bg-card/40 p-3" data-rule-id="{{.RuleID}}" data-severity="{{.Severity}}">
+            <div class="flex items-start gap-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border {{.BadgeClass}}" aria-label="severity {{.SeverityLabel}}">{{.SeverityLabel}}</span>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-text">{{.Title}}</p>
+                    <p class="text-xs text-text-muted mt-0.5">{{.VerdictText}}</p>
+                    <p class="text-xs text-text mt-1"><span class="text-text-muted">Recommendation:</span> {{.Recommendation}}</p>
+                    <p class="text-[10px] text-text-muted mt-1.5">{{.RelativeTime}}</p>
+                </div>
+            </div>
+        </div>
+        {{end}}
+    </div>
+    {{else}}
+    <p class="text-sm text-text-muted text-center py-4">All operational indicators clear</p>
+    {{end}}
+</section>
+{{end}}

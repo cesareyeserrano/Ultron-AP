@@ -20,6 +20,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
+	"github.com/cesareyeserrano/ultron-ap/internal/insights"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/landevices"
@@ -79,6 +80,7 @@ type Server struct {
 	wan                 *wanmonitor.Monitor
 	landevices          *landevices.Orchestrator
 	landevicesStore     *landevicesstore.Store
+	insights            *insights.Service
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -491,6 +493,10 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/network/lan-devices", s.requireAuth(http.HandlerFunc(s.handleLANDevicesAPI)))
 	mux.Handle("GET /api/network/lan-devices/status", s.requireAuth(http.HandlerFunc(s.handleLANDevicesStatus)))
 	mux.Handle("GET /network/lan-devices/fragment", s.requireAuth(http.HandlerFunc(s.handleLANDevicesFragment)))
+
+	// Insights engine (FR-043, FR-044)
+	mux.Handle("GET /api/insights/verdicts", s.requireAuth(http.HandlerFunc(s.handleInsightsVerdicts)))
+	mux.Handle("GET /insights/fragment", s.requireAuth(http.HandlerFunc(s.handleInsightsFragment)))
 }
 
 // startRetentionJob runs a daily cleanup of old ActionLog and Alert records.

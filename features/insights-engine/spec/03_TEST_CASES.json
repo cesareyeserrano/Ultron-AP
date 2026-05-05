@@ -1,0 +1,766 @@
+{
+  "test_plan": {
+    "feature": "insights-engine",
+    "scope": "Validate FR-039..FR-047 (eval tick alignment, rule schema, condition language, verdict lifecycle, SSE delivery, dashboard rendering, persistence, hysteresis, bootstrap rule set) plus NFR-016..NFR-021 (performance budget, persistence reuse, observability, security/no-runtime-rules, UX tokens, notify isolation).",
+    "approach": "Three-layer pyramid. Unit tests pin pure logic (lang parser/compiler, comparison/sustained operators, rule schema decoder). Integration tests exercise the engine + store + SSE broker with an injected clock and a fake metrics snapshot. e2e tests run the real HTTP handlers (GET /api/insights/verdicts) and the SSE event encoder against an in-process server with seeded DB. Browser-based accessibility / DOM rendering tests are deferred to manual exclusions and substituted with HTTP-level fragment tests in implementation.",
+    "fixtures": [
+      "fakeMetricsSnapshot — deterministic *metrics.Snapshot builder with knobs for cpu_pct, ram_pct, swap_pct, temp_c, disk_pct[partition], wan_gateway_ok, wan_cloudflare_ok, wan_packet_loss_pct, lan_device_offline_count, container_unhealthy[name], service_failed[name]; supports per-tick overrides for sustained-window TCs",
+      "injectedClock — deterministic clock (now + advance(d)) used everywhere instead of time.Now; sustained windows and flap windows are driven by it",
+      "tmpDB — t.TempDir() SQLite per test, full parent schema + insights tables (rules, rule_state)",
+      "bundledRulesYAML — the go:embed bundled.json fixture (10 rules) loaded from internal/insights/rules; test variants override via insights/rules.LoadFromBytes(...) for negative cases",
+      "fakeSSEBroker — in-memory broker that records (event, payload) pairs per Eval call so tests can assert verdicts events without spinning real HTTP",
+      "authTestSession — helper that issues a valid session cookie against the parent authMiddleware for e2e API tests"
+    ],
+    "exclusions": [
+      "No headless-browser DOM tests for FR-044 dashboard rendering — declared as manual / e2e-deferred technical debt. Substituted with HTTP-level tests against the rendered HTMX fragment (sse-verdicts.html) asserting sort order, escaping, and empty state via goquery on the response body. Browser-driven accessibility (axe-core) checks are postponed to a later milestone.",
+      "No live-network or real-Pi performance tests for NFR-016. Performance TCs use injectedClock + counters + testing.AllocsPerRun, never wall-clock, to keep CI deterministic. The 24 h soak / 1 h idle FP runs in NFR-016 / FR-047 AC-001 are validated via synthetic ticks driven by the injected clock, not real time.",
+      "No tests for the parent FR-001 metrics tick itself, FR-013 SSE plumbing, FR-007 auth middleware, or FR-015 backup mechanics — covered by parent-feature tests; this feature only verifies its consumers.",
+      "No tests for v2 features explicitly excluded by no-go-zone: rule-authoring UI, push notifications from verdicts, verdict history, cross-host correlation, ML/anomaly detection, runtime rule loading — these have no v1 surface to test."
+    ]
+  },
+  "type_coverage_matrix": {
+    "FR-039": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-040": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-041": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-042": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-043": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-044": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-045": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-046": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-047": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    }
+  },
+  "test_cases": [
+    {
+      "id": "TC-IE-001h",
+      "requirement_id": "FR-039",
+      "user_story_id": "US-039",
+      "ac_id": "AC-039-001",
+      "title": "Engine evaluates all enabled rules on each metrics tick and publishes a verdict-set before the next tick",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "engine.Start(ctx, tmpDB, fakeCollector) succeeds with the bundled rule set loaded",
+        "fakeSSEBroker registered as the verdict sink"
+      ],
+      "given": "Engine running with the bundled 10-rule set; fakeMetricsSnapshot returning cpu_pct=10, temp_c=45, all probes ok",
+      "when": "The metrics tick fires once (broker calls engine.Eval(snapshot))",
+      "then": "Exactly one 'verdicts' event is recorded by fakeSSEBroker for that tick; the event's verdict slice is empty (idle Pi, no rules trigger); engine reports lastEvalAt == tick T",
+      "steps": [
+        "Construct fakeMetricsSnapshot for an idle Pi",
+        "Call engine.Eval(snapshot) once via the broker hook",
+        "Assert fakeSSEBroker.Events('verdicts') has length 1 and payload verdict slice is empty",
+        "Assert engine.LastEvalAt() == injectedClock.Now()"
+      ],
+      "expected_result": "1 verdicts event emitted; verdict slice empty; LastEvalAt advanced to current tick"
+    },
+    {
+      "id": "TC-IE-001f",
+      "requirement_id": "FR-039",
+      "user_story_id": "US-039",
+      "ac_id": "AC-039-002",
+      "title": "Snapshot unavailable for a tick — no new verdict-set emitted, previous set held, single 'snapshot-missing' log",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Engine has previously emitted a verdict-set with N≥1 active verdicts on tick T-1"
+      ],
+      "given": "Engine running; fakeCollector returns (nil, ErrSnapshotUnavailable) for tick T",
+      "when": "The broker's tick fires and engine.Eval is invoked with a nil/empty snapshot",
+      "then": "No new 'verdicts' event is appended for tick T; the previously published verdict set is held (broker reuses last payload); exactly one structured log line 'snapshot-missing' is emitted",
+      "steps": [
+        "Drive tick T-1 with a fakeMetricsSnapshot that fires 1 verdict",
+        "Configure fakeCollector to return ErrSnapshotUnavailable for tick T",
+        "Drive tick T",
+        "Assert fakeSSEBroker received no new 'verdicts' event (event count unchanged)",
+        "Assert log capture contains exactly 1 entry with key='snapshot-missing'"
+      ],
+      "expected_result": "No new verdicts event for tick T; log count('snapshot-missing') == 1; previous verdict slice unchanged"
+    },
+    {
+      "id": "TC-IE-001e",
+      "requirement_id": "FR-039",
+      "user_story_id": "US-039",
+      "ac_id": "AC-039-003",
+      "title": "100 evaluation ticks against the bundled rule set complete within total budget (synthetic perf, NFR-016)",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Engine started with the full bundled rule set",
+        "injectedClock advances 5 s per logical tick"
+      ],
+      "given": "Engine + bundled 10 rules; fakeMetricsSnapshot returning a steady mid-load profile (cpu=45, temp=55, all probes ok)",
+      "when": "100 sequential engine.Eval(snapshot) calls are issued and per-call wall-clock duration is measured via Go's testing benchmarking surface (not injected clock — we measure the engine code itself)",
+      "then": "Total CPU time across 100 ticks is < 500 ms (i.e. p99-equivalent ceiling of 5 ms/tick budget per NFR-016 design table); per-tick allocations are zero after the warm-up tick",
+      "steps": [
+        "Warm up engine with 1 throwaway Eval call",
+        "Capture testing.AllocsPerRun(100, func(){ engine.Eval(snapshot) })",
+        "Measure total wall-clock over 100 Eval calls",
+        "Assert total < 500 ms and AllocsPerRun == 0"
+      ],
+      "expected_result": "Total 100-tick duration < 500 ms; testing.AllocsPerRun == 0; no panics, no rule disabled"
+    },
+    {
+      "id": "TC-IE-002h",
+      "requirement_id": "FR-040",
+      "user_story_id": "US-040",
+      "ac_id": "AC-040-001",
+      "title": "Well-formed rule with all required fields loads, compiles, and is queryable from the engine",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "A single rule JSON with id='test_cpu_high', title, condition (gt cpu_pct 90), severity='warn', verdict_text, recommendation, links=[]",
+      "when": "rules.LoadFromBytes(jsonBytes) is called",
+      "then": "Returns []Rule of length 1; rule.Compiled is non-nil; rule.Severity == SeverityWarn; rule.Links is an empty array (not nil)",
+      "steps": [
+        "Build well-formed rule JSON in-memory",
+        "Call rules.LoadFromBytes",
+        "Assert returned slice len == 1 and fields populated",
+        "Assert rule.Links != nil && len(rule.Links) == 0"
+      ],
+      "expected_result": "1 rule returned; Compiled closure non-nil; Severity=warn; Links is [] not null"
+    },
+    {
+      "id": "TC-IE-002f",
+      "requirement_id": "FR-040",
+      "user_story_id": "US-040",
+      "ac_id": "AC-040-001",
+      "title": "Rule missing 'recommendation' field is rejected at load with a structured log; remaining rules continue to load",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Rule set of 2 rules: rule_a is well-formed; rule_b is missing the 'recommendation' field",
+      "when": "rules.LoadFromBytes(jsonBytes) is called",
+      "then": "Returned slice has length 1 (only rule_a); a structured log line is emitted with rule_id='rule_b' and reason='missing-field=recommendation'; no error is returned for the whole set",
+      "steps": [
+        "Build mixed JSON: rule_a complete, rule_b without recommendation",
+        "Call rules.LoadFromBytes with log capture installed",
+        "Assert returned len == 1 and ID == 'rule_a'",
+        "Assert log capture has exactly 1 entry with rule_id='rule_b' and contains 'missing-field=recommendation'"
+      ],
+      "expected_result": "Loaded count == 1; rule_b dropped; log entry count == 1 with the expected reason"
+    },
+    {
+      "id": "TC-IE-002e",
+      "requirement_id": "FR-040",
+      "user_story_id": "US-040",
+      "ac_id": "AC-040-002",
+      "title": "Severity outside {info, warn, critical} and unknown fields are rejected at load",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Rule set of 3 rules: rule_x with severity='emergency' (invalid), rule_y with an unknown field 'mute_until', rule_z with two rules sharing id='dup_id'",
+      "when": "rules.LoadFromBytes is called",
+      "then": "rule_x rejected with reason='invalid-severity'; rule_y rejected with reason='unknown-field=mute_until'; for the dup-id pair, only the first occurrence is loaded and the second logs reason='duplicate-rule-id'",
+      "steps": [
+        "Build the multi-failure JSON",
+        "Call rules.LoadFromBytes with log capture",
+        "Assert each rejected rule produces exactly one log entry with the expected reason",
+        "Assert returned slice contains only the valid rules and the first occurrence of dup_id"
+      ],
+      "expected_result": "rule_x and rule_y are absent; dup_id appears exactly once (first occurrence); 3 log entries with the documented reasons"
+    },
+    {
+      "id": "TC-IE-003h",
+      "requirement_id": "FR-041",
+      "user_story_id": "US-041",
+      "ac_id": "AC-041-001",
+      "title": "Comparison condition gt(cpu_pct, 90) evaluates true at 91 and false at 90",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Compiled condition tree { op: 'gt', left: {var: 'cpu_pct'}, right: {const: 90} }",
+      "when": "compiled(EvalCtx{cpu_pct=91}) and compiled(EvalCtx{cpu_pct=90}) are evaluated",
+      "then": "First call returns true; second call returns false (strict inequality); third call with cpu_pct=89 returns false",
+      "steps": [
+        "Compile the gt expression",
+        "Evaluate at cpu_pct=91, 90, 89",
+        "Assert results [true, false, false]"
+      ],
+      "expected_result": "Results are [true, false, false] across the three samples"
+    },
+    {
+      "id": "TC-IE-003f",
+      "requirement_id": "FR-041",
+      "user_story_id": "US-041",
+      "ac_id": "AC-041-002",
+      "title": "Missing telemetry variable resolves to false (not error) and emits 'skipped-missing-var' exactly once",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Compiled condition gt(cpu_zzz, 90) where 'cpu_zzz' is not exposed by EvalCtx (lan-devices feed disabled, or typo)",
+      "when": "compiled(EvalCtx{}) is evaluated 5 times in a row",
+      "then": "Every call returns false (no error, no panic); structured log capture contains exactly 1 entry with key='skipped-missing-var' and var='cpu_zzz'",
+      "steps": [
+        "Compile gt(cpu_zzz, 90)",
+        "Install log capture",
+        "Call compiled.Eval 5 times",
+        "Assert all 5 results are false",
+        "Assert log entry count for 'skipped-missing-var' == 1 (rate-limited per process per rule)"
+      ],
+      "expected_result": "All evaluations return false; log count('skipped-missing-var', var='cpu_zzz') == 1"
+    },
+    {
+      "id": "TC-IE-003e",
+      "requirement_id": "FR-041",
+      "user_story_id": "US-041",
+      "ac_id": "AC-041-001",
+      "title": "sustained(gt(cpu_pct,90), 30s) requires 6 consecutive in-window ticks before firing; falls false on first below-threshold tick",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "injectedClock at t0; tick cadence = 5 s (parent FR-001)"
+      ],
+      "given": "Compiled sustained node {var: cpu_pct, op: gt, value: 90, window_ms: 30000}; injectedClock advances 5 s per Eval call",
+      "when": "8 ticks are evaluated with cpu_pct = [91, 91, 91, 91, 91, 91, 91, 80]",
+      "then": "Ticks 1-5 evaluate false (window not yet full); tick 6 evaluates true (30 s of continuous truth completes); tick 7 evaluates true (still in sustained); tick 8 evaluates false (cpu drops to 80, sustained breaks immediately)",
+      "steps": [
+        "Compile sustained node with window_ms=30000",
+        "For each tick i in 1..8: set cpu_pct, advance clock 5 s, evaluate",
+        "Assert results == [false, false, false, false, false, true, true, false]"
+      ],
+      "expected_result": "Results across the 8 ticks are exactly [false, false, false, false, false, true, true, false]"
+    },
+    {
+      "id": "TC-IE-004h",
+      "requirement_id": "FR-042",
+      "user_story_id": "US-042",
+      "ac_id": "AC-042-001",
+      "title": "Rule condition flips false→true on tick T — verdict appears in published set with first_emitted_at=T",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Engine started with rule_a (severity=warn) whose condition is gt(cpu_pct, 90)"
+      ],
+      "given": "Tick T-1 with cpu_pct=50 (verdict absent); injectedClock at time T",
+      "when": "Tick T fires with cpu_pct=95",
+      "then": "fakeSSEBroker's tick-T verdicts payload contains exactly 1 verdict; verdict.RuleID=='rule_a'; verdict.FirstEmittedAt == T (RFC3339); verdict.LastEvaluatedAt == T",
+      "steps": [
+        "Drive tick T-1 with cpu_pct=50",
+        "Advance injectedClock 5 s to T",
+        "Drive tick T with cpu_pct=95",
+        "Read latest verdicts event payload",
+        "Assert verdict count, RuleID, FirstEmittedAt, LastEvaluatedAt"
+      ],
+      "expected_result": "Verdict count == 1; FirstEmittedAt == T; LastEvaluatedAt == T"
+    },
+    {
+      "id": "TC-IE-004f",
+      "requirement_id": "FR-042",
+      "user_story_id": "US-042",
+      "ac_id": "AC-042-002",
+      "title": "Active verdict whose condition flips true→false on tick T disappears from the published set on tick T",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Engine has a verdict for rule_a active from tick T-2 with first_emitted_at=T-2"
+      ],
+      "given": "Verdict for rule_a active; injectedClock at T",
+      "when": "Tick T fires with cpu_pct=50 (rule_a condition becomes false)",
+      "then": "Tick T's verdicts payload does NOT contain rule_a; broker payload's verdict slice has length one less than tick T-1's slice",
+      "steps": [
+        "Drive ticks T-2, T-1 with cpu_pct=95 (rule_a fires)",
+        "Drive tick T with cpu_pct=50",
+        "Assert latest payload does not contain rule_a",
+        "Assert engine state for rule_a no longer has a first_emitted_at (reset)"
+      ],
+      "expected_result": "rule_a absent from tick-T verdicts; engine has cleared first_emitted_at for rule_a"
+    },
+    {
+      "id": "TC-IE-004e",
+      "requirement_id": "FR-042",
+      "user_story_id": "US-042",
+      "ac_id": "AC-042-003",
+      "title": "Rule disabled mid-flight — active verdict for that rule disappears immediately on the next tick",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Engine has rule_a with an active verdict (cpu_pct=95)"
+      ],
+      "given": "rule_a verdict active at tick T-1; cpu_pct still 95 (would normally still fire)",
+      "when": "store.SetEnabled('rule_a', false) is called between T-1 and T; tick T fires",
+      "then": "Tick T's verdicts payload does NOT contain rule_a (rule was skipped at evaluation); subsequent re-enable + tick re-emits with a fresh first_emitted_at",
+      "steps": [
+        "Drive tick T-1 with cpu_pct=95 (verdict active)",
+        "Call store.SetEnabled('rule_a', false)",
+        "Drive tick T with cpu_pct=95",
+        "Assert verdict absent",
+        "Re-enable, drive tick T+1, assert verdict present with FirstEmittedAt == T+1 (not T-1)"
+      ],
+      "expected_result": "rule_a absent at tick T; on re-enable, FirstEmittedAt resets to the new appearance time"
+    },
+    {
+      "id": "TC-IE-005h",
+      "requirement_id": "FR-043",
+      "user_story_id": "US-043",
+      "ac_id": "AC-043-001",
+      "title": "SSE broker emits a 'verdicts' event with HTML fragment when active verdict set changes",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "fakeSSEBroker recording each writeSSEEvent call as (eventName, payloadBytes)"
+      ],
+      "given": "Engine with rule_a (warn). Tick T-1: cpu_pct=50 (no verdicts). Tick T: cpu_pct=95 (rule_a fires).",
+      "when": "Broker rebuilds the SSE payload for tick T",
+      "then": "Recorded events for tick T include exactly one entry with eventName='verdicts' and payload containing the rendered HTML fragment id='operational-indicators' carrying rule_a.title and severity badge",
+      "steps": [
+        "Drive ticks T-1 then T",
+        "Filter fakeSSEBroker.Events for eventName=='verdicts' in tick T",
+        "Assert exactly 1 such event",
+        "goquery-parse the HTML payload and assert badge text and title text"
+      ],
+      "expected_result": "1 'verdicts' event in tick T; HTML contains rule_a's title and a 'WARN' severity label"
+    },
+    {
+      "id": "TC-IE-005f",
+      "requirement_id": "FR-043",
+      "user_story_id": "US-043",
+      "ac_id": "AC-043-003",
+      "title": "Empty active set still emits an empty 'verdicts' event each tick (heartbeat semantics)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Engine with bundled rules; idle Pi snapshot — zero verdicts active across 3 consecutive ticks",
+      "when": "3 ticks fire with the same idle snapshot",
+      "then": "Each tick emits exactly 1 'verdicts' event whose HTML fragment shows the empty-state line ('All operational indicators clear'); no tick is silently skipped",
+      "steps": [
+        "Drive 3 ticks with idle snapshot",
+        "Count 'verdicts' events recorded by fakeSSEBroker",
+        "Assert count == 3",
+        "Assert each payload's text contains 'All operational indicators clear'"
+      ],
+      "expected_result": "3 'verdicts' events emitted; each contains the empty-state copy"
+    },
+    {
+      "id": "TC-IE-005e",
+      "requirement_id": "FR-043",
+      "user_story_id": "US-043",
+      "ac_id": "AC-043-002",
+      "title": "SSE fragment HTML-escapes verdict_text and recommendation (XSS surface defence)",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "A test rule whose verdict_text contains '<script>alert(1)</script>' and recommendation contains '\"><img src=x onerror=alert(1)>'",
+      "when": "The rule's condition fires and the broker renders the 'verdicts' SSE fragment",
+      "then": "The emitted payload bytes contain '&lt;script&gt;' (escaped) and do NOT contain the raw substring '<script>'; auto-escaping by html/template is verified",
+      "steps": [
+        "Inject the malicious test rule via rules.LoadFromBytes",
+        "Drive tick with snapshot that fires the rule",
+        "Read the latest 'verdicts' SSE payload bytes",
+        "Assert bytes.Contains(payload, '&lt;script&gt;') and !bytes.Contains(payload, '<script>')"
+      ],
+      "expected_result": "Payload contains escaped form; raw <script> tag is absent"
+    },
+    {
+      "id": "TC-IE-006h",
+      "requirement_id": "FR-044",
+      "user_story_id": "US-044",
+      "ac_id": "AC-044-001",
+      "title": "Operational Indicators fragment renders verdicts sorted critical → warn → info, newest-first within severity",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Active verdict set: 1 critical at T-3, 1 warn at T-1, 1 warn at T-2, 1 info at T-4 (FirstEmittedAt values)",
+      "when": "The HTMX fragment is rendered via api.RenderFragment(verdicts)",
+      "then": "Resulting HTML's verdict cards in document order are: [critical@T-3, warn@T-1, warn@T-2, info@T-4]",
+      "steps": [
+        "Construct the 4 verdicts in arbitrary input order",
+        "Call api.RenderFragment",
+        "goquery-parse and read .verdict-card sequence",
+        "Assert order matches expected sequence by RuleID"
+      ],
+      "expected_result": "Document order matches [critical@T-3, warn@T-1, warn@T-2, info@T-4]"
+    },
+    {
+      "id": "TC-IE-006f",
+      "requirement_id": "FR-044",
+      "user_story_id": "US-044",
+      "ac_id": "AC-044-003",
+      "title": "Empty active verdict set renders the 'All operational indicators clear' message, never an empty grid",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Active verdict set is empty",
+      "when": "api.RenderFragment([]) is called",
+      "then": "Output HTML contains the literal text 'All operational indicators clear'; output contains zero .verdict-card elements; the section root element is still present (for HTMX swap target stability)",
+      "steps": [
+        "Call api.RenderFragment with empty slice",
+        "goquery-parse",
+        "Assert text contains 'All operational indicators clear'",
+        "Assert document.Find('.verdict-card').Length() == 0",
+        "Assert document.Find('#operational-indicators').Length() == 1"
+      ],
+      "expected_result": "Empty-state copy present; 0 verdict cards; section root present"
+    },
+    {
+      "id": "TC-IE-006e",
+      "requirement_id": "FR-044",
+      "user_story_id": "US-044",
+      "ac_id": "AC-044-001",
+      "title": "100 verdicts render in a single fragment within bounded time and produce 100 cards",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "Synthetic stress: 100 verdicts (mixed severity, distinct RuleIDs)",
+      "when": "api.RenderFragment(verdicts) is called once",
+      "then": "Output contains exactly 100 .verdict-card elements; render duration < 50 ms wall-clock; no panic, no template error",
+      "steps": [
+        "Build 100 synthetic verdicts",
+        "Time api.RenderFragment",
+        "goquery-parse and count cards",
+        "Assert count == 100 and duration < 50 ms"
+      ],
+      "expected_result": "100 cards rendered; render time < 50 ms"
+    },
+    {
+      "id": "TC-IE-007h",
+      "requirement_id": "FR-045",
+      "user_story_id": "US-045",
+      "ac_id": "AC-045-001",
+      "title": "First startup with fresh DB seeds a row per bundled rule with enabled=true",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "tmpDB — freshly migrated parent schema + insights tables, no rows in 'rules'"
+      ],
+      "given": "Empty 'rules' table; bundled set has 10 rules",
+      "when": "engine.Start(ctx, tmpDB, fakeCollector) runs",
+      "then": "After Start, SELECT count(*) FROM rules WHERE source='bundled' returns 10; SELECT count(*) FROM rules WHERE enabled=1 returns 10; created_at and updated_at are populated",
+      "steps": [
+        "Create fresh tmpDB",
+        "Call engine.Start",
+        "Run SQL count queries",
+        "Assert all 10 bundled rules present and enabled"
+      ],
+      "expected_result": "10 rules seeded; all enabled; created_at != 0"
+    },
+    {
+      "id": "TC-IE-007f",
+      "requirement_id": "FR-045",
+      "user_story_id": "US-045",
+      "ac_id": "AC-045-002",
+      "title": "Bundled rule cannot be deleted via store API — only its enabled flag is mutable",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Engine started; 10 bundled rules in DB"
+      ],
+      "given": "Bundled rule 'thermal_throttle_probable' present and enabled",
+      "when": "store.SetEnabled('thermal_throttle_probable', false) is called, then engine restarted",
+      "then": "After restart, the rule is still present in the 'rules' table (DELETE was never offered as an API), but its enabled flag is read back as 0; the engine skips it during eval",
+      "steps": [
+        "Disable the bundled rule via store.SetEnabled",
+        "Stop and restart the engine on the same tmpDB",
+        "SELECT row, assert enabled == 0",
+        "Drive a tick that would normally fire thermal_throttle_probable, assert verdict absent",
+        "Assert no DELETE / Drop API exists on the store struct (compile-time symbol check)"
+      ],
+      "expected_result": "Rule row persists; enabled == 0; verdict not emitted; store has no Delete method for bundled rules"
+    },
+    {
+      "id": "TC-IE-007e",
+      "requirement_id": "FR-045",
+      "user_story_id": "US-045",
+      "ac_id": "AC-045-002",
+      "title": "Schema migration is idempotent and orphan rule_state rows are tolerated",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "tmpDB previously initialised with database.New(); a 'previous-build' rule_state row exists for rule_id='removed_in_v1.1' that no longer appears in the bundled set",
+      "when": "database.New(tmpDB.Path) runs again, then engine.Start runs",
+      "then": "Migration returns no error; the orphan rule_state row remains (or is logged as orphan once and ignored at eval time); the 10 bundled rules continue to load and evaluate normally",
+      "steps": [
+        "Open tmpDB, insert rule_state row with rule_id='removed_in_v1.1'",
+        "Close, re-open via database.New (idempotent migration)",
+        "Call engine.Start",
+        "Assert engine has 10 active rules and orphan row triggered exactly 1 'orphan-rule-state' log",
+        "Drive a tick, assert no panic"
+      ],
+      "expected_result": "Migration succeeds twice; orphan row produces 1 log entry; engine continues with 10 rules"
+    },
+    {
+      "id": "TC-IE-008h",
+      "requirement_id": "FR-046",
+      "user_story_id": "US-046",
+      "ac_id": "AC-046-001",
+      "title": "Rule with 6 transitions in 10 s window holds verdict at initial value; one 'rule-flapping' log emitted",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Engine has rule_a with condition gt(cpu_pct, 90)",
+        "injectedClock advances 1 s per Eval (12 ticks over 12 s for finer granularity)"
+      ],
+      "given": "Tick 0: cpu_pct=50 (verdict absent, initial stable value = false). Ticks 1-6: cpu_pct alternates 95,50,95,50,95,50 (6 transitions in <10 s)",
+      "when": "Engine evaluates ticks 1-6 inside the 10 s window",
+      "then": "After the 5th transition (≥5) is detected, the verdict is held at its initial false value for the rest of the 10 s window — the verdict slice does not contain rule_a even on ticks where the live condition is true; exactly 1 structured log line 'rule-flapping' is emitted with rule_id='rule_a' and transition_count=6",
+      "steps": [
+        "Drive tick 0 with cpu_pct=50",
+        "Drive ticks 1..6 alternating cpu_pct=95,50,...",
+        "Assert held value: rule_a verdict absent on every tick of the held window",
+        "Assert log capture has exactly 1 entry 'rule-flapping' with transition_count == 6"
+      ],
+      "expected_result": "rule_a absent for the held window; log count('rule-flapping') == 1; transition_count recorded == 6"
+    },
+    {
+      "id": "TC-IE-008f",
+      "requirement_id": "FR-046",
+      "user_story_id": "US-046",
+      "ac_id": "AC-046-003",
+      "title": "Clean run — 1 transition in 10 s does NOT engage hysteresis hold",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Tick 0: cpu_pct=50. Ticks 1..10 (10 s window): cpu_pct=95 (1 false→true transition, then steady)",
+      "when": "Engine evaluates the 11 ticks",
+      "then": "rule_a verdict appears at tick 1 with first_emitted_at=tick1 and remains active for ticks 2..10; no 'rule-flapping' log entry is emitted; engine state shows transitions_in_window=1",
+      "steps": [
+        "Drive tick 0 with cpu_pct=50",
+        "Drive ticks 1..10 with cpu_pct=95",
+        "Assert verdict active for ticks 1..10",
+        "Assert log count('rule-flapping') == 0"
+      ],
+      "expected_result": "Verdict tracks live condition; no flap log; transitions_in_window == 1"
+    },
+    {
+      "id": "TC-IE-008e",
+      "requirement_id": "FR-046",
+      "user_story_id": "US-046",
+      "ac_id": "AC-046-001",
+      "title": "Hysteresis state survives a one-tick gap (e.g. snapshot-missing skip) within the 10 s window",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "Mid-flap: transitions_in_window=4 at tick T (1 below the threshold)",
+      "when": "Tick T+1 returns ErrSnapshotUnavailable (skipped per FR-039); tick T+2 is the 5th transition (would push to 5)",
+      "then": "transitions_in_window correctly records 5 at tick T+2 (the missed tick did not reset the counter); flap detection engages on tick T+2; held value is preserved",
+      "steps": [
+        "Bring engine state to transitions_in_window=4 at tick T",
+        "Drive tick T+1 with snapshot unavailable",
+        "Drive tick T+2 with the next transition",
+        "Assert transitions_in_window == 5 and held flag is set",
+        "Assert log count('rule-flapping') == 1"
+      ],
+      "expected_result": "Counter not reset by missed tick; flap detection engages on T+2; 1 flap log emitted"
+    },
+    {
+      "id": "TC-IE-009h",
+      "requirement_id": "FR-047",
+      "user_story_id": "US-047",
+      "ac_id": "AC-047-002",
+      "title": "Bootstrap thermal rule fires when cpu_pct sustained > 90 for 30 s AND temp_c > 75",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Engine started with the bundled 10-rule set",
+        "injectedClock advancing 5 s per tick"
+      ],
+      "given": "6 consecutive ticks (30 s) with cpu_pct=95 AND temp_c=80",
+      "when": "The 6th tick completes",
+      "then": "The verdict 'Thermal throttling probable' (rule_id='thermal_throttle_probable') is present in the active set with severity='critical'; recommendation field is non-empty and references reducing load; verdict not present at ticks 1..5",
+      "steps": [
+        "Drive 6 ticks with the over-threshold snapshot",
+        "Capture verdict slice on each tick",
+        "Assert verdict absent on ticks 1..5 and present on tick 6 with severity=critical"
+      ],
+      "expected_result": "thermal_throttle_probable absent on ticks 1..5; present on tick 6 with severity=critical and non-empty recommendation"
+    },
+    {
+      "id": "TC-IE-009f",
+      "requirement_id": "FR-047",
+      "user_story_id": "US-047",
+      "ac_id": "AC-047-003",
+      "title": "WAN/LAN disambiguation rule fires only when wan_gateway_ok=true AND wan_cloudflare_ok=false",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Bundled rule set loaded",
+      "when": "Three snapshots are evaluated: (a) gateway=ok, cloudflare=ok; (b) gateway=fail, cloudflare=fail; (c) gateway=ok, cloudflare=fail (held for 2 ticks)",
+      "then": "(a) and (b) produce no 'wan_lan_disambig' verdict; (c) on the 2nd consecutive tick produces the verdict with severity='warn' and verdict_text containing 'LAN ok' and 'WAN'/'ISP'",
+      "steps": [
+        "Drive snapshot (a), assert verdict absent",
+        "Drive snapshot (b), assert verdict absent (total outage rule may fire instead, but disambig must not)",
+        "Drive snapshot (c) twice; assert disambig verdict present on 2nd tick with severity=warn"
+      ],
+      "expected_result": "Disambig fires only on snapshot (c) after 2 consecutive ticks; severity=warn"
+    },
+    {
+      "id": "TC-IE-009e",
+      "requirement_id": "FR-047",
+      "user_story_id": "US-047",
+      "ac_id": "AC-047-001",
+      "title": "1 h synthetic idle Pi run — bundled rule set produces zero verdicts (zero false positives)",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "injectedClock used to drive 720 ticks (1 h at 5 s cadence)",
+        "fakeMetricsSnapshot returns idle profile every tick: cpu_pct in [5,18], ram_pct in [20,35], swap_pct=0, temp_c in [40,58], wan_gateway_ok=true, wan_cloudflare_ok=true, wan_packet_loss_pct=0, all containers healthy, all services active, all disk_pct < 50, lan_device_offline_count=0"
+      ],
+      "given": "Bundled 10-rule set + 720 ticks of idle snapshots (slight jitter inside healthy bounds for realism)",
+      "when": "All 720 ticks are evaluated",
+      "then": "Across the full hour, the published active verdict set is empty on every tick; aggregate verdict count == 0; the engine's 'unique-verdicts-fired' counter is 0",
+      "steps": [
+        "Build the 720-tick idle stream with slight in-bound jitter",
+        "Drive every tick through engine.Eval",
+        "Sum |verdicts| across all ticks",
+        "Assert sum == 0"
+      ],
+      "expected_result": "Zero verdicts emitted across 720 idle ticks; FP count == 0"
+    },
+    {
+      "id": "TC-IE-010e",
+      "requirement_id": "FR-039",
+      "user_story_id": "US-039",
+      "ac_id": "AC-039-001",
+      "title": "[NFR-021] internal/insights and sub-packages MUST NOT import internal/alerts or internal/notify",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Source tree of internal/insights/... in the current repo",
+      "when": "go list -deps ./internal/insights/... is run and the dependency set is collected for the package and every sub-package",
+      "then": "The deps slice does not contain any of: github.com/cesareyeserrano/ultron-ap/internal/alerts, github.com/cesareyeserrano/ultron-ap/internal/notify, or any sub-package matching internal/notify/* (telegram, email, etc.)",
+      "steps": [
+        "Exec 'go list -deps ./internal/insights/...' from the repo root",
+        "Parse stdout into a set of package import paths",
+        "Assert the absence of each forbidden path",
+        "Repeat for every sub-package (lang, rules, store, api)"
+      ],
+      "expected_result": "deps set contains 0 forbidden imports; assertion fails the test if any are present",
+      "nfr_id": "NFR-021"
+    },
+    {
+      "id": "TC-IE-011e",
+      "requirement_id": "FR-039",
+      "user_story_id": "US-039",
+      "ac_id": "AC-039-003",
+      "title": "[NFR-016] Steady-state engine.Eval performs zero allocations per tick (after warm-up)",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Engine started with bundled rule set",
+        "Working set pre-allocated at Start (verdict slice, EvalCtx, ring buffers)"
+      ],
+      "given": "Engine warmed by 1 throwaway Eval call; fakeMetricsSnapshot returning a steady mid-load profile",
+      "when": "testing.AllocsPerRun(N=100, f=func(){ engine.Eval(snapshot) }) is computed",
+      "then": "Returned average allocations per call == 0 (the rule-precompilation cache + EvalCtx reuse means no map lookups, no AST re-parse, no string concat allocate in steady state)",
+      "steps": [
+        "Engine.Start with bundled rules",
+        "Run 1 warm-up Eval",
+        "Call testing.AllocsPerRun(100, eval) and capture",
+        "Assert the result == 0"
+      ],
+      "expected_result": "testing.AllocsPerRun returns 0",
+      "nfr_id": "NFR-016"
+    },
+    {
+      "id": "TC-IE-012h",
+      "requirement_id": "FR-043",
+      "user_story_id": "US-043",
+      "ac_id": "AC-043-001",
+      "title": "GET /api/insights/verdicts authenticated — returns 200 with JSON array sorted critical→warn→info",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "In-process server booted with seeded DB; engine running and 3 verdicts active (1 critical, 1 warn, 1 info)"
+      ],
+      "given": "Authenticated session cookie issued via authTestSession; engine has emitted the 3-verdict set on the previous tick",
+      "when": "GET /api/insights/verdicts with Accept: application/json and the session cookie",
+      "then": "Status 200; response Content-Type application/json; body is a JSON array of length 3; element[0].severity=='critical', element[1].severity=='warn', element[2].severity=='info'; each element has fields rule_id, title, severity, verdict_text, recommendation, links (array, possibly []), first_emitted_at, last_evaluated_at; first_emitted_at parses as RFC3339 UTC",
+      "steps": [
+        "Boot in-process server with seeded DB",
+        "Drive 1 tick that fires 3 rules (one per severity)",
+        "Issue authenticated GET",
+        "Assert status, content-type, body shape, severity ordering, ISO 8601 timestamps"
+      ],
+      "expected_result": "Status 200; len(body) == 3; severity order [critical, warn, info]; all required fields present; links is [] not null when empty"
+    },
+    {
+      "id": "TC-IE-012f",
+      "requirement_id": "FR-043",
+      "user_story_id": "US-043",
+      "ac_id": "AC-043-002",
+      "title": "GET /api/insights/verdicts unauthenticated — returns 401, no verdict data leaked",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "In-process server booted; engine has 1 critical verdict active"
+      ],
+      "given": "No session cookie; one critical verdict is active in the engine",
+      "when": "GET /api/insights/verdicts with Accept: application/json and no auth cookie",
+      "then": "Status 401; response body matches the parent auth-error contract (e.g. {\"error\":\"unauthenticated\"}); body does NOT contain the verdict's title, verdict_text, recommendation, or rule_id",
+      "steps": [
+        "Issue GET with no cookie",
+        "Assert status == 401",
+        "Assert response body shape matches parent contract",
+        "Assert response body does not contain the active verdict's title or rule_id substrings"
+      ],
+      "expected_result": "Status 401; no verdict fields leaked in body; matches parent FR-007 auth-error contract",
+      "nfr_id": "NFR-019"
+    }
+  ]
+}

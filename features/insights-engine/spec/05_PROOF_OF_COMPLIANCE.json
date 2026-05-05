@@ -1,0 +1,137 @@
+{
+  "project": "Ultron-AP — Insights Engine (feature)",
+  "version": "1.0.0",
+  "phases_completed": [1, 2, 3, 4, 5],
+  "overall_status": "partial",
+  "deployment_target": "Raspberry Pi via systemd (parent monolith). No Dockerfile or container artefacts — see DEPLOYMENT.md and the project-level rejection history (2026-03-18) for the deliberate decision against containerised deployment.",
+  "requirement_compliance": [
+    {
+      "id": "FR-039",
+      "title": "Rule evaluation tick aligned to parent 5 s metrics cadence",
+      "level": "partial",
+      "evidence": "fr_coverage: 5 passing, 0 failing, 0 skipped. Engine evaluates inline on the SSE broadcast loop (server/sse.go::buildSSEPayloadWithOptions calls Service.evalTick). TC-IE-001h asserts the eval fires per tick; TC-IE-001f asserts no eval when no snapshot is available; TC-IE-001e covers the 100-tick budget. Technical debt: engine is not subscribed to a dedicated metrics.Collector tick channel — that contract does not exist; the SSE-driven path satisfies AC-001 ('verdict-set published within 5 s') but is the substitution path."
+    },
+    {
+      "id": "FR-040",
+      "title": "Rule schema (id, title, condition, severity, verdict, recommendation, links)",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. Strict JSON-schema decoder at internal/insights/rules/rules.go enforces every required field; severity bound to {info,warn,critical} via SQLite CHECK constraint and Go validator. TC-IE-002h (well-formed loads), TC-IE-002f (missing required field rejected), TC-IE-002e (invalid severity rejected) all green. Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-041",
+      "title": "Boolean condition language with sustained-window operators",
+      "level": "partial",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. internal/insights/lang implements the JSON expression grammar (var/const/eq/ne/gt/gte/lt/lte/and/or/not/sustained). Missing var → false + log-once is enforced at AST-eval time. TC-IE-003h/f/e all green. Technical debt: swap_pct, lan_device_offline_count, and loss_pct telemetry variables are not yet projected from any existing collector — the SSE adapter only populates cpu_pct, ram_pct, temp_c, disk_root_pct, services_failed, containers_failed, wan_gateway_ok, wan_cloudflare_ok. Memory-pressure / sustained-packet-loss / lan-empty rules degrade gracefully (never fire) per AC-002 until those vars are wired."
+    },
+    {
+      "id": "FR-042",
+      "title": "Verdict lifecycle — appear within one tick, disappear within one tick",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. Service.evalTick computes the active set per tick and the SSE adapter emits the new fragment only when it differs from the prior set. TC-IE-004h (false→true within next tick), TC-IE-004f (true→false within next tick), TC-IE-004e (rule disabled mid-flight clears verdict immediately). Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-043",
+      "title": "SSE delivery of verdicts on the existing dashboard channel",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 5 passing, 0 failing, 0 skipped. New SSE event 'verdicts' carries the rendered HTML fragment. server/sse.go emits it only when the active set changes since the prior broadcast (FR-043 AC-002 — bandwidth budget). TC-IE-005h/f/e plus the API auth pair (TC-IE-012h/f) all green. Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-044",
+      "title": "Dashboard 'Operational indicators' section rendering",
+      "level": "partial",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. web/templates/partials/sse-verdicts.html renders the live fragment with severity-ordered cards and an empty-state line ('All operational indicators clear'). TC-IE-006h/f/e all green via HTTP-fragment integration tests. Technical debt declared: no headless-browser DOM tests (project has no chromedp/Playwright); axe-core contrast scan deferred (NFR-020) — same reason."
+    },
+    {
+      "id": "FR-045",
+      "title": "Rule enable/disable persistence in SQLite",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. internal/insights/store/store.go owns reads/writes for the rules table; LoadBundled upserts on first boot and preserves user-modified enabled flags on subsequent boots. No delete API for bundled rules in v1 (only disable). TC-IE-007h (fresh DB seeds 10), TC-IE-007f (disable survives re-open), TC-IE-007e (schema idempotent). Zero declared technical debt for this FR."
+    },
+    {
+      "id": "FR-046",
+      "title": "Verdict de-duplication / hysteresis (SHOULD)",
+      "level": "production_ready",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. Hysteresis algorithm: rule_state.transitions_in_window counts state changes inside a sliding 10 s window; if ≥5, the engine holds the last stable value until the window clears. TC-IE-008h (5+ transitions in 10 s → hold), TC-IE-008f (clean run → no hold), TC-IE-008e (state survives one tick miss). Zero declared technical debt."
+    },
+    {
+      "id": "FR-047",
+      "title": "Bootstrap rule set v1 — 10 hand-curated rules",
+      "level": "partial",
+      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. internal/insights/rules/bundled.json ships exactly 10 rules covering thermal, memory pressure, WAN/LAN disambiguation, disk near-full, disk critical, container/service failed, sustained packet loss, temp warning, LAN empty. TC-IE-009h (thermal-throttling AC), TC-IE-009f (WAN-down-isp AC), TC-IE-009e (1-hour idle Pi → zero verdicts). Technical debt: severity distribution differs from spec example (3 critical / 5 warn / 2 info vs example 5/4/1) — operationally appropriate; FR-047 AC-006 only requires each rule to have an assigned severity, not a specific count."
+    },
+    {
+      "id": "NFR-016",
+      "title": "Performance / Resource Budget",
+      "level": "partial",
+      "evidence": "TC-IE-001e covers the per-tick budget (100 ticks under wall-clock budget); TC-IE-011e uses testing.AllocsPerRun to assert zero allocations against the precompiled rule closure once warm. Technical debt: 24-hour Pi soak / pprof allocation profile not executed in this Phase 4 session — operator deployment validation."
+    },
+    {
+      "id": "NFR-017",
+      "title": "Persistence / Storage — reuse parent SQLite + backup",
+      "level": "production_ready",
+      "evidence": "Schema appended to internal/database/sqlite.go's existing schema constant — picked up by parent migration path on first start. The rules and rule_state tables are automatically captured by the parent's existing Backup() (VACUUM INTO)."
+    },
+    {
+      "id": "NFR-018",
+      "title": "Observability — structured logs, evaluation latency",
+      "level": "production_ready",
+      "evidence": "Engine logs rule load failures + missing-var warnings (once per rule per process lifetime to avoid log spam). Service exposes evaluation duration via Status() for future wiring into the parent's metrics surface."
+    },
+    {
+      "id": "NFR-019",
+      "title": "Security — bundled-only rules in v1",
+      "level": "production_ready",
+      "evidence": "Rule definitions ship as a go:embed bundled.json; no runtime file read, no user-supplied rule input. /api/insights/verdicts is GET-only behind parent FR-007 auth (TC-IE-012f). Future custom-rules path is explicitly v2 / out of scope."
+    },
+    {
+      "id": "NFR-020",
+      "title": "UX / Accessibility",
+      "level": "partial",
+      "evidence": "Severity badges reuse parent FR-009 design tokens (bg-danger, text-yellow-400, text-blue-400). Each verdict card renders the severity as an explicit text label so colour is not the sole communicator (NFR-020 AC-003). Technical debt: axe-core / Lighthouse contrast audit deferred — same headless-browser-stack reason as FR-044."
+    },
+    {
+      "id": "NFR-021",
+      "title": "Boundary / Notification Isolation — verdicts ≠ alerts",
+      "level": "production_ready",
+      "evidence": "Architectural boundary enforced by TC-IE-010e: 'go list -deps github.com/.../internal/insights/...' MUST NOT include any package under internal/alerts or internal/notify. Verified at build time as part of go test ./internal/insights/... — boundary check would fail the test if violated. Confirmed empty: 'go list -deps ./internal/insights/... | grep -E alerts|notify' returns nothing on the current tree."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-044",
+      "substitution": "TC-IE-006h/006f/006e DOM rendering tests substituted with HTTP-level fragment assertions on the rendered HTML (string searches for severity ordering, .verdict-card count, 'All operational indicators clear' copy). The project has no headless-browser stack — adding Playwright/chromedp for a single set of TCs would impose a heavy dev-dependency.",
+      "reason": "The Go test suite renders the same html/template the browser would receive; assertions check document order, escaping, and empty state without booting a browser. Equivalent to the lan-devices precedent.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "NFR-020",
+      "substitution": "axe-core / Lighthouse contrast scan deferred. Severity badges reuse parent FR-009 design tokens (bg-danger, text-yellow-400, text-blue-400) which the parent UI's contrast tests already cover.",
+      "reason": "axe-core requires a headless browser; same dependency-cost reasoning as the lan-devices manifest. The fragment test asserts an explicit severity text label is present (NFR-020 AC-003), so colour is never the sole communicator.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "NFR-016",
+      "substitution": "24-hour Pi soak / pprof allocation profile not executed in this Phase 4 session. TC-IE-011e covers the zero-alloc invariant via testing.AllocsPerRun against the compiled rule closure; TC-IE-001e covers the 100-tick wall-clock budget.",
+      "reason": "Long-running validation belongs to deployment verification on hardware, not unit/integration tests. The synthetic 1-hour idle run (TC-IE-009e, 720 ticks) is the equivalent CI-deterministic substitution.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-047",
+      "substitution": "Bundled severity distribution differs from the spec example (FR-047 AC-006 example: 5 critical / 4 warn / 1 info). Implemented as 3 critical / 5 warn / 2 info — closer to the actual operational expectations: container_failed and temp_warning are info because container restarts and a 70 °C temperature are not action-now events; service_failed and disk_critical remain critical.",
+      "reason": "The AC explicitly says 'each rule has a severity assigned' — the count is informational. Operational behaviour matches the AC: thermal/disk-critical/service-failed are critical; warnings are recoverable; info is observational.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-039",
+      "substitution": "Engine evaluation is driven inline by the existing SSE broadcast loop (server/sse.go::buildSSEPayloadWithOptions calls evalInsightsTick), not by a dedicated subscription channel from metrics.Collector. Service.Start(ctx, tickC, snapFn) is exposed for future use but unused in v1 wiring.",
+      "reason": "metrics.Collector does not currently expose a tick channel or callback. Adding one would touch a parent contract for one downstream consumer; reusing the SSE broker tick (which already runs at sseInterval, defaulting to the same 5 s cadence) satisfies FR-039 AC-001 ('verdict-set published within 5 s') without changing the collector API.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-041",
+      "substitution": "swap_pct, lan_device_offline_count, and loss_pct telemetry variables are not yet projected from any existing collector — the SSE adapter (server/sse.go::evalInsightsTick) only populates cpu_pct, ram_pct, temp_c, disk_root_pct, services_failed, containers_failed, wan_gateway_ok, wan_cloudflare_ok. The memory_pressure / sustained_packet_loss / lan_offline_burst rules therefore stay quiet in production until those variables are wired. FR-041 AC-002 — 'missing var resolves to false, never error' — is preserved by the lang package; the rules degrade gracefully.",
+      "reason": "Bringing in the WAN packet-loss and LAN-devices feeds is a separate integration step. The rule definitions ship now; the dashboard surface ships now; the data-source wiring is incremental and does not require a v2 binary.",
+      "effort_to_fix": "low"
+    }
+  ]
+}

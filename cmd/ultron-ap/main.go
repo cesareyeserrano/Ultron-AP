@@ -15,6 +15,8 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
+	"github.com/cesareyeserrano/ultron-ap/internal/insights"
+	insightsstore "github.com/cesareyeserrano/ultron-ap/internal/insights/store"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/landevices"
@@ -185,7 +187,22 @@ func main() {
 	defer landevicesOrch.Stop()
 	log.Printf("LAN devices orchestrator started (default cadence=%s)", landevices.BaseCadence)
 
+	// Insights engine (FR-039..FR-047): declarative rules over telemetry.
+	// Driven by the SSE broadcast loop on the parent metrics tick — no new
+	// ticker, no new datastore, no notify-package coupling (NFR-021).
+	insightsStore := insightsstore.New(db.DB)
+	insightsSvc := insights.New(insights.Config{
+		Store:  insightsStore,
+		Logger: log.Printf,
+	})
+	if err := insightsSvc.LoadBundled(); err != nil {
+		log.Printf("insights: load bundled rules: %v", err)
+	}
+	log.Printf("Insights engine initialised (driven by SSE broadcast tick)")
+	defer insightsSvc.Stop()
+
 	srv := server.New(cfg, db, reader, collector, dockerMon, systemdMon, alertEng)
+	srv.SetInsights(insightsSvc)
 	srv.SetGatewayProbe(gateway)
 	srv.SetWANMonitor(wan)
 	srv.SetLANDevices(landevicesOrch, landevicesStore)

@@ -1,0 +1,246 @@
+{
+  "executed_at": "2026-05-05T22:56:08.677Z",
+  "test_runner": "go test -C ../.. ./internal/insights/... ./internal/server/ -run TC_IE -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-IE-001h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_001h_EngineEvaluatesIdleTickProducesNoVerdicts (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-001f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_001f_SnapshotMissingHoldsPreviousSetSingleLog (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-001e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_001e_HundredTicksUnderBudget (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-002h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_002h_WellFormedRuleLoadsAndCompiles (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-002f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_002f_MissingRecommendationRejectedOthersLoad (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-002e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_002e_InvalidSeverityUnknownFieldDuplicateIDRejected (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-003h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_003h_GtComparisonStrictInequality (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-003f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_003f_MissingVarResolvesFalseLogsOnce (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-003e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_003e_SustainedSixTicksThenDrop (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-004h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_004h_VerdictAppearsOnTransitionTrue (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-004f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_004f_VerdictDisappearsOnTransitionFalse (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-004e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_004e_DisableMidflightDropsVerdictReEnableResetsFirstEmitted (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-005h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_005h_VerdictsFragmentRendersActiveSet (0.01s)"
+    },
+    {
+      "tc_id": "TC-IE-005f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_005f_EmptyActiveSetShowsClearMessage (0.01s)"
+    },
+    {
+      "tc_id": "TC-IE-005e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_005e_VerdictsFragmentHTMLEscapes (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-006h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_006h_FragmentSortsCriticalWarnInfo (0.01s)"
+    },
+    {
+      "tc_id": "TC-IE-006f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_006f_EmptyStateRendersClearCopyAndSectionRoot (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-006e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_006e_HundredVerdictsRenderUnderBudget (0.01s)"
+    },
+    {
+      "tc_id": "TC-IE-007h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_007h_FreshDBSeedsTenEnabledRules (0.01s)"
+    },
+    {
+      "tc_id": "TC-IE-007f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_007f_DisableSurvivesReOpen (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-007e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_007e_SchemaIdempotentOrphanStateTolerated (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-008h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_008h_FlappingRuleHeldOneLogEmitted (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-008f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_008f_SingleTransitionDoesNotEngageHysteresis (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-008e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_008e_HysteresisSurvivesSnapshotMissingTick (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-009h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_009h_BootstrapThermalRuleFires (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-009f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_009f_WANLANDisambigFiresOnlyOnGatewayOkCloudflareFail (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-009e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_009e_OneHourIdleZeroFalsePositives (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-010e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_010e_NFR021_NoNotifyOrAlertImports (0.03s)"
+    },
+    {
+      "tc_id": "TC-IE-011e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_011e_NFR016_ZeroAllocationsPerTick (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-012h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_012h_VerdictsAPIReturnsSortedJSON (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-012f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_012f_VerdictsAPIUnauthenticatedReturns401 (0.00s)"
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-039",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-040",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-041",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-042",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-043",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-044",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-045",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-046",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-047",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 31,
+    "passed": 31,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}

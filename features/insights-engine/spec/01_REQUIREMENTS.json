@@ -1,0 +1,516 @@
+{
+  "project_name": "Ultron-AP — Insights Engine (feature)",
+  "project_summary": {
+    "feature": "insights-engine",
+    "scope": "Add a declarative, data-driven rules engine that consumes Ultron's existing telemetry streams (CPU, RAM, disk, temperature, services, containers, WAN probes, LAN devices) and emits real-time diagnostic verdicts — short, actionable statements with severity, recommendation, and optional doc-anchor links. Rules are JSON entries, not code: a v1 bootstrap set of ~10 hand-curated rules ships with the binary, persists in SQLite, and can be enabled/disabled. The dashboard renders an 'Operational indicators' section that streams verdicts over the existing SSE channel, sorted critical → warn → info. Inherits parent FR-001 metrics tick (5 s), FR-007 auth, FR-009 UI tokens, FR-012 CSRF, FR-013 SSE channel, FR-014 alert engine (verdicts are diagnostic context — they MUST NOT push notifications; that responsibility stays with the alert engine), FR-015 SQLite + backup pipeline. Net new: rule schema, boolean condition language with sustained-window operators, evaluation tick, verdict lifecycle with hysteresis, SSE delivery, dashboard rendering, bootstrap rule set.",
+    "product_analysis": {
+      "north_star_kpi": "Time-to-diagnosis from symptom: from the moment a multi-metric condition becomes true on the Pi (e.g. CPU > 90% for 30 s AND temp > 75 °C), the operator sees a critical verdict with title and recommendation in the dashboard's Operational Indicators section within 5 s (one metrics tick), with 0 false positives over 1 h of healthy idle Pi operation against the bootstrap rule set.",
+      "jtbd": "When my Pi misbehaves, I hire Ultron to tell me WHAT IT MEANS — not just that CPU is at 95% and temp is at 80 °C, but that those numbers together mean thermal throttling is probable and I should kill heavy loads — so I can act in seconds instead of mentally cross-correlating four panels.",
+      "guardrail_metric": "Rule-evaluation overhead must remain within: CPU 5-min average ≤1% attributable to the engine, evaluation latency p99 ≤50 ms per tick across the bootstrap rule set, zero allocations per tick once warm (pre-allocated working set), and no measurable impact on the parent FR-001 5-second metrics cadence (tick jitter ≤100 ms p99). If breached, structured logs surface the offending rule and the engine continues with that rule disabled rather than degrading the rest of the panel."
+    },
+    "idea_gaps": [
+      "FEATURE_IDEA does not specify what happens when telemetry for a referenced variable is missing (e.g. lan-device count when lan-devices feature is disabled). Resolved here by FR-041 (missing-var → condition false, not error) so a rule that references an absent feed degrades gracefully instead of flapping.",
+      "FEATURE_IDEA names hysteresis as a desirable quality but does not quantify flap tolerance. Resolved here by FR-046 (a rule whose condition transitions ≥5 times in 10 s is considered flapping; the verdict is held in its last stable state for the remainder of the window)."
+    ],
+    "inherits_from_parent": [
+      "FR-001 5-second metrics tick — evaluation cadence aligns to parent metrics interval, not a separate timer",
+      "FR-007 auth — verdict API and any future rule-management endpoints require authenticated session",
+      "FR-009 UI tokens — severity colours reuse parent dark-mode tokens; no new colour primitives",
+      "FR-012 CSRF — any future enable/disable POST endpoints follow parent CSRF middleware",
+      "FR-013 SSE channel — verdicts ride the existing dashboard SSE stream, not a new channel",
+      "FR-014 alert engine — verdicts are diagnostic context only; the engine MUST NOT push Telegram/email notifications. Notification responsibility remains with FR-014.",
+      "FR-015 SQLite + backup pipeline — rule definitions and enable/disable state persist in the existing DB and are covered by the existing backup pipeline"
+    ]
+  },
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator (home network admin)",
+      "tech_level": "intermediate",
+      "goal": "Understand at a glance what is wrong with the Pi when something feels off, without mentally cross-correlating four metric panels — see a short, plain-language verdict like 'Thermal throttling probable' with a concrete next step, instead of three separate red numbers.",
+      "pain_point": "Today the dashboard shows raw numbers (CPU 90%, temp 80 °C, RTT 200 ms) but the operator must compose them mentally to diagnose. There is no diagnostic glue across modules — every existing module ships its own ad-hoc thresholds in isolation. Symptoms like 'LAN ok but ISP down' or 'memory pressure' require the operator to know which metric combinations matter, instead of the panel saying so."
+    }
+  ],
+  "no_go_zone": [
+    "No custom rule authoring UI in v1 — rule definitions are code-bundled JSON only. UI editor is a v2 follow-up; in v1 the rule set is fixed at build time and only enable/disable is mutable at runtime.",
+    "No cross-host correlation — rules evaluate the local Pi's telemetry only. No fan-in from peers, no fleet view.",
+    "No ML / anomaly detection — strictly threshold-and-boolean rules in v1. No statistical baselines, no learning, no z-score outlier detection.",
+    "No push notifications for verdicts — that responsibility stays with the existing alert engine (parent FR-014). Verdicts are diagnostic context displayed in the dashboard, not alerts. The engine MUST NOT call Telegram, email, webhooks, or any other notification surface.",
+    "No /help glossary surface (BL-018) — verdict 'links' field is reserved for future doc anchors but the /help page itself is a separate feature; in v1 links may be empty or external.",
+    "No time-series-of-verdicts history view — only the current live state in v1. Past verdicts are not persisted as events, not graphed, not queryable.",
+    "No verdict suppression / acknowledgement workflow — the operator cannot dismiss a verdict; if its condition is true it shows. Acknowledgement is an alert-engine concept.",
+    "No external rule plug-ins / runtime rule loading — no filesystem watcher, no HTTP fetch, no operator-supplied YAML at startup. Bundled at build time only.",
+    "No rule-defined side effects — rules are pure boolean expressions. They cannot trigger restarts, run shell commands, or mutate state. Diagnostic only."
+  ],
+  "constraints": [
+    "Must run on linux/arm64 Raspberry Pi alongside the existing Ultron-AP single Go binary (parent NFR-002).",
+    "Must align evaluation to the parent FR-001 5-second metrics tick — no separate timer, no independent cadence.",
+    "Must reuse the existing SQLite database file and backup pipeline (FR-015) — new tables only for rule enable/disable state, no separate datastore.",
+    "Must reuse the existing FR-013 SSE channel for verdict delivery — no new long-lived connection from the browser.",
+    "Must reuse the existing dashboard surface — extend the page with an 'Operational indicators' section, do not replace existing modules.",
+    "All API endpoints (verdict list, future rule controls) must enforce parent FR-007 auth.",
+    "All UI must satisfy parent FR-009 dark-mode tokens and WCAG AA contrast.",
+    "Rule definitions are bundled into the binary via go:embed at build time — no runtime filesystem read of rule JSON, no network fetch.",
+    "The engine MUST NOT call into the alert engine, Telegram, or email channels (parent FR-014 owns notifications). Verdicts are read-only diagnostic context.",
+    "Steady-state CPU overhead from rule evaluation must not exceed 1% (5-min average) on the Pi."
+  ],
+  "technology_preferences": [
+    "Go (parent project language) for the rule engine, condition parser/evaluator, and SSE publisher.",
+    "Bundled rule definitions via go:embed — JSON files compiled into the binary.",
+    "SQLite (existing DB) for the per-rule enabled/disabled flag and any future user-tunable thresholds; rule definitions themselves remain code-bundled.",
+    "Parent FR-013 SSE channel for verdict delivery — extend the existing event stream with a 'verdict' event type rather than opening a new connection.",
+    "Server-rendered HTMX section for the 'Operational indicators' block on the dashboard, consistent with parent UI stack.",
+    "Structured logging (parent project logger) for rule evaluation errors and per-tick latency observability."
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-039",
+      "title": "Rule evaluation tick aligned to parent 5 s metrics cadence",
+      "description": "On every parent FR-001 metrics tick (5 s), the engine evaluates all enabled rules against the latest telemetry snapshot and produces the current verdict set. The engine does not run on a separate timer — it consumes the same snapshot the dashboard receives, ensuring verdicts and raw metrics are always consistent. If a tick is missed (snapshot unavailable), the engine skips that cycle and waits for the next snapshot rather than stale-evaluating.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "On the parent FR-001 metrics tick, all enabled rules are evaluated against the same snapshot the dashboard receives, and the verdict set is published before the next tick starts (within 5 s).",
+        "Rule evaluation latency p99 across the full bootstrap rule set is ≤50 ms per tick on the Pi.",
+        "If the metrics snapshot is unavailable for a given tick (collector error), the engine emits no new verdicts and logs a single 'snapshot-missing' line; the previous verdict set is held until the next successful tick.",
+        "Engine evaluation does not introduce more than 100 ms of jitter (p99) into the parent FR-001 5-second cadence."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-040",
+      "title": "Rule schema (id, title, condition, severity, verdict, recommendation, links)",
+      "description": "Each rule is a JSON object with a strict schema: id (stable string, used for de-duplication), title (short headline shown in the indicator), condition (boolean expression — see FR-041), severity (one of info / warn / critical), verdict_text (one-line diagnostic statement), recommendation (one-line operator next step), links (optional array of doc anchors, may be empty in v1). Unknown fields cause the rule to be rejected at load time with a structured log line; the engine continues with the remaining valid rules rather than failing closed for the whole feature.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "A rule missing any of {id, title, condition, severity, verdict_text, recommendation} is rejected at engine startup; a structured log entry names the offending rule id (or file index) and reason; the engine continues loading remaining rules.",
+        "Severity values outside the set {info, warn, critical} are rejected at load time with a structured log line.",
+        "Two rules sharing the same id are rejected at load time; only the first occurrence is loaded and the second is logged as 'duplicate-rule-id'.",
+        "An unknown field on a rule (e.g. 'mute_until') is rejected at load time so typos cannot silently disable behaviour.",
+        "The links field, when omitted or empty, results in a verdict whose API representation has links=[] (never null)."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-041",
+      "title": "Boolean condition language over telemetry variables with sustained-window operators",
+      "description": "Rule conditions are boolean expressions composed of: (a) telemetry variables (cpu_pct, ram_pct, disk_pct[partition], temp_c, service_failed[name], container_unhealthy[name], wan_gateway_ok, wan_cloudflare_ok, lan_device_count, lan_device_offline_count, alert_rate_per_min, etc.), (b) comparison operators (==, !=, <, <=, >, >=), (c) logical operators (AND, OR, NOT), (d) sustained-window operators (sustained(expr, duration) — true iff expr has been continuously true for the given window of ticks). A missing telemetry variable (feature disabled, collector failed) evaluates to 'unknown' and any expression containing 'unknown' resolves to false rather than producing an error — so a rule referencing lan-devices when lan-devices is disabled simply never fires.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "Condition 'cpu_pct > 90 AND temp_c > 75' evaluates to true on a single snapshot where both hold and to false on any other snapshot.",
+        "Condition 'sustained(cpu_pct > 90, 30s)' becomes true on the tick that completes the 6th consecutive 5 s sample over 90% (30 s window) and false again on the next tick where cpu_pct ≤ 90.",
+        "Condition referencing 'lan_device_count' evaluates to false (not error) when the lan-devices feature is disabled or its snapshot is unavailable; the rule is logged as 'skipped-missing-var' once per startup.",
+        "Operator precedence is NOT > AND > OR; parentheses override precedence; expressions are validated at engine load time and a malformed rule is rejected with a structured log line.",
+        "Comparison against an out-of-range or wrong-type value (e.g. cpu_pct > 'high') is rejected at load time, not silently coerced."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-042",
+      "title": "Verdict lifecycle — appear within one tick, disappear within one tick",
+      "description": "When a rule's condition flips from false to true, a verdict for that rule appears in the active set on the same tick. When the condition flips from true to false, the verdict disappears on the same tick. The verdict set published over SSE is the full set of currently-true verdicts (not deltas), so the dashboard can render idempotently from any snapshot. Each verdict carries: rule_id, title, severity, verdict_text, recommendation, links, first_emitted_at (ISO 8601 UTC, when this run of the verdict began), last_evaluated_at.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "Given a rule whose condition becomes true at tick T, the verdict is present in the published set at tick T (within 5 s of the metric change) and carries first_emitted_at = T.",
+        "Given a verdict that was active and whose condition becomes false at tick T, the verdict is absent from the published set at tick T (within 5 s).",
+        "If a condition oscillates true→false→true across two consecutive ticks (without exceeding the FR-046 flap threshold), first_emitted_at is reset to the timestamp of the most recent false→true transition.",
+        "The verdict payload includes rule_id, title, severity ∈ {info, warn, critical}, verdict_text, recommendation, links (array, possibly empty), first_emitted_at, last_evaluated_at."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-043",
+      "title": "SSE delivery of verdicts on the existing dashboard channel",
+      "description": "Verdicts are published over the parent FR-013 SSE channel as a new event type 'verdict-set'. The payload is the full active verdict set after each evaluation tick (not a delta). No new long-lived connection is opened; the dashboard's existing EventSource subscription receives both metric updates and verdict updates. Connections initiated without authentication (parent FR-007) are refused exactly as for other dashboard SSE events.",
+      "priority": "MUST",
+      "type": "api",
+      "acceptance_criteria": [
+        "An authenticated dashboard EventSource receives a 'verdict-set' event on the existing SSE channel within 5 s of each metrics tick.",
+        "An unauthenticated EventSource is refused (parent FR-007 behaviour) — no verdicts are leaked.",
+        "The 'verdict-set' event payload is a complete JSON array of currently-active verdicts; clients can render fully from any single event without needing prior state.",
+        "When the active verdict set is empty (idle Pi), an empty-array 'verdict-set' event is still emitted at every tick so the dashboard knows the engine is alive."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-044",
+      "title": "Dashboard 'Operational indicators' section rendering",
+      "description": "The dashboard gains a new 'Operational indicators' section, rendered above the metrics grid, showing the current active verdict set. Verdicts are sorted critical → warn → info, and within a severity by first_emitted_at descending (newest first). Each verdict card displays: severity badge (parent FR-009 colour token), title, verdict_text, recommendation, and a relative-time footer ('first seen 2 min ago'). Empty state shows a quiet 'All operational indicators clear' line — not a blank space.",
+      "priority": "MUST",
+      "type": "ui",
+      "acceptance_criteria": [
+        "When the verdict set contains 1 critical, 2 warn, and 1 info verdict, the rendered order is critical, warn, warn, info.",
+        "Within a severity, verdicts are ordered by first_emitted_at descending (newest first).",
+        "Each verdict card shows severity badge, title, verdict_text, recommendation, and a relative-time footer derived from first_emitted_at; styling reuses parent FR-009 tokens with WCAG AA contrast in both light and dark themes.",
+        "When the active verdict set is empty, the section shows 'All operational indicators clear' centred, never an empty grid or skeleton.",
+        "On a verdict appearing or disappearing, the section updates without page reload (HTMX swap driven by the SSE 'verdict-set' event)."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-045",
+      "title": "Rule enable/disable persistence in SQLite",
+      "description": "A new RuleState table persists, per rule_id, an enabled flag and a last_modified timestamp. On engine startup, the bundled rule set is loaded and each rule's enabled state is read from RuleState (default: enabled). v1 has no UI editor (per no-go-zone); state is mutable only via a server-side mechanism reserved for future use. The table participates in the parent FR-015 backup pipeline without additional configuration.",
+      "priority": "MUST",
+      "type": "persistence",
+      "acceptance_criteria": [
+        "On first startup with a fresh database, every rule in the bundled set has an enabled=true row created in RuleState with last_modified=now.",
+        "On subsequent startups, each rule's enabled flag is read from RuleState; rules with no row default to enabled=true and a row is created.",
+        "If a bundled rule is removed in a later build, its RuleState row remains (orphan) but does not cause startup to fail; orphan rows are logged once and ignored at evaluation time.",
+        "The RuleState table is included in the FR-015 backup pipeline without configuration changes.",
+        "Database growth attributable to RuleState stays under 100 KB regardless of operating duration (bounded by rule count, not by tick count)."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-046",
+      "title": "Verdict de-duplication / hysteresis to prevent UI flap",
+      "description": "If a rule's condition transitions ≥5 times within a 10 s window (a 'flapping' rule), its verdict is held in its last stable state (the value at the start of the window) for the remainder of the window, and a structured log line records the rule_id and transition count. This prevents a rapidly-flipping condition from flickering green/red on the dashboard and makes the operator's read of the indicator reliable. After the window elapses with <5 transitions, normal lifecycle (FR-042) resumes.",
+      "priority": "SHOULD",
+      "type": "logic",
+      "acceptance_criteria": [
+        "A rule whose condition flips true→false→true→false→true→false (6 transitions) within 10 s has its verdict held at its initial value for the rest of the 10 s window; the SSE 'verdict-set' events for those ticks reflect the held value.",
+        "When a rule is held for flapping, a structured log line 'rule-flapping' is emitted exactly once per window with rule_id and transition_count.",
+        "After 10 s of <5 transitions, normal FR-042 lifecycle resumes and the verdict reflects the live condition on the next tick.",
+        "Hysteresis state is per-rule and does not affect evaluation of other rules in the same tick."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-047",
+      "title": "Bootstrap rule set v1 — 10 hand-curated rules",
+      "description": "The v1 binary ships with exactly 10 hand-curated rules covering: (1) thermal throttling probable — sustained(cpu_pct > 90, 30s) AND temp_c > 75; (2) memory pressure — ram_pct > 90 AND swap_pct > 50; (3) WAN/LAN disambiguation — wan_gateway_ok AND NOT wan_cloudflare_ok ('LAN ok, ISP/WAN down'); (4) total network outage — NOT wan_gateway_ok AND NOT wan_cloudflare_ok; (5) disk near-full — any partition disk_pct > 90; (6) disk critical — any partition disk_pct > 97; (7) container failed — any container_unhealthy true for >60 s; (8) systemd service failed — any service_failed true; (9) sustained packet loss — sustained(wan_packet_loss_pct > 5, 60s); (10) LAN device offline burst — sustained(lan_device_offline_count >= 3, 120s). All ten ship as JSON, are loaded at startup, and produce zero verdicts on a healthy idle Pi.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "The bundled rule set contains exactly 10 rules at engine startup, each with the schema fields required by FR-040.",
+        "On a healthy idle Pi (CPU <20%, temp <60 °C, all probes ok, all services active, all containers healthy, disk <50%), the active verdict set is empty over a 1 h observation window — 0 false positives.",
+        "Given the Pi has cpu_pct sustained > 90 for 30 s AND temp_c > 75, the 'Thermal throttling probable' verdict appears within 5 s with severity=critical and a recommendation to reduce load.",
+        "Given wan_gateway_ok=true AND wan_cloudflare_ok=false for 2 consecutive ticks, the 'LAN ok, ISP/WAN down' verdict appears with severity=warn.",
+        "Given any disk partition disk_pct > 97, the 'Disk critical' verdict appears with severity=critical and a recommendation to free space.",
+        "Each of the 10 rules has severity assigned: 5 critical (thermal, memory pressure, total outage, disk critical, service failed), 4 warn (WAN/LAN disambig, disk near-full, packet loss, LAN offline burst), 1 info (container failed >60s — info because container restarts are common)."
+      ],
+      "implementation_level": "production_ready"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-016",
+      "category": "Performance / Resource Budget",
+      "requirement": "Steady-state insights-engine overhead must remain within: CPU 5-min average ≤1% attributable to rule evaluation, evaluation latency p99 ≤50 ms per tick across the full bootstrap rule set, and zero allocations per tick once warm (working set pre-allocated at startup; arena reuse across ticks). RSS overhead above pre-feature baseline ≤5 MB. The engine must not introduce more than 100 ms of jitter (p99) into the parent FR-001 5-second metrics cadence.",
+      "acceptance_criteria": [
+        "Synthetic 24 h test on the Pi running the full bootstrap rule set reports CPU 5-min average attributable to the engine at ≤1% across the run.",
+        "Per-tick evaluation latency histogram (NFR-018) reports p99 ≤50 ms across a 1 h sample with the bootstrap rule set.",
+        "Go pprof allocation profile over 100 consecutive ticks reports zero allocations attributable to the steady-state evaluation hot path (loaders/initialisers excluded).",
+        "Parent FR-001 tick jitter measured before and after enabling the engine differs by ≤100 ms at p99."
+      ]
+    },
+    {
+      "id": "NFR-017",
+      "category": "Persistence / Storage",
+      "requirement": "All persistence reuses the existing SQLite database file (parent FR-015) and is included in the existing backup pipeline without configuration changes. The new RuleState table grows linearly with the bundled rule count (bounded), not with tick count or verdict count. Verdict events themselves are NOT persisted in v1 (per no-go-zone — no history view).",
+      "acceptance_criteria": [
+        "The existing 'aitri' verify and backup tests continue to pass with no new failures after the feature is enabled.",
+        "Database growth attributable to insights-engine stays below 100 KB regardless of how long the system runs (bounded by rule count).",
+        "No new database file or directory is introduced — only new tables in the existing DB."
+      ]
+    },
+    {
+      "id": "NFR-018",
+      "category": "Observability",
+      "requirement": "The engine emits structured logs for: rule load errors (with rule_id and reason), per-tick evaluation errors (with rule_id), flapping detection (FR-046), and snapshot-missing skips (FR-039). It exposes an evaluation-latency histogram (per-tick total, and per-rule when a rule exceeds 5 ms) via the parent project's existing metrics surface. Logs are structured (key=value or JSON, matching parent logger) so they are grep-able and parse-able.",
+      "acceptance_criteria": [
+        "A malformed rule at startup produces exactly one structured log entry containing rule_id (or file index) and 'reason' field; the entry is parseable by the parent logger's standard tooling.",
+        "Per-tick evaluation latency is exposed as a histogram with p50/p95/p99 buckets accessible via the parent project's metrics surface.",
+        "When a rule exceeds 5 ms in a single evaluation, a structured log line names the rule_id, its latency, and the tick number; this log is rate-limited to once per minute per rule_id.",
+        "When the engine is disabled (no rules loaded), no log spam is produced — at most one 'engine-idle' line at startup."
+      ]
+    },
+    {
+      "id": "NFR-019",
+      "category": "Security",
+      "requirement": "Rule definitions are bundled into the binary at build time via go:embed; no runtime filesystem read of rule JSON, no network fetch, no operator-supplied YAML, no plug-in interface. The future custom-rules path (operator-defined rules) is explicitly out of scope for v1 — no API surface for it exists in v1 binaries. Verdict API endpoints enforce parent FR-007 auth; future enable/disable POST endpoints will enforce parent FR-012 CSRF.",
+      "acceptance_criteria": [
+        "Inspecting the v1 binary shows rule JSON embedded via go:embed; removing all on-disk rule files after build does not change runtime behaviour.",
+        "There is no API endpoint in v1 that accepts rule JSON as request body; an attempt to POST a rule definition returns 404.",
+        "The verdict SSE channel and any verdict-list endpoint refuse unauthenticated clients per parent FR-007 (verified by integration test).",
+        "The engine never invokes outbound network calls of its own (no Telegram, no email, no webhooks) — verified by the absence of such call sites in the engine package."
+      ]
+    },
+    {
+      "id": "NFR-020",
+      "category": "UX / Accessibility",
+      "requirement": "Severity colours reuse parent FR-009 design tokens (critical/warn/info/ok) and meet WCAG 2.1 AA contrast in both light and dark themes. Verdicts appearing or disappearing must NOT trigger any auto-flashing, animated, or motion-based change — static colour and content swap only. Severity is never communicated by colour alone (each card carries an explicit severity label) so colour-blind operators read the same information.",
+      "acceptance_criteria": [
+        "Lighthouse / axe accessibility audit on the dashboard with the Operational indicators section populated returns zero contrast violations in both light and dark themes.",
+        "No CSS animation, transition longer than 150 ms, or JS-driven flash is added by this feature; verified by inspection of CSS and JS deltas.",
+        "Each verdict card displays an explicit severity text label (e.g. 'CRITICAL', 'WARN', 'INFO') in addition to the colour badge.",
+        "No new CSS or JS file outside the existing tailwind / HTMX stack is added by this feature."
+      ]
+    },
+    {
+      "id": "NFR-021",
+      "category": "Boundary / Notification Isolation",
+      "requirement": "The insights-engine package MUST NOT call into the alert engine, Telegram channel, email channel, or any other notification surface. Verdicts are diagnostic context displayed in the dashboard only. Notification responsibility remains entirely with parent FR-014. This boundary is enforced architecturally — the engine package does not import the notification packages.",
+      "acceptance_criteria": [
+        "Static analysis (go list / import graph) of the insights-engine package shows zero imports of the alert-engine, telegram, or email packages.",
+        "Integration test fires a critical verdict and asserts that no Telegram message and no email is sent attributable to the verdict.",
+        "Architecture decision recorded in 02_SYSTEM_DESIGN — 'verdicts are not alerts' — referenced by name in NFR-021."
+      ]
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-039",
+      "requirement_id": "FR-039",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "the engine to evaluate rules on the same 5-second tick the dashboard already runs on",
+      "so_that": "verdicts and raw metrics never disagree, and the engine adds no new cadence to reason about",
+      "acceptance_criteria": [
+        {
+          "id": "AC-039-001",
+          "given": "the parent FR-001 metrics tick fires at time T",
+          "when": "the engine evaluates rules",
+          "then": "a 'verdict-set' event reflecting that snapshot is published before tick T+5s"
+        },
+        {
+          "id": "AC-039-002",
+          "given": "the metrics collector fails to produce a snapshot for tick T",
+          "when": "the engine notices",
+          "then": "no new verdicts are emitted for tick T, the previous verdict set is held, and a single 'snapshot-missing' log entry is recorded"
+        },
+        {
+          "id": "AC-039-003",
+          "given": "the engine is enabled with the full bootstrap rule set",
+          "when": "evaluation latency is measured over 1 h",
+          "then": "p99 per-tick latency is ≤50 ms"
+        }
+      ]
+    },
+    {
+      "id": "US-040",
+      "requirement_id": "FR-040",
+      "as_a": "Ultron developer adding a new rule",
+      "i_want": "a strict, validated rule schema",
+      "so_that": "a typo in a JSON field fails at build/load time instead of silently disabling diagnostics in production",
+      "acceptance_criteria": [
+        {
+          "id": "AC-040-001",
+          "given": "a bundled rule missing the 'recommendation' field",
+          "when": "the engine starts",
+          "then": "the rule is rejected with a structured log naming the rule_id and 'missing-field=recommendation', and the remaining valid rules load successfully"
+        },
+        {
+          "id": "AC-040-002",
+          "given": "two bundled rules sharing the same id",
+          "when": "the engine starts",
+          "then": "only the first is loaded and the second is logged as 'duplicate-rule-id'"
+        },
+        {
+          "id": "AC-040-003",
+          "given": "a rule with an unknown field 'mute_until'",
+          "when": "the engine starts",
+          "then": "the rule is rejected so the typo cannot silently disable behaviour"
+        }
+      ]
+    },
+    {
+      "id": "US-041",
+      "requirement_id": "FR-041",
+      "as_a": "Ultron developer composing a rule",
+      "i_want": "a small boolean language with sustained-window operators and graceful handling of missing telemetry",
+      "so_that": "I can express 'CPU > 90% for 30 s AND temp > 75°C' as data, and a rule referencing lan-devices does not break when lan-devices is disabled",
+      "acceptance_criteria": [
+        {
+          "id": "AC-041-001",
+          "given": "a rule with condition 'sustained(cpu_pct > 90, 30s)'",
+          "when": "the 6th consecutive 5 s sample over 90% completes",
+          "then": "the condition becomes true on that tick and false again on the next tick where cpu_pct ≤ 90"
+        },
+        {
+          "id": "AC-041-002",
+          "given": "the lan-devices feature is disabled",
+          "when": "a rule referencing 'lan_device_count' is evaluated",
+          "then": "the condition resolves to false (not error) and the rule is logged as 'skipped-missing-var' once at startup"
+        },
+        {
+          "id": "AC-041-003",
+          "given": "a rule with malformed condition syntax",
+          "when": "the engine starts",
+          "then": "the rule is rejected at load time with a structured log line"
+        }
+      ]
+    },
+    {
+      "id": "US-042",
+      "requirement_id": "FR-042",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "verdicts to appear and disappear within one tick of the underlying condition changing",
+      "so_that": "the dashboard always reflects the current state of my Pi without lag",
+      "acceptance_criteria": [
+        {
+          "id": "AC-042-001",
+          "given": "a rule whose condition becomes true at tick T",
+          "when": "the next 'verdict-set' event is published",
+          "then": "the verdict is present with first_emitted_at = T and severity from the rule"
+        },
+        {
+          "id": "AC-042-002",
+          "given": "an active verdict whose condition becomes false at tick T",
+          "when": "the next 'verdict-set' event is published",
+          "then": "the verdict is absent from the published set"
+        },
+        {
+          "id": "AC-042-003",
+          "given": "a verdict's payload",
+          "when": "it is rendered",
+          "then": "it carries rule_id, title, severity, verdict_text, recommendation, links (array), first_emitted_at, last_evaluated_at"
+        }
+      ]
+    },
+    {
+      "id": "US-043",
+      "requirement_id": "FR-043",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "verdicts to ride the existing dashboard SSE channel",
+      "so_that": "no new long-lived browser connection is opened and the dashboard updates without polling",
+      "acceptance_criteria": [
+        {
+          "id": "AC-043-001",
+          "given": "an authenticated dashboard EventSource",
+          "when": "a metrics tick fires",
+          "then": "a 'verdict-set' event arrives on the existing SSE channel within 5 s, carrying the full active verdict array"
+        },
+        {
+          "id": "AC-043-002",
+          "given": "an unauthenticated client",
+          "when": "it attempts to subscribe to the SSE channel",
+          "then": "the connection is refused per parent FR-007 — no verdicts are leaked"
+        },
+        {
+          "id": "AC-043-003",
+          "given": "the active verdict set is empty",
+          "when": "a tick fires",
+          "then": "an empty-array 'verdict-set' event is still emitted so the client knows the engine is alive"
+        }
+      ]
+    },
+    {
+      "id": "US-044",
+      "requirement_id": "FR-044",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "an Operational indicators section on the dashboard sorted critical → warn → info",
+      "so_that": "I see the worst thing first and can act on the recommendation immediately",
+      "acceptance_criteria": [
+        {
+          "id": "AC-044-001",
+          "given": "the verdict set contains 1 critical, 2 warn, and 1 info",
+          "when": "the section renders",
+          "then": "the order is critical, warn, warn, info; within a severity, newer first_emitted_at first"
+        },
+        {
+          "id": "AC-044-002",
+          "given": "an active verdict",
+          "when": "the card renders",
+          "then": "severity badge, title, verdict_text, recommendation, and a relative-time footer are all visible with WCAG AA contrast in both themes"
+        },
+        {
+          "id": "AC-044-003",
+          "given": "no active verdicts",
+          "when": "the section renders",
+          "then": "'All operational indicators clear' is shown centred — never an empty grid"
+        }
+      ]
+    },
+    {
+      "id": "US-045",
+      "requirement_id": "FR-045",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "rule enable/disable state to survive process restarts",
+      "so_that": "if a future build adds a UI toggle, my preferences are not lost on every deploy",
+      "acceptance_criteria": [
+        {
+          "id": "AC-045-001",
+          "given": "a fresh database",
+          "when": "the engine starts for the first time",
+          "then": "every bundled rule has an enabled=true row in RuleState"
+        },
+        {
+          "id": "AC-045-002",
+          "given": "a build that removes a previously-bundled rule",
+          "when": "the engine starts",
+          "then": "the orphan RuleState row is logged once and ignored, and startup succeeds"
+        },
+        {
+          "id": "AC-045-003",
+          "given": "the parent FR-015 backup pipeline runs",
+          "when": "a backup is produced",
+          "then": "RuleState is included without any new configuration"
+        }
+      ]
+    },
+    {
+      "id": "US-046",
+      "requirement_id": "FR-046",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a verdict that flaps 5 times in 10 s to be held in a stable state instead of flickering",
+      "so_that": "the dashboard remains readable when a metric oscillates near a threshold",
+      "acceptance_criteria": [
+        {
+          "id": "AC-046-001",
+          "given": "a rule whose condition transitions 6 times in 10 s",
+          "when": "the engine evaluates each tick",
+          "then": "the verdict is held at its initial value for the rest of the 10 s window"
+        },
+        {
+          "id": "AC-046-002",
+          "given": "a flapping rule",
+          "when": "flap detection triggers",
+          "then": "exactly one 'rule-flapping' structured log entry is emitted per window with rule_id and transition_count"
+        },
+        {
+          "id": "AC-046-003",
+          "given": "a rule that has been flapping",
+          "when": "10 s elapse with <5 transitions",
+          "then": "normal FR-042 lifecycle resumes on the next tick"
+        }
+      ]
+    },
+    {
+      "id": "US-047",
+      "requirement_id": "FR-047",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "10 hand-curated rules to ship in v1",
+      "so_that": "I get diagnostic value out of the box without writing any rule myself",
+      "acceptance_criteria": [
+        {
+          "id": "AC-047-001",
+          "given": "a healthy idle Pi",
+          "when": "the engine runs for 1 h",
+          "then": "the active verdict set remains empty for the entire hour — 0 false positives"
+        },
+        {
+          "id": "AC-047-002",
+          "given": "cpu_pct sustained > 90 for 30 s AND temp_c > 75",
+          "when": "the next tick fires",
+          "then": "'Thermal throttling probable' appears with severity=critical and a recommendation to reduce load"
+        },
+        {
+          "id": "AC-047-003",
+          "given": "wan_gateway_ok=true AND wan_cloudflare_ok=false for 2 consecutive ticks",
+          "when": "the next 'verdict-set' is published",
+          "then": "'LAN ok, ISP/WAN down' appears with severity=warn"
+        },
+        {
+          "id": "AC-047-004",
+          "given": "any disk partition disk_pct > 97",
+          "when": "the engine evaluates",
+          "then": "'Disk critical' appears with severity=critical and a recommendation to free space"
+        }
+      ]
+    }
+  ],
+  "original_brief": "## Feature\nA declarative rules engine that consumes Ultron's existing telemetry streams (CPU, RAM, disk, temp, services, containers, WAN, LAN devices) and emits real-time verdicts: short, actionable diagnostic statements with severity and recommendation. Rules are data, not code — adding a new rule is one JSON entry, not a compile.\n\n## Problem / Why\nUltron tells you WHAT is happening (CPU 90%, RTT 200 ms) but not WHAT IT MEANS. The operator has to mentally compose multiple metrics to diagnose (\"CPU is high AND temperature is high → thermal throttling probable\"). Every new module today ships its own ad-hoc thresholds and has no diagnostic glue. A rules engine fixes both.\n\n## Target Users\nExisting Ultron operators (Pi household admin). Same dashboard, same SSE stream, same /network page — a new \"Operational indicators\" section surfaces verdicts. No new user type.\n\n## New Behavior\n- The system must evaluate a registered set of rules every metrics tick (5 s) and emit a verdict for each rule whose condition is currently true.\n- Each rule has: id, title, condition (boolean over telemetry vars), severity (info/warn/critical), verdict text, recommendation text, links (optional doc anchors for /help — BL-018).\n- Rules must compose across modules: CPU + temp, gateway + cloudflare, ram + swap, lan-device-count + alert-rate, etc.\n- Verdicts must stream over the existing SSE channel so the dashboard updates without polling.\n- The dashboard must render an \"Operational indicators\" section listing active verdicts, sorted critical → warn → info, with title + recommendation visible.\n- Rule definitions persist in SQLite and can be enabled/disabled (UI later).\n- A bootstrap set of ~10 hand-curated rules ships in v1 covering: thermal, memory pressure, WAN/LAN disambiguation, disk near-full, container/service failed, sustained packet loss.\n\n## Success Criteria\n- Given the Pi has CPU > 90% for 30 s AND temp > 75 °C, when the operator looks at the dashboard, then a critical verdict \"Thermal throttling probable\" appears within 5 s with a recommendation to kill heavy loads.\n- Given the gateway probe is OK AND the cloudflare probe is failing, when the operator looks at the dashboard, then a warning verdict \"LAN ok, ISP/WAN down\" appears.\n- Given a rule's condition flips from true to false, then its verdict disappears from the dashboard within one SSE tick.\n- The bootstrap rule set produces 0 false positives during 1 hour of normal operation on the Pi (validation: no verdicts emitted on a healthy idle Pi).\n\n## Out of Scope\n- Custom rule authoring UI (operator-defined rules) — rule definitions in v1 are code-bundled JSON; UI editor is a v2 follow-up.\n- Cross-host correlation — rules evaluate the local Pi only.\n- ML / anomaly detection — strictly threshold-and-boolean rules in v1.\n- Push notifications for verdicts — that responsibility stays with the existing alert engine. Verdicts are diagnostic context, not alerts.\n- The /help glossary surface (BL-018) — separate feature.\n- Time-series-of-verdicts history view — only the live state in v1.\n"
+}

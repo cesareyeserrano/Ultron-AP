@@ -1,0 +1,151 @@
+[
+  {
+    "id": "thermal_throttle_probable",
+    "title": "Thermal throttling probable",
+    "condition": {
+      "op": "and",
+      "args": [
+        {
+          "sustained": {
+            "var": "cpu_pct",
+            "op": "gt",
+            "value": 90,
+            "window_ms": 30000
+          }
+        },
+        { "op": "gt", "left": { "var": "temp_c" }, "right": { "const": 75 } }
+      ]
+    },
+    "severity": "critical",
+    "verdict": "CPU sustained >90% with temperature >75 °C — the SoC will throttle shortly.",
+    "recommendation": "Reduce load: kill the heaviest CPU consumer or improve cooling.",
+    "links": []
+  },
+  {
+    "id": "wan_lan_disambig",
+    "title": "LAN ok, ISP/WAN down",
+    "condition": {
+      "op": "and",
+      "args": [
+        { "op": "eq", "left": { "var": "wan_gateway_ok" }, "right": { "const": 1 } },
+        { "op": "eq", "left": { "var": "wan_cloudflare_ok" }, "right": { "const": 0 } }
+      ]
+    },
+    "severity": "warn",
+    "verdict": "Local network reachable but the public internet probe is failing — likely an ISP or WAN-side issue.",
+    "recommendation": "Check the upstream router and ISP status; restart the modem if needed.",
+    "links": []
+  },
+  {
+    "id": "memory_pressure",
+    "title": "Memory pressure",
+    "condition": {
+      "op": "and",
+      "args": [
+        { "op": "gte", "left": { "var": "ram_pct" }, "right": { "const": 90 } },
+        { "op": "gt", "left": { "var": "swap_pct" }, "right": { "const": 0 } }
+      ]
+    },
+    "severity": "warn",
+    "verdict": "RAM ≥90% with active swap usage — the system is paging.",
+    "recommendation": "Identify and stop memory-hungry processes; consider increasing RAM if persistent.",
+    "links": []
+  },
+  {
+    "id": "disk_near_full",
+    "title": "Disk near full",
+    "condition": {
+      "op": "gte",
+      "left": { "var": "disk_root_pct" },
+      "right": { "const": 85 }
+    },
+    "severity": "warn",
+    "verdict": "Root partition ≥85% full — running low on storage.",
+    "recommendation": "Free space: clear logs, prune Docker images, or extend the partition.",
+    "links": []
+  },
+  {
+    "id": "disk_critical",
+    "title": "Disk critical",
+    "condition": {
+      "op": "gte",
+      "left": { "var": "disk_root_pct" },
+      "right": { "const": 95 }
+    },
+    "severity": "critical",
+    "verdict": "Root partition ≥95% full — services may fail to write.",
+    "recommendation": "Free space immediately: clear logs and prune Docker artefacts.",
+    "links": []
+  },
+  {
+    "id": "service_failed",
+    "title": "Systemd service failed",
+    "condition": {
+      "op": "gt",
+      "left": { "var": "services_failed" },
+      "right": { "const": 0 }
+    },
+    "severity": "critical",
+    "verdict": "One or more systemd units are in the 'failed' state.",
+    "recommendation": "Inspect 'systemctl --failed' and restart or fix the affected unit.",
+    "links": []
+  },
+  {
+    "id": "container_failed",
+    "title": "Container unhealthy",
+    "condition": {
+      "op": "gt",
+      "left": { "var": "containers_failed" },
+      "right": { "const": 0 }
+    },
+    "severity": "info",
+    "verdict": "One or more Docker containers are not in the 'running' state.",
+    "recommendation": "Check 'docker ps -a' and restart the affected container.",
+    "links": []
+  },
+  {
+    "id": "sustained_packet_loss",
+    "title": "Sustained packet loss",
+    "condition": {
+      "sustained": {
+        "var": "loss_pct",
+        "op": "gte",
+        "value": 5,
+        "window_ms": 60000
+      }
+    },
+    "severity": "warn",
+    "verdict": "Packet loss ≥5% sustained for over a minute — connectivity is degraded.",
+    "recommendation": "Check WAN link quality, ISP status, and physical cabling.",
+    "links": []
+  },
+  {
+    "id": "temp_warning",
+    "title": "Temperature elevated",
+    "condition": {
+      "op": "gte",
+      "left": { "var": "temp_c" },
+      "right": { "const": 70 }
+    },
+    "severity": "info",
+    "verdict": "Core temperature ≥70 °C — approaching thermal throttling territory.",
+    "recommendation": "Improve airflow or attach a heatsink/fan if not already present.",
+    "links": []
+  },
+  {
+    "id": "lan_offline_burst",
+    "title": "LAN devices offline",
+    "condition": {
+      "sustained": {
+        "var": "lan_device_offline_count",
+        "op": "gte",
+        "value": 3,
+        "window_ms": 120000
+      }
+    },
+    "severity": "warn",
+    "verdict": "Three or more LAN devices offline for ≥2 minutes.",
+    "recommendation": "Check the local switch/router and confirm devices have power.",
+    "links": []
+  }
+]

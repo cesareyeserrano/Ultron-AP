@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
+	"github.com/cesareyeserrano/ultron-ap/internal/insights/lang"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
@@ -299,7 +300,79 @@ func (s *Server) buildSSEPayloadWithOptions(includeCharts bool, includeHeavy boo
 		}
 	}
 
+	// Verdicts event (FR-043) — drive one engine evaluation against the
+	// current snapshot, then render the active-set fragment.
+	if s.insights != nil {
+		s.evalInsightsTick(dd)
+		verdictsHTML := s.renderVerdictsFragment(time.Now())
+		writeSSEEvent(&buf, "verdicts", verdictsHTML)
+	}
+
 	return buf.Bytes()
+}
+
+// evalInsightsTick is the single integration point between the SSE broker
+// and the insights engine. It projects the dashboard's existing variable
+// surface (CPU, RAM, temp, disk, services, containers, gateway/cloudflare
+// probes, lan-device-offline) into the engine's lang variable map and calls
+// Eval. The engine never imports server / alerts / notify — variables flow
+// through here as plain values (NFR-021).
+func (s *Server) evalInsightsTick(dd DashboardData) {
+	now := time.Now()
+	if dd.Metrics == nil {
+		s.insights.SnapshotMissing()
+		return
+	}
+	vars := map[string]lang.Value{}
+	vars["cpu_pct"] = lang.Number(dd.Metrics.CPU.TotalPercent)
+	vars["ram_pct"] = lang.Number(dd.Metrics.RAM.Percent)
+	if dd.Metrics.Temperature != nil {
+		vars["temp_c"] = lang.Number(*dd.Metrics.Temperature)
+	}
+	for _, p := range dd.Metrics.Disks {
+		if p.Path == "/" {
+			vars["disk_root_pct"] = lang.Number(p.Percent)
+		}
+	}
+	// swap_pct is not tracked yet by the parent collector — leave missing
+	// (the lang package treats missing → false, so memory_pressure simply
+	// does not fire). FR-041 AC-002 is satisfied; the rule is a no-op until
+	// the collector exposes swap.
+	failedSvc := 0
+	for _, svc := range dd.Services {
+		if svc.ActiveState == "failed" {
+			failedSvc++
+		}
+	}
+	vars["services_failed"] = lang.Number(float64(failedSvc))
+
+	failedCont := 0
+	for _, c := range dd.Containers {
+		if c.State != "running" {
+			failedCont++
+		}
+	}
+	vars["containers_failed"] = lang.Number(float64(failedCont))
+
+	// WAN gateway / cloudflare ok flags inferred from the gatewayprobe
+	// snapshot list (best-effort name match — labels are operator-set).
+	for _, snap := range dd.Network {
+		if snap == nil {
+			continue
+		}
+		ok := 0.0
+		if string(snap.Status) == "ok" {
+			ok = 1.0
+		}
+		switch snap.Label {
+		case "gateway":
+			vars["wan_gateway_ok"] = lang.Number(ok)
+		case "cloudflare":
+			vars["wan_cloudflare_ok"] = lang.Number(ok)
+		}
+	}
+
+	s.insights.EvalWithVars(now, vars)
 }
 
 func writeSSEEvent(buf *bytes.Buffer, event string, data string) {

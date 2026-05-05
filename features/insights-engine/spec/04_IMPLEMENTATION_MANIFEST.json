@@ -1,0 +1,75 @@
+{
+  "feature": "insights-engine",
+  "phase": 4,
+  "stack": "Go 1.x (parent ultron-ap monolith) + html/template + HTMX + SQLite (modernc.org/sqlite). No new runtime dependencies introduced by this feature.",
+  "files_created": [
+    "../../internal/insights/insights.go",
+    "../../internal/insights/insights_test.go",
+    "../../internal/insights/lang/lang.go",
+    "../../internal/insights/lang/lang_test.go",
+    "../../internal/insights/rules/rules.go",
+    "../../internal/insights/rules/rules_test.go",
+    "../../internal/insights/rules/bundled.json",
+    "../../internal/insights/store/store.go",
+    "../../internal/insights/store/store_test.go",
+    "../../internal/server/handlers_insights.go",
+    "../../internal/server/handlers_insights_test.go",
+    "../../web/templates/partials/sse-verdicts.html"
+  ],
+  "files_modified": [
+    "../../internal/database/sqlite.go",
+    "../../internal/server/server.go",
+    "../../internal/server/sse.go",
+    "../../internal/server/templates.go",
+    "../../web/templates/dashboard.html",
+    "../../cmd/ultron-ap/main.go"
+  ],
+  "setup_commands": [],
+  "environment_variables": [],
+  "technical_debt": [
+    {
+      "fr_id": "FR-044",
+      "substitution": "TC-IE-006h/006f/006e DOM rendering tests substituted with HTTP-level fragment assertions on the rendered HTML (string searches for severity ordering, .verdict-card count, 'All operational indicators clear' copy). The project has no headless-browser stack — adding Playwright/chromedp for a single set of TCs would impose a heavy dev-dependency.",
+      "reason": "The Go test suite renders the same html/template the browser would receive; assertions check document order, escaping, and empty state without booting a browser. Equivalent to the lan-devices precedent.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "NFR-020",
+      "substitution": "axe-core / Lighthouse contrast scan deferred. Severity badges reuse parent FR-009 design tokens (bg-danger, text-yellow-400, text-blue-400) which the parent UI's contrast tests already cover.",
+      "reason": "axe-core requires a headless browser; same dependency-cost reasoning as the lan-devices manifest. The fragment test asserts an explicit severity text label is present (NFR-020 AC-003), so colour is never the sole communicator.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "NFR-016",
+      "substitution": "24-hour Pi soak / pprof allocation profile not executed in this Phase 4 session. TC-IE-011e covers the zero-alloc invariant via testing.AllocsPerRun against the compiled rule closure; TC-IE-001e covers the 100-tick wall-clock budget.",
+      "reason": "Long-running validation belongs to deployment verification on hardware, not unit/integration tests. The synthetic 1-hour idle run (TC-IE-009e, 720 ticks) is the equivalent CI-deterministic substitution.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-047",
+      "substitution": "Bundled severity distribution differs from the spec example (FR-047 AC-006 example: 5 critical / 4 warn / 1 info). Implemented as 3 critical / 5 warn / 2 info — closer to the actual operational expectations: container_failed and temp_warning are info because container restarts and a 70 °C temperature are not action-now events; service_failed and disk_critical remain critical.",
+      "reason": "The AC explicitly says 'each rule has a severity assigned' — the count is informational. Operational behaviour matches the AC: thermal/disk-critical/service-failed are critical; warnings are recoverable; info is observational.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-039",
+      "substitution": "Engine evaluation is driven inline by the existing SSE broadcast loop (server/sse.go::buildSSEPayloadWithOptions calls evalInsightsTick), not by a dedicated subscription channel from metrics.Collector. Service.Start(ctx, tickC, snapFn) is exposed for future use but unused in v1 wiring.",
+      "reason": "metrics.Collector does not currently expose a tick channel or callback. Adding one would touch a parent contract for one downstream consumer; reusing the SSE broker tick (which already runs at sseInterval, defaulting to the same 5 s cadence) satisfies FR-039 AC-001 ('verdict-set published within 5 s') without changing the collector API.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-041",
+      "substitution": "swap_pct, lan_device_offline_count, and loss_pct telemetry variables are not yet projected from any existing collector — the SSE adapter (server/sse.go::evalInsightsTick) only populates cpu_pct, ram_pct, temp_c, disk_root_pct, services_failed, containers_failed, wan_gateway_ok, wan_cloudflare_ok. The memory_pressure / sustained_packet_loss / lan_offline_burst rules therefore stay quiet in production until those variables are wired. FR-041 AC-002 — 'missing var resolves to false, never error' — is preserved by the lang package; the rules degrade gracefully.",
+      "reason": "Bringing in the WAN packet-loss and LAN-devices feeds is a separate integration step. The rule definitions ship now; the dashboard surface ships now; the data-source wiring is incremental and does not require a v2 binary.",
+      "effort_to_fix": "low"
+    }
+  ],
+  "test_runner": "go test -C ../.. ./internal/insights/... ./internal/server/ -run TC_IE -v",
+  "test_files": [
+    "../../internal/insights/insights_test.go",
+    "../../internal/insights/lang/lang_test.go",
+    "../../internal/insights/rules/rules_test.go",
+    "../../internal/insights/store/store_test.go",
+    "../../internal/server/handlers_insights_test.go"
+  ]
+}
