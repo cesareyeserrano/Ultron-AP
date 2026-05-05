@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-alpha.27",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-05T14:46:48.943Z",
+  "updatedAt": "2026-05-05T15:43:17.158Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,25 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-02T23:46:23.703Z",
-      "event": "completed",
-      "phase": 4
-    },
-    {
-      "at": "2026-05-02T23:47:41.204Z",
-      "event": "approved",
-      "phase": 4
-    },
-    {
-      "at": "2026-05-02T23:47:52.044Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
     {
       "at": "2026-05-02T23:52:53.844Z",
       "event": "verify-complete",
@@ -182,6 +163,31 @@
       "method": "git",
       "baseRefFrom": "d76f9f89ca9da3abd2434dd438a1a350938ffa20",
       "baseRefTo": "6532fd8a8497d9f073b84d80b6fc0c93344bf77f"
+    },
+    {
+      "at": "2026-05-05T15:25:21.154Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-05T15:25:23.949Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-05T15:43:17.134Z",
+      "event": "normalize-resolved",
+      "phase": null,
+      "files": 2,
+      "method": "git",
+      "baseRefFrom": "6532fd8a8497d9f073b84d80b6fc0c93344bf77f",
+      "baseRefTo": "b429e2e3e2d284c1cea842ea37aeb1f3b3ff9c85"
     }
   ],
   "verifyPassed": true,
@@ -193,9 +199,9 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-05-05T14:44:10.604Z",
+  "verifyRanAt": "2026-05-05T15:25:21.154Z",
   "lastSession": {
-    "at": "2026-05-05T14:46:48.943Z",
+    "at": "2026-05-05T15:43:17.158Z",
     "agent": "unknown",
     "event": "normalize --resolve",
     "files_touched": [
@@ -206,10 +212,10 @@
   "auditLastAt": "2026-05-03T22:42:15.435Z",
   "upgradeFindings": [],
   "normalizeState": {
-    "baseRef": "6532fd8a8497d9f073b84d80b6fc0c93344bf77f",
+    "baseRef": "b429e2e3e2d284c1cea842ea37aeb1f3b3ff9c85",
     "method": "git",
     "status": "resolved",
-    "lastRun": "2026-05-05T14:46:48.911Z"
+    "lastRun": "2026-05-05T15:43:17.133Z"
   },
   "verifySummary": {
     "total": 45,
