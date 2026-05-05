@@ -1,0 +1,76 @@
+PREFIX,VENDOR
+B8:27:EB,Raspberry Pi Foundation
+DC:A6:32,Raspberry Pi Trading
+E4:5F:01,Raspberry Pi Trading
+28:CD:C1,Raspberry Pi Trading
+2C:CF:67,Raspberry Pi Trading
+D8:3A:DD,Raspberry Pi Trading
+00:1A:11,Google
+3C:5A:B4,Google
+54:60:09,Google
+D8:6C:63,Google
+F4:F5:E8,Google
+F8:8F:CA,Google
+F4:F5:D8,Google
+04:0C:CE,Apple
+00:25:00,Apple
+3C:07:54,Apple
+98:01:A7,Apple
+A4:5E:60,Apple
+F4:0F:24,Apple
+68:5B:35,Apple
+0C:74:C2,Apple
+D0:E1:40,Apple
+60:F8:1D,Apple
+00:23:99,Samsung Electronics
+E8:50:8B,Samsung Electronics
+38:AA:3C,Samsung Electronics
+5C:0A:5B,Samsung Electronics
+9C:02:98,Samsung Electronics
+14:1F:BA,Samsung Electronics
+E0:91:F5,Samsung Electronics
+50:C7:BF,TP-Link
+E8:DE:27,TP-Link
+F8:1A:67,TP-Link
+EC:08:6B,TP-Link
+14:CC:20,TP-Link
+9C:53:22,Espressif (ESP32/ESP8266)
+A0:20:A6,Espressif (ESP32/ESP8266)
+24:0A:C4,Espressif (ESP32/ESP8266)
+E8:DB:84,Espressif (ESP32/ESP8266)
+50:02:91,Espressif (ESP32/ESP8266)
+B4:E6:2D,Espressif (ESP32/ESP8266)
+00:17:88,Philips Lighting (Hue)
+EC:1B:BD,Philips Lighting (Hue)
+00:50:F2,Microsoft
+E4:DE:1E,Microsoft
+74:E2:F5,Microsoft
+00:0F:54,Ubiquiti Networks
+24:5A:4C,Ubiquiti Networks
+74:83:C2,Ubiquiti Networks
+E0:63:DA,Ubiquiti Networks
+F0:9F:C2,Ubiquiti Networks
+00:11:32,Synology
+00:50:43,Marvell (NAS / consumer routers)
+40:B0:34,LG Electronics
+00:1F:6B,LG Electronics
+F8:0F:F9,Cisco-Linksys (Belkin)
+70:B3:D5,IEEE Registration Authority (LAA-style assignments)
+00:90:A9,Western Digital
+B8:9A:2A,Western Digital
+74:8F:3C,Sonos
+B8:E9:37,Sonos
+9C:8E:CD,Amazon Technologies
+F0:27:2D,Amazon Technologies
+0C:47:C9,Amazon Technologies
+68:54:FD,Amazon Technologies
+44:65:0D,Amazon Technologies
+68:37:E9,Amazon Technologies
+44:00:10,Amazon Technologies
+B0:7D:64,Amazon Technologies
+00:13:EF,Roku
+B0:A7:37,Roku
+DC:3A:5E,Roku
+00:E0:4C,Realtek (NIC chipset)
+52:54:00,QEMU virtual NIC
+08:00:27,VirtualBox virtual NIC

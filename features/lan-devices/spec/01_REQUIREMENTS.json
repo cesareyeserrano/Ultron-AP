@@ -1,0 +1,424 @@
+{
+  "project_name": "Ultron-AP — LAN Devices (feature)",
+  "project_summary": {
+    "feature": "lan-devices",
+    "scope": "Add per-device LAN visibility to the Ultron panel: a periodic ICMP sweep over the local /24, paired with the kernel ARP cache and an OUI vendor table, persisted to SQLite and rendered on the existing /network page. Inherits auth (FR-007), CSRF (FR-012), dark-mode UI (FR-009), SQLite persistence + backup pipeline (FR-015), and the unprivileged ICMP path enabled for gatewayprobe via net.ipv4.ping_group_range. Net new: subnet auto-detection, sweep scheduler, ARP-cache reader, OUI bundled lookup, LanDevice persistence, online/offline state machine, list API, /network UI table.",
+    "product_analysis": {
+      "north_star_kpi": "Time-to-answer 'what is on my LAN?': from /network page load, the operator sees a complete device list (IP, MAC, vendor, online state, last-seen) within 5 seconds, with at least 80% of MACs vendor-resolved.",
+      "jtbd": "When something feels off on my home network, I hire Ultron to show me every device on the LAN with online state and last-seen, so I can spot what just appeared, what just dropped, and what is unfamiliar — without leaving the panel.",
+      "guardrail_metric": "Sweep + ARP-read + persistence overhead must remain within: CPU 5-min average ≤2%, RSS ≤20 MB above pre-feature baseline, DB growth ≤50 MB / year at default 5-min cadence over a typical /24, and sweep wall-clock ≤3 s. If breached, the sweep self-throttles (cadence doubled until under budget)."
+    },
+    "idea_gaps": [],
+    "inherits_from_parent": [
+      "FR-007 auth",
+      "FR-009 UI tokens / dark-mode",
+      "FR-011 privilege separation (unchanged — no new privileged path)",
+      "FR-012 CSRF (read-only API needs auth, no CSRF for GET)",
+      "FR-015 SQLite + backup pipeline",
+      "FR-021 NetSample table pattern (sibling network-monitoring feature)"
+    ]
+  },
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator (home network owner)",
+      "tech_level": "intermediate",
+      "goal": "Maintain a clear, always-current inventory of devices on the home LAN — what is present, what is online right now, what has not been seen recently, and what each device's vendor is — without manually walking a router admin UI.",
+      "pain_point": "Today the only way to know what is on the LAN is to log into the router (different vendors, different UIs, sometimes no LAN list at all) or run nmap by hand. There is no historical view (when did this MAC first appear? when was it last seen?), and unfamiliar devices are easy to miss until they cause a problem."
+    }
+  ],
+  "no_go_zone": [
+    "No per-device WiFi signal strength — requires router cooperation; not feasible from a guest Ethernet host.",
+    "No per-device bandwidth or traffic accounting — same router-cooperation constraint; would also require packet capture which is out of the parent project's no-go zone.",
+    "No mDNS / Bonjour / Avahi-derived friendly hostnames in v1 — adds an avahi runtime dependency. Deferred to v2.",
+    "No IPv6 neighbor discovery in v1 — household LANs Ultron targets remain IPv4-NAT in 2026. Revisit when justified.",
+    "No active fingerprinting (TCP/SYN scans, banner grabs, OS detection) — stays passive ICMP-only.",
+    "No SNMP / router-API integration — vendor-specific, fragile, out of scope for a zero-config feature.",
+    "No per-device alerting or notifications in v1 — that surface is owned by the future insights-engine (BL-017). lan-devices is a discovery feed, not an alerting product.",
+    "No agents installed on remote devices — all collection happens on the Pi.",
+    "No deep packet inspection or any form of payload capture — parent project's permanent no-go.",
+    "No new privileged-helper endpoints — the unprivileged ICMP path (net.ipv4.ping_group_range) used by gatewayprobe must cover sweep needs."
+  ],
+  "constraints": [
+    "Must run on linux/arm64 Raspberry Pi alongside existing Ultron-AP binary (parent NFR-002 — single Go binary).",
+    "Must use only the unprivileged ICMP socket path already enabled for gatewayprobe; no setcap, no apt installs, no extension to ultron-helper.",
+    "Must reuse the existing SQLite database file and backup pipeline (FR-015) — new tables only, no separate datastore.",
+    "Must reuse the existing /network page surface — extend, do not replace; existing WAN/event rendering must keep working.",
+    "All API endpoints must enforce parent FR-007 auth.",
+    "All UI must satisfy parent FR-009 dark-mode tokens and WCAG AA contrast.",
+    "OUI vendor table must be embedded in the binary at build time — no runtime network lookup, no external file read at request time."
+  ],
+  "technology_preferences": [
+    "Go (parent project language) for sweep scheduler, ARP-cache reader, OUI lookup.",
+    "go-ping or equivalent unprivileged ICMP library compatible with ping_group_range (same approach as gatewayprobe).",
+    "SQLite for LanDevice persistence; new tables only.",
+    "Server-rendered HTMX table on /network (consistent with parent dashboard); JSON API alongside for programmatic access.",
+    "IEEE OUI registry as the vendor source, embedded via go:embed at build time."
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-030",
+      "title": "Auto-detect local IPv4 subnet from default-route interface",
+      "description": "On startup and on a long interval (10 min) refresh, the lan-devices module determines the local IPv4 subnet to sweep by reading the default-route interface and its primary IPv4 /N. No manual configuration. If the host has no default route or no IPv4 on the chosen interface, the module remains idle and exposes a clear status until the network is reachable.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "When the Pi has a default route on eth0 with 192.168.1.42/24, the module reports subnet=192.168.1.0/24 and interface=eth0 within 1 s of process start.",
+        "When the Pi has no default route at startup, the module reports status='no-default-route' and does not emit any ICMP packets.",
+        "When the default-route interface changes at runtime (e.g. failover from eth0 to wlan0), the next subnet refresh detects the change within 10 min and the next sweep targets the new subnet.",
+        "Subnet larger than /24 is clamped: if the interface is /16 or wider, the sweep limits itself to the /24 containing the host's IPv4 and reports 'subnet-clamped' in status."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-031",
+      "title": "Periodic ICMP sweep across local /24 with rate-limit",
+      "description": "Every 5 minutes (configurable 1-30 min), the module sends an unprivileged ICMP echo to each of the 254 host addresses in the resolved /24. Probes are staggered to keep total sweep duration ≤3 s and to avoid bursting the link. Each probe waits up to 1 s for a reply; non-replies are silent (the ARP-cache reader picks up devices that responded indirectly).",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "On the default cadence the sweep emits ≥250 ICMP packets per cycle and completes within 3 s wall-clock on the Pi.",
+        "Sweep runs use the unprivileged net.ipv4.ping_group_range path; verifying with 'getcap' on the binary returns no raw-socket capability set.",
+        "If a sweep cycle is still running when the next cadence fires, the new cycle is skipped and a 'sweep-overrun' counter is incremented (no overlapping sweeps).",
+        "Sweep cadence is configurable from 60 s to 1800 s; the configured value is honoured within ±10% in steady state."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-032",
+      "title": "Read ARP cache and pair responding hosts with MAC addresses",
+      "description": "Immediately after each sweep, the module reads the kernel ARP cache (/proc/net/arp) and pairs each responding IP from the sweep with its MAC. Stale entries (flag 0x0) are ignored; only resolved entries (flag 0x2) count as live observations. Sweep responders without an ARP entry (rare; broken neighbour resolution) are recorded with mac=null and status='no-arp'.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "After a sweep where 5 distinct hosts replied, /proc/net/arp is read once and each of those 5 IPs is paired with its current MAC where the ARP flag is 0x2.",
+        "ARP entries with flag 0x0 (incomplete/stale) are not used to mark devices online.",
+        "If /proc/net/arp is unreadable (permission or not present), the module logs once and continues (degraded mode: ICMP-replied devices appear with mac=null)."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-033",
+      "title": "OUI vendor lookup from a bundled IEEE prefix table",
+      "description": "Each MAC address is mapped to a vendor name via an embedded IEEE OUI prefix table (24-bit prefix → vendor). The table is compiled into the binary at build time via go:embed. No runtime network lookup, no filesystem dependency. Unknown prefixes resolve to 'Unknown' (not an error). Locally-administered MACs (LAA bit set) resolve to 'Locally administered' regardless of prefix.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "A MAC starting 'B8:27:EB' (Raspberry Pi Foundation) resolves to a vendor string containing 'Raspberry Pi'.",
+        "A MAC with the LAA bit set (second-least-significant bit of the first byte) resolves to 'Locally administered' regardless of OUI table contents.",
+        "A MAC whose OUI is not in the table resolves to 'Unknown' without producing an error in the response.",
+        "The bundled OUI table is loaded at process start and lookup latency is <100 µs per call (in-memory map)."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-034",
+      "title": "Persist observed devices to SQLite",
+      "description": "Each (mac, ip) pair observed during a sweep is upserted into a LanDevice table with fields: mac (key), ip, vendor, first_seen, last_seen, online (bool), missed_sweeps (int). The table grows at most by the number of distinct MACs ever seen on the LAN; no per-sweep history is stored at the device level (sample-level history is out of scope for v1).",
+      "priority": "MUST",
+      "type": "persistence",
+      "acceptance_criteria": [
+        "On the first sweep that sees a previously-unknown MAC, a new row is inserted with first_seen=last_seen=now, online=true, missed_sweeps=0.",
+        "On a subsequent sweep that re-sees a known MAC, the row's last_seen advances, online becomes true, and missed_sweeps resets to 0; first_seen never changes.",
+        "If a MAC's IP changes between sweeps (DHCP renewal), the row's ip column updates and last_seen advances; first_seen is preserved.",
+        "The LanDevice table is included in the FR-015 backup pipeline without additional configuration.",
+        "DB growth at default cadence with 30 distinct devices stays under 50 MB after one year of continuous operation."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-035",
+      "title": "Online/offline state machine with miss tolerance",
+      "description": "A device is online while it responds to the most recent sweep or one of the last N-1 sweeps (N defaults to 3, configurable 1-10). After N consecutive misses it flips to offline; last_seen freezes at the timestamp of the last successful sweep. A device that returns after being offline flips back to online on the next successful sweep. This avoids flapping for devices that sleep (phones, IoT) without delaying genuine offline detection past ~15 min at the default 5-min cadence.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "A device that fails to respond to 1 sweep and then responds again stays online; missed_sweeps resets to 0.",
+        "A device that fails to respond to N consecutive sweeps (default 3) flips to offline; last_seen equals the timestamp of the last successful sweep.",
+        "A device that was offline and responds to the next sweep flips to online; last_seen advances; missed_sweeps resets to 0.",
+        "Changing the miss threshold N at runtime via configuration takes effect on the next sweep cycle."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-036",
+      "title": "JSON API endpoint listing LAN devices",
+      "description": "GET /api/network/lan-devices returns the current device list as a JSON array, ordered by online-first then last_seen desc. Each entry contains: ip, mac, vendor, online, first_seen (ISO 8601), last_seen (ISO 8601), missed_sweeps. Endpoint requires authenticated session per FR-007. No CSRF token required for GET. Returns within 100 ms for typical LANs (<100 devices).",
+      "priority": "MUST",
+      "type": "api",
+      "acceptance_criteria": [
+        "Authenticated GET to /api/network/lan-devices returns 200 with a JSON array, with online entries listed before offline ones.",
+        "Each entry includes ip, mac, vendor, online (bool), first_seen, last_seen, missed_sweeps; timestamps are ISO 8601 UTC.",
+        "Unauthenticated GET returns 401 (or redirect, consistent with parent auth behaviour).",
+        "Response time on the Pi for a 30-device LAN is below 100 ms at the 99th percentile across 100 sequential requests."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-037",
+      "title": "Render LAN device table on /network page",
+      "description": "The existing /network page gains a new section above the WAN-events block titled 'LAN devices'. It renders an HTMX-powered table with columns: IP, MAC, Vendor, Online (visual badge: green dot online / grey dot offline), Last seen (relative time, e.g. '2 min ago'). The table refreshes every 30 s. Empty / loading / error states are explicit and styled consistently with parent FR-009 tokens.",
+      "priority": "MUST",
+      "type": "ui",
+      "acceptance_criteria": [
+        "Visiting /network as an authenticated user renders the LAN devices section with a non-empty table within 5 s on a populated LAN.",
+        "Online state badge is colour-tokenised: green-500 for online, neutral-400 for offline; both meet WCAG AA contrast against the table row background in both light and dark themes.",
+        "Last-seen column shows relative time for entries newer than 24 h ('5 min ago', '2 h ago') and absolute date+time for older.",
+        "The existing WAN-events block continues to render below the new section with no regression.",
+        "Empty state (no devices yet observed) shows a centred message 'No devices discovered yet — first sweep in <countdown>' rather than a blank table."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-038",
+      "title": "Self-throttle sweep on resource-budget breach",
+      "description": "The sweep scheduler measures its own wall-clock duration and the process's 5-min CPU average. If wall-clock exceeds 3 s for 2 consecutive cycles or 5-min CPU exceeds 2% averaged over a 10-min window, the sweep cadence doubles (up to the configured maximum). Cadence returns to configured baseline after 30 min of all-clear samples.",
+      "priority": "SHOULD",
+      "type": "logic",
+      "acceptance_criteria": [
+        "When two consecutive sweeps exceed 3 s wall-clock, the next sweep is scheduled at 2× the current cadence and a 'self-throttled' status flag is exposed via the API.",
+        "After 30 min of sweeps that are within budget, cadence returns to the configured baseline and the throttled flag clears.",
+        "Cadence never falls below 60 s or rises above 1800 s regardless of throttling decisions."
+      ],
+      "implementation_level": "production_ready"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-011",
+      "category": "Security / Privilege",
+      "requirement": "lan-devices must not require any new privileged-helper endpoint. The unprivileged ICMP path enabled by net.ipv4.ping_group_range (already used by gatewayprobe) is the only network-emitting facility used. /proc/net/arp is read directly by the unprivileged web process (world-readable on standard kernels). The deployed binary must not require CAP_NET_RAW or any other capability beyond what is already set on parent NFR-001.",
+      "acceptance_criteria": [
+        "Running 'getcap' on the deployed binary returns the same capability set as before the feature.",
+        "Disabling net.ipv4.ping_group_range causes lan-devices to fail closed with a clear log message rather than escalating to raw sockets."
+      ]
+    },
+    {
+      "id": "NFR-012",
+      "category": "Distribution / Dependencies",
+      "requirement": "OUI vendor table is embedded into the binary via go:embed at build time. No runtime network lookup. No external file read after process start. The build pipeline includes a script to refresh the bundled OUI source from the IEEE registry so the table can be updated by a deliberate rebuild.",
+      "acceptance_criteria": [
+        "Running the binary in an environment with no DNS and no outbound internet still resolves vendors for any MAC whose OUI is in the bundled table.",
+        "The bundled OUI source file is checked into the repo and produced by a documented refresh script."
+      ]
+    },
+    {
+      "id": "NFR-013",
+      "category": "Persistence / Storage",
+      "requirement": "All persistence reuses the existing SQLite database file (parent FR-015) and is included in the existing backup pipeline without configuration changes. The new LanDevice table grows linearly with distinct MACs observed (bounded by network size), not with sweep count.",
+      "acceptance_criteria": [
+        "The existing 'aitri' verify and backup tests continue to pass with no new failures.",
+        "Backup file produced after one week of continuous operation increases by less than 1 MB attributable to LanDevice rows on a 30-device LAN."
+      ]
+    },
+    {
+      "id": "NFR-014",
+      "category": "Performance / Resource Budget",
+      "requirement": "Steady-state lan-devices overhead must remain within: CPU 5-min average ≤2%, RSS ≤20 MB above pre-feature baseline, DB growth ≤50 MB / year at default cadence on a typical /24 with ≤100 devices, and per-sweep wall-clock ≤3 s. Verified by FR-038 self-measurement.",
+      "acceptance_criteria": [
+        "Synthetic 24-h test running at default cadence on the Pi reports values inside the budget.",
+        "When any threshold is breached, FR-038 self-throttling becomes observable via the API status flag."
+      ]
+    },
+    {
+      "id": "NFR-015",
+      "category": "UX / Accessibility",
+      "requirement": "All UI added by this feature reuses parent FR-009 design tokens (colours, spacing, typography). Online/offline badges meet WCAG AA contrast in both light and dark themes. No animation triggered automatically (no flashing on state change) — use static colour change only.",
+      "acceptance_criteria": [
+        "Lighthouse / axe accessibility audit on /network with the LAN-devices section populated returns no contrast violations.",
+        "No CSS or JS file outside the existing tailwind / HTMX stack is added by this feature."
+      ]
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-030",
+      "requirement_id": "FR-030",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "the panel to figure out my home subnet on its own",
+      "so_that": "I can deploy on a new network without editing config files or env vars",
+      "acceptance_criteria": [
+        {
+          "id": "AC-030-001",
+          "given": "the Pi is freshly imaged and on 192.168.1.42/24 via eth0",
+          "when": "the Ultron service starts",
+          "then": "the lan-devices status reports subnet=192.168.1.0/24 within 1 s of boot"
+        },
+        {
+          "id": "AC-030-002",
+          "given": "the Pi has no default route at boot (offline LAN)",
+          "when": "the Ultron service starts",
+          "then": "the lan-devices status reports 'no-default-route' and no ICMP packets are emitted"
+        }
+      ]
+    },
+    {
+      "id": "US-031",
+      "requirement_id": "FR-031",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a complete LAN sweep every few minutes without me triggering it",
+      "so_that": "the device list stays current as devices come and go",
+      "acceptance_criteria": [
+        {
+          "id": "AC-031-001",
+          "given": "the default 5-min cadence and a /24 with ~30 live devices",
+          "when": "a sweep cycle runs",
+          "then": "≥250 ICMP packets are emitted and the cycle completes within 3 s wall-clock"
+        },
+        {
+          "id": "AC-031-002",
+          "given": "a sweep is still running when the cadence timer fires",
+          "when": "the new cycle would start",
+          "then": "the new cycle is skipped and a sweep-overrun counter increments"
+        }
+      ]
+    },
+    {
+      "id": "US-032",
+      "requirement_id": "FR-032",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "MAC addresses paired with each responding IP",
+      "so_that": "I can recognise devices across DHCP renewals and identify their vendor",
+      "acceptance_criteria": [
+        {
+          "id": "AC-032-001",
+          "given": "a sweep where 5 hosts replied",
+          "when": "/proc/net/arp is read after the sweep",
+          "then": "all 5 IPs appear in the device list paired with their MAC where the ARP flag is 0x2"
+        },
+        {
+          "id": "AC-032-002",
+          "given": "/proc/net/arp is unreadable on this kernel",
+          "when": "the sweep tries to pair MACs",
+          "then": "responding IPs appear with mac=null and status='no-arp', the service does not crash, and a single log line is emitted"
+        }
+      ]
+    },
+    {
+      "id": "US-033",
+      "requirement_id": "FR-033",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "human-readable vendor names next to each MAC",
+      "so_that": "I can spot what brand each device is at a glance",
+      "acceptance_criteria": [
+        {
+          "id": "AC-033-001",
+          "given": "a device with MAC starting B8:27:EB",
+          "when": "the device list is rendered",
+          "then": "its vendor column contains 'Raspberry Pi'"
+        },
+        {
+          "id": "AC-033-002",
+          "given": "a device with the LAA bit set in its MAC",
+          "when": "the device list is rendered",
+          "then": "its vendor column shows 'Locally administered'"
+        }
+      ]
+    },
+    {
+      "id": "US-034",
+      "requirement_id": "FR-034",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "the device list to survive process restarts",
+      "so_that": "I do not lose first-seen history every time I deploy a new build",
+      "acceptance_criteria": [
+        {
+          "id": "AC-034-001",
+          "given": "a device that has been observed for 3 days",
+          "when": "the Ultron service is restarted",
+          "then": "the device's first_seen on /network reflects the original 3-days-ago timestamp"
+        },
+        {
+          "id": "AC-034-002",
+          "given": "a device whose IP changed via DHCP renewal between sweeps",
+          "when": "the device is observed again",
+          "then": "its row's ip column updates and last_seen advances; first_seen is preserved"
+        }
+      ]
+    },
+    {
+      "id": "US-035",
+      "requirement_id": "FR-035",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "devices that briefly miss a sweep to stay marked online",
+      "so_that": "phones and IoT devices that sleep do not flap green/grey on the dashboard",
+      "acceptance_criteria": [
+        {
+          "id": "AC-035-001",
+          "given": "a device that fails to respond to 1 sweep then responds again",
+          "when": "the next sweep completes",
+          "then": "the device stays online and missed_sweeps resets to 0"
+        },
+        {
+          "id": "AC-035-002",
+          "given": "a device that fails to respond to 3 consecutive sweeps (default N=3)",
+          "when": "the third sweep completes",
+          "then": "the device flips to offline and last_seen freezes at the last successful sweep"
+        }
+      ]
+    },
+    {
+      "id": "US-036",
+      "requirement_id": "FR-036",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a JSON endpoint exposing the current device list",
+      "so_that": "I can integrate with my own scripts or external tools",
+      "acceptance_criteria": [
+        {
+          "id": "AC-036-001",
+          "given": "an authenticated session and a populated device list",
+          "when": "I GET /api/network/lan-devices",
+          "then": "I receive a 200 JSON array with online entries before offline ones, each with ip/mac/vendor/online/first_seen/last_seen/missed_sweeps"
+        },
+        {
+          "id": "AC-036-002",
+          "given": "no authenticated session",
+          "when": "I GET /api/network/lan-devices",
+          "then": "I receive 401 (or the parent project's standard auth-redirect response)"
+        }
+      ]
+    },
+    {
+      "id": "US-037",
+      "requirement_id": "FR-037",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "the device list rendered on /network alongside WAN events",
+      "so_that": "I have one network-overview page rather than two separate views",
+      "acceptance_criteria": [
+        {
+          "id": "AC-037-001",
+          "given": "an authenticated session and a populated device list",
+          "when": "I open /network",
+          "then": "the LAN devices table renders within 5 s and the existing WAN-events block continues to render below it"
+        },
+        {
+          "id": "AC-037-002",
+          "given": "no devices have been observed yet",
+          "when": "I open /network shortly after Ultron starts",
+          "then": "the table area shows 'No devices discovered yet — first sweep in <countdown>' instead of an empty grid"
+        }
+      ]
+    },
+    {
+      "id": "US-038",
+      "requirement_id": "FR-038",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "the sweep to back off automatically if it ever consumes too much of my Pi",
+      "so_that": "lan-devices never degrades the rest of the panel",
+      "acceptance_criteria": [
+        {
+          "id": "AC-038-001",
+          "given": "two consecutive sweeps exceeded the 3 s wall-clock budget",
+          "when": "the scheduler decides the next cadence",
+          "then": "the next sweep is scheduled at 2× the current cadence and a 'self-throttled' flag becomes visible via the API"
+        },
+        {
+          "id": "AC-038-002",
+          "given": "the self-throttled flag has been set and 30 min of in-budget sweeps have elapsed",
+          "when": "the next cadence is chosen",
+          "then": "cadence returns to configured baseline and the flag clears"
+        }
+      ]
+    }
+  ],
+  "original_brief": "## Feature\n\nDiscover and track devices on the local LAN via periodic ICMP sweep + ARP-cache read + OUI vendor lookup, surfaced in `/network`.\n\n## Problem / Why\n\nUltron's network visibility today ends at the WAN edge: gateway, cloudflare, and DNS probes confirm the uplink works, but there is zero view of *what is on the LAN*. An operator running a Pi as a household admin panel cannot answer basic questions (\"is the printer up?\", \"what device just appeared?\", \"is anything unfamiliar on my network?\") without leaving Ultron and SSHing into the router. F1 of the 2026-Q2 roadmap closes this gap with the cheapest possible discovery method that does not require router cooperation.\n\n## Target Users\n\nExisting Ultron operators (home / small-office). No new user types — same admin who already uses the dashboard for system + WAN telemetry now also sees per-device LAN state in the same surface.\n\n## New Behavior\n\nThe system must:\n\n- Detect the local IPv4 subnet automatically from the default-route interface (no manual configuration).\n- Run an ICMP sweep across the local /24 every 5 minutes, rate-limited so the burst stays under ~3 seconds (~250 packets).\n- Read the ARP cache (`/proc/net/arp`) immediately after each sweep and pair responding hosts with their MAC addresses.\n- Resolve each MAC's vendor from a bundled IEEE OUI prefix table (no network lookup at runtime).\n- Persist each observed device with: IP, MAC, vendor, first_seen, last_seen, current online state.\n- Mark a device as `offline` when it has been absent from the last sweep but present within the last N sweeps (configurable, default 3).\n- Expose the device list via JSON API and render it on `/network` (table view: IP, MAC, vendor, online state, last-seen relative time).\n- Stay entirely unprivileged — must use the same `ping_group_range`-enabled ICMP path as `gatewayprobe`, no `setcap`, no `ultron-helper` extension, no apt installs.\n\n## Success Criteria\n\n- **Given** the Pi is on `192.168.1.0/24` with at least 5 reachable devices (router, laptop, phone, printer, smart bulb), **when** the operator visits `/network` after 6 minutes of uptime, **then** the table lists at least those 5 devices with vendor populated for ≥80% of them.\n- **Given** a device drops off the network, **when** 3 sweeps elapse without an ICMP response from it, **then** its row flips to `offline` and `last_seen` shows the timestamp of the last successful sweep.\n- **Given** a brand-new device joins the LAN, **when** the next sweep runs, **then** its row appears with `first_seen ≈ now` and `online = true`.\n- The full sweep + DB write cycle on the Pi consumes <2% CPU averaged over 5 minutes (negligible impact on existing telemetry).\n- No regression in existing 45 TC pass count.\n\n## Out of Scope\n\n- Per-device WiFi signal strength (requires router cooperation; not feasible from a guest Ethernet host).\n- Per-device bandwidth or traffic accounting (same constraint).\n- mDNS / Bonsoir-derived friendly hostnames (deferred to v2 — adds an avahi dependency).\n- IPv6 neighbor discovery (the household LANs Ultron targets are still IPv4-NAT in 2026; revisit once IPv6 visibility justifies the cost).\n- Active fingerprinting (TCP/SYN, banner grabs) — stays passive + ICMP-only for v1.\n- Per-device alerting / notifications — that is `insights-engine` (BL-017) territory; the lan-devices feed becomes one more telemetry source for it later.\n"
+}

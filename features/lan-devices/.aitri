@@ -1,0 +1,84 @@
+{
+  "currentPhase": 4,
+  "approvedPhases": [
+    1,
+    2,
+    3
+  ],
+  "completedPhases": [
+    1,
+    2,
+    3
+  ],
+  "projectName": "lan-devices",
+  "createdAt": "2026-05-05T17:27:43.037Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-05-05T18:15:25.376Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-05-05T17:29:36.165Z",
+      "event": "started",
+      "phase": 1
+    },
+    {
+      "at": "2026-05-05T17:32:56.845Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-05-05T17:37:18.654Z",
+      "event": "approved",
+      "phase": 1,
+      "ideaArchived": true
+    },
+    {
+      "at": "2026-05-05T17:37:26.138Z",
+      "event": "started",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-05T17:39:15.740Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-05T17:46:29.681Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-05T17:46:32.958Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-05T17:52:20.143Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-05T18:03:49.700Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-05T18:15:25.376Z",
+      "event": "started",
+      "phase": 4
+    }
+  ],
+  "artifactHashes": {
+    "1": "07873b045472fe2aece0a8e2007c3d9b517fb2a0653945abd66674fc17d00ee9",
+    "2": "ea1dd8f23b4accca9eb75bb1b8c116162442afce873d2ab30ede0f118a369dec",
+    "3": "5eaad7de4b3ed2194f7fc79ca7fe7cd08691f349d29e75afff25a0289878985a"
+  },
+  "lastSession": {
+    "at": "2026-05-05T18:03:49.715Z",
+    "agent": "unknown",
+    "event": "approve tests",
+    "files_touched": [
+      ".aitri/config.json"
+    ]
+  }
+}

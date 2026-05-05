@@ -1,0 +1,989 @@
+{
+  "test_plan": {
+    "feature": "lan-devices",
+    "scope": "Validate FR-030..FR-038 (subnet detection, ICMP sweep, ARP pairing, OUI lookup, persistence, online/offline state machine, JSON API, /network UI fragment, self-throttle) plus NFR-011..NFR-015 (privilege boundary, embedded OUI, SQLite reuse, performance budget, UX tokens).",
+    "approach": "Three-layer pyramid. Unit tests pin pure logic (subnet parser, ARP parser, OUI lookup, state machine). Integration tests exercise the orchestrator + store + SQLite together with a faked ICMP transport. Two e2e tests run the real HTTP handlers against an in-process server with a pre-populated DB.",
+    "fixtures": [
+      "fakeICMPTransport \u2014 deterministic per-host reply map; supports drop-after-N-cycles for offline tests",
+      "tmpDB \u2014 t.TempDir() SQLite per test, no shared state",
+      "/proc/net/arp synthetic file \u2014 written into a t.TempDir() and read via an injected path resolver",
+      "/proc/net/route synthetic file \u2014 same injection seam as arp"
+    ],
+    "exclusions": [
+      "No tests for per-device WiFi signal, bandwidth, mDNS, IPv6, fingerprinting, SNMP, or alerting \u2014 all in no_go_zone.",
+      "No live-network tests that depend on actual LAN devices; all integration TCs use injected /proc files and a fake ICMP transport.",
+      "No tests against the real IEEE OUI registry over the network; OUI table is the bundled artifact.",
+      "No tests for database backup mechanics \u2014 covered by parent FR-015 tests."
+    ]
+  },
+  "type_coverage_matrix": {
+    "FR-030": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-031": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-032": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-033": {
+      "unit": "MUST",
+      "integration": "SHOULD",
+      "e2e": "SHOULD"
+    },
+    "FR-034": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-035": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-036": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-037": {
+      "unit": "SHOULD",
+      "integration": "SHOULD",
+      "e2e": "MUST"
+    },
+    "FR-038": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    }
+  },
+  "test_cases": [
+    {
+      "id": "TC-LD-001h",
+      "requirement_id": "FR-030",
+      "user_story_id": "US-030",
+      "ac_id": "AC-030-001",
+      "title": "Subnet detector returns 192.168.1.0/24 from a synthetic /proc/net/route + eth0 inet",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "subnet.Detect() accepts injectable readers for /proc/net/route and net.InterfaceByName"
+      ],
+      "given": "/proc/net/route contains a default-route line for eth0 (destination 0.0.0.0, gateway 0101A8C0) and net.InterfaceByName('eth0').Addrs() returns 192.168.1.42/24",
+      "when": "subnet.Detect() is called",
+      "then": "returns Subnet{CIDR:'192.168.1.0/24', Iface:'eth0', Status:'ok'} with no error",
+      "steps": [
+        "Write synthetic /proc/net/route to t.TempDir()",
+        "Inject a fake interface resolver returning 192.168.1.42/24 for eth0",
+        "Call subnet.Detect(routePath, ifaceResolver)",
+        "Assert returned struct"
+      ],
+      "expected_result": "Subnet.CIDR == '192.168.1.0/24'; Iface == 'eth0'; Status == 'ok'; err == nil"
+    },
+    {
+      "id": "TC-LD-001f",
+      "requirement_id": "FR-030",
+      "user_story_id": "US-030",
+      "ac_id": "AC-030-002",
+      "title": "Subnet detector reports no-default-route when /proc/net/route has no default entry",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "/proc/net/route contains only header + a non-default route (destination 192.168.1.0, gateway 0)",
+      "when": "subnet.Detect() is called",
+      "then": "returns Subnet{Status:'no-default-route'} with no error and CIDR empty",
+      "steps": [
+        "Write synthetic /proc/net/route lacking a default entry",
+        "Call subnet.Detect()",
+        "Assert Status == 'no-default-route' and CIDR == ''"
+      ],
+      "expected_result": "Status == 'no-default-route'; CIDR == ''; err == nil"
+    },
+    {
+      "id": "TC-LD-001e",
+      "requirement_id": "FR-030",
+      "user_story_id": "US-030",
+      "ac_id": "AC-030-001",
+      "title": "Subnet detector clamps a /16 interface to the host's /24",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "Interface eth0 has 10.50.7.42/16 and a default route via that interface",
+      "when": "subnet.Detect() is called",
+      "then": "returns Subnet{CIDR:'10.50.7.0/24', Status:'subnet-clamped'}",
+      "steps": [
+        "Inject interface eth0 with 10.50.7.42/16",
+        "Inject /proc/net/route with eth0 default entry",
+        "Call subnet.Detect()",
+        "Assert clamped CIDR and status flag"
+      ],
+      "expected_result": "CIDR == '10.50.7.0/24'; Status == 'subnet-clamped'"
+    },
+    {
+      "id": "TC-LD-002h",
+      "requirement_id": "FR-031",
+      "user_story_id": "US-031",
+      "ac_id": "AC-031-001",
+      "title": "Sweep emits exactly 254 ICMP probes against a /24 and completes within 3 s wall-clock",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "fakeICMPTransport answers 30 hosts with 5 ms RTT, others with timeout"
+      ],
+      "given": "Orchestrator started with subnet 192.168.1.0/24, cadence 60 s, fakeICMPTransport, 32-worker pool",
+      "when": "one sweep cycle runs",
+      "then": "transport.SendCount() == 254 (one per host address 1..254); orchestrator.LastSweepDuration() < 3 s",
+      "steps": [
+        "Build orchestrator with fake transport",
+        "Trigger one sweep cycle synchronously",
+        "Read sweep stats"
+      ],
+      "expected_result": "SendCount == 254; LastSweepDuration < 3 * time.Second"
+    },
+    {
+      "id": "TC-LD-002f",
+      "requirement_id": "FR-031",
+      "user_story_id": "US-031",
+      "ac_id": "AC-031-002",
+      "title": "Overlapping sweep cycle is skipped and overrun counter increments",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Orchestrator with cadence 1 s and a transport that blocks the in-flight sweep for 2 s",
+      "when": "the cadence ticker fires while the prior sweep is still running",
+      "then": "no new sweep starts; orchestrator.OverrunCount() == 1; only one cycle's SendCount is observed",
+      "steps": [
+        "Configure 1 s cadence and a transport with a 2 s artificial delay",
+        "Start orchestrator",
+        "Wait 1.5 s",
+        "Inspect overrun counter and total SendCount"
+      ],
+      "expected_result": "OverrunCount == 1; total SendCount == 254 (single cycle, not 2 cycles)"
+    },
+    {
+      "id": "TC-LD-002e",
+      "requirement_id": "FR-031",
+      "user_story_id": "US-031",
+      "ac_id": "AC-031-002",
+      "title": "Sweep cadence configured to 1800 s is honoured within \u00b110% over 3 cycles",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "Orchestrator with cadence 1800 s and fake clock advancing 5400 s in 3 cycle steps",
+      "when": "3 cadence cycles complete",
+      "then": "interval between sweep starts is 1800 s \u00b1180 s (\u00b110%) for both gaps",
+      "steps": [
+        "Configure 1800 s cadence",
+        "Advance fake clock by 1800 s \u00d7 3",
+        "Read sweep timestamps",
+        "Assert intervals"
+      ],
+      "expected_result": "All 2 inter-sweep intervals within [1620 s, 1980 s]"
+    },
+    {
+      "id": "TC-LD-003h",
+      "requirement_id": "FR-032",
+      "user_story_id": "US-032",
+      "ac_id": "AC-032-001",
+      "title": "ARP parser pairs 5 responding IPs with their MACs from /proc/net/arp",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Synthetic /proc/net/arp with 5 entries, all flag 0x2 (REACHABLE), MACs distinct; sweep responders set is the same 5 IPs",
+      "when": "arp.Pair(responders, arpPath) is called",
+      "then": "returns 5 (ip, mac) pairs matching the file; mac strings normalised to lower-hex with colons",
+      "steps": [
+        "Write 5 arp entries to t.TempDir()/arp",
+        "Call arp.Pair(responders, path)",
+        "Assert returned slice"
+      ],
+      "expected_result": "len(pairs) == 5; each mac matches expected lower-hex form"
+    },
+    {
+      "id": "TC-LD-003f",
+      "requirement_id": "FR-032",
+      "user_story_id": "US-032",
+      "ac_id": "AC-032-002",
+      "title": "Missing /proc/net/arp degrades gracefully (mac=null), no panic",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "arpPath points to a file that does not exist; 3 responding IPs",
+      "when": "arp.Pair(responders, arpPath) is called",
+      "then": "returns 3 pairs with mac == '' and a sentinel error errors.Is(err, ErrARPUnavailable); orchestrator log line emitted exactly once",
+      "steps": [
+        "Set arpPath to /tmp/non-existent-arp-XXXX",
+        "Call arp.Pair([3 ips], path)",
+        "Assert mac == '' on each, sentinel error, and log captured once"
+      ],
+      "expected_result": "All pair.MAC == ''; errors.Is(err, ErrARPUnavailable) == true; log line count == 1"
+    },
+    {
+      "id": "TC-LD-003e",
+      "requirement_id": "FR-032",
+      "user_story_id": "US-032",
+      "ac_id": "AC-032-001",
+      "title": "Stale ARP entries (flag 0x0) are ignored",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "/proc/net/arp with 3 reachable (0x2) and 2 incomplete (0x0) entries; all 5 IPs are responders",
+      "when": "arp.Pair runs",
+      "then": "returns 5 pairs; the 2 with flag 0x0 have mac == '' and status 'no-arp', the 3 with flag 0x2 have full MACs",
+      "steps": [
+        "Write mixed-flag arp file",
+        "Call arp.Pair",
+        "Assert correct selection by flag"
+      ],
+      "expected_result": "3 entries with mac populated; 2 entries with mac == '' and status 'no-arp'"
+    },
+    {
+      "id": "TC-LD-004h",
+      "requirement_id": "FR-033",
+      "user_story_id": "US-033",
+      "ac_id": "AC-033-001",
+      "title": "OUI lookup resolves B8:27:EB to a vendor string containing 'Raspberry Pi'",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Bundled OUI table loaded at startup (go:embed)",
+      "when": "oui.Vendor('b8:27:eb:11:22:33') is called",
+      "then": "returns a string containing 'Raspberry Pi' (case-insensitive)",
+      "steps": [
+        "Call oui.Vendor on canonical Pi MAC",
+        "Assert string contains 'raspberry pi' lowercased"
+      ],
+      "expected_result": "strings.Contains(strings.ToLower(vendor), 'raspberry pi') == true"
+    },
+    {
+      "id": "TC-LD-004f",
+      "requirement_id": "FR-033",
+      "user_story_id": "US-033",
+      "ac_id": "AC-033-002",
+      "title": "Locally-administered MAC (LAA bit set) returns 'Locally administered' regardless of OUI",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "MAC 02:00:00:00:00:01 (LAA bit set in first byte: 0x02 has bit 1 set)",
+      "when": "oui.Vendor is called",
+      "then": "returns 'Locally administered'",
+      "steps": [
+        "Call oui.Vendor('02:00:00:00:00:01')",
+        "Assert exact string match"
+      ],
+      "expected_result": "vendor == 'Locally administered'"
+    },
+    {
+      "id": "TC-LD-004e",
+      "requirement_id": "FR-033",
+      "user_story_id": "US-033",
+      "ac_id": "AC-033-002",
+      "title": "Unknown OUI returns 'Unknown' (no error)",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "MAC 00:DE:AD:BE:EF:01 with OUI 00:DE:AD not in the bundled table",
+      "when": "oui.Vendor is called",
+      "then": "returns 'Unknown' without error",
+      "steps": [
+        "Call oui.Vendor('00:de:ad:be:ef:01')",
+        "Assert vendor == 'Unknown'"
+      ],
+      "expected_result": "vendor == 'Unknown'"
+    },
+    {
+      "id": "TC-LD-005h",
+      "requirement_id": "FR-034",
+      "user_story_id": "US-034",
+      "ac_id": "AC-034-001",
+      "title": "Persistence \u2014 first sweep inserts new MAC with first_seen == last_seen and online=true",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Empty t.TempDir() SQLite DB initialised with parent schema + lan_devices table"
+      ],
+      "given": "lan_devices table is empty; sweep observes (mac=AA:BB:CC:11:22:33, ip=192.168.1.50, vendor='Acme Corp')",
+      "when": "store.Upsert is called for the observation",
+      "then": "row exists with first_seen == last_seen (within 1 ms), online == 1, missed_sweeps == 0",
+      "steps": [
+        "Open tmp DB",
+        "Call store.Upsert with the observation",
+        "SELECT row, assert fields"
+      ],
+      "expected_result": "Single row; |first_seen - last_seen| < 1 ms; online == 1; missed_sweeps == 0"
+    },
+    {
+      "id": "TC-LD-005f",
+      "requirement_id": "FR-034",
+      "user_story_id": "US-034",
+      "ac_id": "AC-034-002",
+      "title": "DHCP renewal \u2014 same MAC with new IP updates ip and last_seen, preserves first_seen",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "DB pre-populated with one row: mac=AA:BB:CC:11:22:33, ip=192.168.1.50, first_seen=t0, last_seen=t0"
+      ],
+      "given": "1 hour later, sweep observes the same MAC with ip=192.168.1.99",
+      "when": "store.Upsert is called",
+      "then": "row's ip becomes '192.168.1.99'; last_seen advances; first_seen still equals t0",
+      "steps": [
+        "Pre-populate DB with original row at t0",
+        "Advance fake clock by 1 hour to t1",
+        "Call store.Upsert with new ip",
+        "SELECT row and assert"
+      ],
+      "expected_result": "ip == '192.168.1.99'; last_seen \u2248 t1; first_seen == t0 (unchanged)"
+    },
+    {
+      "id": "TC-LD-005e",
+      "requirement_id": "FR-034",
+      "user_story_id": "US-034",
+      "ac_id": "AC-034-001",
+      "title": "Persistence survives process restart \u2014 first_seen preserved across re-open",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "DB has one row inserted 3 days ago (first_seen = t-3d)",
+      "when": "the *DB is closed and re-opened, then SELECT runs against the new handle",
+      "then": "first_seen still equals t-3d (no clock-on-startup overwrite)",
+      "steps": [
+        "Open DB, insert row with first_seen=t-3d",
+        "db.Close()",
+        "Re-open same dbPath",
+        "SELECT and assert"
+      ],
+      "expected_result": "first_seen == original t-3d value"
+    },
+    {
+      "id": "TC-LD-006h",
+      "requirement_id": "FR-035",
+      "user_story_id": "US-035",
+      "ac_id": "AC-035-001",
+      "title": "Single-miss tolerance \u2014 device missing 1 sweep then responding stays online",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Default miss threshold N=3"
+      ],
+      "given": "Device AA:BB online from sweeps 1-2; sweep 3 misses; sweep 4 sees it again",
+      "when": "the state machine processes sweeps 1..4",
+      "then": "after sweep 4 the row's online == 1, missed_sweeps == 0, last_seen advanced to sweep 4 timestamp",
+      "steps": [
+        "Drive 4 sweep cycles via the orchestrator with the fake transport",
+        "Sweep 3: device is in the drop list",
+        "After sweep 4: SELECT row and assert"
+      ],
+      "expected_result": "online == 1; missed_sweeps == 0; last_seen == sweep 4 ts"
+    },
+    {
+      "id": "TC-LD-006f",
+      "requirement_id": "FR-035",
+      "user_story_id": "US-035",
+      "ac_id": "AC-035-002",
+      "title": "Three consecutive misses flip device to offline; last_seen freezes",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Device online at sweep 1; absent from sweeps 2, 3, 4 (N=3)",
+      "when": "sweep 4 completes",
+      "then": "row's online == 0; last_seen == sweep 1 timestamp (frozen, not sweep 4); missed_sweeps == 3",
+      "steps": [
+        "Run 4 sweeps; device is in the responder set only on sweep 1",
+        "After sweep 4: SELECT row",
+        "Assert online flip and last_seen freeze"
+      ],
+      "expected_result": "online == 0; last_seen == sweep 1 ts; missed_sweeps == 3"
+    },
+    {
+      "id": "TC-LD-006e",
+      "requirement_id": "FR-035",
+      "user_story_id": "US-035",
+      "ac_id": "AC-035-001",
+      "title": "Recovery \u2014 offline device responding once flips back to online",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "Device flipped offline at sweep 4 (per previous TC); sweep 5 sees it again",
+      "when": "the state machine processes sweep 5",
+      "then": "row's online == 1; missed_sweeps == 0; last_seen advances to sweep 5 ts; first_seen unchanged",
+      "steps": [
+        "Bring DB into the offline state at sweep 4",
+        "Run sweep 5 with the device in the responder set",
+        "SELECT row, assert fields"
+      ],
+      "expected_result": "online flips back to 1; missed_sweeps == 0; last_seen == sweep 5 ts; first_seen unchanged"
+    },
+    {
+      "id": "TC-LD-007h",
+      "requirement_id": "FR-036",
+      "user_story_id": "US-036",
+      "ac_id": "AC-036-001",
+      "title": "GET /api/network/lan-devices returns JSON with online entries first",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "DB pre-populated: 2 online (last_seen recent), 1 offline (last_seen 1h ago)"
+      ],
+      "given": "An authenticated session and 3 rows in lan_devices",
+      "when": "GET /api/network/lan-devices is issued with the session cookie and Accept: application/json",
+      "then": "HTTP 200; JSON array length 3; first 2 entries have online=true; third has online=false; ordering within online is last_seen DESC; timestamps are ISO 8601 UTC",
+      "steps": [
+        "Pre-populate DB",
+        "Build authenticated test client",
+        "Issue GET",
+        "Assert status, length, ordering, ISO 8601 format"
+      ],
+      "expected_result": "Status 200; len(JSON) == 3; arr[0].online && arr[1].online && !arr[2].online; arr[0].last_seen > arr[1].last_seen"
+    },
+    {
+      "id": "TC-LD-007f",
+      "requirement_id": "FR-036",
+      "user_story_id": "US-036",
+      "ac_id": "AC-036-002",
+      "title": "Unauthenticated GET returns 401 (JSON) / redirect (HTML)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "No session cookie",
+      "when": "GET /api/network/lan-devices with Accept: application/json",
+      "then": "HTTP 401 with body containing 'unauthenticated' (or parent's standard JSON error shape)",
+      "steps": [
+        "Issue GET with no cookie",
+        "Assert status and body shape"
+      ],
+      "expected_result": "Status == 401; body matches parent auth-error contract"
+    },
+    {
+      "id": "TC-LD-007e",
+      "requirement_id": "FR-036",
+      "user_story_id": "US-036",
+      "ac_id": "AC-036-001",
+      "title": "API returns within 100 ms p99 over 100 sequential requests on a 30-device DB",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "DB pre-populated with 30 rows"
+      ],
+      "given": "An authenticated session and 30 rows in lan_devices",
+      "when": "100 sequential GETs to /api/network/lan-devices are issued",
+      "then": "p99 latency < 100 ms (computed from the slowest 1 of 100 = the 99th-percentile sample)",
+      "steps": [
+        "Issue 100 GETs measuring per-request duration",
+        "Sort durations and read index 98 (p99)",
+        "Assert duration < 100 ms"
+      ],
+      "expected_result": "p99 latency < 100 ms"
+    },
+    {
+      "id": "TC-LD-008h",
+      "requirement_id": "FR-037",
+      "user_story_id": "US-037",
+      "ac_id": "AC-037-001",
+      "title": "/network page renders LAN devices table within 5 s with WAN events still present below it",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "DB pre-populated with 5 lan_devices rows and 2 net_events rows"
+      ],
+      "given": "An authenticated session and pre-populated DB",
+      "when": "the operator opens /network in a headless browser",
+      "then": "within 5 s of page load, the lan-devices section shows a 5-row table; the WAN events block is also rendered below it; both regions are visible without scrolling on a 1280\u00d7800 viewport",
+      "steps": [
+        "Boot in-process server with seeded DB",
+        "Drive a headless browser to /network",
+        "Wait for the lan-devices section to populate",
+        "Assert table row count == 5",
+        "Assert the WAN-events block is also present and below the lan-devices section"
+      ],
+      "expected_result": "Page load < 5 s; LAN table has 5 rows; WAN events block follows it"
+    },
+    {
+      "id": "TC-LD-008f",
+      "requirement_id": "FR-037",
+      "user_story_id": "US-037",
+      "ac_id": "AC-037-002",
+      "title": "Empty state \u2014 when no devices observed yet, /network shows the 'No devices discovered' message instead of an empty table",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "Empty DB; orchestrator started <1 sweep cadence ago"
+      ],
+      "given": "DB has zero lan_devices rows; orchestrator has never run a sweep",
+      "when": "the operator opens /network",
+      "then": "the lan-devices section renders the literal text 'No devices discovered yet \u2014 first sweep in' followed by a non-empty countdown, and no <table> element is present in that section",
+      "steps": [
+        "Start server with empty DB",
+        "Drive headless browser to /network",
+        "Locate the lan-devices section",
+        "Assert text content and absence of <table>"
+      ],
+      "expected_result": "Section contains 'No devices discovered yet'; no <table> in section"
+    },
+    {
+      "id": "TC-LD-008e",
+      "requirement_id": "FR-037",
+      "user_story_id": "US-037",
+      "ac_id": "AC-037-002",
+      "title": "Online badge contrast meets WCAG AA in both light and dark themes",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "DB has 1 online and 1 offline row"
+      ],
+      "given": "/network rendered with 2 rows",
+      "when": "an axe-core scan runs against the page in both prefers-color-scheme: light and dark",
+      "then": "0 contrast violations are reported on the lan-devices section in both themes",
+      "steps": [
+        "Render /network with light theme media query",
+        "Run axe-core audit",
+        "Repeat with dark theme",
+        "Assert 0 contrast violations in section both times"
+      ],
+      "expected_result": "axe.violations(contrast) on lan-devices section == 0 in both themes"
+    },
+    {
+      "id": "TC-LD-009h",
+      "requirement_id": "FR-038",
+      "user_story_id": "US-038",
+      "ac_id": "AC-038-001",
+      "title": "Two consecutive over-budget sweeps trigger 2\u00d7 cadence and self_throttled flag",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Orchestrator at cadence 300 s; transport configured to make sweeps take 4 s wall-clock for 2 cycles in a row",
+      "when": "the second over-budget cycle completes",
+      "then": "next cadence is 600 s (2\u00d7); status.self_throttled == true; status flag visible via /api/network/lan-devices/status",
+      "steps": [
+        "Configure orchestrator with slow transport for 2 cycles",
+        "Run 2 cycles",
+        "Read scheduled-next time and status",
+        "Assert"
+      ],
+      "expected_result": "next interval == 600 s; status.self_throttled == true"
+    },
+    {
+      "id": "TC-LD-009f",
+      "requirement_id": "FR-038",
+      "user_story_id": "US-038",
+      "ac_id": "AC-038-002",
+      "title": "30 min of in-budget sweeps after throttling restores the configured cadence",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "Orchestrator already in self-throttled state at cadence 600 s"
+      ],
+      "given": "Throttled to 600 s; transport now completes sweeps in 1 s; fake clock runs 30 min of sweeps",
+      "when": "the 30 min of all-clear samples elapses",
+      "then": "next cadence returns to the configured 300 s baseline; status.self_throttled == false",
+      "steps": [
+        "Set state to self-throttled at 600 s",
+        "Switch transport to fast",
+        "Advance fake clock 30 min",
+        "Read status"
+      ],
+      "expected_result": "Next interval == 300 s; status.self_throttled == false"
+    },
+    {
+      "id": "TC-LD-009e",
+      "requirement_id": "FR-038",
+      "user_story_id": "US-038",
+      "ac_id": "AC-038-001",
+      "title": "Cadence cap \u2014 repeated over-budget cycles never push interval above 1800 s",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "Orchestrator at cadence 1200 s"
+      ],
+      "given": "Throttling triggers twice in a row: first throttle would set 2400 s, second would set 4800 s",
+      "when": "the scheduler computes the next cadence after each over-budget cycle",
+      "then": "first throttle clamps to 1800 s; second throttle stays at 1800 s; status.self_throttled == true; no overflow into negative numbers or wraparound",
+      "steps": [
+        "Configure cadence 1200 s",
+        "Force two over-budget pairs (4 cycles)",
+        "Read interval after each pair",
+        "Assert clamp at 1800 s both times"
+      ],
+      "expected_result": "After 1st throttle: interval == 1800 s; after 2nd throttle: interval == 1800 s (no overflow)"
+    },
+    {
+      "id": "TC-LD-010h",
+      "requirement_id": "FR-031",
+      "user_story_id": "US-031",
+      "ac_id": "AC-031-002",
+      "title": "[NFR-011] Deployed binary has no CAP_NET_RAW or other new capabilities (deployment proof)",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "linux/arm64 binary built via 'make build-arm'"
+      ],
+      "given": "the built binary at bin/ultron-ap-linux-arm64",
+      "when": "running 'getcap bin/ultron-ap-linux-arm64' on a Linux host",
+      "then": "stdout is empty (no capabilities set) \u2014 same as before this feature",
+      "steps": [
+        "Build the binary",
+        "Exec getcap on the artifact",
+        "Assert empty output"
+      ],
+      "expected_result": "getcap output == '' (no capabilities)",
+      "nfr_id": "NFR-011"
+    },
+    {
+      "id": "TC-LD-010f",
+      "requirement_id": "FR-031",
+      "user_story_id": "US-031",
+      "ac_id": "AC-031-002",
+      "title": "[NFR-011] Sweep fails closed when net.ipv4.ping_group_range is unset",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Linux test host where ping_group_range can be temporarily set to '1 0'"
+      ],
+      "given": "ping_group_range is configured to disallow the running uid",
+      "when": "the orchestrator attempts a sweep",
+      "then": "the sweep returns ErrUnprivilegedICMPUnavailable; no raw socket fallback is attempted; no panic; orchestrator logs once and self-disables",
+      "steps": [
+        "Set /proc/sys/net/ipv4/ping_group_range to '1 0' (disallow)",
+        "Run one sweep",
+        "Assert error type and disabled state",
+        "Restore ping_group_range to the default"
+      ],
+      "expected_result": "errors.Is(err, ErrUnprivilegedICMPUnavailable) == true; no raw-socket attempt; orchestrator.Disabled() == true",
+      "nfr_id": "NFR-011"
+    },
+    {
+      "id": "TC-LD-010e",
+      "requirement_id": "FR-031",
+      "user_story_id": "US-032",
+      "ac_id": "AC-032-001",
+      "title": "[NFR-011] Unprivileged uid can read /proc/net/arp on the deployed Pi (privilege boundary holds)",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "Test runs as a non-root uid"
+      ],
+      "given": "Process is running as the unprivileged 'ultron' uid (or any non-root in tests)",
+      "when": "arp.ReadCache('/proc/net/arp') is called",
+      "then": "returns the parsed entries with no permission error; no setuid escalation, no helper IPC calls",
+      "steps": [
+        "Drop to a non-root uid via os.Setuid in a fork (or assert os.Geteuid() != 0)",
+        "Call arp.ReadCache",
+        "Assert no permission error",
+        "Assert no IPC call to ultron-helper was attempted (count == 0)"
+      ],
+      "expected_result": "Returns valid entries; no permission error; helper-IPC count == 0",
+      "nfr_id": "NFR-011"
+    },
+    {
+      "id": "TC-LD-011h",
+      "requirement_id": "FR-033",
+      "user_story_id": "US-033",
+      "ac_id": "AC-033-001",
+      "title": "[NFR-012] OUI lookup works in a process with no DNS / no outbound network",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "Tests run with no network (Go test with -no-network or DNS hooks intercepted)",
+      "when": "oui.Vendor is called for B8:27:EB:00:00:00, 00:1A:11:00:00:00 (Google Inc), and a random unknown prefix",
+      "then": "all three calls return synchronously and produce expected vendor strings ('Raspberry Pi\u2026', 'Google\u2026', 'Unknown') with no network syscalls",
+      "steps": [
+        "Run subtest with network-syscall hook installed",
+        "Call oui.Vendor on the 3 inputs",
+        "Assert returns + no network syscalls"
+      ],
+      "expected_result": "Each call returns the expected vendor; net syscall count == 0",
+      "nfr_id": "NFR-012"
+    },
+    {
+      "id": "TC-LD-011f",
+      "requirement_id": "FR-033",
+      "user_story_id": "US-033",
+      "ac_id": "AC-033-002",
+      "title": "[NFR-012] Malformed MAC input does not cause network lookup or panic",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "MAC strings: 'not-a-mac', '00:00', 'ZZ:YY:XX:11:22:33', empty string",
+      "when": "oui.Vendor is called for each",
+      "then": "each returns 'Unknown' or 'Locally administered' (depending on parse) without error and without any net syscall",
+      "steps": [
+        "Install a net-syscall hook that fails the test on any DNS / connect call",
+        "Call oui.Vendor for each malformed input",
+        "Assert all calls return without error"
+      ],
+      "expected_result": "All calls return a non-empty string; no panic; net syscall count == 0",
+      "nfr_id": "NFR-012"
+    },
+    {
+      "id": "TC-LD-011e",
+      "requirement_id": "FR-033",
+      "user_story_id": "US-033",
+      "ac_id": "AC-033-001",
+      "title": "[NFR-012] OUI source file is checked into the repo and the refresh script regenerates it deterministically",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "low",
+      "preconditions": [
+        "tools/oui/refresh.sh exists and uses a pinned source URL"
+      ],
+      "given": "The repository contains internal/network/landevices/oui/data.csv (or .txt) and tools/oui/refresh.sh",
+      "when": "tools/oui/refresh.sh is run twice against a stubbed input file (no real network)",
+      "then": "the produced output file is byte-identical across the two runs (deterministic refresh) and is the same file used by go:embed",
+      "steps": [
+        "Stub the network fetch step to return a fixed input snapshot",
+        "Run tools/oui/refresh.sh twice into a temp dir",
+        "Diff the two outputs",
+        "Assert byte-equal and equal to the file referenced by go:embed in the source"
+      ],
+      "expected_result": "Two runs produce byte-identical output; output matches the embedded path",
+      "nfr_id": "NFR-012"
+    },
+    {
+      "id": "TC-LD-012h",
+      "requirement_id": "FR-034",
+      "user_story_id": "US-034",
+      "ac_id": "AC-034-001",
+      "title": "[NFR-013] Schema migration is idempotent \u2014 re-running New() on an existing DB does not error",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "DB created once via database.New(path), then closed",
+      "when": "database.New(path) runs again on the same file",
+      "then": "no error; lan_devices table still present and schema is unchanged (PRAGMA table_info matches expected columns)",
+      "steps": [
+        "Open + close DB",
+        "Re-open via New()",
+        "PRAGMA table_info(lan_devices)",
+        "Assert columns match expected"
+      ],
+      "expected_result": "No error; lan_devices columns == [mac, ip, vendor, first_seen, last_seen, online, missed_sweeps]",
+      "nfr_id": "NFR-013"
+    },
+    {
+      "id": "TC-LD-012f",
+      "requirement_id": "FR-034",
+      "user_story_id": "US-034",
+      "ac_id": "AC-034-001",
+      "title": "[NFR-013] Backup pipeline (parent FR-015) includes lan_devices rows",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "DB has 5 lan_devices rows"
+      ],
+      "given": "DB with 5 rows; existing backup machinery reachable via db.Backup(path)",
+      "when": "db.Backup(tmp.db) runs",
+      "then": "the resulting tmp.db file contains exactly 5 lan_devices rows when opened independently",
+      "steps": [
+        "Pre-populate DB",
+        "Call db.Backup(tmp)",
+        "Open tmp file in a fresh handle",
+        "SELECT count(*) FROM lan_devices",
+        "Assert == 5"
+      ],
+      "expected_result": "Restored DB has 5 lan_devices rows",
+      "nfr_id": "NFR-013"
+    },
+    {
+      "id": "TC-LD-012e",
+      "requirement_id": "FR-034",
+      "user_story_id": "US-034",
+      "ac_id": "AC-034-001",
+      "title": "[NFR-013] Table size grows with distinct MACs, not with sweep count",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "Empty DB"
+      ],
+      "given": "5 distinct MACs in the responder set; 100 sweep cycles run",
+      "when": "after 100 cycles SELECT count(*) FROM lan_devices",
+      "then": "count == 5 (one row per distinct MAC, not 500)",
+      "steps": [
+        "Open empty DB",
+        "Run 100 sweep cycles via orchestrator with the 5 fixed responders",
+        "SELECT count(*)",
+        "Assert == 5"
+      ],
+      "expected_result": "lan_devices row count == 5 after 100 cycles",
+      "nfr_id": "NFR-013"
+    },
+    {
+      "id": "TC-LD-013h",
+      "requirement_id": "FR-038",
+      "user_story_id": "US-031",
+      "ac_id": "AC-031-001",
+      "title": "[NFR-014] Steady-state synthetic 30-min run reports CPU avg \u2264 2% and RSS delta \u2264 20 MB",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "Synthetic clock + fake transport"
+      ],
+      "given": "Orchestrator running 6 sweep cycles (30 min synthetic time) at default 5-min cadence with 30-device responder set",
+      "when": "the run completes",
+      "then": "process CPU avg < 2% over the run; RSS delta from baseline (pre-Start) < 20 MB",
+      "steps": [
+        "Snapshot RSS",
+        "Start orchestrator",
+        "Drive 6 cycles",
+        "Snapshot RSS again",
+        "Assert deltas"
+      ],
+      "expected_result": "CPU avg < 2%; RSS delta < 20 MB",
+      "nfr_id": "NFR-014"
+    },
+    {
+      "id": "TC-LD-013f",
+      "requirement_id": "FR-038",
+      "user_story_id": "US-038",
+      "ac_id": "AC-038-001",
+      "title": "[NFR-014] Simulated CPU > 2% (5-min avg) over 10 min triggers self-throttle (FR-038 link)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "Orchestrator with injected CPU-monitor stub"
+      ],
+      "given": "CPU monitor stub reports 5-min avg = 4% (over budget) for 10 consecutive minutes",
+      "when": "the orchestrator evaluates the budget on each cycle",
+      "then": "self_throttled becomes true; cadence doubles; status flag exposed via /api/network/lan-devices/status",
+      "steps": [
+        "Inject CPU stub returning 4%",
+        "Drive 2 cycles (10 min)",
+        "Read status",
+        "Assert throttled flag and 2\u00d7 cadence"
+      ],
+      "expected_result": "status.self_throttled == true; cadence == 2\u00d7 original",
+      "nfr_id": "NFR-014"
+    },
+    {
+      "id": "TC-LD-013e",
+      "requirement_id": "FR-038",
+      "user_story_id": "US-031",
+      "ac_id": "AC-031-001",
+      "title": "[NFR-014] Worst-case sweep \u2014 all 254 hosts respond \u2014 completes within 3 s wall-clock",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "fakeICMPTransport answers every host with 1 ms RTT"
+      ],
+      "given": "/24 where all 254 hosts respond; 32-worker pool; per-host timeout 1 s",
+      "when": "one sweep cycle runs",
+      "then": "wall-clock duration < 3 s; SendCount == 254; all 254 are recorded as ResponderSet",
+      "steps": [
+        "Configure transport to answer every host with 1 ms RTT",
+        "Run one sweep",
+        "Assert duration and counts"
+      ],
+      "expected_result": "duration < 3 s; SendCount == 254; len(ResponderSet) == 254",
+      "nfr_id": "NFR-014"
+    },
+    {
+      "id": "TC-LD-014h",
+      "requirement_id": "FR-037",
+      "user_story_id": "US-037",
+      "ac_id": "AC-037-002",
+      "title": "[NFR-015] No new CSS or JS files added by this feature \u2014 only template changes",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "low",
+      "preconditions": [],
+      "given": "git diff main..HEAD scoped to web/static/css and web/static/js",
+      "when": "the diff is computed",
+      "then": "no new files were added; only existing files (or templates) were modified",
+      "steps": [
+        "Run 'git diff --name-status main..HEAD -- web/static/css web/static/js'",
+        "Assert no lines starting with 'A'"
+      ],
+      "expected_result": "No 'A' (added) entries in the scoped diff",
+      "nfr_id": "NFR-015"
+    },
+    {
+      "id": "TC-LD-014f",
+      "requirement_id": "FR-037",
+      "user_story_id": "US-037",
+      "ac_id": "AC-037-002",
+      "title": "[NFR-015] Online \u2192 offline transition does not animate or flash (no auto-triggered transitions)",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [
+        "DB pre-populated with 1 online row"
+      ],
+      "given": "/network rendered with the device row showing online",
+      "when": "the row is updated to offline (DB write + HTMX refresh) and a CSS-transition observer captures all transitions on the badge element for 5 s",
+      "then": "no transitions / animations are triggered on the badge or row (only a static colour swap); operator-prefers-reduced-motion is also honoured by absence of animation",
+      "steps": [
+        "Render /network with online row",
+        "Install a CSS transitionstart observer on the badge",
+        "Flip DB row to offline",
+        "Wait for HTMX refresh (\u226430 s polling cycle, or trigger refresh manually)",
+        "Assert transition count == 0 over the 5 s window"
+      ],
+      "expected_result": "Zero CSS transitions triggered on badge/row during the state flip",
+      "nfr_id": "NFR-015"
+    },
+    {
+      "id": "TC-LD-014e",
+      "requirement_id": "FR-037",
+      "user_story_id": "US-037",
+      "ac_id": "AC-037-001",
+      "title": "[NFR-015] All colour values used in the LAN-devices section come from existing Tailwind tokens (no inline hex)",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "low",
+      "preconditions": [],
+      "given": "Rendered /network HTML with the lan-devices section populated",
+      "when": "the section's HTML is scanned for inline style attributes containing colour literals",
+      "then": "no inline style='...color: #...' or 'background: rgb(...)' is present; colours come exclusively from Tailwind utility classes",
+      "steps": [
+        "Render /network with 2 rows",
+        "Extract the lan-devices section HTML",
+        "Regex-scan for /style=\"[^\"]*(color|background)[^\"]*#|rgb/i",
+        "Assert match count == 0"
+      ],
+      "expected_result": "No inline colour literals found in section HTML",
+      "nfr_id": "NFR-015"
+    }
+  ]
+}

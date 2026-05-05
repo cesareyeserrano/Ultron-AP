@@ -111,6 +111,18 @@ CREATE TABLE IF NOT EXISTS NetEvent (
 );
 CREATE INDEX IF NOT EXISTS idx_net_event_ts ON NetEvent(ts);
 CREATE INDEX IF NOT EXISTS idx_net_event_kind_ts ON NetEvent(kind, ts);
+
+CREATE TABLE IF NOT EXISTS lan_devices (
+	mac TEXT PRIMARY KEY,
+	ip TEXT NOT NULL,
+	vendor TEXT NOT NULL DEFAULT 'Unknown',
+	first_seen INTEGER NOT NULL,
+	last_seen INTEGER NOT NULL,
+	online INTEGER NOT NULL DEFAULT 1,
+	missed_sweeps INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_lan_devices_online_lastseen
+	ON lan_devices(online DESC, last_seen DESC);
 `
 
 type DB struct {
