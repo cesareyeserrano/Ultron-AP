@@ -128,8 +128,9 @@
       "title": "Feature: lan-devices — discover & track LAN devices via ICMP sweep + ip neigh",
       "priority": "P2",
       "problem": "Pi runs on eth0 in 192.168.1.0/24; gateway/cloudflare/dns probes already cover WAN reachability. Add per-device discovery: 5-min ICMP sweep over /24 + read ip neigh + OUI vendor lookup → device list (IP, MAC, vendor, online/offline, last_seen) persisted in SQLite. No apt installs (uses unprivileged ICMP already enabled via ping_group_range). UI lives at /network. v1 scope: no per-device WiFi signal (router-cooperation required, not feasible from a guest host) and no per-device bandwidth. mDNS hostname enrichment is a v2 follow-up. Cost: ~250 ARP packets in 3s every 5min, negligible Pi/network impact.",
-      "status": "open",
-      "createdAt": "2026-05-05T14:42:16.143Z"
+      "status": "closed",
+      "createdAt": "2026-05-05T14:42:16.143Z",
+      "closedAt": "2026-05-05T21:48:10.562Z"
     },
     {
       "id": "BL-017",
