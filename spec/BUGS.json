@@ -387,6 +387,26 @@
       "fix_at": "2026-05-05T15:24:33.278Z",
       "close_commit_sha": "6ef7f06cdb939b706b178cec58ba0db8834793e7",
       "close_at": "2026-05-05T15:24:33.351Z"
+    },
+    {
+      "id": "BG-018",
+      "title": "lan-devices: nil sweep.Transport panics on first sweep cycle",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "critical",
+      "status": "open",
+      "fr": "FR-031",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-05-05T21:57:46.836Z",
+      "updated_at": "2026-05-05T21:57:46.836Z",
+      "resolution": null
     }
   ]
 }

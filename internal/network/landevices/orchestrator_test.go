@@ -12,6 +12,19 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/network/landevices/store"
 )
 
+// BG-018 regression: New() must default Transport to a non-nil production
+// implementation when none is injected, so the first sweep cycle does not
+// panic with a nil-pointer dereference in production.
+func TestBG_018_NewDefaultsTransportWhenNil(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "test.db")
+	db, err := database.New(dbPath)
+	require.NoError(t, err)
+	t.Cleanup(func() { db.Close() })
+
+	o := New(Config{Store: store.New(db.DB)}) // no Transport
+	require.NotNil(t, o.cfg.Transport, "BG-018: Transport must default when nil")
+}
+
 // helper: build an orchestrator with an injectable clock and an empty store.
 func newTestOrch(t *testing.T, cadence time.Duration, clock func() time.Time) *Orchestrator {
 	t.Helper()

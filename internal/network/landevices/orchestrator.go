@@ -104,6 +104,11 @@ func New(cfg Config) *Orchestrator {
 	if cfg.IfaceResolver == nil {
 		cfg.IfaceResolver = subnet.DefaultIfaceResolver
 	}
+	if cfg.Transport == nil {
+		// BG-018: production uses an unprivileged SOCK_DGRAM ICMP socket;
+		// tests inject sweep.fakeTransport via Config.
+		cfg.Transport = sweep.DefaultTransport()
+	}
 	if cfg.Logger == nil {
 		cfg.Logger = func(string, ...interface{}) {}
 	}
