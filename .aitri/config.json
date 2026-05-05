@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-alpha.27",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-05T21:34:17.381Z",
+  "updatedAt": "2026-05-05T21:36:54.528Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,11 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-03T21:50:15.915Z",
-      "event": "approved",
-      "phase": "ux"
-    },
     {
       "at": "2026-05-04T00:29:21.919Z",
       "event": "verify-run",
@@ -198,6 +193,15 @@
       "method": "git",
       "baseRefFrom": "b429e2e3e2d284c1cea842ea37aeb1f3b3ff9c85",
       "baseRefTo": "fac1ff7ddc682b5eba53f7d98a57acfe21ebd2cb"
+    },
+    {
+      "at": "2026-05-05T21:36:54.492Z",
+      "event": "normalize-resolved",
+      "phase": null,
+      "files": 27,
+      "method": "git",
+      "baseRefFrom": "fac1ff7ddc682b5eba53f7d98a57acfe21ebd2cb",
+      "baseRefTo": "6ed86445500f4665c5bf845ad3efe6949343ae0a"
     }
   ],
   "verifyPassed": true,
@@ -211,17 +215,17 @@
   },
   "verifyRanAt": "2026-05-05T15:59:54.331Z",
   "lastSession": {
-    "at": "2026-05-05T17:27:43.054Z",
+    "at": "2026-05-05T21:36:54.527Z",
     "agent": "unknown",
-    "event": "feature init lan-devices"
+    "event": "normalize --resolve"
   },
   "auditLastAt": "2026-05-03T22:42:15.435Z",
   "upgradeFindings": [],
   "normalizeState": {
-    "baseRef": "fac1ff7ddc682b5eba53f7d98a57acfe21ebd2cb",
+    "baseRef": "6ed86445500f4665c5bf845ad3efe6949343ae0a",
     "method": "git",
-    "status": "pending",
-    "lastRun": "2026-05-05T21:34:17.380Z"
+    "status": "resolved",
+    "lastRun": "2026-05-05T21:36:54.490Z"
   },
   "verifySummary": {
     "total": 45,
