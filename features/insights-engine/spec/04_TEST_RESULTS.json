@@ -1,12 +1,12 @@
 {
-  "executed_at": "2026-05-05T22:56:08.677Z",
+  "executed_at": "2026-05-05T23:03:49.428Z",
   "test_runner": "go test -C ../.. ./internal/insights/... ./internal/server/ -run TC_IE -v",
   "exit_code": 0,
   "results": [
     {
       "tc_id": "TC-IE-001h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_001h_EngineEvaluatesIdleTickProducesNoVerdicts (0.00s)"
+      "notes": "--- PASS: TestTC_IE_001h_EngineEvaluatesIdleTickProducesNoVerdicts (0.01s)"
     },
     {
       "tc_id": "TC-IE-001f",
