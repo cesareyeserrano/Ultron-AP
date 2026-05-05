@@ -373,7 +373,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -381,8 +381,12 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-05-05T14:41:27.976Z",
-      "updated_at": "2026-05-05T14:41:27.976Z",
-      "resolution": null
+      "updated_at": "2026-05-05T15:24:33.351Z",
+      "resolution": null,
+      "fix_commit_sha": "6ef7f06cdb939b706b178cec58ba0db8834793e7",
+      "fix_at": "2026-05-05T15:24:33.278Z",
+      "close_commit_sha": "6ef7f06cdb939b706b178cec58ba0db8834793e7",
+      "close_at": "2026-05-05T15:24:33.351Z"
     }
   ]
 }
