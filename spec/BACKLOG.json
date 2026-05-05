@@ -137,8 +137,9 @@
       "title": "Feature: insights-engine — declarative rules engine producing real-time verdicts across all modules",
       "priority": "P1",
       "problem": "Today Ultron tells you WHAT is happening (CPU 90%, RTT 200ms) but not WHAT IT MEANS. Build a declarative rules engine: each rule = condition over telemetry vars + verdict + severity + recommendation. Reusable across system/network/services/devices. Examples: cpu>=90 AND temp>=75 → 'thermal throttling probable, kill heavy loads'; gateway ok AND cloudflare fail → 'LAN ok, ISP/WAN down'; ram>=90 AND swap>0 → 'memory pressure, inspect processes'. Verdicts surface in dashboard's Operational Indicators section and SSE-stream. Highest-leverage piece: every future module gains diagnostic capability for free by adding rules. Pairs with /help page (BL-018) which becomes the documentation surface for verdict definitions in two voices (technical + non-technical).",
-      "status": "open",
-      "createdAt": "2026-05-05T14:42:23.242Z"
+      "status": "closed",
+      "createdAt": "2026-05-05T14:42:23.242Z",
+      "closedAt": "2026-05-05T23:08:36.669Z"
     },
     {
       "id": "BL-018",
