@@ -54,8 +54,9 @@
       "title": "Surface missing ULTRON_SECRET_KEY at startup, not lazily",
       "priority": "P1",
       "problem": "internal/database/secrets.go:33-44 — plaintext-storage warning is sync.Once-gated and only fires on first secret use, possibly long after process start. Log the warning unconditionally during cmd/ultron-ap startup, and expose it on /healthz.",
-      "status": "open",
-      "createdAt": "2026-05-03T23:51:43.718Z"
+      "status": "closed",
+      "createdAt": "2026-05-03T23:51:43.718Z",
+      "closedAt": "2026-05-05T15:59:27.010Z"
     },
     {
       "id": "BL-008",
