@@ -11,15 +11,23 @@ import (
 	"log"
 	"os"
 	"strings"
-	"sync"
 )
 
 const encPrefix = "enc:v1:"
 
-// missingKeyWarnOnce guarantees the operator sees the "secrets at rest are plaintext"
-// warning exactly once per process start — enough to be noticed in logs without
-// spamming on every write path.
-var missingKeyWarnOnce sync.Once
+// missingSecretKeyWarning is logged at startup (BL-007) when ULTRON_SECRET_KEY
+// is not configured. Previously emitted lazily on the first notification write;
+// surfacing it at boot ensures operators see it in the journal immediately,
+// before any sensitive configuration has had a chance to land in plaintext.
+const missingSecretKeyWarning = "SECURITY WARNING: ULTRON_SECRET_KEY is not set — notification secrets (Telegram bot token, SMTP password) will be stored in the database in plaintext. Set ULTRON_SECRET_KEY before persisting sensitive configuration."
+
+// WarnIfMissingSecretKey emits the plaintext-secrets warning to the standard
+// logger if ULTRON_SECRET_KEY is not configured. Call this once at startup.
+func WarnIfMissingSecretKey() {
+	if _, ok := secretKeyFromEnv(); !ok {
+		log.Println(missingSecretKeyWarning)
+	}
+}
 
 func secretKeyFromEnv() ([]byte, bool) {
 	raw := strings.TrimSpace(os.Getenv("ULTRON_SECRET_KEY"))
@@ -33,14 +41,9 @@ func secretKeyFromEnv() ([]byte, bool) {
 func encryptSecret(plain string) (string, error) {
 	key, ok := secretKeyFromEnv()
 	if !ok {
-		// BG-001: previously this fell back to plaintext silently, so an operator
-		// who forgot to set ULTRON_SECRET_KEY would persist Telegram bot tokens
-		// and SMTP passwords unencrypted with no signal. Keep the backward-compatible
-		// behavior (still writes plaintext so notification config continues to work),
-		// but surface a loud, once-per-process warning to the log.
-		missingKeyWarnOnce.Do(func() {
-			log.Println("SECURITY WARNING: ULTRON_SECRET_KEY is not set — notification secrets (Telegram bot token, SMTP password) will be stored in the database in plaintext. Set ULTRON_SECRET_KEY before persisting sensitive configuration.")
-		})
+		// Backward-compatible fallback: still write plaintext so notification
+		// config continues to work for operators who haven't migrated. The loud
+		// warning is surfaced at startup via WarnIfMissingSecretKey (BL-007).
 		return plain, nil
 	}
 	block, err := aes.NewCipher(key)

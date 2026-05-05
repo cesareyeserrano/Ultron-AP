@@ -32,6 +32,10 @@ func main() {
 
 	log.Printf("Log level: %s", cfg.LogLevel)
 
+	// Surface ULTRON_SECRET_KEY misconfiguration in the journal at boot —
+	// before any notification config can land in the DB unencrypted (BL-007).
+	database.WarnIfMissingSecretKey()
+
 	// Initialize database
 	db, err := database.New(cfg.DBPath)
 	if err != nil {
