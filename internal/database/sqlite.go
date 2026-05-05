@@ -123,21 +123,18 @@ func New(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("cannot create database directory %q: %w", dir, err)
 	}
 
-	db, err := sql.Open("sqlite", dbPath)
+	// Apply pragmas via DSN so every connection in the pool gets them at
+	// handshake — busy_timeout is per-connection, and PRAGMA executed after
+	// sql.Open() only affects whichever pooled connection runs it. Without
+	// this, new connections spawned under load default to busy_timeout=0
+	// and return SQLITE_BUSY immediately on lock contention (BG-017).
+	dsn := fmt.Sprintf(
+		"file:%s?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=synchronous(NORMAL)",
+		dbPath,
+	)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open database %q: %w", dbPath, err)
-	}
-
-	// Enable WAL mode for better concurrent read performance
-	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("cannot enable WAL mode: %w", err)
-	}
-
-	// Set busy timeout to prevent "database is locked" errors during spikes
-	if _, err := db.Exec("PRAGMA busy_timeout=5000"); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("cannot set busy timeout: %w", err)
 	}
 
 	// Run schema migration
