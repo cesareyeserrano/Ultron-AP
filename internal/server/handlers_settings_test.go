@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -296,6 +297,7 @@ func TestBackupConfigSave_RequiresCSRF(t *testing.T) {
 func TestBackupConfigSave_PersistsAndApplies(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 
+	allowedPath := filepath.Join(srv.cfg.BackupRoot, "ultron-backups")
 	form := url.Values{
 		"csrf_token":         {session.CSRFToken},
 		"enabled":            {"on"},
@@ -305,7 +307,7 @@ func TestBackupConfigSave_PersistsAndApplies(t *testing.T) {
 		"schedule_hour":      {"2"},
 		"schedule_minute":    {"30"},
 		"destination_mode":   {"local_plus_telegram"},
-		"local_path":         {"/tmp/ultron-backups"},
+		"local_path":         {allowedPath},
 		"encrypt_enabled":    {"on"},
 		"encryption_key_ref": {"env:ULTRON_BACKUP_KEY"},
 		"upload_timeout_sec": {"45"},
@@ -328,11 +330,45 @@ func TestBackupConfigSave_PersistsAndApplies(t *testing.T) {
 	assert.Equal(t, 2, cfg.ScheduleHour)
 	assert.Equal(t, 30, cfg.ScheduleMinute)
 	assert.Equal(t, "local_plus_telegram", cfg.DestinationMode)
-	assert.Equal(t, "/tmp/ultron-backups", cfg.LocalPath)
+	assert.Equal(t, allowedPath, cfg.LocalPath)
 	assert.True(t, cfg.EncryptEnabled)
 	assert.Equal(t, "env:ULTRON_BACKUP_KEY", cfg.EncryptionKeyRef)
 	assert.Equal(t, 45, cfg.UploadTimeoutSec)
 	assert.Equal(t, 80, cfg.MaxUploadSizeMB)
+}
+
+func TestBackupConfigSave_RejectsPathOutsideRoot(t *testing.T) {
+	// BG-025 / BL-005: admin-supplied local_path must be inside ULTRON_BACKUP_ROOT.
+	// VACUUM INTO cannot be parameterised, so accepting arbitrary paths from a
+	// post-auth admin form was a defense-in-depth gap.
+	srv, session := setupSSETestServer(t)
+
+	cases := []struct {
+		name string
+		path string
+	}{
+		{"absolute outside root", "/etc/passwd-backup"},
+		{"relative", "ultron-backups"},
+		{"escape via dot-dot", filepath.Join(srv.cfg.BackupRoot, "..", "outside")},
+		{"NUL byte", filepath.Join(srv.cfg.BackupRoot, "evil\x00name")},
+		{"newline", filepath.Join(srv.cfg.BackupRoot, "evil\nname")},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			form := url.Values{
+				"csrf_token": {session.CSRFToken},
+				"enabled":    {"on"},
+				"local_path": {tc.path},
+			}
+			req := httptest.NewRequest(http.MethodPost, "/api/backup/config", strings.NewReader(form.Encode()))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+			rec := httptest.NewRecorder()
+
+			srv.httpServer.Handler.ServeHTTP(rec, req)
+			assert.Equal(t, http.StatusBadRequest, rec.Code, "path %q must be rejected", tc.path)
+		})
+	}
 }
 
 func TestBackupConfigSave_EnabledWithoutOtherFields(t *testing.T) {

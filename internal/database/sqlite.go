@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	_ "modernc.org/sqlite"
 )
@@ -266,7 +267,28 @@ func New(dbPath string) (*DB, error) {
 
 // Backup creates a consistent copy of the database at the destination path
 // using SQLite's VACUUM INTO command. This is safe even with WAL mode active.
+//
+// The destination is sanity-checked here as a defense-in-depth measure — the
+// HTTP handler that accepts admin-supplied backup directories runs the full
+// ValidateBackupPath against ULTRON_BACKUP_ROOT, but VACUUM INTO cannot be
+// parameterised so any caller reaching this function must not pass attacker-
+// controlled bytes (NUL/control chars, relative paths) regardless.
 func (db *DB) Backup(dstPath string) error {
+	if dstPath == "" {
+		return fmt.Errorf("backup destination is empty")
+	}
+	if strings.ContainsRune(dstPath, 0) {
+		return fmt.Errorf("backup destination contains NUL byte")
+	}
+	for _, r := range dstPath {
+		if unicode.IsControl(r) {
+			return fmt.Errorf("backup destination contains control character")
+		}
+	}
+	if !filepath.IsAbs(dstPath) {
+		return fmt.Errorf("backup destination must be absolute, got %q", dstPath)
+	}
+
 	// Ensure the destination doesn't exist (VACUUM INTO fails if it does)
 	_ = os.Remove(dstPath)
 

@@ -79,7 +79,14 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 	if mode != "" {
 		cfg.DestinationMode = mode
 	}
-	cfg.LocalPath = strings.TrimSpace(r.FormValue("local_path"))
+	rawLocalPath := strings.TrimSpace(r.FormValue("local_path"))
+	cleanedLocalPath, err := database.ValidateBackupPath(rawLocalPath, s.cfg.BackupRoot)
+	if err != nil {
+		log.Printf("settings: rejected backup local_path %q: %v", rawLocalPath, err)
+		http.Error(w, "Invalid backup path: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	cfg.LocalPath = cleanedLocalPath
 	cfg.EncryptEnabled = r.FormValue("encrypt_enabled") == "on"
 	cfg.EncryptionKeyRef = strings.TrimSpace(r.FormValue("encryption_key_ref"))
 	if v, err := strconv.Atoi(r.FormValue("upload_timeout_sec")); err == nil {

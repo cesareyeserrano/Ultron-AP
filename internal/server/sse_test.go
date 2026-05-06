@@ -19,13 +19,15 @@ import (
 func setupSSETestServer(t *testing.T) (*Server, *database.Session) {
 	t.Helper()
 
+	tmpDir := t.TempDir()
 	cfg := &config.Config{
 		Port:       8080,
-		DBPath:     filepath.Join(t.TempDir(), "test.db"),
+		DBPath:     filepath.Join(tmpDir, "test.db"),
 		LogLevel:   "info",
 		AdminUser:  "admin",
 		AdminPass:  "secret",
 		SessionTTL: 24 * time.Hour,
+		BackupRoot: tmpDir,
 	}
 
 	db, err := database.New(cfg.DBPath)

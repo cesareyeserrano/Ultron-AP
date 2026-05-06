@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +21,13 @@ type Config struct {
 	MetricsInterval time.Duration
 	HelperSocket    string
 	HelperTimeout   time.Duration
+
+	// BackupRoot is the only directory under which admin-supplied backup
+	// destination paths may live. An empty form value falls back to
+	// <BackupRoot>/backups. ULTRON_BACKUP_ROOT overrides; default is the
+	// directory containing DBPath, which matches the historical implicit
+	// destination.
+	BackupRoot string
 
 	// TrustedProxies is the parsed list of upstream proxies whose
 	// X-Forwarded-For headers we believe. When empty (the default), every
@@ -118,6 +126,14 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("invalid helper timeout: must be >= 1s, got %v", d)
 		}
 		cfg.HelperTimeout = d
+	}
+
+	cfg.BackupRoot = filepath.Clean(filepath.Dir(cfg.DBPath))
+	if v := strings.TrimSpace(os.Getenv("ULTRON_BACKUP_ROOT")); v != "" {
+		if !filepath.IsAbs(v) {
+			return nil, fmt.Errorf("invalid ULTRON_BACKUP_ROOT %q: must be an absolute path", v)
+		}
+		cfg.BackupRoot = filepath.Clean(v)
 	}
 
 	if v := os.Getenv("ULTRON_TRUSTED_PROXIES"); strings.TrimSpace(v) != "" {
