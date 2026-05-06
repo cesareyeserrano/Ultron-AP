@@ -87,7 +87,11 @@ func (s *Server) handleNotificationTest(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var cfg map[string]string
-	json.Unmarshal([]byte(nc.Config), &cfg)
+	if err := json.Unmarshal([]byte(nc.Config), &cfg); err != nil {
+		log.Printf("notifications: malformed config for channel %q: %v", channel, err)
+		http.Error(w, "Notification config is malformed — re-save settings.", http.StatusInternalServerError)
+		return
+	}
 
 	alert := &database.Alert{
 		Severity:  "info",

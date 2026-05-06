@@ -244,12 +244,23 @@ func New(dbPath string) (*DB, error) {
 		}
 	}
 
-	// Add source column to ActionLog if not present (migration for existing DBs)
-	_, _ = db.Exec(`ALTER TABLE ActionLog ADD COLUMN source TEXT NOT NULL DEFAULT ''`)
-	// BackupConfig schedule fields migration for existing DBs.
-	_, _ = db.Exec(`ALTER TABLE BackupConfig ADD COLUMN schedule_mode TEXT NOT NULL DEFAULT 'interval'`)
-	_, _ = db.Exec(`ALTER TABLE BackupConfig ADD COLUMN schedule_hour INTEGER NOT NULL DEFAULT 3`)
-	_, _ = db.Exec(`ALTER TABLE BackupConfig ADD COLUMN schedule_minute INTEGER NOT NULL DEFAULT 0`)
+	// Idempotent ALTER TABLE migrations for existing DBs. The expected
+	// failure mode on a re-run is "duplicate column name" — anything
+	// else (DB locked, table missing, IO error) is a real fault and
+	// must surface. BG-029 / BL-004 closed the silent-error gap that
+	// hid those.
+	idempotentAlters := []string{
+		`ALTER TABLE ActionLog ADD COLUMN source TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE BackupConfig ADD COLUMN schedule_mode TEXT NOT NULL DEFAULT 'interval'`,
+		`ALTER TABLE BackupConfig ADD COLUMN schedule_hour INTEGER NOT NULL DEFAULT 3`,
+		`ALTER TABLE BackupConfig ADD COLUMN schedule_minute INTEGER NOT NULL DEFAULT 0`,
+	}
+	for _, stmt := range idempotentAlters {
+		if _, err := db.Exec(stmt); err != nil && !isDuplicateColumnErr(err) {
+			db.Close()
+			return nil, fmt.Errorf("migration %q: %w", stmt, err)
+		}
+	}
 
 	// Integrity check
 	var result string
@@ -263,6 +274,18 @@ func New(dbPath string) (*DB, error) {
 	}
 
 	return &DB{db}, nil
+}
+
+// isDuplicateColumnErr returns true when an ALTER TABLE ADD COLUMN
+// failed because the column already exists — the expected outcome of
+// an idempotent re-run. Anything else (locked DB, missing table, IO
+// error) must surface so a corrupt schema state doesn't get silently
+// papered over. modernc.org/sqlite returns the SQLite engine message
+// verbatim, which always begins "duplicate column name:".
+//
+// @aitri-trace BG-029 BL-004
+func isDuplicateColumnErr(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "duplicate column name")
 }
 
 // Backup creates a consistent copy of the database at the destination path

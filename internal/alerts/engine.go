@@ -194,6 +194,33 @@ func (e *Engine) evaluate() {
 	e.recentMu.Lock()
 	e.recentAlerts = alerts
 	e.recentMu.Unlock()
+
+	e.pruneCooldowns()
+}
+
+// cooldownRetention is the upper bound on how long an entry stays in
+// the cooldowns map after its last trigger. metric:* keys are bounded
+// by the count of configured rules and don't leak — but docker:* and
+// systemd:* keys are keyed by transient container/service names, so
+// the map grew unbounded as containers were created and removed. The
+// retention covers any practical cooldown setting (max useful
+// cooldown is on the order of an hour).
+const cooldownRetention = 24 * time.Hour
+
+// pruneCooldowns drops cooldowns map entries older than the retention
+// window. Called at the end of each evaluate() pass so the cost is
+// amortised over the eval cadence (default 5 s).
+//
+// @aitri-trace BG-028 BL-003 FR-004
+func (e *Engine) pruneCooldowns() {
+	cutoff := time.Now().Add(-cooldownRetention)
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	for k, last := range e.cooldowns {
+		if last.Before(cutoff) {
+			delete(e.cooldowns, k)
+		}
+	}
 }
 
 func (e *Engine) evaluateMetricRule(cfg database.AlertConfig, snap *metrics.Snapshot) {

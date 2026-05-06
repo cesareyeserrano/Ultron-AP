@@ -151,7 +151,9 @@ func (s *Server) renderLogin(w http.ResponseWriter, data loginPageData) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tmpl.Execute(w, data)
+	if err := tmpl.Execute(w, data); err != nil {
+		log.Printf("render: login.html execute failed: %v", err)
+	}
 }
 
 func (s *Server) renderLoginWithError(w http.ResponseWriter, msg string) {
