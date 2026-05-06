@@ -16,7 +16,7 @@
 
     <img src="/static/ultron-192.png?v=20260226h" alt="Ultron" class="md:hidden absolute top-1/2 w-8 h-8 shrink-0 pointer-events-none" style="left:50%;transform:translate(-50%,-50%);">
 
-    <!-- Right: uptime + user -->
+    <!-- Right: uptime + user dropdown -->
     <div class="flex items-center gap-3">
         <!-- Uptime indicator -->
         <div class="hidden sm:flex items-center gap-1.5 text-xs text-text-muted" title="Server uptime">
@@ -27,6 +27,28 @@
             <span class="font-mono">{{.Uptime}}</span>
         </div>
 
+        <!-- FR-067: header user dropdown — Logout reachable from every authenticated page. -->
+        <details data-header-dropdown class="relative">
+            <summary class="list-none cursor-pointer p-1.5 rounded-lg text-text-muted hover:bg-card hover:text-text transition-colors flex items-center gap-1" aria-label="User menu">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </summary>
+            <div class="absolute right-0 mt-1 w-44 panel-soft p-1 z-30 text-xs">
+                <form method="POST" action="/logout" class="m-0">
+                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    <button type="submit" data-action="logout" class="w-full text-left px-3 py-2 rounded hover:bg-card text-text flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>
+                        </svg>
+                        Log out
+                    </button>
+                </form>
+            </div>
+        </details>
     </div>
 </header>
 {{end}}

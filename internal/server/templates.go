@@ -56,6 +56,10 @@ func (s *Server) parseTemplates() {
 			"tailscalePeerOnline":   tailscalePeerOnline,
 			"tailscalePeerDevice":   tailscalePeerDeviceName,
 			"tailscalePeerDeviceChip": tailscalePeerDeviceChip,
+			"rangeLabel":              func(field string) string { return RangeFor(field).LabelWithHint() },
+			"rangeHint":               func(field string) string { return RangeFor(field).Hint() },
+			"rangeMin":                func(field string) int { return RangeFor(field).Min },
+			"rangeMax":                func(field string) int { return RangeFor(field).Max },
 			"dict": func(values ...interface{}) (map[string]interface{}, error) {
 			if len(values)%2 != 0 {
 				return nil, fmt.Errorf("invalid dict call")
@@ -132,6 +136,10 @@ func (s *Server) parseTemplates() {
 			"tailscalePeerOnline":   tailscalePeerOnline,
 			"tailscalePeerDevice":   tailscalePeerDeviceName,
 			"tailscalePeerDeviceChip": tailscalePeerDeviceChip,
+			"rangeLabel":              func(field string) string { return RangeFor(field).LabelWithHint() },
+			"rangeHint":               func(field string) string { return RangeFor(field).Hint() },
+			"rangeMin":                func(field string) int { return RangeFor(field).Min },
+			"rangeMax":                func(field string) int { return RangeFor(field).Max },
 			"dict": func(values ...interface{}) (map[string]interface{}, error) {
 			if len(values)%2 != 0 {
 				return nil, fmt.Errorf("invalid dict call")

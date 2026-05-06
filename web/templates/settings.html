@@ -4,28 +4,27 @@
         <div class="flex flex-col gap-1">
             <p class="text-[10px] uppercase tracking-wider text-text-muted">Control Plane</p>
             <h2 class="text-lg font-semibold text-text">Settings</h2>
-            <p class="text-xs text-text-muted">Ajusta alertas, notificaciones, rendimiento y mantenimiento con enfoque seguro para servidor.</p>
+            <p data-settings-subtitle class="text-xs text-text-muted">Configure alerts, notifications, performance, and maintenance for this server.</p>
         </div>
         <div class="overflow-x-auto">
             <div class="flex items-center gap-2 min-w-max">
-                <a href="#settings-alerts" class="timeline-chip timeline-chip-idle">Alerts</a>
-                <a href="#settings-telegram" class="timeline-chip timeline-chip-idle">Telegram</a>
-                <a href="#settings-email" class="timeline-chip timeline-chip-idle">Email</a>
-                <a href="#settings-performance" class="timeline-chip timeline-chip-idle">Performance</a>
-                <a href="#settings-backup" class="timeline-chip timeline-chip-idle">Backup</a>
-                <a href="#settings-maintenance" class="timeline-chip timeline-chip-idle">Maintenance</a>
-                <a href="#settings-controls" class="timeline-chip timeline-chip-idle">System</a>
+                <a href="#settings-alerts" data-anchor="alerts" class="timeline-chip timeline-chip-idle">Alerts</a>
+                <a href="#settings-telegram" data-anchor="telegram" class="timeline-chip timeline-chip-idle">Telegram</a>
+                <a href="#settings-email" data-anchor="email" class="timeline-chip timeline-chip-idle">Email</a>
+                <a href="#settings-performance" data-anchor="performance" class="timeline-chip timeline-chip-idle">Performance</a>
+                <a href="#settings-backup" data-anchor="backup" class="timeline-chip timeline-chip-idle">Backup</a>
+                <a href="#settings-maintenance" data-anchor="maintenance" class="timeline-chip timeline-chip-idle">Maintenance</a>
+                <a href="#settings-controls" data-anchor="controls" class="timeline-chip timeline-chip-idle">System</a>
             </div>
         </div>
     </section>
     <div class="space-y-3">
-            <section id="settings-alerts" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-accent/20">
+            <section id="settings-alerts" data-settings-section data-section="alerts" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-accent/20">
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-accent/30 bg-accent/10 text-accent">01</span>
                         <h3 class="text-sm md:text-[1rem] font-semibold text-text">Alert Rules</h3>
                     </div>
-                    <span data-form-state-pill="alerts-rule" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
+                    <span data-form-state-host="alerts-rule"></span>
                 </div>
                 <p class="text-xs text-text-muted">Define runtime thresholds and severity behavior.</p>
 
@@ -41,7 +40,7 @@
                         data-status-target="#alerts-rule-status"
                         data-saving-label="Saving alert rule..."
                         data-settings-form="alerts-rule"
-                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-w-4xl"
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
                     >
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                         <div class="sm:col-span-2">
@@ -71,17 +70,31 @@
                             <label class="text-[11px] text-text-muted">Threshold</label>
                             <input type="number" name="threshold" step="0.1" min="0" required class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
+                        <!-- FR-058: severity segmented control replaces <select> -->
                         <div>
                             <label class="text-[11px] text-text-muted">Severity</label>
-                            <select name="severity" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                                <option value="critical">Critical</option>
-                                <option value="warning">Warning</option>
-                                <option value="info">Info</option>
-                            </select>
+                            <div data-widget="segmented" data-field="severity" role="radiogroup" aria-label="Severity" class="mt-1 grid grid-cols-3 gap-0 rounded-lg overflow-hidden border border-border">
+                                <button type="button" role="radio" data-value="critical" data-active="true" aria-checked="true" class="px-2 py-2 min-h-[44px] text-xs font-medium bg-danger/20 text-danger border-r border-border data-[active=true]:bg-danger data-[active=true]:text-white">Critical</button>
+                                <button type="button" role="radio" data-value="warning" data-active="false" aria-checked="false" class="px-2 py-2 min-h-[44px] text-xs font-medium border-r border-border text-text-muted data-[active=true]:bg-yellow-400/30 data-[active=true]:text-yellow-100">Warning</button>
+                                <button type="button" role="radio" data-value="info" data-active="false" aria-checked="false" class="px-2 py-2 min-h-[44px] text-xs font-medium text-text-muted data-[active=true]:bg-accent/30 data-[active=true]:text-accent">Info</button>
+                                <input type="hidden" name="severity" value="critical">
+                            </div>
                         </div>
-                        <div>
-                            <label class="text-[11px] text-text-muted">Cooldown (min)</label>
-                            <input type="number" name="cooldown" value="15" min="0" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                        <!-- FR-057, FR-059: cooldown stepper + chip-preset row -->
+                        <div class="sm:col-span-2 lg:col-span-3">
+                            <label class="text-[11px] text-text-muted">{{rangeLabel "cooldown"}}</label>
+                            <div data-widget="chip-preset" data-field="cooldown_minutes" class="mt-1 flex flex-wrap items-center gap-1">
+                                <button type="button" data-preset-value="1" data-active="false" class="timeline-chip timeline-chip-idle min-h-[40px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">1m</button>
+                                <button type="button" data-preset-value="5" data-active="false" class="timeline-chip timeline-chip-idle min-h-[40px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">5m</button>
+                                <button type="button" data-preset-value="15" data-active="true" class="timeline-chip timeline-chip-idle min-h-[40px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">15m</button>
+                                <button type="button" data-preset-value="60" data-active="false" class="timeline-chip timeline-chip-idle min-h-[40px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">1h</button>
+                                <span class="text-[10px] text-text-muted ml-1">custom:</span>
+                                <span data-widget="stepper" data-field="cooldown" data-min="{{rangeMin "cooldown"}}" data-max="{{rangeMax "cooldown"}}" data-value="15" class="inline-flex items-center gap-1">
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[40px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <input type="number" name="cooldown" value="15" min="{{rangeMin "cooldown"}}" max="{{rangeMax "cooldown"}}" class="w-16 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[40px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                </span>
+                            </div>
                         </div>
                         <div class="sm:col-span-2 lg:col-span-3 flex items-end gap-2">
                             <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Add Rule</button>
@@ -92,15 +105,14 @@
                 </div>
             </section>
 
-            <section id="settings-telegram" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+            <section id="settings-telegram" data-settings-section data-section="telegram" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">02</span>
                         <h3 class="text-sm md:text-[1rem] font-semibold text-text">Telegram</h3>
                     </div>
-                    <span data-form-state-pill="telegram" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
+                    <span data-form-state-host="telegram"></span>
                 </div>
-                <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" data-status-target="#telegram-status" data-saving-label="Saving Telegram settings..." data-settings-form="telegram" class="space-y-3 max-w-4xl">
+                <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" data-status-target="#telegram-status" data-saving-label="Saving Telegram settings..." data-settings-form="telegram" class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
@@ -113,9 +125,13 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <label class="flex items-center gap-2 text-xs text-text">
-                            <input type="checkbox" name="enabled" {{if and .Content.Telegram .Content.Telegram.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
-                            Enabled
+                        <!-- FR-061: toggle replaces checkbox -->
+                        <label data-widget="toggle" data-field="telegram_enabled" data-state="{{if and .Content.Telegram .Content.Telegram.Enabled}}on{{else}}off{{end}}" class="flex items-center gap-2 text-xs text-text cursor-pointer min-h-[44px]">
+                            <span data-toggle-track class="relative inline-block w-10 h-6 rounded-full bg-card border border-border transition-colors data-[state=on]:bg-accent/40 data-[state=on]:border-accent" data-state="{{if and .Content.Telegram .Content.Telegram.Enabled}}on{{else}}off{{end}}">
+                                <span data-toggle-thumb class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-text-muted transition-all data-[state=on]:bg-accent data-[state=on]:left-[18px]" data-state="{{if and .Content.Telegram .Content.Telegram.Enabled}}on{{else}}off{{end}}"></span>
+                            </span>
+                            <input type="checkbox" name="enabled" data-toggle-input {{if and .Content.Telegram .Content.Telegram.Enabled}}checked{{end}} class="sr-only" aria-label="Telegram enabled">
+                            <span data-toggle-label>{{if and .Content.Telegram .Content.Telegram.Enabled}}Enabled{{else}}Disabled{{end}}</span>
                         </label>
                         <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
                         <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
@@ -125,15 +141,14 @@
                 </form>
             </section>
 
-            <section id="settings-email" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+            <section id="settings-email" data-settings-section data-section="email" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">03</span>
                         <h3 class="text-sm md:text-[1rem] font-semibold text-text">Email</h3>
                     </div>
-                    <span data-form-state-pill="email" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
+                    <span data-form-state-host="email"></span>
                 </div>
-                <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" data-status-target="#email-status" data-saving-label="Saving email settings..." data-settings-form="email" class="space-y-3 max-w-4xl">
+                <form hx-post="/api/notifications/email" hx-target="#email-status" hx-swap="innerHTML" data-status-target="#email-status" data-saving-label="Saving email settings..." data-settings-form="email" class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                         <div>
@@ -162,9 +177,13 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <label class="flex items-center gap-2 text-xs text-text">
-                            <input type="checkbox" name="enabled" {{if and .Content.Email .Content.Email.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
-                            Enabled
+                        <!-- FR-061: toggle replaces checkbox -->
+                        <label data-widget="toggle" data-field="email_enabled" data-state="{{if and .Content.Email .Content.Email.Enabled}}on{{else}}off{{end}}" class="flex items-center gap-2 text-xs text-text cursor-pointer min-h-[44px]">
+                            <span data-toggle-track class="relative inline-block w-10 h-6 rounded-full bg-card border border-border transition-colors data-[state=on]:bg-accent/40 data-[state=on]:border-accent" data-state="{{if and .Content.Email .Content.Email.Enabled}}on{{else}}off{{end}}">
+                                <span data-toggle-thumb class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-text-muted transition-all data-[state=on]:bg-accent data-[state=on]:left-[18px]" data-state="{{if and .Content.Email .Content.Email.Enabled}}on{{else}}off{{end}}"></span>
+                            </span>
+                            <input type="checkbox" name="enabled" data-toggle-input {{if and .Content.Email .Content.Email.Enabled}}checked{{end}} class="sr-only" aria-label="Email enabled">
+                            <span data-toggle-label>{{if and .Content.Email .Content.Email.Enabled}}Enabled{{else}}Disabled{{end}}</span>
                         </label>
                         <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
                         <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
@@ -174,44 +193,48 @@
                 </form>
             </section>
 
-            <section id="settings-performance" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+            <section id="settings-performance" data-settings-section data-section="performance" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">04</span>
                         <h3 class="text-sm md:text-[1rem] font-semibold text-text">Performance</h3>
                     </div>
-                    <span data-form-state-pill="performance" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
+                    <span data-form-state-host="performance"></span>
                 </div>
-                <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" data-status-target="#perf-status" data-saving-label="Applying performance profile..." data-settings-form="performance" class="space-y-3 max-w-4xl">
+                <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" data-status-target="#perf-status" data-saving-label="Applying performance profile..." data-settings-form="performance" class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    <!-- FR-057, FR-060: stepper widgets with inline range hint from RangeFor() -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                            <label class="text-[11px] text-text-muted">Dashboard refresh</label>
-                            <div class="flex items-center gap-2 mt-1">
-                                <input type="number" name="sse_interval_sec" value="{{.Content.Perf.SSEIntervalSec}}" min="2" max="60" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                                <span class="text-[11px] text-text-muted">sec</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">{{rangeLabel "sse_interval_sec"}}</label>
+                            <span data-widget="stepper" data-field="sse_interval_sec" data-min="{{rangeMin "sse_interval_sec"}}" data-max="{{rangeMax "sse_interval_sec"}}" data-value="{{.Content.Perf.SSEIntervalSec}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                <input type="number" name="sse_interval_sec" value="{{.Content.Perf.SSEIntervalSec}}" min="{{rangeMin "sse_interval_sec"}}" max="{{rangeMax "sse_interval_sec"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                            </span>
                         </div>
                         <div>
-                            <label class="text-[11px] text-text-muted">Disk check</label>
-                            <div class="flex items-center gap-2 mt-1">
-                                <input type="number" name="disk_interval_min" value="{{.Content.Perf.DiskIntervalMin}}" min="1" max="1440" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                                <span class="text-[11px] text-text-muted">min</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">{{rangeLabel "disk_interval_min"}}</label>
+                            <span data-widget="stepper" data-field="disk_interval_min" data-min="{{rangeMin "disk_interval_min"}}" data-max="{{rangeMax "disk_interval_min"}}" data-value="{{.Content.Perf.DiskIntervalMin}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                <input type="number" name="disk_interval_min" value="{{.Content.Perf.DiskIntervalMin}}" min="{{rangeMin "disk_interval_min"}}" max="{{rangeMax "disk_interval_min"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                            </span>
                         </div>
                         <div>
-                            <label class="text-[11px] text-text-muted">Docker refresh</label>
-                            <div class="flex items-center gap-2 mt-1">
-                                <input type="number" name="docker_interval_sec" value="{{.Content.Perf.DockerIntervalSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                                <span class="text-[11px] text-text-muted">sec</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">{{rangeLabel "docker_interval_sec"}}</label>
+                            <span data-widget="stepper" data-field="docker_interval_sec" data-min="{{rangeMin "docker_interval_sec"}}" data-max="{{rangeMax "docker_interval_sec"}}" data-value="{{.Content.Perf.DockerIntervalSec}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                <input type="number" name="docker_interval_sec" value="{{.Content.Perf.DockerIntervalSec}}" min="{{rangeMin "docker_interval_sec"}}" max="{{rangeMax "docker_interval_sec"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                            </span>
                         </div>
                         <div>
-                            <label class="text-[11px] text-text-muted">Services refresh</label>
-                            <div class="flex items-center gap-2 mt-1">
-                                <input type="number" name="systemd_interval_sec" value="{{.Content.Perf.SystemdIntervalSec}}" min="5" max="300" class="w-full px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                                <span class="text-[11px] text-text-muted">sec</span>
-                            </div>
+                            <label class="text-[11px] text-text-muted">{{rangeLabel "systemd_interval_sec"}}</label>
+                            <span data-widget="stepper" data-field="systemd_interval_sec" data-min="{{rangeMin "systemd_interval_sec"}}" data-max="{{rangeMax "systemd_interval_sec"}}" data-value="{{.Content.Perf.SystemdIntervalSec}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                <input type="number" name="systemd_interval_sec" value="{{.Content.Perf.SystemdIntervalSec}}" min="{{rangeMin "systemd_interval_sec"}}" max="{{rangeMax "systemd_interval_sec"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                            </span>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -222,15 +245,14 @@
                 </form>
             </section>
 
-            <section id="settings-backup" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+            <section id="settings-backup" data-settings-section data-section="backup" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">05</span>
                         <h3 class="text-sm md:text-[1rem] font-semibold text-text">Backup</h3>
                     </div>
-                    <span data-form-state-pill="backup" class="text-[10px] px-2 py-0.5 rounded border border-border/50 text-text-muted">idle</span>
+                    <span data-form-state-host="backup"></span>
                 </div>
-                <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." data-settings-form="backup" class="space-y-3 max-w-4xl">
+                <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." data-settings-form="backup" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <label class="flex items-center gap-2 text-xs text-text">
@@ -242,58 +264,96 @@
                             Encrypt artifact
                         </label>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[11px] text-text-muted">Interval (hours)</label>
-                            <input type="number" name="interval_hours" value="{{.Content.Backup.IntervalHours}}" min="1" max="720" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                        </div>
-                        <div>
-                            <label class="text-[11px] text-text-muted">Retention (files)</label>
-                            <input type="number" name="retention_count" value="{{.Content.Backup.RetentionCount}}" min="1" max="200" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                        </div>
-                        <div>
-                            <label class="text-[11px] text-text-muted">Upload timeout (sec)</label>
-                            <input type="number" name="upload_timeout_sec" value="{{.Content.Backup.UploadTimeoutSec}}" min="5" max="300" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                        </div>
-                        <div>
-                            <label class="text-[11px] text-text-muted">Max size (MB)</label>
-                            <input type="number" name="max_upload_size_mb" value="{{.Content.Backup.MaxUploadSizeMB}}" min="1" max="1024" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+
+                    <!-- FR-062: Backup section sub-divided into Limits / Schedule / Destination -->
+                    <div data-subsection="limits" class="space-y-2">
+                        <p data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider mt-6">Limits</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-text-muted">{{rangeLabel "interval_hours"}}</label>
+                                <span data-widget="stepper" data-field="interval_hours" data-min="{{rangeMin "interval_hours"}}" data-max="{{rangeMax "interval_hours"}}" data-value="{{.Content.Backup.IntervalHours}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <input type="number" name="interval_hours" value="{{.Content.Backup.IntervalHours}}" min="{{rangeMin "interval_hours"}}" max="{{rangeMax "interval_hours"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                </span>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-text-muted">{{rangeLabel "retention_count"}}</label>
+                                <span data-widget="stepper" data-field="retention_count" data-min="{{rangeMin "retention_count"}}" data-max="{{rangeMax "retention_count"}}" data-value="{{.Content.Backup.RetentionCount}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <input type="number" name="retention_count" value="{{.Content.Backup.RetentionCount}}" min="{{rangeMin "retention_count"}}" max="{{rangeMax "retention_count"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                </span>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-text-muted">{{rangeLabel "upload_timeout_sec"}}</label>
+                                <span data-widget="stepper" data-field="upload_timeout_sec" data-min="{{rangeMin "upload_timeout_sec"}}" data-max="{{rangeMax "upload_timeout_sec"}}" data-value="{{.Content.Backup.UploadTimeoutSec}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <input type="number" name="upload_timeout_sec" value="{{.Content.Backup.UploadTimeoutSec}}" min="{{rangeMin "upload_timeout_sec"}}" max="{{rangeMax "upload_timeout_sec"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                </span>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-text-muted">{{rangeLabel "max_upload_size_mb"}}</label>
+                                <span data-widget="stepper" data-field="max_upload_size_mb" data-min="{{rangeMin "max_upload_size_mb"}}" data-max="{{rangeMax "max_upload_size_mb"}}" data-value="{{.Content.Backup.MaxUploadSizeMB}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <input type="number" name="max_upload_size_mb" value="{{.Content.Backup.MaxUploadSizeMB}}" min="{{rangeMin "max_upload_size_mb"}}" max="{{rangeMax "max_upload_size_mb"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[11px] text-text-muted">Schedule cadence</label>
-                            <select name="schedule_mode" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                                <option value="interval" {{if eq .Content.Backup.ScheduleMode "interval"}}selected{{end}}>By interval (hours)</option>
-                                <option value="daily" {{if eq .Content.Backup.ScheduleMode "daily"}}selected{{end}}>Daily</option>
-                                <option value="weekly" {{if eq .Content.Backup.ScheduleMode "weekly"}}selected{{end}}>Weekly</option>
-                                <option value="biweekly" {{if eq .Content.Backup.ScheduleMode "biweekly"}}selected{{end}}>Biweekly</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[11px] text-text-muted">Schedule hour</label>
-                            <input type="number" name="schedule_hour" value="{{.Content.Backup.ScheduleHour}}" min="0" max="23" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                        </div>
-                        <div>
-                            <label class="text-[11px] text-text-muted">Schedule minute</label>
-                            <input type="number" name="schedule_minute" value="{{.Content.Backup.ScheduleMinute}}" min="0" max="59" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+
+                    <div data-subsection="schedule" class="space-y-2">
+                        <p data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider mt-6">Schedule</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-text-muted">Schedule cadence</label>
+                                <select name="schedule_mode" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                                    <option value="interval" {{if eq .Content.Backup.ScheduleMode "interval"}}selected{{end}}>By interval (hours)</option>
+                                    <option value="daily" {{if eq .Content.Backup.ScheduleMode "daily"}}selected{{end}}>Daily</option>
+                                    <option value="weekly" {{if eq .Content.Backup.ScheduleMode "weekly"}}selected{{end}}>Weekly</option>
+                                    <option value="biweekly" {{if eq .Content.Backup.ScheduleMode "biweekly"}}selected{{end}}>Biweekly</option>
+                                </select>
+                            </div>
+                            <!-- FR-064: single time picker replaces hour/minute pair -->
+                            <div>
+                                <label class="text-[11px] text-text-muted">Schedule time (24h)</label>
+                                <input type="time" name="time" value="{{printf "%02d:%02d" .Content.Backup.ScheduleHour .Content.Backup.ScheduleMinute}}" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                            </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[11px] text-text-muted">Destination mode</label>
-                            <select name="destination_mode" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                                <option value="local_only" {{if eq .Content.Backup.DestinationMode "local_only"}}selected{{end}}>Local only</option>
-                                <option value="local_plus_telegram" {{if eq .Content.Backup.DestinationMode "local_plus_telegram"}}selected{{end}}>Local + Telegram</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[11px] text-text-muted">Local path (optional)</label>
-                            <input type="text" name="local_path" value="{{.Content.Backup.LocalPath}}" placeholder="/var/lib/ultron-ap/backups" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="text-[11px] text-text-muted">Encryption key reference</label>
-                            <input type="text" name="encryption_key_ref" value="{{.Content.Backup.EncryptionKeyRef}}" placeholder="env:ULTRON_BACKUP_KEY or kms://..." class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+
+                    <div data-subsection="destination" class="space-y-2">
+                        <p data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider mt-6">Destination</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-text-muted">Destination mode</label>
+                                <select name="destination_mode" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                                    <option value="local_only" {{if eq .Content.Backup.DestinationMode "local_only"}}selected{{end}}>Local only</option>
+                                    <option value="local_plus_telegram" {{if eq .Content.Backup.DestinationMode "local_plus_telegram"}}selected{{end}}>Local + Telegram</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-text-muted">Local path (optional)</label>
+                                <input type="text" name="local_path" value="{{.Content.Backup.LocalPath}}" placeholder="/var/lib/ultron-ap/backups" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                            </div>
+                            <!-- FR-068: encryption-key composite picker (scheme select + value + ✓/✗ badge) -->
+                            <div class="md:col-span-2" data-widget="encryption-key">
+                                <label class="text-[11px] text-text-muted">Encryption key reference</label>
+                                <div class="mt-1 flex flex-col sm:flex-row gap-2">
+                                    {{- $rawKey := .Content.Backup.EncryptionKeyRef -}}
+                                    {{- $schemeVal := "env" -}}
+                                    {{- $valuePart := $rawKey -}}
+                                    <select data-enc-scheme class="px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                                        <option value="env">env:</option>
+                                        <option value="file">file:</option>
+                                        <option value="kms">kms://</option>
+                                    </select>
+                                    <input type="text" name="encryption_key_ref" value="{{$rawKey}}" placeholder="ULTRON_BACKUP_KEY" class="flex-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                                    <span id="enc-key-badge" data-enc-badge data-state="idle" class="text-[11px] px-2 py-1 rounded border border-border/50 text-text-muted self-start sm:self-center">idle</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -304,12 +364,11 @@
                 </form>
             </section>
 
-            <section id="settings-maintenance" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+            <section id="settings-maintenance" data-settings-section data-section="maintenance" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
                 <div class="flex items-center gap-2">
-                    <span class="text-[10px] px-2 py-0.5 rounded-full border border-border/50 bg-card/40 text-text-muted">06</span>
                     <h3 class="text-sm md:text-[1rem] font-semibold text-text">Maintenance</h3>
                 </div>
-                <div class="rounded-lg border border-border/40 bg-card/25 p-3 max-w-4xl flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div class="rounded-lg border border-border/40 bg-card/25 p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
                         <p class="text-xs text-text">Database backup export</p>
                         <p class="text-[11px] text-text-muted">Download snapshot or send backup to Telegram.</p>
@@ -325,23 +384,14 @@
                 </div>
             </section>
 
-            <section id="settings-controls" data-settings-section class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-danger/30 bg-danger/5">
+            <section id="settings-controls" data-settings-section data-section="controls" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-danger/30 bg-danger/5">
                 <div class="flex items-center gap-2">
-                    <span class="text-[10px] px-2 py-0.5 rounded-full border border-danger/40 bg-danger/15 text-danger">07</span>
                     <h3 class="text-sm md:text-[1rem] font-semibold text-text">System Controls</h3>
                 </div>
                 <p class="text-xs text-text-muted">Critical operations are protected with typed confirmation and an execution countdown.</p>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 max-w-4xl">
-                    <form method="POST" action="/logout" class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
-                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                        <div>
-                            <p class="text-xs text-text">Logout</p>
-                            <p class="text-[11px] text-text-muted">Close admin session.</p>
-                        </div>
-                        <button type="submit" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors">Run</button>
-                    </form>
-
-                    <article class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
+                <!-- FR-067: Logout removed (now in header dropdown). Shutdown gets distinct destructive treatment. -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                    <article data-action-card="restart" class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
                         <div>
                             <p class="text-xs text-text">Restart device</p>
                             <p class="text-[11px] text-text-muted">Requires typed confirmation and countdown.</p>
@@ -349,8 +399,9 @@
                         <button type="button" data-danger-open data-danger-action="restart" data-danger-word="restart" class="px-3 py-1.5 text-xs rounded bg-surface border border-border hover:bg-card/50 transition-colors">Run</button>
                     </article>
 
-                    <article class="rounded border border-danger/30 bg-danger/5 p-3 flex items-center justify-between gap-2">
+                    <article data-action-card="shutdown" class="rounded border-2 border-danger bg-danger/10 p-3 flex items-center justify-between gap-2">
                         <div>
+                            <p class="text-[10px] uppercase tracking-wider text-danger font-semibold">Destructive</p>
                             <p class="text-xs text-text">Shutdown device</p>
                             <p class="text-[11px] text-text-muted">Requires typed confirmation and countdown.</p>
                         </div>
@@ -389,7 +440,7 @@
                     </form>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-4xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <form hx-post="/api/alerts/clear" hx-swap="none" class="rounded border border-border/40 bg-card/25 p-3 flex items-center justify-between gap-2">
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                         <div>
@@ -490,17 +541,34 @@
 
     function setFormState(form, state, message, allowRetry) {
         var name = form.getAttribute('data-settings-form');
-        var pill = name ? shell.querySelector('[data-form-state-pill="' + name + '"]') : null;
+        // FR-065: form-state pill is rendered only when state != idle.
+        // At idle the pill element is removed from the DOM entirely.
+        var host = name ? shell.querySelector('[data-form-state-host="' + name + '"]') : null;
         var statusTargetSel = form.getAttribute('data-status-target');
         var statusTarget = statusTargetSel ? document.querySelector(statusTargetSel) : null;
 
-        if (pill) {
-            pill.textContent = state;
-            pill.classList.remove('border-border/50', 'text-text-muted', 'border-yellow-400/50', 'text-yellow-400', 'border-green-400/40', 'text-green-400', 'border-danger/40', 'text-danger');
-            if (state === 'saving') pill.classList.add('border-yellow-400/50', 'text-yellow-400');
-            else if (state === 'applied') pill.classList.add('border-green-400/40', 'text-green-400');
-            else if (state === 'failed') pill.classList.add('border-danger/40', 'text-danger');
-            else pill.classList.add('border-border/50', 'text-text-muted');
+        if (host) {
+            // Clear existing pill
+            host.innerHTML = '';
+            if (state && state !== 'idle') {
+                var pill = document.createElement('span');
+                pill.setAttribute('data-form-state-pill', name || '');
+                pill.setAttribute('data-state', state);
+                pill.className = 'text-[10px] px-2 py-0.5 rounded border';
+                if (state === 'saving') pill.className += ' border-yellow-400/50 text-yellow-400';
+                else if (state === 'applied') pill.className += ' border-green-400/40 text-green-400';
+                else if (state === 'failed') pill.className += ' border-danger/40 text-danger';
+                else pill.className += ' border-border/50 text-text-muted';
+                pill.textContent = state;
+                host.appendChild(pill);
+
+                // Auto-remove `applied` after 2.5s — pill fully removed (NOT hidden).
+                if (state === 'applied') {
+                    setTimeout(function() {
+                        if (host.querySelector('[data-state="applied"]')) host.innerHTML = '';
+                    }, 2500);
+                }
+            }
         }
 
         if (statusTarget && message !== undefined) {
