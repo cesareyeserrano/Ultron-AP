@@ -15,6 +15,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
+	"github.com/cesareyeserrano/ultron-ap/internal/help"
 	"github.com/cesareyeserrano/ultron-ap/internal/insights"
 	insightsstore "github.com/cesareyeserrano/ultron-ap/internal/insights/store"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
@@ -201,8 +202,22 @@ func main() {
 	log.Printf("Insights engine initialised (driven by SSE broadcast tick)")
 	defer insightsSvc.Stop()
 
+	// Help page (FR-048..FR-056). Embedded glossary parsed at boot. The links
+	// validator runs once after both glossary and rules are loaded — warnings
+	// about missing anchors land in the journal so a typo in a rule's links
+	// surfaces at the next start, not in production.
+	helpSvc, err := help.New(log.Printf)
+	if err != nil {
+		log.Printf("help: load glossary: %v", err)
+	} else {
+		helpSvc.ValidateLinks(insightsSvc.RuleLinks())
+	}
+
 	srv := server.New(cfg, db, reader, collector, dockerMon, systemdMon, alertEng)
 	srv.SetInsights(insightsSvc)
+	if helpSvc != nil {
+		srv.SetHelp(helpSvc)
+	}
 	srv.SetGatewayProbe(gateway)
 	srv.SetWANMonitor(wan)
 	srv.SetLANDevices(landevicesOrch, landevicesStore)

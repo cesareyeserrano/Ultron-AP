@@ -1,0 +1,167 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "help-page",
+  "createdAt": "2026-05-05T23:20:30.189Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-05-06T00:41:36.625Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-05-05T23:23:45.825Z",
+      "event": "started",
+      "phase": 1
+    },
+    {
+      "at": "2026-05-05T23:32:04.804Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-05-05T23:36:05.343Z",
+      "event": "approved",
+      "phase": 1,
+      "ideaArchived": true
+    },
+    {
+      "at": "2026-05-05T23:36:08.236Z",
+      "event": "started",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-05T23:42:29.675Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-05T23:43:00.404Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-05T23:43:02.943Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-05T23:51:56.500Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-05T23:52:33.047Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-05T23:52:35.854Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-06T00:07:53.954Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-06T00:09:00.452Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-06T00:09:05.035Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 35,
+      "failed": 0,
+      "skipped": 20,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-06T00:09:52.369Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 18,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-06T00:09:55.191Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-06T00:09:58.237Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-06T00:13:10.919Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-06T00:41:36.594Z",
+      "event": "approved",
+      "phase": 5
+    }
+  ],
+  "artifactHashes": {
+    "1": "d9d002e9a46033581fc8d6898e8acae1ca88ebbb4efd364048b47cb5a7f658ca",
+    "2": "0c35eade36b3bccaebd4dba14cb402a1dae0d517b869cd6ad40a711996eb7d8f",
+    "3": "a00a3753c111eb4bb82182d1c9adcc217045d8d2020c28670fceb3f78002b21a",
+    "4": "56c479368f90958de638324854b7d83c8881ea7f925a48593b4c87d889e7f425",
+    "5": "d7bbf804b8a7f8c199b5e1fe05a0a3d46a0b1219f7fa86c96e73131d6ba79553"
+  },
+  "lastSession": {
+    "at": "2026-05-06T00:41:36.624Z",
+    "agent": "unknown",
+    "event": "approve deploy",
+    "files_touched": [
+      ".aitri/config.json",
+      "cmd/ultron-ap/main.go",
+      "internal/insights/insights.go",
+      "internal/network/landevices/sweep/sweep.go",
+      "internal/server/handlers_insights.go",
+      "internal/server/server.go",
+      "internal/server/templates.go",
+      "web/static/css/app.css",
+      "web/templates/partials/sidebar.html",
+      "web/templates/partials/sse-verdicts.html"
+    ]
+  },
+  "normalizeState": {
+    "baseRef": "929fd525e800d9ba02c4121f8838e31339aa9e1b",
+    "method": "git",
+    "status": "resolved",
+    "lastRun": "2026-05-06T00:09:00.451Z"
+  },
+  "verifyRanAt": "2026-05-06T00:09:52.369Z",
+  "verifyPassed": true,
+  "verifySummary": {
+    "total": 55,
+    "passed": 37,
+    "failed": 0,
+    "skipped": 18,
+    "skipped_e2e": 13,
+    "skipped_no_marker": 5,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}

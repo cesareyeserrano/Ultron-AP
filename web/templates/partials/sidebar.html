@@ -96,6 +96,16 @@
                     <span class="whitespace-nowrap truncate sidebar-label">Settings</span>
                 </a>
             </li>
+            <li>
+                <a href="/help" class="nav-item nav-item-help group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                    {{if eq .ActivePage "help"}}active-link bg-card text-accent border border-accent/30{{else}}text-text-muted hover:bg-card hover:text-text border border-transparent{{end}}" hx-boost="true">
+                    <!-- Lucide: HelpCircle -->
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span class="whitespace-nowrap truncate sidebar-label">Help</span>
+                </a>
+            </li>
         </ul>
     </nav>
 

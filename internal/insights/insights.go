@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cesareyeserrano/ultron-ap/internal/help/contract"
 	"github.com/cesareyeserrano/ultron-ap/internal/insights/lang"
 	"github.com/cesareyeserrano/ultron-ap/internal/insights/rules"
 	"github.com/cesareyeserrano/ultron-ap/internal/insights/store"
@@ -515,4 +516,24 @@ func (s *Service) LastSnapshotMissing() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.lastSnapshotMissing
+}
+
+// RuleLinks returns a snapshot of every loaded rule's id and links field as
+// plain data, suitable for the help-page links validator (FR-052). The slice
+// and each Links slice are owned by the caller; mutating them does not affect
+// the engine.
+//
+// @aitri-trace FR-052 NFR-026
+func (s *Service) RuleLinks() []contract.RuleLink {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]contract.RuleLink, 0, len(s.compiledRules))
+	for _, cr := range s.compiledRules {
+		links := append([]string(nil), cr.rule.Links...)
+		out = append(out, contract.RuleLink{
+			RuleID: cr.rule.ID,
+			Links:  links,
+		})
+	}
+	return out
 }

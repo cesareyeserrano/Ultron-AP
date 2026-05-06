@@ -1,0 +1,1434 @@
+{
+  "test_plan": {
+    "feature": "help-page",
+    "scope": "Validate FR-048..FR-056 (GET /help route, glossary entry schema, two-voice rendering, anchor deep-linking, links validator, verdict-card Learn-more link, typed filter, bootstrap content, sidebar nav) plus NFR-022..NFR-026 (performance, embed-only packaging, accessibility, SEO/discoverability, architectural boundary).",
+    "approach": "Three-layer pyramid. Unit tests pin the loader (schema validation, duplicate handling, slug regex) and pure helpers (AnchorResolver.FirstValidAnchor). Integration tests exercise help.Service end-to-end with synthetic glossary fixtures and a mocked LogFunc, verifying loader behaviour, validator output, and Renderer HTML structure via goquery. e2e tests run the real HTTP handler behind a test session against an in-process server with the production glossary embedded, plus a Playwright spec that drives the typed filter and Learn-more anchor flow against the actual rendered page. CI lint pipeline gates the architectural boundary (NFR-026) and bootstrap-content invariants (FR-055).",
+    "fixtures": [
+      "fakeLogger \u2014 captures structured log lines as []LogLine{Format,Args} for assertion. Methods: Lines(), Count(substr), Last()",
+      "fixtureGlossary \u2014 testdata/glossary-*.json bundle with named subsets: minimal (1 entry per category, 5 total), full (\u226530 entries matching production), missing-field-plain, invalid-category, duplicate-id, unknown-field, no-thresholds, no-source-path, slug-too-long, slug-bad-chars",
+      "fakeRuleLinks \u2014 []contract.RuleLink builder with knobs for ruleID and links slice; supports per-test variants (all-valid, one-missing, external-https, empty-links, mixed-fragments)",
+      "testServer \u2014 httptest.Server wrapping internal/server.New with the help.Service wired and a stub insights.Service.RuleLinks() returning fixture data; cookie helper newTestSession(t) returns a valid auth cookie via parent authMiddleware",
+      "tmpEmbedDir \u2014 t.TempDir() workspace used by NFR-023 integration test \u2014 invokes the built binary with no on-disk glossary file present",
+      "playwrightContext \u2014 chromium 1280x800 viewport context against testServer URL with auth cookie pre-set; supports viewport.setSize(375,667) for mobile tests"
+    ],
+    "exclusions": [
+      "No live Raspberry Pi tests for NFR-022 p99 budgets \u2014 p99 is verified on CI Linux runner using b.N\u22651000 iterations with t.Logf-reported quantiles; the explicit Pi-class hardware run is a manual deployment-time check (DEPLOYMENT.md), not a CI gate.",
+      "No accessibility tests against headless screen readers \u2014 axe-core via Playwright covers contrast and label violations declared in NFR-024 AC-1; deeper semantic-flow review is deferred to manual review.",
+      "No cross-browser tests (Firefox, Safari) \u2014 Playwright runs Chromium only in CI. CSS :target and :has fallbacks are verified by feature-detection assertions, not by parallel browser runs.",
+      "No load test (1000+ rps) \u2014 the route is auth-gated, internal, single-Pi-operator scale; NFR-022 p99 budget is the only performance target and is met by ETag short-circuit + ~50 ms cold render.",
+      "No tests for items in no_go_zone: no admin UI, no Markdown editor, no /help/<id> deep routes, no SQLite glossary persistence, no localization, no SSE on /help, no internal/insights internal-API consumption from the help-page package."
+    ]
+  },
+  "type_coverage_matrix": {
+    "FR-048": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-049": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-050": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-051": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-052": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-053": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-054": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-055": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-056": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    }
+  },
+  "test_cases": [
+    {
+      "id": "TC-HP-048h",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "Authenticated GET /help returns 200 with five category sections in fixed order",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "testServer running with fixtureGlossary 'full' loaded (\u226530 entries spanning all 5 categories)",
+        "newTestSession(t) returns a valid session cookie"
+      ],
+      "given": "An authenticated client with the test session cookie",
+      "when": "Client issues GET /help",
+      "then": "Response status is 200; Content-Type is 'text/html; charset=utf-8'; the response body contains exactly 5 <section data-category=\"\u2026\"> elements with data-category values, in document order: 'system-metrics', 'network-probes', 'services-containers', 'vpn', 'insights-verdicts'",
+      "steps": [
+        "GET /help with the auth cookie",
+        "Assert resp.StatusCode == 200",
+        "Assert resp.Header.Get('Content-Type') == 'text/html; charset=utf-8'",
+        "Parse body with goquery; collect all section[data-category] in document order",
+        "Assert the slice equals exactly ['system-metrics','network-probes','services-containers','vpn','insights-verdicts']"
+      ],
+      "expected_result": "HTTP 200 + Content-Type 'text/html; charset=utf-8'; sections appear in the exact 5-element ordered slice ['system-metrics','network-probes','services-containers','vpn','insights-verdicts'] \u2014 no missing, no duplicate, no extra"
+    },
+    {
+      "id": "TC-HP-048f",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-002",
+      "title": "Unauthenticated GET /help returns 302 to /login and leaks no glossary content",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "testServer running with fixtureGlossary 'full' loaded",
+        "Client has no session cookie"
+      ],
+      "given": "An anonymous client with no auth cookie",
+      "when": "Client issues GET /help with redirects disabled",
+      "then": "Response status is 302; Location header equals '/login'; response body length is 0 OR body contains no glossary entry id (no 'entry-' prefix and no 'verdict-thermal-throttling' substring)",
+      "steps": [
+        "Build http.Client with CheckRedirect returning ErrUseLastResponse",
+        "GET /help with no cookie",
+        "Assert resp.StatusCode == 302",
+        "Assert resp.Header.Get('Location') == '/login'",
+        "Read body; assert it does not contain the substring 'entry-' and does not contain 'verdict-thermal-throttling'"
+      ],
+      "expected_result": "HTTP 302, Location: /login, body contains zero matches for 'entry-' or 'verdict-thermal-throttling' substrings"
+    },
+    {
+      "id": "TC-HP-048e",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "Empty category is omitted from rendered HTML \u2014 no skeleton or empty header",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "testServer running with fixtureGlossary 'no-vpn' (\u22656 entries spanning 4 categories, zero entries with category='vpn')"
+      ],
+      "given": "Glossary loaded with entries in {system-metrics, network-probes, services-containers, insights-verdicts} only \u2014 zero VPN entries",
+      "when": "Authenticated client issues GET /help",
+      "then": "Response body contains no <section data-category=\"vpn\"> element AND no element with id='cat-vpn'; the four populated categories are rendered in their fixed positions",
+      "steps": [
+        "GET /help authenticated",
+        "Parse body with goquery",
+        "Assert document.querySelector('section[data-category=\"vpn\"]') is null",
+        "Assert document.querySelector('#cat-vpn') is null",
+        "Assert exactly 4 section[data-category] elements present"
+      ],
+      "expected_result": "Zero <section data-category=\"vpn\"> in DOM; zero element with id 'cat-vpn'; exactly 4 section[data-category] siblings"
+    },
+    {
+      "id": "TC-HP-049ha",
+      "requirement_id": "FR-049",
+      "user_story_id": "US-049",
+      "ac_id": "AC-049-001",
+      "title": "Fully valid entry loads with all fields and renders title, technical, plain, thresholds, and source_path",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "fixtureGlossary 'one-complete' contains exactly one entry: id='entry-cpu-percent', title='CPU %', category='system-metrics', technical='Percent of CPU time spent non-idle, sampled every 5 s.', plain='How busy your Pi has been recently.', thresholds=[{label:'warn',value:'>=80%',severity:'warn'}], source_path='internal/metrics/system.go'",
+        "fakeLogger captures loader output"
+      ],
+      "given": "A glossary JSON with one fully-populated entry satisfying every required and optional field",
+      "when": "help.New(fakeLogger) is invoked, then GET /help is rendered authenticated",
+      "then": "svc.EntryCount() == 1; fakeLogger.Count('event=glossary-entry-rejected') == 0; rendered HTML contains article#entry-cpu-percent with text 'CPU %' AND 'Percent of CPU time spent non-idle, sampled every 5 s.' AND 'How busy your Pi has been recently.' AND a <table> containing 'warn' and '>=80%' AND a .source-path element with text 'internal/metrics/system.go'",
+      "steps": [
+        "Inject fixtureGlossary 'one-complete'",
+        "svc, _ := help.New(fakeLogger)",
+        "Assert svc.EntryCount() == 1",
+        "Assert fakeLogger.Count('glossary-entry-rejected') == 0",
+        "GET /help authenticated; parse body with goquery",
+        "article := body.querySelector('article#entry-cpu-percent'); assert article != null",
+        "Assert article.textContent contains 'CPU %'",
+        "Assert article.textContent contains 'Percent of CPU time spent non-idle, sampled every 5 s.'",
+        "Assert article.textContent contains 'How busy your Pi has been recently.'",
+        "Assert article.querySelector('table') != null && article.querySelector('table').textContent contains 'warn' && '>=80%'",
+        "Assert article.querySelector('.source-path').textContent contains 'internal/metrics/system.go'"
+      ],
+      "expected_result": "svc.EntryCount() == 1; zero rejection log lines; rendered article#entry-cpu-percent contains all five field values: title 'CPU %', technical body, plain body, thresholds row 'warn'/'>=80%', and source_path 'internal/metrics/system.go'"
+    },
+    {
+      "id": "TC-HP-049h",
+      "requirement_id": "FR-049",
+      "user_story_id": "US-049",
+      "ac_id": "AC-049-001",
+      "title": "Loader rejects entry missing 'plain' field with structured log; remaining valid entries load successfully",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "fixtureGlossary 'missing-field-plain' contains exactly 3 entries: entry-A (valid), entry-B (missing 'plain' field), entry-C (valid)",
+        "fakeLogger captures all loader output"
+      ],
+      "given": "A glossary JSON with 3 entries where entry-B is missing the required 'plain' field",
+      "when": "help.New(fakeLogger) is invoked with that fixture as the embedded payload",
+      "then": "help.Service.EntryCount() returns 2; fakeLogger.Count(\"event=glossary-entry-rejected\") == 1; the recorded log line contains both id=\"entry-B\" and reason=\"missing-field=plain\"",
+      "steps": [
+        "Inject fixtureGlossary 'missing-field-plain' as the embedded payload via test seam",
+        "Invoke help.New(fakeLogger) and capture (svc, err)",
+        "Assert err == nil",
+        "Assert svc.EntryCount() == 2",
+        "Assert fakeLogger.Count('glossary-entry-rejected') == 1",
+        "Assert the matching log line's args contain id='entry-B' and reason='missing-field=plain'"
+      ],
+      "expected_result": "svc.EntryCount() == 2; exactly 1 log line with event='glossary-entry-rejected', id='entry-B', reason='missing-field=plain'; entries A and C are present in the loaded set"
+    },
+    {
+      "id": "TC-HP-049f",
+      "requirement_id": "FR-049",
+      "user_story_id": "US-049",
+      "ac_id": "AC-049-002",
+      "title": "Entry with category='something-else' is rejected at load time with structured log",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "fixtureGlossary 'invalid-category' contains 2 entries: one with category='system-metrics' (valid), one with category='something-else' (invalid)"
+      ],
+      "given": "A glossary JSON where one entry has category='something-else'",
+      "when": "help.New(fakeLogger) is invoked",
+      "then": "help.Service.EntryCount() returns 1; fakeLogger.Count(\"event=glossary-entry-rejected\") == 1; the log line contains reason='invalid-category=something-else'",
+      "steps": [
+        "Inject fixtureGlossary 'invalid-category'",
+        "Invoke help.New(fakeLogger)",
+        "Assert svc.EntryCount() == 1",
+        "Assert fakeLogger.Count('glossary-entry-rejected') == 1",
+        "Assert log args contain reason='invalid-category=something-else'"
+      ],
+      "expected_result": "svc.EntryCount() == 1; exactly 1 'glossary-entry-rejected' log line with reason='invalid-category=something-else'"
+    },
+    {
+      "id": "TC-HP-049e",
+      "requirement_id": "FR-049",
+      "user_story_id": "US-049",
+      "ac_id": "AC-049-003",
+      "title": "Duplicate entry id \u2014 only first occurrence loaded, second logged as 'duplicate-entry-id'",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "fixtureGlossary 'duplicate-id' contains 2 entries both with id='entry-cpu-percent', differing only in title"
+      ],
+      "given": "A glossary JSON with two entries sharing id='entry-cpu-percent' (first.title='First', second.title='Second')",
+      "when": "help.New(fakeLogger) is invoked",
+      "then": "help.Service.EntryCount() returns 1; svc.EntryByID('entry-cpu-percent').Title == 'First'; fakeLogger.Count('event=duplicate-entry-id') == 1; the log line contains id='entry-cpu-percent'",
+      "steps": [
+        "Inject fixtureGlossary 'duplicate-id'",
+        "Invoke help.New(fakeLogger)",
+        "Assert svc.EntryCount() == 1",
+        "Assert svc.EntryByID('entry-cpu-percent').Title == 'First'",
+        "Assert fakeLogger.Count('duplicate-entry-id') == 1"
+      ],
+      "expected_result": "svc.EntryCount() == 1; first entry's title 'First' is the loaded one; exactly 1 log line with event='duplicate-entry-id' and id='entry-cpu-percent'"
+    },
+    {
+      "id": "TC-HP-049f2",
+      "requirement_id": "FR-049",
+      "user_story_id": "US-049",
+      "ac_id": "AC-049-001",
+      "title": "Unknown field on entry (e.g. 'mute_until') is rejected at load time",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "fixtureGlossary 'unknown-field' contains 1 entry with all required fields plus an unknown field 'mute_until=2026-12-31'"
+      ],
+      "given": "A glossary JSON where the only entry has an unrecognized field 'mute_until'",
+      "when": "help.New(fakeLogger) is invoked",
+      "then": "help.Service.EntryCount() returns 0; fakeLogger.Count('glossary-entry-rejected') == 1; the log line's reason field contains the substring 'unknown field' AND the substring 'mute_until'",
+      "steps": [
+        "Inject fixtureGlossary 'unknown-field'",
+        "Invoke help.New(fakeLogger)",
+        "Assert svc.EntryCount() == 0",
+        "Assert fakeLogger.Count('glossary-entry-rejected') == 1",
+        "Assert the log line's reason arg contains both 'unknown field' and 'mute_until'"
+      ],
+      "expected_result": "svc.EntryCount() == 0; exactly 1 'glossary-entry-rejected' log line whose reason arg contains the substrings 'unknown field' and 'mute_until'"
+    },
+    {
+      "id": "TC-HP-049e2",
+      "requirement_id": "FR-049",
+      "user_story_id": "US-049",
+      "ac_id": "AC-049-001",
+      "title": "Entry with thresholds=[] omits thresholds table from rendered HTML \u2014 no empty <table>",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "testServer running with fixtureGlossary 'no-thresholds': single entry id='entry-test', thresholds field absent"
+      ],
+      "given": "A glossary entry with the 'thresholds' field omitted entirely",
+      "when": "Authenticated client issues GET /help",
+      "then": "Response body's article#entry-test contains zero <table> elements AND zero element with class containing 'thresholds'",
+      "steps": [
+        "GET /help authenticated",
+        "Parse body with goquery",
+        "Select article#entry-test",
+        "Assert the selected article contains zero <table> elements",
+        "Assert the selected article contains zero elements with class*='thresholds'"
+      ],
+      "expected_result": "article#entry-test has 0 <table> children and 0 elements with class containing 'thresholds'"
+    },
+    {
+      "id": "TC-HP-049e3",
+      "requirement_id": "FR-049",
+      "user_story_id": "US-049",
+      "ac_id": "AC-049-001",
+      "title": "Entry with source_path omitted \u2014 rendered HTML omits the source-path line entirely",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "testServer running with fixtureGlossary 'no-source-path': single entry id='entry-test', source_path absent"
+      ],
+      "given": "A glossary entry with no source_path field",
+      "when": "Authenticated client issues GET /help",
+      "then": "Response body's article#entry-test contains zero elements with class='source-path'",
+      "steps": [
+        "GET /help authenticated",
+        "Parse body with goquery",
+        "Assert document.querySelectorAll('article#entry-test .source-path').length == 0"
+      ],
+      "expected_result": "article#entry-test contains zero elements with class='source-path'"
+    },
+    {
+      "id": "TC-HP-050h",
+      "requirement_id": "FR-050",
+      "user_story_id": "US-050",
+      "ac_id": "AC-050-001",
+      "title": "On 1280x800 viewport, technical and plain bodies render side-by-side with both labels visible",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800 viewport, authenticated, /help loaded with fixtureGlossary 'minimal'",
+        "fixtureGlossary 'minimal' contains entry id='entry-test' with technical='TECH-BODY-XYZ' and plain='PLAIN-BODY-ABC'"
+      ],
+      "given": "A 1280x800 chromium viewport authenticated against /help with fixture entry id='entry-test'",
+      "when": "Page is fully loaded",
+      "then": "article#entry-test contains visible elements with text 'Technical' AND 'Plain' AND 'TECH-BODY-XYZ' AND 'PLAIN-BODY-ABC'; the bounding boxes of the two voice columns satisfy: column-Technical.x + column-Technical.width <= column-Plain.x (or vice versa) \u2014 i.e. they are side-by-side, not stacked",
+      "steps": [
+        "page.setViewportSize({width:1280, height:800})",
+        "page.goto('/help')",
+        "Wait for article#entry-test to be visible",
+        "Assert page.locator('article#entry-test').getByText('Technical').isVisible()",
+        "Assert page.locator('article#entry-test').getByText('Plain').isVisible()",
+        "Assert page.locator('article#entry-test').getByText('TECH-BODY-XYZ').isVisible()",
+        "Assert page.locator('article#entry-test').getByText('PLAIN-BODY-ABC').isVisible()",
+        "Capture boundingBox for both column elements; assert one's x + width <= the other's x (no horizontal overlap; columns are placed beside each other)"
+      ],
+      "expected_result": "Both labels 'Technical' and 'Plain' visible; both bodies 'TECH-BODY-XYZ' and 'PLAIN-BODY-ABC' visible; column bounding boxes are non-overlapping horizontally (side-by-side, not stacked)"
+    },
+    {
+      "id": "TC-HP-050e",
+      "requirement_id": "FR-050",
+      "user_story_id": "US-050",
+      "ac_id": "AC-050-002",
+      "title": "On 375 px viewport, plain body renders above technical (vertical stack, plain first)",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 375x667 viewport, authenticated, fixtureGlossary 'minimal' with same entry id='entry-test'"
+      ],
+      "given": "A 375x667 chromium viewport authenticated against /help",
+      "when": "Page is fully loaded",
+      "then": "article#entry-test bounding-box layout: PLAIN body element y < TECHNICAL body element y (plain visually above technical); plain body x range overlaps technical body x range (vertical stack, not horizontal)",
+      "steps": [
+        "page.setViewportSize({width:375, height:667})",
+        "page.goto('/help')",
+        "Wait for article#entry-test to be visible",
+        "boxPlain = page.locator('article#entry-test [data-voice=\"plain\"]').boundingBox()",
+        "boxTech = page.locator('article#entry-test [data-voice=\"technical\"]').boundingBox()",
+        "Assert boxPlain.y < boxTech.y",
+        "Assert ranges [boxPlain.x, boxPlain.x+boxPlain.width] and [boxTech.x, boxTech.x+boxTech.width] overlap by \u226580% (stacked, not side-by-side)"
+      ],
+      "expected_result": "boxPlain.y < boxTech.y; horizontal overlap \u226580% \u2014 plain voice rendered above technical voice in a vertical stack"
+    },
+    {
+      "id": "TC-HP-050f",
+      "requirement_id": "FR-050",
+      "user_story_id": "US-050",
+      "ac_id": "AC-050-003",
+      "title": "With JavaScript disabled, both voices remain visible \u2014 pure CSS layout",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800, javaScriptEnabled=false, authenticated, fixtureGlossary 'minimal'"
+      ],
+      "given": "A chromium context with javaScriptEnabled=false at 1280x800",
+      "when": "Page loads /help",
+      "then": "Both 'TECH-BODY-XYZ' and 'PLAIN-BODY-ABC' text are present in DOM AND visible (offsetWidth > 0); no script-driven hiding occurs",
+      "steps": [
+        "Create new browser context with javaScriptEnabled: false",
+        "page.goto('/help') with auth cookie",
+        "Assert page.getByText('TECH-BODY-XYZ').isVisible()",
+        "Assert page.getByText('PLAIN-BODY-ABC').isVisible()",
+        "Assert page.getByText('Technical').isVisible()",
+        "Assert page.getByText('Plain').isVisible()"
+      ],
+      "expected_result": "All four texts ('Technical', 'Plain', 'TECH-BODY-XYZ', 'PLAIN-BODY-ABC') visible with javaScriptEnabled=false"
+    },
+    {
+      "id": "TC-HP-051h",
+      "requirement_id": "FR-051",
+      "user_story_id": "US-051",
+      "ac_id": "AC-051-001",
+      "title": "GET /help#verdict-thermal-throttling scrolls matching entry into top 80% of 1280x800 viewport",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800, authenticated, production fixtureGlossary 'full' loaded which contains entry id='verdict-thermal-throttling'"
+      ],
+      "given": "Production glossary loaded; viewport 1280x800",
+      "when": "page.goto('/help#verdict-thermal-throttling') and wait for scroll to settle (page.waitForFunction returns when document.querySelector('#entry-verdict-thermal-throttling').getBoundingClientRect().top is stable for 200 ms)",
+      "then": "boundingBox of article#entry-verdict-thermal-throttling has y >= 0 AND y <= 0.8 * 800 (i.e., title is within top 640 px of the viewport \u2014 top 80%)",
+      "steps": [
+        "page.setViewportSize({width:1280, height:800})",
+        "page.goto('/help#verdict-thermal-throttling')",
+        "Wait 500 ms for scroll to settle",
+        "box = page.locator('#entry-verdict-thermal-throttling').boundingBox()",
+        "Assert box.y >= 0",
+        "Assert box.y <= 640"
+      ],
+      "expected_result": "article#entry-verdict-thermal-throttling boundingBox.y in [0, 640] \u2014 title is within top 80% of 800 px viewport without manual scroll"
+    },
+    {
+      "id": "TC-HP-051e",
+      "requirement_id": "FR-051",
+      "user_story_id": "US-051",
+      "ac_id": "AC-051-002",
+      "title": ":target highlight visible for 1\u20132 s on hash arrival, then fades \u2014 no JS",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800, authenticated, javaScriptEnabled=false (proves CSS-only)",
+        "fixtureGlossary 'minimal' with entry id='entry-test'"
+      ],
+      "given": "Browser context with JS disabled, viewport 1280x800, /help loaded then navigated to /help#entry-test",
+      "when": "Page navigates to /help#entry-test",
+      "then": "Within 100 ms after navigation, computed background-color of article#entry-test is non-transparent (rgba alpha > 0); after 1500 ms the computed background-color alpha is < 0.2 (fading or faded); after 2500 ms the alpha is 0 (transparent)",
+      "steps": [
+        "page.goto('/help') with javaScriptEnabled:false",
+        "page.goto('/help#entry-test')",
+        "t0 = Date.now()",
+        "Within 100 ms: assert getComputedStyle(article#entry-test).backgroundColor parses to alpha > 0.5",
+        "Wait until t0 + 1500 ms",
+        "Assert getComputedStyle(article#entry-test).backgroundColor parses to alpha < 0.2",
+        "Wait until t0 + 2500 ms",
+        "Assert getComputedStyle(article#entry-test).backgroundColor parses to alpha == 0 (or 'transparent')"
+      ],
+      "expected_result": "Computed background-color alpha trajectory: t<100ms \u2192 \u03b1\u22650.5; t=1500ms \u2192 \u03b1<0.2; t=2500ms \u2192 \u03b1=0; achieved with javaScriptEnabled=false (pure CSS :target animation)"
+    },
+    {
+      "id": "TC-HP-051e2",
+      "requirement_id": "FR-051",
+      "user_story_id": "US-051",
+      "ac_id": "AC-051-001",
+      "title": "Category anchor /help#cat-network-probes scrolls the Network probes header into view",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "playwrightContext at 1280x800, authenticated, fixtureGlossary 'full'"
+      ],
+      "given": "Production glossary loaded; viewport 1280x800",
+      "when": "page.goto('/help#cat-network-probes')",
+      "then": "After scroll settles, boundingBox of section#cat-network-probes has y >= 0 AND y <= 640",
+      "steps": [
+        "page.goto('/help#cat-network-probes')",
+        "Wait 500 ms",
+        "box = page.locator('section#cat-network-probes').boundingBox()",
+        "Assert box.y >= 0 && box.y <= 640"
+      ],
+      "expected_result": "section#cat-network-probes boundingBox.y in [0, 640] \u2014 category header within top 80% of viewport"
+    },
+    {
+      "id": "TC-HP-051f",
+      "requirement_id": "FR-051",
+      "user_story_id": "US-051",
+      "ac_id": "AC-051-003",
+      "title": "Hash with no matching id is ignored gracefully \u2014 page renders at top, no console error",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800, authenticated, page.on('pageerror') and page.on('console') capturing errors",
+        "fixtureGlossary 'full' (entry id 'verdict-nonexistent-foo' is NOT present)"
+      ],
+      "given": "Production glossary loaded; no entry with id 'verdict-nonexistent-foo'",
+      "when": "page.goto('/help#verdict-nonexistent-foo')",
+      "then": "Page returns 200; document.scrollTop == 0 (page renders at top); page.on('pageerror') captured 0 errors; console.errors.length == 0",
+      "steps": [
+        "Set up listeners: errors=[], page.on('pageerror', e=>errors.push(e)); console.on('console', m=>{if(m.type()=='error') errors.push(m)})",
+        "page.goto('/help#verdict-nonexistent-foo')",
+        "Wait 500 ms",
+        "Assert response.status() == 200",
+        "Assert page.evaluate(() => document.documentElement.scrollTop) == 0",
+        "Assert errors.length == 0"
+      ],
+      "expected_result": "HTTP 200; document.scrollTop == 0; pageerror count == 0; console.error count == 0"
+    },
+    {
+      "id": "TC-HP-052h",
+      "requirement_id": "FR-052",
+      "user_story_id": "US-052",
+      "ac_id": "AC-052-001",
+      "title": "Validator emits zero WARN lines when all rule links resolve to real glossary anchors",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "fixtureGlossary 'minimal' with entry ids: ['entry-a','entry-b']",
+        "fakeRuleLinks 'all-valid' with rules [{id:'r1', links:['#entry-a']}, {id:'r2', links:['#entry-b','#entry-a']}]"
+      ],
+      "given": "Loaded glossary contains entry-a and entry-b; rule links reference only those two anchors",
+      "when": "svc.ValidateLinks(fakeRuleLinks) is invoked",
+      "then": "fakeLogger.Count('event=insights-link-missing') == 0",
+      "steps": [
+        "Construct help.Service with fixtureGlossary 'minimal' and fakeLogger",
+        "Invoke svc.ValidateLinks(fakeRuleLinks 'all-valid')",
+        "Assert fakeLogger.Count('insights-link-missing') == 0",
+        "Assert fakeLogger.Count('links-validator-deferred') == 0"
+      ],
+      "expected_result": "fakeLogger has 0 lines containing 'insights-link-missing' AND 0 lines containing 'links-validator-deferred'"
+    },
+    {
+      "id": "TC-HP-052f",
+      "requirement_id": "FR-052",
+      "user_story_id": "US-052",
+      "ac_id": "AC-052-002",
+      "title": "Rule with links=['#verdict-foo'] not in glossary \u2014 exactly one WARN, rule still loaded",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "fixtureGlossary 'minimal' with entry ids ['entry-a'] (no 'verdict-foo')",
+        "fakeRuleLinks with rule {id:'thermal', links:['#verdict-foo']}"
+      ],
+      "given": "Glossary has no entry with id 'verdict-foo'; rule 'thermal' has links=['#verdict-foo']",
+      "when": "svc.ValidateLinks(fakeRuleLinks) is invoked",
+      "then": "fakeLogger.Count('event=insights-link-missing') == 1; the captured log line's args contain rule_id='thermal' AND missing_anchor='verdict-foo'; svc has no side-effect on rule (validator returns void; the rule remains in the caller's slice unchanged)",
+      "steps": [
+        "Snapshot fakeRuleLinks slice contents before call",
+        "svc.ValidateLinks(fakeRuleLinks)",
+        "Assert fakeLogger.Count('insights-link-missing') == 1",
+        "Inspect the matching log line's args; assert rule_id='thermal' and missing_anchor='verdict-foo'",
+        "Assert fakeRuleLinks slice contents are byte-equal to the pre-call snapshot (no mutation)"
+      ],
+      "expected_result": "Exactly 1 'insights-link-missing' WARN line with rule_id='thermal' and missing_anchor='verdict-foo'; fakeRuleLinks slice unchanged byte-for-byte"
+    },
+    {
+      "id": "TC-HP-052e",
+      "requirement_id": "FR-052",
+      "user_story_id": "US-052",
+      "ac_id": "AC-052-003",
+      "title": "External http/https links are skipped by validator \u2014 only fragment links checked",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "fixtureGlossary 'minimal' with entry ids ['entry-a']",
+        "fakeRuleLinks with rule {id:'r1', links:['https://example.com/foo','http://docs/x','#entry-a']}"
+      ],
+      "given": "Rule links contain two external URLs and one fragment that matches an existing entry",
+      "when": "svc.ValidateLinks is invoked",
+      "then": "fakeLogger.Count('event=insights-link-missing') == 0 (external URLs ignored, the fragment matches)",
+      "steps": [
+        "svc.ValidateLinks(fakeRuleLinks)",
+        "Assert fakeLogger.Count('insights-link-missing') == 0"
+      ],
+      "expected_result": "fakeLogger.Count('insights-link-missing') == 0 \u2014 external https/http links produce no warnings"
+    },
+    {
+      "id": "TC-HP-052e2",
+      "requirement_id": "FR-052",
+      "user_story_id": "US-052",
+      "ac_id": "AC-052-002",
+      "title": "Validator does not import internal/insights \u2014 RuleLinks contract is plain-data only",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Build environment available; the help-page package compiles"
+      ],
+      "given": "The help-page validator function signature ValidateLinks(rules []contract.RuleLink)",
+      "when": "Static reflection asserts the function signature via runtime.FuncForPC and reflect.TypeOf",
+      "then": "The argument type's PkgPath equals 'github.com/cesareyeserrano/ultron-ap/internal/help/contract' AND the type's field set is exactly {RuleID string, Links []string} (no struct fields, no methods)",
+      "steps": [
+        "Use reflect.TypeOf((*contract.RuleLink)(nil)).Elem()",
+        "Assert PkgPath == 'github.com/cesareyeserrano/ultron-ap/internal/help/contract'",
+        "Assert NumField() == 2",
+        "Assert Field(0).Name == 'RuleID' && Field(0).Type.Kind() == reflect.String",
+        "Assert Field(1).Name == 'Links' && Field(1).Type.Kind() == reflect.Slice && Field(1).Type.Elem().Kind() == reflect.String",
+        "Assert NumMethod() == 0"
+      ],
+      "expected_result": "contract.RuleLink type lives in internal/help/contract; has exactly 2 fields {RuleID string, Links []string}; has 0 methods"
+    },
+    {
+      "id": "TC-HP-052e3",
+      "requirement_id": "FR-052",
+      "user_story_id": "US-052",
+      "ac_id": "AC-052-002",
+      "title": "Validator scales to 100 rules each with 10 links \u2014 boundary value, all-missing scenario",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "fixtureGlossary 'minimal' with 0 entries",
+        "fakeRuleLinks generated with 100 rules \u00d7 10 unique fragment links each (none present in glossary)"
+      ],
+      "given": "100 rules each with 10 unique '#missing-N' fragments; empty glossary",
+      "when": "svc.ValidateLinks is invoked",
+      "then": "fakeLogger.Count('event=insights-link-missing') == 1000 (100 \u00d7 10); validator returns within 50 ms",
+      "steps": [
+        "Generate fakeRuleLinks with 100 rules, each links has 10 unique '#missing-N' fragments",
+        "t0 = time.Now()",
+        "svc.ValidateLinks(fakeRuleLinks)",
+        "Assert time.Since(t0) < 50 * time.Millisecond",
+        "Assert fakeLogger.Count('insights-link-missing') == 1000"
+      ],
+      "expected_result": "Validator emits exactly 1000 'insights-link-missing' lines and completes in <50 ms"
+    },
+    {
+      "id": "TC-HP-053h",
+      "requirement_id": "FR-053",
+      "user_story_id": "US-053",
+      "ac_id": "AC-053-001",
+      "title": "AnchorResolver.FirstValidAnchor with single valid fragment returns matching href",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "help.Service constructed with fixtureGlossary containing entry id='verdict-thermal-throttling'"
+      ],
+      "given": "Glossary contains entry with id='verdict-thermal-throttling'",
+      "when": "svc.FirstValidAnchor(['#verdict-thermal-throttling']) is invoked",
+      "then": "Returns ('/help#verdict-thermal-throttling', true)",
+      "steps": [
+        "href, ok := svc.FirstValidAnchor([]string{\"#verdict-thermal-throttling\"})",
+        "Assert ok == true",
+        "Assert href == '/help#verdict-thermal-throttling'"
+      ],
+      "expected_result": "FirstValidAnchor returns href='/help#verdict-thermal-throttling', ok=true"
+    },
+    {
+      "id": "TC-HP-053e",
+      "requirement_id": "FR-053",
+      "user_story_id": "US-053",
+      "ac_id": "AC-053-003",
+      "title": "AnchorResolver picks first valid when first fragment is missing and second exists",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Glossary has entry id='verdict-thermal-throttling' (and not 'verdict-foo')"
+      ],
+      "given": "Rule links=['#verdict-foo','#verdict-thermal-throttling'] where only the second exists",
+      "when": "svc.FirstValidAnchor(['#verdict-foo','#verdict-thermal-throttling']) is invoked",
+      "then": "Returns ('/help#verdict-thermal-throttling', true)",
+      "steps": [
+        "href, ok := svc.FirstValidAnchor([]string{\"#verdict-foo\",\"#verdict-thermal-throttling\"})",
+        "Assert ok == true",
+        "Assert href == '/help#verdict-thermal-throttling'"
+      ],
+      "expected_result": "FirstValidAnchor returns href='/help#verdict-thermal-throttling', ok=true (skips the missing first fragment)"
+    },
+    {
+      "id": "TC-HP-053f",
+      "requirement_id": "FR-053",
+      "user_story_id": "US-053",
+      "ac_id": "AC-053-002",
+      "title": "AnchorResolver returns ok=false when all fragments missing or links empty \u2014 verdict-card omits Learn more",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Rendered sse-verdicts.html partial driven by help.Service.FirstValidAnchor",
+        "Verdict input has links=[] (case A) and links=['#verdict-foo'] where 'verdict-foo' is not in glossary (case B)"
+      ],
+      "given": "Two test verdicts: A.links=[] and B.links=['#verdict-foo'] (and 'verdict-foo' is not in glossary)",
+      "when": "Render sse-verdicts.html partial for each verdict",
+      "then": "For verdict A: rendered HTML contains zero <a> elements with text 'Learn more'. For verdict B: same \u2014 zero such anchors. svc.FirstValidAnchor returns ok=false in both cases",
+      "steps": [
+        "okA, _ := svc.FirstValidAnchor([]string{}); assert okA == false",
+        "okB, _ := svc.FirstValidAnchor([]string{\"#verdict-foo\"}); assert okB == false",
+        "Render the partial for verdict A; parse with goquery; assert document.querySelectorAll('a:contains(Learn more)').length == 0",
+        "Render the partial for verdict B; same assertion"
+      ],
+      "expected_result": "FirstValidAnchor returns ok=false for both inputs; rendered HTML contains zero <a> elements with text 'Learn more' for both verdicts"
+    },
+    {
+      "id": "TC-HP-053e2",
+      "requirement_id": "FR-053",
+      "user_story_id": "US-053",
+      "ac_id": "AC-053-001",
+      "title": "Rendered Learn-more link opens in same tab \u2014 no target='_blank'",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "Verdict input with links=['#verdict-thermal-throttling']; glossary contains that anchor"
+      ],
+      "given": "A verdict with a valid Learn-more anchor",
+      "when": "Render sse-verdicts.html partial",
+      "then": "The <a> element with text containing 'Learn more' has no 'target' attribute (or target='') \u2014 never 'target=_blank'",
+      "steps": [
+        "Render partial",
+        "Locate the Learn-more anchor via goquery",
+        "Assert anchor.AttrOr('target', '') == ''"
+      ],
+      "expected_result": "<a> with text 'Learn more' has empty or absent 'target' attribute"
+    },
+    {
+      "id": "TC-HP-053e3",
+      "requirement_id": "FR-053",
+      "user_story_id": "US-053",
+      "ac_id": "AC-053-001",
+      "title": "End-to-end: clicking Learn more on thermal-throttling verdict navigates to /help#verdict-thermal-throttling and highlights it",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800 authenticated; dashboard rendered with active thermal-throttling verdict whose rule links=['#verdict-thermal-throttling']",
+        "Production fixtureGlossary 'full' loaded; verdict-thermal-throttling entry exists"
+      ],
+      "given": "Dashboard shows a thermal-throttling verdict card with a 'Learn more \u2192' anchor",
+      "when": "page.click('a:has-text(\"Learn more\")') on the thermal verdict card and wait for navigation",
+      "then": "page.url() ends with '/help#verdict-thermal-throttling'; article#entry-verdict-thermal-throttling boundingBox.y is in [0, 640]; the article matches CSS pseudo-class :target (verified via page.evaluate(() => document.querySelector('#entry-verdict-thermal-throttling').matches(':target')))",
+      "steps": [
+        "page.goto('/') with auth",
+        "Wait for verdict card with rule_id='thermal-throttling' to appear",
+        "page.click('[data-rule-id=\"thermal-throttling\"] a:has-text(\"Learn more\")')",
+        "page.waitForURL('**/help#verdict-thermal-throttling')",
+        "Wait 500 ms for scroll",
+        "Assert page.url().endsWith('/help#verdict-thermal-throttling')",
+        "box = page.locator('#entry-verdict-thermal-throttling').boundingBox(); assert box.y in [0,640]",
+        "Assert page.evaluate(() => document.querySelector('#entry-verdict-thermal-throttling').matches(':target')) === true"
+      ],
+      "expected_result": "URL ends with /help#verdict-thermal-throttling; entry's boundingBox.y in [0, 640]; the entry matches CSS :target"
+    },
+    {
+      "id": "TC-HP-054h",
+      "requirement_id": "FR-054",
+      "user_story_id": "US-054",
+      "ac_id": "AC-054-001",
+      "title": "Typing 'cpu' hides every entry whose title and bodies all lack 'cpu'; matching entries remain visible within 100 ms",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800 authenticated, fixtureGlossary 'full' loaded",
+        "Glossary contains entries: id='entry-cpu-percent' (title: 'CPU %'), id='entry-ram-percent' (title: 'RAM %', no 'cpu' in any field), and at least one entry where 'CPU' appears only in the technical body (id='entry-thermal-cpu-link')"
+      ],
+      "given": "Page /help loaded with the full glossary; the filter input is empty and all entries are visible",
+      "when": "page.fill('#help-filter', 'cpu') then wait 100 ms",
+      "then": "page.locator('#entry-cpu-percent').isVisible() === true; page.locator('#entry-ram-percent').isVisible() === false; page.locator('#entry-thermal-cpu-link').isVisible() === true; the elapsed time between the input event and the visibility-update is <100 ms (measured via Performance.now() within page.evaluate)",
+      "steps": [
+        "Wait for #help-filter to be ready",
+        "Inject a Performance.now() probe via page.evaluate that records timestamps on input event start and on the next mutation observer fire over the entries container",
+        "page.fill('#help-filter', 'cpu')",
+        "Wait 100 ms",
+        "delta = page.evaluate(() => window.__filterDelta) \u2014 assert delta < 100",
+        "Assert page.locator('#entry-cpu-percent').isVisible() === true",
+        "Assert page.locator('#entry-ram-percent').isVisible() === false",
+        "Assert page.locator('#entry-thermal-cpu-link').isVisible() === true"
+      ],
+      "expected_result": "delta < 100 ms; entry-cpu-percent visible; entry-ram-percent hidden; entry-thermal-cpu-link visible (matches via technical body)"
+    },
+    {
+      "id": "TC-HP-054e",
+      "requirement_id": "FR-054",
+      "user_story_id": "US-054",
+      "ac_id": "AC-054-002",
+      "title": "Filter that matches zero entries in a category hides that category section entirely",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800 authenticated, fixtureGlossary 'full'",
+        "Among VPN entries, NONE contain the substring 'xxxnomatchxxx' in any field"
+      ],
+      "given": "/help loaded; 'xxxnomatchxxx' does not appear in any VPN entry",
+      "when": "page.fill('#help-filter', 'xxxnomatchxxx_vpn_specific_query'); wait 100 ms",
+      "then": "page.locator('section#cat-vpn').isVisible() === false (display:none or hidden class applied); other categories that have at least one match retain visibility",
+      "steps": [
+        "Use a query string designed to match nothing in the entire glossary EXCEPT a single entry in cat-system-metrics",
+        "Actually use this design: pick a unique substring 'cpufreq' present only in entries within cat-insights-verdicts and cat-system-metrics",
+        "page.fill('#help-filter', 'cpufreq')",
+        "Wait 100 ms",
+        "Assert page.locator('section#cat-vpn').isVisible() === false",
+        "Assert page.locator('section#cat-network-probes').isVisible() === false",
+        "Assert page.locator('section#cat-services-containers').isVisible() === false",
+        "Assert page.locator('section#cat-system-metrics').isVisible() === true",
+        "Assert page.locator('section#cat-insights-verdicts').isVisible() === true"
+      ],
+      "expected_result": "section#cat-vpn, #cat-network-probes, and #cat-services-containers are not visible; #cat-system-metrics and #cat-insights-verdicts remain visible"
+    },
+    {
+      "id": "TC-HP-054f",
+      "requirement_id": "FR-054",
+      "user_story_id": "US-054",
+      "ac_id": "AC-054-003",
+      "title": "With JS disabled, /help renders fully and shows ALL entries \u2014 filter input is non-functional but page works",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800, javaScriptEnabled=false, authenticated, fixtureGlossary 'full'"
+      ],
+      "given": "Browser context with JS disabled; full glossary loaded",
+      "when": "page.goto('/help')",
+      "then": "Every article.help-entry in the DOM is visible (offsetWidth>0); the page renders without error; the input#help-filter exists in DOM",
+      "steps": [
+        "Create context with javaScriptEnabled:false",
+        "page.goto('/help')",
+        "entries = page.locator('article.help-entry')",
+        "count = await entries.count()",
+        "Assert count >= 30",
+        "For each entry, assert isVisible() === true",
+        "Assert page.locator('#help-filter').isAttached() === true"
+      ],
+      "expected_result": "\u226530 article.help-entry elements all visible; #help-filter input exists in DOM (non-functional but present)"
+    },
+    {
+      "id": "TC-HP-054e2",
+      "requirement_id": "FR-054",
+      "user_story_id": "US-054",
+      "ac_id": "AC-054-001",
+      "title": "No JS framework added to /help \u2014 only inline vanilla JS; no React/Vue/Alpine/jQuery in HTML",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "testServer running with fixtureGlossary 'full'"
+      ],
+      "given": "Authenticated GET /help",
+      "when": "Response body is parsed",
+      "then": "Number of <script src=...> elements in body is 0 (only existing parent scripts in base.html may load \u2014 and those scripts must not contain framework markers); the body contains zero substring matches for ['react','React','Vue','Alpine','jQuery','$('] in inline-script text; only one inline <script> block exists as part of the help page itself",
+      "steps": [
+        "GET /help authenticated; capture body",
+        "Parse with goquery",
+        "scripts = body.querySelectorAll('script')",
+        "Filter scripts to those declared inside #help-page (or with class 'help-filter-script')",
+        "Assert exactly 1 inline help-page script",
+        "Assert that inline script's text contains no substring from {'react','Vue','Alpine','jQuery','window.$'}"
+      ],
+      "expected_result": "Exactly 1 inline help-page script; its text contains no framework markers ('react','Vue','Alpine','jQuery','window.$')"
+    },
+    {
+      "id": "TC-HP-055h",
+      "requirement_id": "FR-055",
+      "user_story_id": "US-055",
+      "ac_id": "AC-055-001",
+      "title": "Production glossary loads \u226530 entries and emits 'glossary-loaded' boot log line",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Production go:embed glossary.json bundled into binary",
+        "fakeLogger captures boot output"
+      ],
+      "given": "Binary boots with the production embedded glossary",
+      "when": "help.New(fakeLogger) is invoked",
+      "then": "svc.EntryCount() >= 30; fakeLogger.Count('event=glossary-loaded') == 1; the matching log line's args contain entries=N where N == svc.EntryCount()",
+      "steps": [
+        "svc, _ := help.New(fakeLogger)",
+        "Assert svc.EntryCount() >= 30",
+        "Assert fakeLogger.Count('glossary-loaded') == 1",
+        "Inspect log line args; assert entries=svc.EntryCount()"
+      ],
+      "expected_result": "svc.EntryCount() \u2265 30; exactly 1 'glossary-loaded' boot log line with entries=N matching the service's count"
+    },
+    {
+      "id": "TC-HP-055h2",
+      "requirement_id": "FR-055",
+      "user_story_id": "US-055",
+      "ac_id": "AC-055-002",
+      "title": "Insights-verdicts category contains exactly 10 entries, one per bundled rule",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Production glossary loaded",
+        "Production insights bundled rule set loaded (10 rules per insights-engine FR-047)"
+      ],
+      "given": "Production glossary + production insights bundled rules",
+      "when": "Aggregate the entries with category=insights-verdicts and the rule ids from insights.Service.RuleLinks()",
+      "then": "len(entries[category=insights-verdicts]) == 10; for every rule with non-empty links, at least one fragment in rule.Links matches a glossary entry id (i.e. validator emits zero 'insights-link-missing' lines for the production sets)",
+      "steps": [
+        "verdictEntries := svc.EntriesByCategory(CategoryInsightsVerdicts)",
+        "Assert len(verdictEntries) == 10",
+        "ruleLinks := insightsSvc.RuleLinks()",
+        "svc.ValidateLinks(ruleLinks)",
+        "Assert fakeLogger.Count('insights-link-missing') == 0"
+      ],
+      "expected_result": "exactly 10 entries in category insights-verdicts; validator emits zero 'insights-link-missing' for the production rule set"
+    },
+    {
+      "id": "TC-HP-055e",
+      "requirement_id": "FR-055",
+      "user_story_id": "US-055",
+      "ac_id": "AC-055-003",
+      "title": "System-metrics category covers CPU%, RAM%, temperature_c, and at least one disk-partition percent threshold",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "Production glossary loaded"
+      ],
+      "given": "Production glossary",
+      "when": "Inspect entries with category='system-metrics'",
+      "then": "There exists at least one entry whose title or technical body contains 'CPU' (case-insensitive); same for 'RAM'; same for 'temperature' OR 'temp_c'; same for 'disk' AND 'percent' OR '%'",
+      "steps": [
+        "sysEntries := svc.EntriesByCategory(CategorySystemMetrics)",
+        "Assert any(e => contains(e.Title+e.Technical, 'cpu', case-insensitive))",
+        "Assert any(e => contains(e.Title+e.Technical, 'ram', case-insensitive))",
+        "Assert any(e => contains(e.Title+e.Technical, 'temp', case-insensitive))",
+        "Assert any(e => contains(e.Title+e.Technical, 'disk', case-insensitive) AND contains(e.Title+e.Technical, '%'))"
+      ],
+      "expected_result": "system-metrics has \u22651 entry referencing each of: CPU, RAM, temperature, and disk percent"
+    },
+    {
+      "id": "TC-HP-055f",
+      "requirement_id": "FR-055",
+      "user_story_id": "US-055",
+      "ac_id": "AC-055-001",
+      "title": "Every bundled entry passes FR-049 schema \u2014 production glossary survives the strict loader",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Production glossary.json checked in",
+        "fakeLogger captures rejections"
+      ],
+      "given": "Production glossary.json content",
+      "when": "help.New(fakeLogger) is invoked with the production payload",
+      "then": "fakeLogger.Count('event=glossary-entry-rejected') == 0; fakeLogger.Count('event=duplicate-entry-id') == 0",
+      "steps": [
+        "svc, _ := help.New(fakeLogger)",
+        "Assert fakeLogger.Count('glossary-entry-rejected') == 0",
+        "Assert fakeLogger.Count('duplicate-entry-id') == 0"
+      ],
+      "expected_result": "Zero 'glossary-entry-rejected' AND zero 'duplicate-entry-id' lines for the production glossary"
+    },
+    {
+      "id": "TC-HP-056h",
+      "requirement_id": "FR-056",
+      "user_story_id": "US-056",
+      "ac_id": "AC-056-001",
+      "title": "Sidebar contains a 'Help' nav item with icon + label, placed below existing items",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "testServer running with fixtureGlossary 'full'"
+      ],
+      "given": "Authenticated GET /",
+      "when": "Parse rendered dashboard body",
+      "then": "Sidebar contains exactly one <a href=\"/help\"> with class containing 'nav-item' and visible text 'Help'; this anchor's DOM-source position is AFTER all other existing nav-item anchors (Dashboard, Docker, Services, Alerts, Network, History, Logs, Settings)",
+      "steps": [
+        "GET / authenticated",
+        "Parse with goquery",
+        "anchors = body.querySelectorAll('a.nav-item') \u2014 preserve document order",
+        "Find anchor with href='/help'; assert exactly one such anchor exists",
+        "Assert that anchor's text contains 'Help'",
+        "Assert that anchor's index in the anchors list is the last (== anchors.length-1)"
+      ],
+      "expected_result": "Exactly 1 <a.nav-item href=\"/help\"> with text 'Help'; its index in the nav-item ordered list is the last position"
+    },
+    {
+      "id": "TC-HP-056e",
+      "requirement_id": "FR-056",
+      "user_story_id": "US-056",
+      "ac_id": "AC-056-003",
+      "title": "On /help, the Help nav item carries active-state styling matching other active nav items",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "testServer running"
+      ],
+      "given": "Authenticated GET /help",
+      "when": "Parse rendered body",
+      "then": "The sidebar's <a href=\"/help\"> has the same active-state CSS class set as the dashboard's nav-item carries when on /. Active-state class detection: the rendered class string for the /help anchor includes 'nav-item-active' (or whatever active marker the existing sidebar uses; assert exact equality with the marker observed on the dashboard's active item)",
+      "steps": [
+        "GET / authenticated; parse; find the active nav-item; record its full class attribute \u2192 activeClassDashboard",
+        "GET /help authenticated; parse; find <a href=\"/help\">; record its class attribute \u2192 classHelp",
+        "Compute activeMarker = the class token (regex /nav-item-(active|current|on)/) present in activeClassDashboard",
+        "Assert activeMarker is non-empty",
+        "Assert classHelp contains activeMarker"
+      ],
+      "expected_result": "The class string of <a href=\"/help\"> on /help contains the same active-marker token (e.g. 'nav-item-active') as the dashboard's active anchor on /"
+    },
+    {
+      "id": "TC-HP-056f",
+      "requirement_id": "FR-056",
+      "user_story_id": "US-056",
+      "ac_id": "AC-056-002",
+      "title": "Clicking the Help nav item navigates to /help in the same tab",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "playwrightContext at 1280x800 authenticated, full glossary"
+      ],
+      "given": "page on /",
+      "when": "page.click('a.nav-item[href=\"/help\"]') then waitForURL",
+      "then": "page.url() ends with '/help'; the page is in the same browser tab (page.context().pages().length unchanged); the anchor had no target='_blank'",
+      "steps": [
+        "page.goto('/')",
+        "before = page.context().pages().length",
+        "Assert (await page.locator('a.nav-item[href=\"/help\"]').getAttribute('target')) in [null, '']",
+        "page.click('a.nav-item[href=\"/help\"]')",
+        "page.waitForURL('**/help')",
+        "after = page.context().pages().length",
+        "Assert after == before",
+        "Assert page.url().endsWith('/help')"
+      ],
+      "expected_result": "page.url() ends with /help; pages-count unchanged before vs after click; clicked anchor's target attribute is null or empty string"
+    },
+    {
+      "id": "TC-HP-056fneg",
+      "requirement_id": "FR-056",
+      "user_story_id": "US-056",
+      "ac_id": "AC-056-003",
+      "title": "Adding the Help nav item does NOT move, rename, or restyle any existing sidebar item",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "testServer running with full glossary",
+        "Snapshot baselineSidebarHTML captured from a build BEFORE FR-056 (file: testdata/sidebar-baseline.html) \u2014 list of (href, label, classAttr) for each pre-existing nav-item: Dashboard '/', Docker '/docker', Services '/services', Alerts '/alerts', Network '/network', History '/history', Logs '/logs', Settings '/settings'"
+      ],
+      "given": "Authenticated GET / rendered with FR-056 applied",
+      "when": "Parse the rendered sidebar; collect all nav-item anchors except href='/help'; compare to baselineSidebarHTML triples",
+      "then": "For every pre-existing href in {'/', '/docker', '/services', '/alerts', '/network', '/history', '/logs', '/settings'}: the rendered anchor's text label and class attribute are byte-equal to the baseline triple; the count of nav-item anchors with href != '/help' equals the baseline count exactly",
+      "steps": [
+        "Load baselineSidebarHTML from testdata/sidebar-baseline.html",
+        "GET / authenticated; parse",
+        "renderedItems := all <a.nav-item> with href != '/help' as map[href] = {label, classAttr}",
+        "Assert len(renderedItems) == len(baselineItems)",
+        "For each href in baselineItems: assert renderedItems[href].label == baselineItems[href].label",
+        "For each href in baselineItems: assert renderedItems[href].classAttr == baselineItems[href].classAttr"
+      ],
+      "expected_result": "Every existing nav-item href has byte-equal label and class attribute to its pre-FR-056 baseline; the non-help nav-item count equals the baseline count exactly \u2014 zero existing items moved, renamed, or restyled"
+    },
+    {
+      "id": "TC-HP-NFR-022h",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-003",
+      "title": "Server-side render p99 of GET /help is <500 ms over 100 sequential requests",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "testServer running with production fixtureGlossary 'full' (\u226530 entries)"
+      ],
+      "given": "Server warmed (one initial GET /help completed); ETag cache populated",
+      "when": "100 sequential authenticated GET /help requests are issued, each with no If-None-Match header (forces full render)",
+      "then": "The p99 of measured wall-clock durations is <500 ms; p50 is <100 ms",
+      "steps": [
+        "Issue 1 warm-up GET /help",
+        "For i in 1..100: t0=time.Now(); GET /help; durations[i] = time.Since(t0)",
+        "Sort durations; compute p50 = durations[49], p99 = durations[98]",
+        "Assert p99 < 500 * time.Millisecond",
+        "Assert p50 < 100 * time.Millisecond",
+        "Log p50/p95/p99 via t.Logf"
+      ],
+      "expected_result": "p99 < 500 ms, p50 < 100 ms over 100 sequential GET /help requests"
+    },
+    {
+      "id": "TC-HP-NFR-022h2",
+      "requirement_id": "FR-054",
+      "user_story_id": "US-054",
+      "ac_id": "AC-054-001",
+      "title": "Filter keystroke\u2192visual update p99 <100 ms over 50 sequential keystrokes",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800, authenticated, full glossary",
+        "Performance.now() probe injected as in TC-HP-054h"
+      ],
+      "given": "Page /help loaded; #help-filter focused",
+      "when": "Inject 50 distinct single-character keystrokes (e.g. typing 'cpufreq\u2026' character-by-character then backspacing then typing other terms) and capture filter-delta for each",
+      "then": "p99 of filter-deltas < 100 ms; p50 < 30 ms",
+      "steps": [
+        "page.evaluate to install a performance probe that records timestamps for each input event and the next style-update batch (via requestAnimationFrame chain ending after class-toggle completes)",
+        "For each of 50 keystrokes: page.keyboard.press(key); wait 100 ms; pull recorded delta",
+        "Compute p99, p50",
+        "Assert p99 < 100",
+        "Assert p50 < 30"
+      ],
+      "expected_result": "p99 of filter-update delta < 100 ms; p50 < 30 ms over 50 keystrokes"
+    },
+    {
+      "id": "TC-HP-NFR-022f",
+      "requirement_id": "FR-054",
+      "user_story_id": "US-054",
+      "ac_id": "AC-054-001",
+      "title": "Filter operates with ZERO additional XHR/fetch calls after initial GET /help",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800, authenticated"
+      ],
+      "given": "Page /help loaded; network capture started; before any filter input",
+      "when": "Type 'cpu' character-by-character into #help-filter; clear it; type 'ram'; clear it",
+      "then": "Across all keystrokes after the initial page load completed, page.context() recorded zero requests (XHR or fetch) to any URL \u2014 the filter is fully client-side",
+      "steps": [
+        "page.goto('/help'); wait for page.waitForLoadState('networkidle')",
+        "Set up requestCount=0 listener: page.on('request', () => requestCount++)",
+        "Reset requestCount to 0",
+        "page.fill('#help-filter', 'cpu'); wait 50 ms",
+        "page.fill('#help-filter', ''); wait 50 ms",
+        "page.fill('#help-filter', 'ram'); wait 50 ms",
+        "page.fill('#help-filter', ''); wait 50 ms",
+        "Assert requestCount == 0"
+      ],
+      "expected_result": "Zero new requests on the network panel between filter-typing start and filter-clearing end (post-initial-load)"
+    },
+    {
+      "id": "TC-HP-NFR-023h",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "Removing on-disk glossary file after build does not change runtime behaviour \u2014 go:embed works",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Built binary bin/ultron-ap available",
+        "tmpEmbedDir is an empty t.TempDir() with no internal/help/glossary/glossary.json"
+      ],
+      "given": "Built binary copied into tmpEmbedDir; no glossary.json on disk anywhere in tmpEmbedDir",
+      "when": "The binary is started in tmpEmbedDir as its working directory; an authenticated GET /help is issued",
+      "then": "GET /help returns 200 with the same number of glossary entries as a build-tree run; the response body length matches within 1% of a control build-tree run",
+      "steps": [
+        "controlBody = curl /help (in build tree, with on-disk file present)",
+        "controlEntries = count of '<article class=\"help-entry\"' substrings in controlBody",
+        "Copy bin/ultron-ap into tmpEmbedDir; cd tmpEmbedDir",
+        "Start binary; capture testBody from authenticated GET /help",
+        "testEntries = count of article markers in testBody",
+        "Assert testEntries == controlEntries",
+        "Assert |len(testBody) - len(controlBody)| / len(controlBody) < 0.01"
+      ],
+      "expected_result": "testEntries == controlEntries; body length difference <1% \u2014 runtime behaviour unchanged when on-disk glossary is absent"
+    },
+    {
+      "id": "TC-HP-NFR-023f",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "POST to any /help-related endpoint returns 404 \u2014 no glossary-write API exists",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "testServer running"
+      ],
+      "given": "Authenticated client",
+      "when": "POST /help with body {} AND POST /api/help/glossary with body {} AND POST /api/help/entry with body {}",
+      "then": "All three responses have status code 404 (route not registered)",
+      "steps": [
+        "POST /help \u2014 assert resp.StatusCode == 404 (or 405, but Go ServeMux GET-only mux returns 405 \u2192 accept either 404 or 405)",
+        "POST /api/help/glossary \u2014 assert resp.StatusCode == 404",
+        "POST /api/help/entry \u2014 assert resp.StatusCode == 404"
+      ],
+      "expected_result": "POST /help \u2192 404 or 405; POST /api/help/glossary \u2192 404; POST /api/help/entry \u2192 404"
+    },
+    {
+      "id": "TC-HP-NFR-023e",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "Help-page package contains zero os.Open / os.ReadFile calls referencing glossary paths",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Source tree available"
+      ],
+      "given": "Source files under internal/help/",
+      "when": "Static analysis (go/ast or grep) scans for os.Open|os.ReadFile|os.OpenFile|ioutil.ReadFile calls in non-test files of internal/help",
+      "then": "Zero matches in production .go files (test files excluded); the only source of glossary content is the //go:embed directive on the package-level var glossaryJSON",
+      "steps": [
+        "List internal/help/*.go (exclude *_test.go)",
+        "Use go/ast.ParseFile + ast.Walk to find SelectorExpr with X.Name in {os, ioutil} and Sel.Name in {Open, ReadFile, OpenFile}",
+        "Filter out comments and string literals (only function calls)",
+        "Assert match count == 0",
+        "Additionally grep for '//go:embed' in non-test files; assert exactly one occurrence in the file containing var glossaryJSON []byte"
+      ],
+      "expected_result": "Zero os.Open/os.ReadFile/os.OpenFile/ioutil.ReadFile calls in production code; exactly one //go:embed directive on var glossaryJSON []byte"
+    },
+    {
+      "id": "TC-HP-NFR-024h",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "Lighthouse / axe-core audit reports zero contrast and zero label violations on /help in light mode",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800 authenticated, full glossary, light theme",
+        "axe-core injected via @axe-core/playwright"
+      ],
+      "given": "Light theme /help with full glossary",
+      "when": "axe-core analysis runs with rules including 'color-contrast' and 'label'",
+      "then": "result.violations filtered to id in ['color-contrast','label','label-content-name-mismatch'] is an empty list",
+      "steps": [
+        "page.goto('/help'); apply data-theme='light'",
+        "results = await new AxeBuilder({page}).withTags(['wcag21aa']).analyze()",
+        "violations = results.violations.filter(v => ['color-contrast','label','label-content-name-mismatch'].includes(v.id))",
+        "Assert violations.length == 0; if not, log violation.id and violation.nodes for debugging"
+      ],
+      "expected_result": "axe-core reports zero violations of color-contrast / label / label-content-name-mismatch in light mode"
+    },
+    {
+      "id": "TC-HP-NFR-024e",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "Same axe audit on /help in dark mode returns zero contrast and label violations",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "playwrightContext at 1280x800 authenticated, full glossary, dark theme"
+      ],
+      "given": "Dark theme /help with full glossary",
+      "when": "axe-core analysis with same filters as TC-HP-NFR-024h",
+      "then": "violations filtered list is empty",
+      "steps": [
+        "page.goto('/help'); apply data-theme='dark' via the existing toggle/cookie",
+        "Run axe analyze",
+        "Assert filtered violations.length == 0"
+      ],
+      "expected_result": "axe-core in dark mode reports zero violations of color-contrast / label / label-content-name-mismatch"
+    },
+    {
+      "id": "TC-HP-NFR-024f",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "Rendered HTML uses semantic landmarks \u2014 exactly one <h1>, <section> per category, <h3> per entry",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "testServer running with full glossary"
+      ],
+      "given": "Authenticated GET /help",
+      "when": "Parse body with goquery",
+      "then": "body has exactly 1 <h1>; body has 5 <section[data-category]> with exactly 1 <h2> child each; the count of <article.help-entry> equals svc.EntryCount(); each article contains exactly 1 <h3>",
+      "steps": [
+        "GET /help; parse with goquery",
+        "Assert document.querySelectorAll('h1').length == 1 (within #help-page)",
+        "sections = document.querySelectorAll('section[data-category]'); assert sections.length == 5",
+        "For each section: assert section.querySelector('header > h2') exists",
+        "articles = document.querySelectorAll('article.help-entry'); assert articles.length == svc.EntryCount()",
+        "For each article: assert article.querySelectorAll('h3').length == 1"
+      ],
+      "expected_result": "Exactly 1 h1; 5 section[data-category] each with 1 header>h2; article count == svc.EntryCount(); each article has exactly 1 h3"
+    },
+    {
+      "id": "TC-HP-NFR-024f2",
+      "requirement_id": "FR-054",
+      "user_story_id": "US-054",
+      "ac_id": "AC-054-001",
+      "title": "Filter input has accessible label via for/id and aria-controls referencing entries container",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "testServer running"
+      ],
+      "given": "Authenticated GET /help",
+      "when": "Parse the filter input element and its label",
+      "then": "input#help-filter is type='search'; there exists a <label for='help-filter'> with non-empty visible text; input#help-filter has aria-controls='help-entries'; element with id='help-entries' exists",
+      "steps": [
+        "GET /help; parse",
+        "input = document.querySelector('input#help-filter')",
+        "Assert input.getAttribute('type') == 'search'",
+        "label = document.querySelector('label[for=\"help-filter\"]')",
+        "Assert label != null && label.textContent.trim().length > 0",
+        "Assert input.getAttribute('aria-controls') == 'help-entries'",
+        "Assert document.getElementById('help-entries') != null"
+      ],
+      "expected_result": "input#help-filter has type='search'; matching <label for='help-filter'> with non-empty text; aria-controls='help-entries'; element id='help-entries' exists"
+    },
+    {
+      "id": "TC-HP-NFR-025h",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "curl /help with auth cookie and grep returns entry contents \u2014 text is in initial HTML, not behind JS",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "testServer running with full glossary",
+        "Glossary contains entry id='verdict-thermal-throttling' with title containing 'Thermal throttling'"
+      ],
+      "given": "Auth cookie",
+      "when": "curl-equivalent HTTP GET of /help; pipe to grep -F 'Thermal throttling'",
+      "then": "grep matches at least 1 line; the matching content includes the entry's title text in the raw HTML body (no JS needed for this content to appear)",
+      "steps": [
+        "body := http.Get('/help', auth-cookie).body-as-string",
+        "lines := splitLines(body)",
+        "matches := lines filtered to contains 'Thermal throttling' (case-insensitive)",
+        "Assert len(matches) >= 1",
+        "Assert body contains 'too hot' or another snippet from the plain body of that entry"
+      ],
+      "expected_result": "grep -F 'Thermal throttling' against curl /help body matches \u22651 line; plain-body snippet from the entry is present in raw HTML"
+    },
+    {
+      "id": "TC-HP-NFR-025e",
+      "requirement_id": "FR-048",
+      "user_story_id": "US-048",
+      "ac_id": "AC-048-001",
+      "title": "Category fragments cat-system-metrics, cat-network-probes, cat-services-containers, cat-vpn, cat-insights-verdicts all exist as element ids",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "testServer running with full glossary"
+      ],
+      "given": "Authenticated GET /help",
+      "when": "Parse body; query for each of the 5 expected category ids",
+      "then": "All 5 ids ['cat-system-metrics','cat-network-probes','cat-services-containers','cat-vpn','cat-insights-verdicts'] resolve to exactly one element each",
+      "steps": [
+        "GET /help; parse body",
+        "For id in ['cat-system-metrics','cat-network-probes','cat-services-containers','cat-vpn','cat-insights-verdicts']: assert document.querySelectorAll('#'+id).length == 1"
+      ],
+      "expected_result": "Each of the 5 stable category ids resolves to exactly 1 element"
+    },
+    {
+      "id": "TC-HP-NFR-025f",
+      "requirement_id": "FR-049",
+      "user_story_id": "US-049",
+      "ac_id": "AC-049-001",
+      "title": "Adding a new entry to glossary does not change any existing entry's URL fragment \u2014 slugs are stable",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "fixtureGlossary 'baseline-3' contains exactly 3 entries with ids ['entry-cpu-percent','entry-ram-percent','verdict-thermal-throttling']",
+        "fixtureGlossary 'baseline-3-plus-1' contains the same 3 entries plus a new entry id='entry-disk-percent'"
+      ],
+      "given": "Two glossary fixtures: baseline (3 entries) and extended (same 3 + 1 new)",
+      "when": "Load each fixture into help.New(fakeLogger) and collect the entry id sets",
+      "then": "The set of entry ids from baseline is a strict subset of the extended set; the difference set has exactly 1 element ('entry-disk-percent'); for each id in baseline, the entry's id field is byte-equal between the two loads",
+      "steps": [
+        "svcA, _ := help.New(fakeLogger) with 'baseline-3'",
+        "idsA := set(svcA.AllEntryIDs())",
+        "svcB, _ := help.New(fakeLogger) with 'baseline-3-plus-1'",
+        "idsB := set(svcB.AllEntryIDs())",
+        "Assert idsA is subset of idsB",
+        "Assert (idsB - idsA) == {'entry-disk-percent'}",
+        "For each id in idsA: assert svcA.EntryByID(id).ID == svcB.EntryByID(id).ID (byte-equal)"
+      ],
+      "expected_result": "idsA is subset of idsB; the single new id is 'entry-disk-percent'; every baseline entry id appears byte-equal in the extended load"
+    },
+    {
+      "id": "TC-HP-NFR-026h",
+      "requirement_id": "FR-052",
+      "user_story_id": "US-052",
+      "ac_id": "AC-052-002",
+      "title": "go list -deps internal/help/... contains zero entries matching internal/(insights|alerts|notify)",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Go toolchain available; module root is the project root"
+      ],
+      "given": "The project's internal/help package tree",
+      "when": "Shell out: go list -deps ./internal/help/... and filter the import paths",
+      "then": "Zero lines match the regex 'github.com/cesareyeserrano/ultron-ap/internal/(insights|alerts|notify)(/|$)'",
+      "steps": [
+        "out := exec('go', 'list', '-deps', './internal/help/...')",
+        "matches := regex.FindAll(out, 'github.com/cesareyeserrano/ultron-ap/internal/(insights|alerts|notify)(/|$)')",
+        "Assert len(matches) == 0",
+        "If non-zero, t.Fatalf with the list of offending packages"
+      ],
+      "expected_result": "go list -deps ./internal/help/... produces zero lines matching internal/(insights|alerts|notify)"
+    },
+    {
+      "id": "TC-HP-NFR-026f",
+      "requirement_id": "FR-052",
+      "user_story_id": "US-052",
+      "ac_id": "AC-052-002",
+      "title": "ValidateLinks signature accepts only []contract.RuleLink \u2014 no insights.Rule or insights.Verdict types cross the boundary",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Source tree available"
+      ],
+      "given": "Public API surface of internal/help",
+      "when": "Reflect on every exported method of help.Service",
+      "then": "For every exported method, every parameter and return type's PkgPath is either empty (builtin) OR starts with 'github.com/cesareyeserrano/ultron-ap/internal/help' OR is from the standard library; no parameter or return type's PkgPath contains '/internal/insights' or '/internal/alerts' or '/internal/notify'",
+      "steps": [
+        "svcType := reflect.TypeOf(&help.Service{})",
+        "For i in 0..svcType.NumMethod()-1: m := svcType.Method(i)",
+        "For each param j in 0..m.Type.NumIn()-1 and return k in 0..m.Type.NumOut()-1: t := the parameter or return type, walking through pointer/slice/map element types",
+        "For every collected type t: pkg := t.PkgPath(); assert !contains(pkg, '/internal/insights') && !contains(pkg, '/internal/alerts') && !contains(pkg, '/internal/notify')"
+      ],
+      "expected_result": "No exported help.Service method exposes a parameter or return type whose package path contains internal/insights, internal/alerts, or internal/notify"
+    },
+    {
+      "id": "TC-HP-NFR-026e",
+      "requirement_id": "FR-052",
+      "user_story_id": "US-052",
+      "ac_id": "AC-052-002",
+      "title": "Help-page package contains zero call sites to alerts.*, notify.*, or telegram/email send functions",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Source tree available"
+      ],
+      "given": "Production .go files under internal/help/",
+      "when": "Static AST scan for SelectorExpr where X.Name in {alerts, notify, telegram, email, smtp} (any imported alias) \u2014 but since the boundary check already prohibits these imports, the assertion is: the imports list of every internal/help/*.go (non-test) does NOT include any of those packages",
+      "then": "For every production .go file in internal/help/: imports list is disjoint from {.../internal/alerts, .../internal/notify, anything containing 'telegram', anything containing 'smtp'}",
+      "steps": [
+        "files := glob internal/help/*.go (exclude *_test.go and internal/help/contract/*)",
+        "For each file: ast.ParseFile; collect Imports",
+        "For each import path: assert !contains(path, '/internal/alerts') && !contains(path, '/internal/notify') && !contains(path, 'telegram') && !contains(path, 'smtp')"
+      ],
+      "expected_result": "No production .go file in internal/help/ imports a package whose path contains '/internal/alerts', '/internal/notify', 'telegram', or 'smtp'"
+    }
+  ]
+}

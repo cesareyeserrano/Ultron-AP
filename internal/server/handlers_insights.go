@@ -63,6 +63,12 @@ type VerdictsFragmentRow struct {
 	VerdictText    string
 	Recommendation string
 	RelativeTime   string // e.g. "first seen 2 min ago"
+
+	// LearnMoreHref is "/help#<slug>" when the rule's links contain at least
+	// one fragment matching a real glossary entry; empty otherwise. The
+	// template renders the "Learn more →" anchor only when this is non-empty
+	// (FR-053 — never render a dead link).
+	LearnMoreHref string
 }
 
 // VerdictsFragmentData is the payload for the operational-indicators partial.
@@ -111,7 +117,7 @@ func (s *Server) gatherVerdictsFragment(now time.Time) VerdictsFragmentData {
 	out.HasVerdicts = true
 	out.Verdicts = make([]VerdictsFragmentRow, 0, len(verdicts))
 	for _, v := range verdicts {
-		out.Verdicts = append(out.Verdicts, VerdictsFragmentRow{
+		row := VerdictsFragmentRow{
 			RuleID:         v.RuleID,
 			Title:          v.Title,
 			Severity:       string(v.Severity),
@@ -120,7 +126,13 @@ func (s *Server) gatherVerdictsFragment(now time.Time) VerdictsFragmentData {
 			VerdictText:    v.VerdictText,
 			Recommendation: v.Recommendation,
 			RelativeTime:   "first seen " + relativeTime(now, v.FirstEmittedAt),
-		})
+		}
+		if s.help != nil {
+			if href, ok := s.help.FirstValidAnchor(v.Links); ok {
+				row.LearnMoreHref = href
+			}
+		}
+		out.Verdicts = append(out.Verdicts, row)
 	}
 	return out
 }

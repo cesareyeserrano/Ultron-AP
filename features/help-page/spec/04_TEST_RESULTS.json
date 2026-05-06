@@ -1,0 +1,366 @@
+{
+  "executed_at": "2026-05-06T00:09:52.368Z",
+  "test_runner": "go test -C ../.. ./internal/help/... ./internal/server/ -run TC_HP -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-HP-048h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_048h (0.01s)"
+    },
+    {
+      "tc_id": "TC-HP-048f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_048f (0.01s)"
+    },
+    {
+      "tc_id": "TC-HP-048e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-048e\" (e.g. test_TC_HP_048e_description) and add # @aitri-tc TC-HP-048e above it."
+    },
+    {
+      "tc_id": "TC-HP-049ha",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_049ha (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-049h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_049h (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-049f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_049f (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-049e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_049e (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-049f2",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_049f2 (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-049e2",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_049e2 (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-049e3",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_049e3 (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-050h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_050h (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-050e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-050e\" (e.g. test_TC_HP_050e_description) and add # @aitri-tc TC-HP-050e above it."
+    },
+    {
+      "tc_id": "TC-HP-050f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-050f\" (e.g. test_TC_HP_050f_description) and add # @aitri-tc TC-HP-050f above it."
+    },
+    {
+      "tc_id": "TC-HP-051h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_051h (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-051e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-051e\" (e.g. test_TC_HP_051e_description) and add # @aitri-tc TC-HP-051e above it."
+    },
+    {
+      "tc_id": "TC-HP-051e2",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-051e2\" (e.g. test_TC_HP_051e2_description) and add # @aitri-tc TC-HP-051e2 above it."
+    },
+    {
+      "tc_id": "TC-HP-051f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-051f\" (e.g. test_TC_HP_051f_description) and add # @aitri-tc TC-HP-051f above it."
+    },
+    {
+      "tc_id": "TC-HP-052h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_052h (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-052f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_052f (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-052e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_052e (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-052e2",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_052e2 (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-052e3",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_052e3 (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-053h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_053h (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-053e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_053e (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-053f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_053f (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-053e2",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_053e2 (0.01s)"
+    },
+    {
+      "tc_id": "TC-HP-053e3",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-053e3\" (e.g. test_TC_HP_053e3_description) and add # @aitri-tc TC-HP-053e3 above it."
+    },
+    {
+      "tc_id": "TC-HP-054h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-054h\" (e.g. test_TC_HP_054h_description) and add # @aitri-tc TC-HP-054h above it."
+    },
+    {
+      "tc_id": "TC-HP-054e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-054e\" (e.g. test_TC_HP_054e_description) and add # @aitri-tc TC-HP-054e above it."
+    },
+    {
+      "tc_id": "TC-HP-054f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-054f\" (e.g. test_TC_HP_054f_description) and add # @aitri-tc TC-HP-054f above it."
+    },
+    {
+      "tc_id": "TC-HP-054e2",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_054e2 (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-055h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_055h (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-055h2",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_055h2 (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-055e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_055e (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-055f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_055f (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-056h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_056h (0.05s)"
+    },
+    {
+      "tc_id": "TC-HP-056e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_056e (0.01s)"
+    },
+    {
+      "tc_id": "TC-HP-056f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-056f\" (e.g. test_TC_HP_056f_description) and add # @aitri-tc TC-HP-056f above it."
+    },
+    {
+      "tc_id": "TC-HP-056fneg",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_056fneg (0.05s)"
+    },
+    {
+      "tc_id": "TC-HP-NFR-022h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_NFR_022h (0.06s)"
+    },
+    {
+      "tc_id": "TC-HP-NFR-022h2",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-NFR-022h2\" (e.g. test_TC_HP_NFR_022h2_description) and add # @aitri-tc TC-HP-NFR-022h2 above it."
+    },
+    {
+      "tc_id": "TC-HP-NFR-022f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_NFR_022f (0.01s)"
+    },
+    {
+      "tc_id": "TC-HP-NFR-023h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-NFR-023h\" (e.g. test_TC_HP_NFR_023h_description) and add # @aitri-tc TC-HP-NFR-023h above it."
+    },
+    {
+      "tc_id": "TC-HP-NFR-023f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-NFR-023f\" (e.g. test_TC_HP_NFR_023f_description) and add # @aitri-tc TC-HP-NFR-023f above it."
+    },
+    {
+      "tc_id": "TC-HP-NFR-023e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-NFR-023e\" (e.g. test_TC_HP_NFR_023e_description) and add # @aitri-tc TC-HP-NFR-023e above it."
+    },
+    {
+      "tc_id": "TC-HP-NFR-024h",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-NFR-024h\" (e.g. test_TC_HP_NFR_024h_description) and add # @aitri-tc TC-HP-NFR-024h above it."
+    },
+    {
+      "tc_id": "TC-HP-NFR-024e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-NFR-024e\" (e.g. test_TC_HP_NFR_024e_description) and add # @aitri-tc TC-HP-NFR-024e above it."
+    },
+    {
+      "tc_id": "TC-HP-NFR-024f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_NFR_024f (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-NFR-024f2",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_NFR_024f2 (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-NFR-025h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_NFR_025h (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-NFR-025e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_NFR_025e (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-NFR-025f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_NFR_025f (0.00s)"
+    },
+    {
+      "tc_id": "TC-HP-NFR-026h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_NFR_026h (0.05s)"
+    },
+    {
+      "tc_id": "TC-HP-NFR-026f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-HP-NFR-026f\" (e.g. test_TC_HP_NFR_026f_description) and add # @aitri-tc TC-HP-NFR-026f above it."
+    },
+    {
+      "tc_id": "TC-HP-NFR-026e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_NFR_026e (0.00s)"
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-048",
+      "tests_passing": 6,
+      "tests_failing": 0,
+      "tests_skipped": 6,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-049",
+      "tests_passing": 8,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-050",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-051",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 3,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-052",
+      "tests_passing": 7,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-053",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-054",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 4,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-055",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-056",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 55,
+    "passed": 37,
+    "failed": 0,
+    "skipped": 18,
+    "skipped_e2e": 13,
+    "skipped_no_marker": 5,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}

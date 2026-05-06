@@ -169,6 +169,7 @@ func (s *Server) parseTemplates() {
 		{"logs.html", nil},
 		{"settings.html", []string{"templates/partials/alert-rules-table.html"}},
 		{"placeholder.html", nil},
+		{"help.html", nil},
 	}
 
 	for _, p := range pages {

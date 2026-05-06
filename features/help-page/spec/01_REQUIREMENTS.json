@@ -1,0 +1,512 @@
+{
+  "project_name": "Ultron-AP — Help Page (feature)",
+  "project_summary": {
+    "feature": "help-page",
+    "scope": "Add a new authenticated /help page that documents every Ultron-AP metric, state, and insights-engine verdict in two parallel voices: a technical voice (what the metric measures, source path, thresholds, code reference) and a plain voice (what it means for the operator in everyday words). Glossary entries live as a JSON literal embedded in the binary via go:embed (no SQLite, no admin UI, no runtime file read), are grouped by category (System metrics, Network probes, Services & containers, VPN, Insights verdicts), and are deep-linkable via stable URL fragments (e.g. /help#verdict-thermal-throttling). The dashboard's Operational Indicators verdict cards (FR-044) gain a 'Learn more →' link pointing at the rule's first valid /help anchor, closing the loop on the insights-engine `links` field. A typed in-page filter (≤100 ms response, no JS framework) hides non-matching entries. Insights-engine validates rule `links` against the glossary at startup with warn-on-missing semantics — never fails. Inherits parent FR-007 auth, FR-009 UI tokens / dark mode. Pure read-only consumer of public types — does not import internal/insights, internal/alerts, or internal/notify.",
+    "product_analysis": {
+      "north_star_kpi": "Time-from-symptom-to-explanation: from the moment a verdict card appears in Operational Indicators, the operator clicks 'Learn more →' once, lands on /help scrolled to the matching anchor with the entry visible without further scrolling on a 1280×800 viewport, and reads a plain-voice explanation of the verdict in <10 s. Measured by: (a) every bundled insights-engine rule has a working anchor target on /help, (b) the matching anchor is in the top 80% of the viewport on initial scroll, (c) the page renders server-side in <500 ms and the in-page filter responds in <100 ms.",
+      "jtbd": "When Ultron tells me something is wrong on my Pi (a red verdict, a failed service, a high temperature), I hire the /help page to tell me WHAT THAT THING IS in plain words and WHERE IT COMES FROM in technical words — without leaving the dashboard, without a Google search, without reading source code — so I can decide in seconds whether to act.",
+      "guardrail_metric": "The /help page MUST NOT degrade dashboard performance, MUST NOT introduce a runtime filesystem dependency for glossary content (go:embed only), and MUST NOT cross architectural boundaries — the help-page package may not import internal/insights, internal/alerts, or internal/notify. Specifically: server-side render time <500 ms p99, glossary content embedded in the binary (verified by removing on-disk JSON files post-build and confirming behaviour is unchanged), and static analysis (go list -deps) shows zero imports of the three forbidden internal packages from the help-page package. If any guardrail is breached the build fails."
+    },
+    "idea_gaps": [
+      "FEATURE_IDEA does not specify what happens when an insights-engine rule's `links` field references an anchor that does not exist in the glossary. Resolved here by FR-052 (warn-on-missing at startup, rule still loads — links are advisory, never required). This is consistent with insights-engine FR-040 treating `links` as optional/possibly-empty.",
+      "FEATURE_IDEA names a typed in-page filter but does not specify whether matching is title-only or full-body. Resolved here by FR-054 (case-insensitive substring match against the entry's title AND technical+plain body, OR-combined; ≤100 ms response).",
+      "FEATURE_IDEA mentions a 'Learn more' link on verdict cards but does not specify behaviour when a verdict's rule has empty or all-missing `links`. Resolved here by FR-053 (when no valid anchor exists, the 'Learn more' link is omitted entirely — never rendered as a dead link).",
+      "FEATURE_IDEA does not constrain the technical-vs-plain rendering layout (side-by-side vs toggle). Resolved here by FR-050 (both voices visible simultaneously by default; layout reuses parent FR-009 tokens; no JavaScript required for the two-voice presentation itself — JS is reserved for the optional filter)."
+    ],
+    "inherits_from_parent": [
+      "FR-007 auth — the /help route requires the same authenticated session as the dashboard; an unauthenticated GET returns 302 / 401 per existing parent middleware",
+      "FR-009 UI tokens / dark mode — all colours, spacing, typography come from existing tokens; no new colour primitives, no new font, no new CSS file outside the existing tailwind / HTMX stack",
+      "FR-013 (HTMX patterns) — the /help page is a pure GET, server-rendered HTML page and does NOT use the SSE channel; if any HTMX attributes appear they reuse the existing patterns rather than introducing new ones (no new long-lived browser connection)",
+      "FR-015 (NOT used) — glossary content is embedded via go:embed, not stored in SQLite; the parent backup pipeline is unaffected by this feature"
+    ]
+  },
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator (home network admin)",
+      "tech_level": "intermediate",
+      "goal": "When Ultron flags a problem (a critical verdict, a failed service, a red metric) understand in plain words what it means and what to do, without leaving the dashboard, without reading Go source, and without a Google search. Be able to click any verdict card and land directly on its definition.",
+      "pain_point": "Today the dashboard shows raw numbers and verdict text but the only deeper explanation is buried in source comments or external upstream docs. Phrases like 'thermal throttling probable' or 'WAN gateway ok' are jargon to a non-technical operator; they need a single, in-product, authoritative glossary that speaks both technical and plain at once."
+    },
+    {
+      "role": "Ultron developer adding a new bundled insights rule",
+      "tech_level": "advanced",
+      "goal": "Add a new rule whose `links` field references a glossary anchor, with confidence that a typo or missing anchor will surface as a startup warning rather than silently producing dead 'Learn more' links in production.",
+      "pain_point": "Without startup validation, a misspelled anchor in a rule (e.g. `#verdict-thermal-trottling`) ships unnoticed and produces a broken click-through for operators."
+    }
+  ],
+  "no_go_zone": [
+    "No operator-authored glossary entries / admin UI in v1 — entries are JSON literals committed with code. UI editor is a v2 follow-up; in v1 the glossary is fixed at build time.",
+    "No multi-language localization — content is English-only in v1. No i18n framework, no translation files.",
+    "No Markdown editor / live preview — entries are plain JSON literals; no in-process Markdown renderer is added (entry bodies are plain strings or simple HTML strings vetted at compile time).",
+    "No server-side full-text search index — client-side typed filter is sufficient at v1 scale (≤100 entries). No Bleve, no SQLite FTS, no external index.",
+    "No changelog / version history of glossary edits — git history is the record. No in-app diff view.",
+    "No /help/<id> deep-page routes — every entry lives on the same /help page anchored by URL fragment. One route, one page.",
+    "No SQLite persistence for glossary content — content is embedded via go:embed only. No new tables, no migration, no backup-pipeline change.",
+    "No imports of internal/insights, internal/alerts, or internal/notify from the help-page package — read-only consumer of public types only (e.g. it may call a public RuleIDs() / RuleLinks() accessor but not the engine itself).",
+    "No SSE / long-lived connection on /help — pure GET page. The dashboard's SSE channel is not extended for this feature."
+  ],
+  "constraints": [
+    "Must run on linux/arm64 Raspberry Pi as part of the existing Ultron-AP single Go binary (parent NFR-002).",
+    "Must enforce parent FR-007 authentication on the /help route — unauthenticated requests are redirected/refused exactly like the dashboard.",
+    "Must use parent FR-009 dark-mode design tokens; WCAG 2.1 AA contrast in both light and dark themes; no new colour primitives.",
+    "Glossary content MUST be bundled into the binary via go:embed at build time — no runtime filesystem read, no network fetch, no operator-supplied YAML.",
+    "MUST NOT introduce a new datastore — no SQLite tables, no key-value file, no on-disk cache.",
+    "MUST NOT import internal/insights, internal/alerts, or internal/notify from the help-page package; read-only access to public accessors only.",
+    "Page server-side render must complete in <500 ms p99 on the Pi; client-side filter response must complete in <100 ms.",
+    "All HTML must be semantic — entries use <section>/<article> with <h2>/<h3> headings; the filter input is a labelled <input type=\"search\"> with aria-controls.",
+    "No new CSS or JS file outside the existing tailwind / HTMX stack; any in-page filter logic is inline JS or CSS :has() — no framework.",
+    "Insights-engine `links` validation against the glossary at startup MUST be warn-only — a rule referencing a missing anchor logs a warning and the rule still loads (insights-engine FR-040 contract preserved)."
+  ],
+  "technology_preferences": [
+    "Go (parent project language) for the /help handler, glossary loader, and links validator.",
+    "Bundled glossary content via go:embed — a single JSON file (or directory of JSON files) compiled into the binary.",
+    "Server-rendered HTML using the existing template stack (html/template) — same convention as parent dashboard pages.",
+    "Plain HTML/CSS for two-voice rendering — semantic <section>/<article> per entry; CSS grid or flex from existing tokens.",
+    "Vanilla inline JS or CSS :has() for the typed filter — no JS framework, no bundler.",
+    "Structured logging (parent project logger) for the startup links-validation warnings."
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-048",
+      "title": "GET /help renders the embedded glossary grouped by category",
+      "description": "The server registers a new GET /help route, behind parent FR-007 auth, that renders an HTML page listing every glossary entry. Entries are grouped into the categories System metrics, Network probes, Services & containers, VPN, Insights verdicts, in that fixed order. Within a category, entries are sorted alphabetically by title. The page is server-rendered (no SPA, no client-side fetch for content) and uses parent FR-009 design tokens for layout, typography, and colour.",
+      "priority": "MUST",
+      "type": "ui",
+      "acceptance_criteria": [
+        "An authenticated GET /help returns 200 with a fully-rendered HTML body containing one <section> per category in the fixed order: System metrics, Network probes, Services & containers, VPN, Insights verdicts.",
+        "An unauthenticated GET /help returns the same 302/401 response the dashboard returns under parent FR-007 — no glossary content is leaked.",
+        "Server-side render time for /help is <500 ms p99 on the Pi (measured over 100 requests with the bootstrap glossary of ≥30 entries loaded).",
+        "Each category section header carries a stable id (id=\"cat-system-metrics\", id=\"cat-insights-verdicts\", etc.) so the table of contents can deep-link to a category as well as an individual entry.",
+        "When the glossary contains zero entries for a category, that category section is omitted entirely (no empty grid, no skeleton)."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-049",
+      "title": "Glossary entry schema (id, title, category, technical, plain, optional thresholds, optional source path)",
+      "description": "Every glossary entry is a JSON object with a strict schema: id (stable slug used as URL fragment, e.g. 'verdict-thermal-throttling'), title (short headline), category (one of system-metrics / network-probes / services-containers / vpn / insights-verdicts), technical (string — what the metric measures, where it comes from, units, thresholds), plain (string — what it means for the operator in everyday words), thresholds (optional array of {label, value, severity} rows rendered as a table), source_path (optional string — repo-relative path to the source line, rendered as inline code). Unknown fields cause the entry to be rejected at startup with a structured log line; the loader continues with the remaining valid entries rather than failing closed for the whole feature.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "An entry missing any of {id, title, category, technical, plain} is rejected at glossary load time; a structured log entry names the offending entry id (or array index) and reason; the remaining entries load successfully.",
+        "Category values outside the set {system-metrics, network-probes, services-containers, vpn, insights-verdicts} are rejected at load time with a structured log line.",
+        "Two entries sharing the same id are rejected at load time; only the first occurrence is loaded and the second is logged as 'duplicate-entry-id'.",
+        "An unknown field on an entry (e.g. 'mute_until') is rejected at load time so typos cannot silently disable behaviour.",
+        "When `thresholds` is omitted or empty, the rendered entry simply omits the thresholds table (no empty <table> element).",
+        "When `source_path` is omitted, the rendered entry omits the source-path line entirely."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-050",
+      "title": "Two-voice rendering (technical + plain) shown side-by-side",
+      "description": "Each entry renders both the `technical` and `plain` bodies simultaneously — not behind a toggle, not in tabs, not collapsed. On viewports ≥768 px the two voices are laid out side-by-side (e.g. CSS grid with two columns); on viewports <768 px they stack vertically with the plain voice first, then the technical voice. Each voice is preceded by a short label ('Technical' / 'Plain') so the operator never has to guess which is which. No JavaScript is required for the two-voice layout itself — pure CSS using parent FR-009 tokens.",
+      "priority": "MUST",
+      "type": "ui",
+      "acceptance_criteria": [
+        "On a 1280×800 viewport, the technical and plain bodies of a rendered entry are visible side-by-side in two columns; both labels ('Technical', 'Plain') are visible.",
+        "On a 375 px viewport, the two bodies stack vertically with the plain voice rendered first (above) and the technical voice second (below).",
+        "Disabling JavaScript in the browser does not hide either voice — the two-voice layout is pure CSS.",
+        "Both voices use parent FR-009 typography and colour tokens; WCAG 2.1 AA contrast holds in both light and dark themes (verified by Lighthouse / axe).",
+        "No new CSS or JS file outside the existing tailwind / HTMX stack is added by this requirement."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-051",
+      "title": "Anchor-based deep-linking with hash-scroll and highlight",
+      "description": "Every glossary entry renders inside a wrapper with a stable id of the form `entry-<slug>` (matching the entry's `id` field). When the page loads with a URL hash (e.g. /help#verdict-thermal-throttling), the browser scrolls the matching entry into view AND the entry receives a transient visual highlight (e.g. a 1.5 s background-tint via CSS `:target`) so the operator sees which entry the click resolved to. The hash MUST round-trip — sharing a /help#... URL with another operator opens the same entry highlighted.",
+      "priority": "MUST",
+      "type": "ui",
+      "acceptance_criteria": [
+        "Every entry's wrapper has id=\"entry-<slug>\" where <slug> matches the entry's `id` field exactly (lowercase kebab-case, no trailing whitespace).",
+        "GET /help#verdict-thermal-throttling scrolls the 'verdict-thermal-throttling' entry into view such that its title is in the top 80% of a 1280×800 viewport without further scrolling.",
+        "On hash arrival, the matching entry receives a CSS `:target`-driven highlight that is visible for between 1 and 2 seconds and then fades; no JS is required for the highlight.",
+        "Sharing the URL /help#cat-network-probes scrolls the Network probes category section header into view (category anchors also work, per FR-048 AC-004).",
+        "A hash that does not match any entry or category id is ignored gracefully — the page renders at the top with no error and no JS console exception."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-052",
+      "title": "Insights-engine `links` validation at startup — warn on missing, never fail",
+      "description": "At server startup, after the glossary has loaded and the insights-engine bundled rules have loaded, a validator walks every rule's `links` field and checks each `#anchor` reference against the loaded glossary entry ids. For every rule whose `links` array contains a fragment that does not match any entry id, a single structured log line of level WARN is emitted with rule_id, missing_anchor, and total_missing count for that rule. Validation MUST NOT fail startup, MUST NOT disable the rule, and MUST NOT mutate the rule. Links are advisory — the insights-engine FR-040 contract that `links` is optional is preserved.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "On startup with all rule `links` matching real glossary anchors, no WARN line is emitted by the help-page validator.",
+        "On startup with one rule whose links contains '#verdict-foo' and no entry has id 'verdict-foo', exactly one structured WARN line is emitted naming rule_id and missing_anchor='verdict-foo'; the rule still loads and is enabled.",
+        "Validation runs after both glossary load and rule load; if either has not happened the validator skips with a single 'links-validator-deferred' log line and is retried at most once on the next tick.",
+        "The validator does NOT import internal/insights — it consumes a public accessor (e.g. insights.RuleIDs() / insights.RuleLinks() returning []string) only.",
+        "Links beginning with 'http://' or 'https://' (external links) are skipped by the validator — only fragment-only links starting with '#' are checked against the glossary."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-053",
+      "title": "Verdict cards gain a 'Learn more →' link to the rule's first valid /help anchor",
+      "description": "The dashboard fragment that renders Operational Indicators verdict cards (web/templates/partials/sse-verdicts.html, owned by insights-engine FR-044) is extended so each card displays a 'Learn more →' link pointing at /help#<first-valid-anchor> for that rule. 'First valid' means the first entry in the rule's `links` array whose fragment matches a real glossary entry id. If no fragment in `links` matches any glossary id, the 'Learn more' link is omitted entirely from that card — never rendered as a dead link. The link reuses parent FR-009 link tokens and opens in the same tab (operator stays in Ultron).",
+      "priority": "MUST",
+      "type": "ui",
+      "acceptance_criteria": [
+        "A verdict card whose rule has links=['#verdict-thermal-throttling'] and that anchor exists in the glossary renders a 'Learn more →' link with href='/help#verdict-thermal-throttling'.",
+        "A verdict card whose rule has links=['#verdict-foo','#verdict-thermal-throttling'] where only the second anchor exists renders 'Learn more →' pointing at the second (first valid) anchor.",
+        "A verdict card whose rule has empty links or all-missing anchors renders NO 'Learn more' link — there is no <a> element with text 'Learn more' in that card's HTML.",
+        "The link opens in the same tab (no target=_blank) so the operator stays inside the Ultron session.",
+        "Clicking 'Learn more →' on a thermal-throttling verdict card navigates the browser to /help#verdict-thermal-throttling, which scrolls and highlights the matching entry per FR-051."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-054",
+      "title": "In-page typed filter with ≤100 ms response",
+      "description": "The /help page renders a labelled <input type=\"search\"> at the top of the page. As the operator types, entries whose title OR technical body OR plain body do NOT contain the typed substring (case-insensitive) are hidden; entries that match remain visible. Categories with zero visible entries collapse (their section is hidden) so the operator sees a tight result list. Filtering is implemented with either inline vanilla JS (≤30 lines) or CSS `:has()` — no JS framework, no debounce library. Response from keystroke to visual update is ≤100 ms p99 on the Pi-served page in a typical desktop browser.",
+      "priority": "MUST",
+      "type": "ui",
+      "acceptance_criteria": [
+        "Typing 'cpu' in the filter input hides every entry whose title and technical body and plain body all lack 'cpu' (case-insensitive); entries containing 'CPU' or 'cpu' in any of those three fields remain visible within 100 ms of the keystroke.",
+        "Clearing the filter input restores every entry and every category section to visible.",
+        "When filtering hides every entry in a category, the category's <section> wrapper is hidden (display:none) so the operator does not see an empty category header.",
+        "The filter input is <input type=\"search\"> with an accessible <label> and aria-controls referencing the entries container id.",
+        "No JS framework (React, Vue, Alpine, jQuery, etc.) is added to support the filter; the implementation is inline vanilla JS or CSS :has() only — verified by inspection of the page's <script> and dependency manifest deltas.",
+        "Disabling JavaScript still allows the page to render fully and shows ALL entries; the filter input is simply non-functional (degrades gracefully)."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-055",
+      "title": "Bootstrap glossary content — ≥30 entries spanning all parent FR domains plus the 10 insights rules",
+      "description": "The v1 binary ships with a bundled glossary of ≥30 entries covering: CPU/RAM/temp/disk thresholds (System metrics); systemd service states active/failed/restarting and Docker container states healthy/unhealthy/restarting (Services & containers); gateway/cloudflare/DNS probe semantics, WAN state machine (up/unknown/down), jitter/loss/RTT (Network probes); Tailscale VPN peer states (VPN); and one entry per insights-engine bundled rule (Insights verdicts — exactly 10 entries to match insights-engine FR-047). Every entry satisfies the FR-049 schema. Entries are written by humans, committed to git, and embedded via go:embed.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "The bundled glossary contains ≥30 entries at engine startup; the count is logged as 'glossary-loaded entries=N' on startup.",
+        "The Insights verdicts category contains exactly one entry per insights-engine bundled rule from FR-047 — 10 entries — each whose id matches the rule's link fragment (e.g. 'verdict-thermal-throttling' for the thermal-throttling rule).",
+        "The System metrics category contains entries covering CPU%, RAM%, temperature_c, and at least one disk-partition percent threshold entry.",
+        "The Network probes category contains entries covering gateway probe, cloudflare probe, DNS probe, jitter, packet loss, and RTT.",
+        "The Services & containers category contains entries covering systemd active/failed/restarting and Docker healthy/unhealthy/restarting.",
+        "The VPN category contains at least one Tailscale peer-state entry.",
+        "Every bundled entry satisfies the FR-049 schema — verified by the same loader used at runtime; CI rejects any entry missing required fields."
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-056",
+      "title": "Sidebar navigation gains a 'Help' item linking to /help",
+      "description": "The dashboard's existing left/side navigation gains one new item, 'Help', linking to /help. The item appears below the existing primary nav items, uses the same parent FR-009 nav tokens (icon + label, hover state, active state), and is highlighted when the current route is /help. No other nav layout is changed.",
+      "priority": "SHOULD",
+      "type": "ui",
+      "acceptance_criteria": [
+        "The dashboard sidebar renders a new 'Help' item with an icon (reusing an existing icon set, no new SVG asset) and the label 'Help', placed below the existing items.",
+        "Clicking the 'Help' nav item navigates the browser to /help in the same tab.",
+        "When the current route is /help, the 'Help' nav item carries the same active-state styling as other active nav items (parent FR-009 tokens).",
+        "No other nav item is moved, renamed, or restyled by this requirement."
+      ],
+      "implementation_level": "production_ready"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-022",
+      "category": "Performance",
+      "requirement": "The /help page must render server-side in <500 ms p99 on the Pi with the bootstrap glossary loaded, and the in-page typed filter must respond in <100 ms p99 from keystroke to visual update on a typical desktop browser. The page must not require a network round-trip after initial load to function (filter is fully client-side).",
+      "acceptance_criteria": [
+        "Synthetic 100-request test against /help on the Pi reports p99 server-side render time <500 ms.",
+        "Manual browser test on a 1280×800 desktop browser served by the Pi reports keystroke-to-visual-update latency in the in-page filter <100 ms p99 over 50 keystrokes.",
+        "After /help has loaded once, disabling the network and typing in the filter still works (filter is client-side only).",
+        "No additional XHR / fetch calls are issued after the initial GET /help — verified by browser devtools network tab on filter typing."
+      ]
+    },
+    {
+      "id": "NFR-023",
+      "category": "Distribution / Packaging",
+      "requirement": "Glossary content is bundled into the binary at build time via go:embed — no runtime filesystem read of glossary JSON, no network fetch, no operator-supplied YAML, no external content source. This matches the parent NFR-012 / lan-devices distribution pattern. Removing all on-disk glossary files after build does not change runtime behaviour.",
+      "acceptance_criteria": [
+        "Inspecting the v1 binary shows glossary JSON embedded via go:embed; removing all on-disk glossary files after build does not change runtime behaviour (verified by integration test).",
+        "There is no API endpoint in v1 that accepts glossary entries as request body; an attempt to POST a glossary entry returns 404.",
+        "The /help handler never reads from the runtime filesystem for glossary content — verified by the absence of os.Open / os.ReadFile calls referencing glossary paths in the help-page package.",
+        "The parent FR-015 backup pipeline is not modified by this feature; no new tables, no new files."
+      ]
+    },
+    {
+      "id": "NFR-024",
+      "category": "UX / Accessibility",
+      "requirement": "The /help page must satisfy parent FR-009 design tokens and WCAG 2.1 AA contrast in both light and dark themes. HTML must be semantic: each entry uses <section> or <article> with <h2>/<h3> headings; each category uses <section> with a <header> containing an <h2>. The typed filter is a labelled <input type=\"search\"> with an accessible <label> and aria-controls. No CSS animation or motion-based change is added beyond the FR-051 :target highlight (≤2 s, no auto-flashing). No new font, no new colour primitive.",
+      "acceptance_criteria": [
+        "Lighthouse / axe accessibility audit on /help with the bootstrap glossary loaded returns zero contrast violations and zero label violations in both light and dark themes.",
+        "Inspecting the rendered HTML shows: one <section> per category with a header <h2>; one <section>/<article> per entry with <h3> for the entry title; no <div> soup substitutes for these landmarks.",
+        "The filter input has a non-empty associated <label> (via for/id) and an aria-controls attribute pointing at the entries-container id.",
+        "No CSS animation or transition longer than 150 ms is added by this feature, with the single exception of the FR-051 :target highlight which fades within 1–2 s and never auto-replays."
+      ]
+    },
+    {
+      "id": "NFR-025",
+      "category": "SEO / Discoverability",
+      "requirement": "Every glossary entry must have a stable URL fragment of the form #entry-<slug> that survives server restarts and content additions (slugs are stable for the lifetime of the entry). The page's HTML structure must be search-engine-grep-friendly — entry titles, technical bodies, and plain bodies are present in the initial HTML response (not behind JS), so a curl /help | grep returns the entry contents.",
+      "acceptance_criteria": [
+        "curl --user authcookie /help | grep -F 'thermal throttling' returns the matching entry's title and at least one body line (text is in the initial HTML, not behind JS).",
+        "Adding a new entry to the bundled glossary does not change the URL fragment of any existing entry — slugs are stable and reused as ids verbatim.",
+        "Removing an entry causes its fragment to 404-equivalent (a hash that matches no entry id is ignored gracefully per FR-051 AC-005), but does not change any other entry's fragment.",
+        "The category fragments (cat-system-metrics, cat-network-probes, cat-services-containers, cat-vpn, cat-insights-verdicts) are also stable for the lifetime of the feature."
+      ]
+    },
+    {
+      "id": "NFR-026",
+      "category": "Boundary / Architectural Isolation",
+      "requirement": "The help-page package MUST NOT import internal/insights, internal/alerts, or internal/notify. It is a read-only consumer of public types only — for example it may call a public accessor (e.g. insights.RuleIDs() / insights.RuleLinks() returning []string) but MUST NOT depend on the engine, the alert engine, or the notify dispatcher. This boundary is enforced architecturally and verified by static analysis.",
+      "acceptance_criteria": [
+        "Static analysis (go list -deps) of the help-page package shows zero imports of internal/insights, internal/alerts, and internal/notify.",
+        "The links validator (FR-052) consumes a public accessor that returns plain []string — verified by inspecting the function signature it calls; no Engine / Rule struct types from internal/insights cross the boundary.",
+        "An attempt to add an import of any of the three forbidden packages causes a CI lint failure (architectural rule encoded in CI).",
+        "The help-page package never invokes the alert engine, Telegram, email, or any notification surface — verified by the absence of such call sites."
+      ]
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-048",
+      "requirement_id": "FR-048",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "an authenticated /help page that lists every glossary entry grouped by category",
+      "so_that": "I have a single in-product reference for every metric, state, and verdict Ultron shows me",
+      "acceptance_criteria": [
+        {
+          "id": "AC-048-001",
+          "given": "I am authenticated",
+          "when": "I GET /help",
+          "then": "the page returns 200 with five category sections in fixed order: System metrics, Network probes, Services & containers, VPN, Insights verdicts"
+        },
+        {
+          "id": "AC-048-002",
+          "given": "I am unauthenticated",
+          "when": "I GET /help",
+          "then": "the response is 302/401 per parent FR-007 and no glossary content is leaked"
+        },
+        {
+          "id": "AC-048-003",
+          "given": "the bootstrap glossary is loaded",
+          "when": "I measure server-side render time over 100 requests on the Pi",
+          "then": "p99 is <500 ms"
+        }
+      ]
+    },
+    {
+      "id": "US-049",
+      "requirement_id": "FR-049",
+      "as_a": "Ultron developer adding a glossary entry",
+      "i_want": "a strict, validated entry schema",
+      "so_that": "a typo in a JSON field fails at load time instead of silently breaking the help page in production",
+      "acceptance_criteria": [
+        {
+          "id": "AC-049-001",
+          "given": "a bundled entry missing the 'plain' field",
+          "when": "the loader runs at startup",
+          "then": "the entry is rejected with a structured log naming the entry id and 'missing-field=plain', and the remaining valid entries load successfully"
+        },
+        {
+          "id": "AC-049-002",
+          "given": "an entry with category='something-else'",
+          "when": "the loader runs",
+          "then": "the entry is rejected at load time with a structured log line"
+        },
+        {
+          "id": "AC-049-003",
+          "given": "two entries sharing the same id",
+          "when": "the loader runs",
+          "then": "only the first is loaded and the second is logged as 'duplicate-entry-id'"
+        }
+      ]
+    },
+    {
+      "id": "US-050",
+      "requirement_id": "FR-050",
+      "as_a": "non-technical operator",
+      "i_want": "to see both a technical and a plain explanation of every metric at the same time",
+      "so_that": "I can read the plain voice first and consult the technical voice if I need to dig deeper — without clicking a toggle",
+      "acceptance_criteria": [
+        {
+          "id": "AC-050-001",
+          "given": "a 1280×800 viewport",
+          "when": "the entry renders",
+          "then": "the technical and plain bodies are visible side-by-side with both labels"
+        },
+        {
+          "id": "AC-050-002",
+          "given": "a 375 px viewport",
+          "when": "the entry renders",
+          "then": "the two bodies stack vertically with plain first and technical second"
+        },
+        {
+          "id": "AC-050-003",
+          "given": "JavaScript is disabled in the browser",
+          "when": "I load /help",
+          "then": "both voices are still visible — the layout is pure CSS"
+        }
+      ]
+    },
+    {
+      "id": "US-051",
+      "requirement_id": "FR-051",
+      "as_a": "operator clicking 'Learn more →' on a verdict card",
+      "i_want": "the browser to scroll to the matching entry and highlight it",
+      "so_that": "I see immediately which entry the click resolved to and can read it without further scrolling",
+      "acceptance_criteria": [
+        {
+          "id": "AC-051-001",
+          "given": "the URL /help#verdict-thermal-throttling",
+          "when": "the page loads",
+          "then": "the matching entry is scrolled into view such that its title is in the top 80% of a 1280×800 viewport"
+        },
+        {
+          "id": "AC-051-002",
+          "given": "a hash arrival",
+          "when": "the matching entry receives :target",
+          "then": "a CSS-driven highlight is visible for 1–2 s and then fades — no JS required"
+        },
+        {
+          "id": "AC-051-003",
+          "given": "a hash that matches no entry or category id",
+          "when": "the page loads",
+          "then": "the page renders at the top with no error and no JS console exception"
+        }
+      ]
+    },
+    {
+      "id": "US-052",
+      "requirement_id": "FR-052",
+      "as_a": "Ultron developer adding a new bundled rule",
+      "i_want": "a startup validator that warns when a rule's `links` reference a missing glossary anchor",
+      "so_that": "a typo or missing anchor surfaces as a log warning the next time I start the binary, not as a dead 'Learn more' link in production",
+      "acceptance_criteria": [
+        {
+          "id": "AC-052-001",
+          "given": "all rule `links` match real glossary anchors at startup",
+          "when": "the validator runs",
+          "then": "no WARN line is emitted by the help-page validator"
+        },
+        {
+          "id": "AC-052-002",
+          "given": "a rule with links=['#verdict-foo'] and no entry has id 'verdict-foo'",
+          "when": "the validator runs",
+          "then": "exactly one structured WARN line is emitted naming rule_id and missing_anchor='verdict-foo', and the rule still loads and is enabled"
+        },
+        {
+          "id": "AC-052-003",
+          "given": "a rule with links=['https://example.com/foo']",
+          "when": "the validator runs",
+          "then": "the external link is skipped (only fragment-only '#…' links are validated)"
+        }
+      ]
+    },
+    {
+      "id": "US-053",
+      "requirement_id": "FR-053",
+      "as_a": "Raspberry Pi operator looking at a verdict card",
+      "i_want": "a 'Learn more →' link that takes me to the matching glossary entry in one click",
+      "so_that": "I close the loop from symptom to explanation without leaving Ultron",
+      "acceptance_criteria": [
+        {
+          "id": "AC-053-001",
+          "given": "a verdict whose rule has links=['#verdict-thermal-throttling'] and that anchor exists",
+          "when": "the card renders",
+          "then": "a 'Learn more →' link with href='/help#verdict-thermal-throttling' is visible and opens in the same tab"
+        },
+        {
+          "id": "AC-053-002",
+          "given": "a verdict whose rule has empty links or all-missing anchors",
+          "when": "the card renders",
+          "then": "NO 'Learn more' link is rendered — there is no <a> with that text in the card"
+        },
+        {
+          "id": "AC-053-003",
+          "given": "a verdict with links=['#verdict-foo','#verdict-thermal-throttling'] where only the second exists",
+          "when": "the card renders",
+          "then": "'Learn more →' points at the first valid anchor — the second one"
+        }
+      ]
+    },
+    {
+      "id": "US-054",
+      "requirement_id": "FR-054",
+      "as_a": "operator looking for one specific term",
+      "i_want": "a typed in-page filter that hides non-matching entries within 100 ms",
+      "so_that": "I can find the entry for 'cpu' or 'cloudflare' in seconds without scrolling",
+      "acceptance_criteria": [
+        {
+          "id": "AC-054-001",
+          "given": "the /help page is loaded",
+          "when": "I type 'cpu' in the filter input",
+          "then": "every entry whose title and technical body and plain body all lack 'cpu' (case-insensitive) is hidden within 100 ms"
+        },
+        {
+          "id": "AC-054-002",
+          "given": "every entry in a category is hidden by the filter",
+          "when": "the filter applies",
+          "then": "the category's <section> wrapper is hidden so I do not see an empty category header"
+        },
+        {
+          "id": "AC-054-003",
+          "given": "JavaScript is disabled",
+          "when": "I load /help",
+          "then": "every entry is visible and the filter input is non-functional but the page is fully usable (graceful degradation)"
+        }
+      ]
+    },
+    {
+      "id": "US-055",
+      "requirement_id": "FR-055",
+      "as_a": "Raspberry Pi operator on day 1",
+      "i_want": "the bundled glossary to cover every metric and verdict the dashboard shows me",
+      "so_that": "I get value out of the box without writing any glossary entry myself",
+      "acceptance_criteria": [
+        {
+          "id": "AC-055-001",
+          "given": "a fresh install",
+          "when": "the binary starts",
+          "then": "≥30 glossary entries are loaded and the count is logged as 'glossary-loaded entries=N'"
+        },
+        {
+          "id": "AC-055-002",
+          "given": "the bundled rule set from insights-engine FR-047 (10 rules)",
+          "when": "I look at the Insights verdicts category",
+          "then": "I see exactly 10 entries, each whose id matches a rule's link fragment"
+        },
+        {
+          "id": "AC-055-003",
+          "given": "the System metrics category",
+          "when": "I read it",
+          "then": "I see entries covering CPU%, RAM%, temperature_c, and at least one disk-partition percent threshold"
+        }
+      ]
+    },
+    {
+      "id": "US-056",
+      "requirement_id": "FR-056",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a 'Help' item in the sidebar navigation",
+      "so_that": "I can reach /help from anywhere in the dashboard in one click",
+      "acceptance_criteria": [
+        {
+          "id": "AC-056-001",
+          "given": "I am on the dashboard",
+          "when": "I look at the sidebar",
+          "then": "I see a 'Help' item with an icon and label, placed below the existing items"
+        },
+        {
+          "id": "AC-056-002",
+          "given": "I click the 'Help' nav item",
+          "when": "the browser navigates",
+          "then": "I land on /help in the same tab"
+        },
+        {
+          "id": "AC-056-003",
+          "given": "the current route is /help",
+          "when": "I look at the sidebar",
+          "then": "the 'Help' item carries the same active-state styling as other active nav items per parent FR-009"
+        }
+      ]
+    }
+  ],
+  "original_brief": "## Feature\nA new /help page that documents every Ultron metric, state, and insights-engine verdict in two parallel voices: technical (what the metric measures, source, thresholds, code path) and plain (what it means for the user in everyday words). Verdict cards on the dashboard deep-link via anchor IDs (e.g. /help#verdict-thermal-throttling) to the matching entry, closing the loop on the insights-engine's `links` field.\n\n## Problem / Why\nThe insights-engine (BL-017) emits verdicts like \"Thermal throttling probable\" with recommendations, but a non-technical operator still has no in-product explanation of what \"thermal throttling\" actually means or how the threshold was chosen. Today's only references are buried in source comments and external docs. Ultron needs an authoritative, in-product glossary so any verdict, badge, or metric on the dashboard can be one click from a definition.\n\n## Target Users\nExisting Ultron operators. Same dashboard, same auth, same nav — adds one new left-nav item (\"Help\") and a new route /help. No new user type.\n\n## New Behavior\n- The system must serve a /help page (parent FR-007 auth) listing every glossary entry, grouped by category (System metrics, Network probes, Services & containers, VPN, Insights verdicts).\n- Each entry has: stable anchor id, title, two-voice body (technical + plain), optional threshold table, optional source-code path link.\n- Each insights-engine bundled rule's `links` field must reference a real anchor on /help (validated at startup — if a rule references a missing anchor, log a warning and continue; rule still loads).\n- The dashboard's Operational Indicators verdict cards must add a \"Learn more\" link pointing at the rule's first valid anchor on /help.\n- Glossary content lives as embedded JSON in the binary (go:embed), versioned with the code. No SQLite, no admin UI in v1.\n- Bootstrap content covers: CPU/RAM/temp/disk thresholds, service & container states (active/failed/restarting), Docker container health, gateway/cloudflare/DNS probe semantics, WAN state machine (up/unknown/down), jitter/loss/RTT, Tailscale VPN peers, and one entry per insights-engine bundled rule (10).\n- Page must support in-page client-side filter (typed search) — no JS framework, just a plain input that hides non-matching entries via CSS or a tiny inline script.\n\n## Success Criteria\n- Given the operator clicks \"Learn more\" on a thermal-throttling verdict card, when the browser navigates, then /help opens scrolled to the matching anchor with the entry visible without further scrolling on a 1280×800 viewport.\n- Given the operator types \"cpu\" in the page filter, then only entries whose title or body mentions \"cpu\" remain visible within 100 ms.\n- Given a developer adds a new bundled rule with `links: [\"#verdict-foo\"]` and `verdict-foo` is NOT defined in the glossary, when the binary starts, then a WARN log is emitted (the rule still loads — links are advisory, not required).\n- The bootstrap glossary covers ≥30 entries spanning all parent FR domains plus the 10 insights-engine rules.\n\n## Out of Scope\n- Operator-authored glossary entries (admin UI) — v2.\n- Multi-language localization — content is English-only in v1.\n- Markdown editor / live preview — entries are JSON literals committed with code.\n- Server-side full-text search index — client-side filter is sufficient at v1 scale (≤100 entries).\n- Changelog / version history of glossary edits — git history is the record.\n- /help/<id> deep-page routes — every entry lives on the same /help page anchored.\n"
+}

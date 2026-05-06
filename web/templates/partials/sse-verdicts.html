@@ -12,6 +12,9 @@
                     <p class="text-xs text-text-muted mt-0.5">{{.VerdictText}}</p>
                     <p class="text-xs text-text mt-1"><span class="text-text-muted">Recommendation:</span> {{.Recommendation}}</p>
                     <p class="text-[10px] text-text-muted mt-1.5">{{.RelativeTime}}</p>
+                    {{if .LearnMoreHref}}
+                    <p class="text-xs mt-1.5"><a href="{{.LearnMoreHref}}" class="text-accent hover:underline">Learn more →</a></p>
+                    {{end}}
                 </div>
             </div>
         </div>

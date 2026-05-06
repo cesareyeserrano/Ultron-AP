@@ -1,0 +1,293 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "cpu-percent",
+      "title": "CPU %",
+      "category": "system-metrics",
+      "technical": "Percent of CPU time spent non-idle, sampled every 5 s by gopsutil and exposed as cpu_pct in metrics.Snapshot. Source: internal/metrics/system.go.",
+      "plain": "How busy your Pi has been recently. 100% means the CPU is fully loaded; sustained high values can make the dashboard feel sluggish.",
+      "thresholds": [
+        {"label": "warn",     "value": ">= 80%", "severity": "warn"},
+        {"label": "critical", "value": ">= 95%", "severity": "critical"}
+      ],
+      "source_path": "internal/metrics/system.go"
+    },
+    {
+      "id": "ram-percent",
+      "title": "RAM %",
+      "category": "system-metrics",
+      "technical": "Percent of physical memory in use, exposed as ram_pct. Excludes swap. Pressure rises when active working set approaches the Pi's installed RAM.",
+      "plain": "How much of your Pi's memory is in use. Above 90% means the Pi is close to swapping or killing processes.",
+      "thresholds": [
+        {"label": "warn",     "value": ">= 85%", "severity": "warn"},
+        {"label": "critical", "value": ">= 95%", "severity": "critical"}
+      ],
+      "source_path": "internal/metrics/system.go"
+    },
+    {
+      "id": "swap-percent",
+      "title": "Swap %",
+      "category": "system-metrics",
+      "technical": "Percent of swap space in use, exposed as swap_pct. Sustained non-zero swap on a Pi indicates memory pressure that the kernel is paging to disk.",
+      "plain": "How much temporary disk space your Pi is using as extra memory. Any sustained swap usage usually means RAM is full.",
+      "source_path": "internal/metrics/system.go"
+    },
+    {
+      "id": "temperature-c",
+      "title": "Temperature (°C)",
+      "category": "system-metrics",
+      "technical": "CPU temperature in Celsius, read from /sys/class/thermal/thermal_zone0/temp on Linux ARM. Exposed as temp_c.",
+      "plain": "How hot your Pi's chip is right now. Higher than 80°C means the CPU may slow itself down to cool off.",
+      "thresholds": [
+        {"label": "warn",     "value": ">= 70 °C", "severity": "warn"},
+        {"label": "critical", "value": ">= 80 °C", "severity": "critical"}
+      ],
+      "source_path": "internal/metrics/system.go"
+    },
+    {
+      "id": "disk-root-percent",
+      "title": "Disk usage (root /)",
+      "category": "system-metrics",
+      "technical": "Percent of the root filesystem in use, exposed as disk_pct[\"/\"]. Computed by gopsutil over the / mountpoint.",
+      "plain": "How full the Pi's main disk is. When this approaches 100% the system can't write logs, backups, or new files.",
+      "thresholds": [
+        {"label": "warn",     "value": ">= 80%", "severity": "warn"},
+        {"label": "critical", "value": ">= 95%", "severity": "critical"}
+      ],
+      "source_path": "internal/metrics/system.go"
+    },
+    {
+      "id": "load-average",
+      "title": "Load average",
+      "category": "system-metrics",
+      "technical": "Linux 1/5/15-minute load average via sysinfo. Roughly 'how many processes are wanting CPU'. Reference value: load equal to the number of cores is full utilisation.",
+      "plain": "How many things your Pi is trying to do at once. If this stays higher than the number of CPU cores, your Pi is overloaded.",
+      "source_path": "internal/metrics/system.go"
+    },
+    {
+      "id": "gateway-probe",
+      "title": "Gateway probe",
+      "category": "network-probes",
+      "technical": "ICMP ping every 5 s to the LAN gateway resolved from /proc/net/route. Status is one of ok | unknown | down. Exposed via the wan_gateway_ok variable.",
+      "plain": "Whether your Pi can reach your home router. If this is down, the Pi is cut off from the local network.",
+      "source_path": "internal/network/gatewayprobe/gatewayprobe.go"
+    },
+    {
+      "id": "cloudflare-probe",
+      "title": "Cloudflare probe (1.1.1.1)",
+      "category": "network-probes",
+      "technical": "ICMP ping every 5 s to 1.1.1.1 — Cloudflare's public DNS resolver. Used as the public-internet reference. Status mirrors the wan_cloudflare_ok variable.",
+      "plain": "Whether your Pi can reach the public internet. If the gateway is up but this is down, the problem is upstream of your router.",
+      "source_path": "internal/network/gatewayprobe/gatewayprobe.go"
+    },
+    {
+      "id": "dns-probe",
+      "title": "DNS probe",
+      "category": "network-probes",
+      "technical": "DNS query every 5 s for cloudflare.com via 1.1.1.1. Status is ok | unknown | down. Independent of the ICMP gateway/cloudflare probes — DNS can fail even when ping succeeds.",
+      "plain": "Whether your Pi can look up names like 'github.com'. If ping works but this fails, you have a DNS problem.",
+      "source_path": "internal/network/gatewayprobe/gatewayprobe.go"
+    },
+    {
+      "id": "wan-state",
+      "title": "WAN state machine",
+      "category": "network-probes",
+      "technical": "Three-state monitor that observes every gateway/cloudflare/DNS probe and emits wan_up / wan_down events. Requires three consecutive failures to declare WAN_DOWN, three successes to recover.",
+      "plain": "The Pi's overall verdict on whether your home internet is up. Smooths over single missed pings so a flaky cable doesn't trigger a false alarm.",
+      "thresholds": [
+        {"label": "down threshold", "value": "3 consecutive probe failures", "severity": "critical"},
+        {"label": "up threshold",   "value": "3 consecutive probe successes", "severity": "info"}
+      ],
+      "source_path": "internal/network/wanmonitor/wanmonitor.go"
+    },
+    {
+      "id": "rtt-ms",
+      "title": "Probe RTT (ms)",
+      "category": "network-probes",
+      "technical": "Round-trip time of the most recent successful ICMP probe in milliseconds. NetSample.RTTMs is persisted for the network history chart.",
+      "plain": "How long a 'are you there?' message takes to come back. Higher numbers mean a slower or congested link.",
+      "source_path": "internal/network/gatewayprobe/gatewayprobe.go"
+    },
+    {
+      "id": "packet-loss",
+      "title": "Packet loss %",
+      "category": "network-probes",
+      "technical": "Percent of probes within a window whose Status != ok. Used by the sustained_packet_loss insight rule. Variable: loss_pct.",
+      "plain": "How many of the last few 'are you there?' messages got no answer. Above a few percent over time means a degraded link.",
+      "source_path": "internal/network/gatewayprobe/gatewayprobe.go"
+    },
+    {
+      "id": "jitter-ms",
+      "title": "Jitter (ms)",
+      "category": "network-probes",
+      "technical": "Standard deviation of probe RTT over a short window. High jitter degrades real-time traffic (VoIP, video calls) even if average latency is fine.",
+      "plain": "How much the response time bounces around. Steady is good; spiky means video calls and game traffic will stutter.",
+      "source_path": "internal/network/gatewayprobe/gatewayprobe.go"
+    },
+    {
+      "id": "lan-device-offline-count",
+      "title": "Offline LAN devices",
+      "category": "network-probes",
+      "technical": "Count of LAN devices currently in state=offline as observed by the LAN devices orchestrator. Variable: lan_device_offline_count.",
+      "plain": "How many devices on your home network the Pi can't reach right now. A small number is normal (devices come and go); a sudden burst can mean a wider problem.",
+      "source_path": "internal/network/landevices/landevices.go"
+    },
+    {
+      "id": "service-active",
+      "title": "Systemd service: active",
+      "category": "services-containers",
+      "technical": "ActiveState='active' from the systemd D-Bus interface — the unit started successfully and its main process is running.",
+      "plain": "The service is running normally.",
+      "source_path": "internal/systemd/systemd.go"
+    },
+    {
+      "id": "service-failed",
+      "title": "Systemd service: failed",
+      "category": "services-containers",
+      "technical": "ActiveState='failed' — the unit terminated with a non-zero exit and exhausted its Restart= policy. Will not run again without intervention.",
+      "plain": "The service crashed and is not running anymore. Click into Services to inspect logs and restart manually.",
+      "source_path": "internal/systemd/systemd.go"
+    },
+    {
+      "id": "service-restarting",
+      "title": "Systemd service: restarting",
+      "category": "services-containers",
+      "technical": "ActiveState='activating' or 'reloading' transitionally observed during a Restart= cycle. Sustained restart loops are surfaced by the insights-engine.",
+      "plain": "The service is in the middle of restarting. If it stays in this state, it's stuck in a crash loop.",
+      "source_path": "internal/systemd/systemd.go"
+    },
+    {
+      "id": "container-healthy",
+      "title": "Docker container: healthy",
+      "category": "services-containers",
+      "technical": "Docker State.Health.Status='healthy' (or no healthcheck configured and State.Status='running'). Reported via the Docker daemon socket.",
+      "plain": "The container is running and (if it has a health check) reporting itself as fine.",
+      "source_path": "internal/docker/docker.go"
+    },
+    {
+      "id": "container-unhealthy",
+      "title": "Docker container: unhealthy",
+      "category": "services-containers",
+      "technical": "Docker State.Health.Status='unhealthy' — the configured healthcheck command has exited non-zero N consecutive times.",
+      "plain": "The container is running, but its self-check is failing. Something inside the container is broken even though Docker itself didn't kill it.",
+      "source_path": "internal/docker/docker.go"
+    },
+    {
+      "id": "container-restarting",
+      "title": "Docker container: restarting",
+      "category": "services-containers",
+      "technical": "Docker State.Status='restarting' — the daemon is in the middle of bringing the container back up under its restart policy. Sustained restart loops are surfaced as a verdict.",
+      "plain": "The container keeps crashing and Docker keeps restarting it. Inspect its logs to find the underlying error.",
+      "source_path": "internal/docker/docker.go"
+    },
+    {
+      "id": "tailscale-peer-online",
+      "title": "Tailscale peer: online",
+      "category": "vpn",
+      "technical": "Peer reachable through the Tailscale mesh — Online=true from `tailscale status --json`. Either via direct path or DERP relay.",
+      "plain": "The other device on your Tailscale network is reachable right now.",
+      "source_path": "internal/server/helpers_tailscale.go"
+    },
+    {
+      "id": "tailscale-peer-offline",
+      "title": "Tailscale peer: offline",
+      "category": "vpn",
+      "technical": "Peer Online=false — Tailscale has not received recent keepalives. The peer device may be powered off, asleep, or have lost internet.",
+      "plain": "The other device on your Tailscale network can't be reached right now.",
+      "source_path": "internal/server/helpers_tailscale.go"
+    },
+    {
+      "id": "tailscale-derp-relay",
+      "title": "Tailscale DERP relay",
+      "category": "vpn",
+      "technical": "Fallback relay used when no direct path between peers can be negotiated. Slower and uses Tailscale's servers as middlemen.",
+      "plain": "Your Pi is reaching the other Tailscale device through a relay server, not directly. Still works, just slower.",
+      "source_path": "internal/server/helpers_tailscale.go"
+    },
+    {
+      "id": "verdict-thermal-throttling",
+      "title": "Thermal throttling probable",
+      "category": "insights-verdicts",
+      "technical": "Triggered by the bundled rule 'thermal-throttling' when temp_c sustains above 80 °C. Source: internal/insights/rules/bundled.json. The CPU is reducing its clock to stay within thermal limits.",
+      "plain": "Your Pi got too hot and is slowing itself down to cool off. Improve airflow, add a heatsink/fan, or move the Pi out of direct sunlight.",
+      "thresholds": [
+        {"label": "warn",     "value": "temp_c >= 70 °C", "severity": "warn"},
+        {"label": "critical", "value": "temp_c >= 80 °C", "severity": "critical"}
+      ],
+      "source_path": "internal/insights/rules/bundled.json"
+    },
+    {
+      "id": "verdict-cpu-saturation",
+      "title": "CPU saturation",
+      "category": "insights-verdicts",
+      "technical": "Bundled rule 'cpu-saturation' — sustained cpu_pct above its threshold for several consecutive ticks. Indicates a process is monopolising the CPU.",
+      "plain": "Something on your Pi is using almost all of the CPU. Check the dashboard for the busiest process.",
+      "source_path": "internal/insights/rules/bundled.json"
+    },
+    {
+      "id": "verdict-memory-pressure",
+      "title": "Memory pressure",
+      "category": "insights-verdicts",
+      "technical": "Bundled rule 'memory-pressure' — ram_pct sustained high, often combined with rising swap_pct. The OS is paging to disk to keep up.",
+      "plain": "Your Pi is running out of memory. Apps will feel slow because the Pi is shuffling memory to disk.",
+      "source_path": "internal/insights/rules/bundled.json"
+    },
+    {
+      "id": "verdict-disk-critical",
+      "title": "Disk space critical",
+      "category": "insights-verdicts",
+      "technical": "Bundled rule 'disk-critical' — disk_pct['/'] above 95%. At this point new file writes (logs, backups) start failing.",
+      "plain": "Your Pi's disk is almost full. Free up space soon or things will start breaking.",
+      "source_path": "internal/insights/rules/bundled.json"
+    },
+    {
+      "id": "verdict-service-failed",
+      "title": "Service failed",
+      "category": "insights-verdicts",
+      "technical": "Bundled rule 'service-failed' — at least one tracked systemd unit is in ActiveState='failed' and not auto-restarting. Variable: services_failed.",
+      "plain": "An important background service crashed. Open the Services page to inspect and restart it.",
+      "source_path": "internal/insights/rules/bundled.json"
+    },
+    {
+      "id": "verdict-container-failed",
+      "title": "Container failed",
+      "category": "insights-verdicts",
+      "technical": "Bundled rule 'container-failed' — one or more Docker containers are in unhealthy or restart-loop state. Variable: containers_failed.",
+      "plain": "A container is unhealthy or stuck in a restart loop. Open Docker to see which one and check its logs.",
+      "source_path": "internal/insights/rules/bundled.json"
+    },
+    {
+      "id": "verdict-wan-down",
+      "title": "WAN down",
+      "category": "insights-verdicts",
+      "technical": "Bundled rule 'wan-down' — the WAN state machine has declared WAN_DOWN (three consecutive cloudflare-probe failures). Variable: wan_cloudflare_ok=false.",
+      "plain": "Your home internet is down — your Pi can't reach the public internet, even though it can reach the local router.",
+      "source_path": "internal/insights/rules/bundled.json"
+    },
+    {
+      "id": "verdict-gateway-unreachable",
+      "title": "Gateway unreachable",
+      "category": "insights-verdicts",
+      "technical": "Bundled rule 'gateway-unreachable' — wan_gateway_ok=false. The Pi can't even reach its own router.",
+      "plain": "Your Pi can't talk to your home router. Check the network cable, Wi-Fi connection, or router.",
+      "source_path": "internal/insights/rules/bundled.json"
+    },
+    {
+      "id": "verdict-sustained-packet-loss",
+      "title": "Sustained packet loss",
+      "category": "insights-verdicts",
+      "technical": "Bundled rule 'sustained-packet-loss' — loss_pct above the threshold over a window. The link is up but lossy.",
+      "plain": "Your internet is up but degraded — calls and video will stutter. Often a Wi-Fi or upstream-ISP issue.",
+      "source_path": "internal/insights/rules/bundled.json"
+    },
+    {
+      "id": "verdict-lan-offline-burst",
+      "title": "LAN offline burst",
+      "category": "insights-verdicts",
+      "technical": "Bundled rule 'lan-offline-burst' — lan_device_offline_count spiked above the threshold. Often caused by an AP reboot or DHCP outage.",
+      "plain": "Several devices on your home network went offline at once. Usually an issue with the Wi-Fi access point or router rather than each device.",
+      "source_path": "internal/insights/rules/bundled.json"
+    }
+  ]
+}

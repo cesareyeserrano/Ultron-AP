@@ -20,6 +20,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
+	"github.com/cesareyeserrano/ultron-ap/internal/help"
 	"github.com/cesareyeserrano/ultron-ap/internal/insights"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
@@ -81,6 +82,7 @@ type Server struct {
 	landevices          *landevices.Orchestrator
 	landevicesStore     *landevicesstore.Store
 	insights            *insights.Service
+	help                *help.Service
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -497,6 +499,10 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	// Insights engine (FR-043, FR-044)
 	mux.Handle("GET /api/insights/verdicts", s.requireAuth(http.HandlerFunc(s.handleInsightsVerdicts)))
 	mux.Handle("GET /insights/fragment", s.requireAuth(http.HandlerFunc(s.handleInsightsFragment)))
+
+	// Help page (FR-048..FR-056). Wrapped in the parent dashboard chrome by
+	// handleHelpPage; the embedded help.Service writes the body fragment.
+	mux.Handle("GET /help", s.requireAuth(http.HandlerFunc(s.handleHelpPage)))
 }
 
 // startRetentionJob runs a daily cleanup of old ActionLog and Alert records.
@@ -534,6 +540,14 @@ func (s *Server) SetGatewayProbe(p *gatewayprobe.Probe) {
 // as a status badge on the dashboard. Optional.
 func (s *Server) SetWANMonitor(m *wanmonitor.Monitor) {
 	s.wan = m
+}
+
+// SetHelp attaches the help-page service. Required for /help to be reachable;
+// when nil the route returns 503.
+//
+// @aitri-trace FR-048
+func (s *Server) SetHelp(h *help.Service) {
+	s.help = h
 }
 
 func (s *Server) Start() error {
