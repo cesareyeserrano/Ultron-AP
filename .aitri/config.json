@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-alpha.27",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-05T23:20:30.206Z",
+  "updatedAt": "2026-05-06T01:35:08.561Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,15 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-04T14:00:44.910Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
     {
       "at": "2026-05-04T14:22:48.751Z",
       "event": "normalize-resolved",
@@ -200,6 +191,15 @@
       "method": "git",
       "baseRefFrom": "f31786f72455e8475e6ed2e5ec64eae8aef1911f",
       "baseRefTo": "d87acfb6ee1260eb585b5090665a2abe2b697412"
+    },
+    {
+      "at": "2026-05-06T01:35:08.522Z",
+      "event": "normalize-resolved",
+      "phase": null,
+      "files": 28,
+      "method": "git",
+      "baseRefFrom": "d87acfb6ee1260eb585b5090665a2abe2b697412",
+      "baseRefTo": "d9aac31277b67eb26e9b64b852111de971aaffa4"
     }
   ],
   "verifyPassed": true,
@@ -213,20 +213,22 @@
   },
   "verifyRanAt": "2026-05-05T22:59:18.250Z",
   "lastSession": {
-    "at": "2026-05-05T23:20:30.206Z",
+    "at": "2026-05-06T01:35:08.561Z",
     "agent": "unknown",
-    "event": "feature init help-page",
+    "event": "normalize --resolve",
     "files_touched": [
-      "web/static/css/app.css"
+      ".aitri/config.json",
+      "internal/network/landevices/sweep/sweep.go",
+      "internal/network/landevices/sweep/sweep_test.go"
     ]
   },
   "auditLastAt": "2026-05-03T22:42:15.435Z",
   "upgradeFindings": [],
   "normalizeState": {
-    "baseRef": "d87acfb6ee1260eb585b5090665a2abe2b697412",
+    "baseRef": "d9aac31277b67eb26e9b64b852111de971aaffa4",
     "method": "git",
     "status": "resolved",
-    "lastRun": "2026-05-05T23:12:12.909Z"
+    "lastRun": "2026-05-06T01:35:08.520Z"
   },
   "verifySummary": {
     "total": 45,
