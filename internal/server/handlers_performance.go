@@ -7,31 +7,60 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 )
 
-// handlePerformanceSave handles POST /api/performance
+// parseScheduleTime parses an "HH:MM" 24-hour time string into (hour, minute).
+// Returns an error with the canonical message used by FR-064 / TC-SR-064f.
+//
+// @aitri-trace FR-064 — single helper for backup-schedule time parsing.
+func parseScheduleTime(s string) (int, int, error) {
+	parts := strings.SplitN(s, ":", 2)
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("time must be HH:MM in 00:00..23:59")
+	}
+	t, err := time.Parse("15:04", s)
+	if err != nil {
+		return 0, 0, fmt.Errorf("time must be HH:MM in 00:00..23:59")
+	}
+	return t.Hour(), t.Minute(), nil
+}
+
+// handlePerformanceSave handles POST /api/performance.
+//
+// @aitri-trace FR-057, FR-060 — uses RangeFor() for single source of truth.
+// Out-of-range values now return 400 with the same hint string used in the
+// label, instead of being silently dropped. Backwards compat: in-range
+// values continue to succeed (NFR-029); a body that previously succeeded
+// with valid numbers continues to succeed.
 func (s *Server) handlePerformanceSave(w http.ResponseWriter, r *http.Request) {
 	if !s.validateCSRF(w, r) {
 		return
 	}
 
 	cfg := database.DefaultPerformanceConfig()
-	if v, err := strconv.Atoi(r.FormValue("sse_interval_sec")); err == nil && v >= 2 && v <= 60 {
-		cfg.SSEIntervalSec = v
-	}
-	if v, err := strconv.Atoi(r.FormValue("disk_interval_min")); err == nil && v >= 1 && v <= 1440 {
-		cfg.DiskIntervalMin = v
-	}
-	if v, err := strconv.Atoi(r.FormValue("docker_interval_sec")); err == nil && v >= 5 && v <= 300 {
-		cfg.DockerIntervalSec = v
-	}
-	if v, err := strconv.Atoi(r.FormValue("systemd_interval_sec")); err == nil && v >= 5 && v <= 300 {
-		cfg.SystemdIntervalSec = v
+	for _, field := range []*struct {
+		Name string
+		Dst  *int
+	}{
+		{"sse_interval_sec", &cfg.SSEIntervalSec},
+		{"disk_interval_min", &cfg.DiskIntervalMin},
+		{"docker_interval_sec", &cfg.DockerIntervalSec},
+		{"systemd_interval_sec", &cfg.SystemdIntervalSec},
+	} {
+		raw := r.FormValue(field.Name)
+		if raw == "" {
+			continue
+		}
+		v, err := RangeFor(field.Name).ParseAndValidate(raw)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		*field.Dst = v
 	}
 
 	log.Printf("settings: saving performance config: SSE=%ds, Disk=%dm, Docker=%ds, Systemd=%ds",
@@ -59,21 +88,69 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 
 	cfg := database.DefaultBackupConfig()
 	cfg.Enabled = r.FormValue("enabled") == "on"
-	if v, err := strconv.Atoi(r.FormValue("interval_hours")); err == nil {
-		cfg.IntervalHours = v
-	}
-	if v, err := strconv.Atoi(r.FormValue("retention_count")); err == nil {
-		cfg.RetentionCount = v
+
+	// Numeric fields go through RangeFor() — out-of-range returns 400 with
+	// the same hint string visible in the label.
+	for _, field := range []*struct {
+		Name string
+		Dst  *int
+	}{
+		{"interval_hours", &cfg.IntervalHours},
+		{"retention_count", &cfg.RetentionCount},
+		{"upload_timeout_sec", &cfg.UploadTimeoutSec},
+		{"max_upload_size_mb", &cfg.MaxUploadSizeMB},
+	} {
+		raw := r.FormValue(field.Name)
+		if raw == "" {
+			continue
+		}
+		v, err := RangeFor(field.Name).ParseAndValidate(raw)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		*field.Dst = v
 	}
 	scheduleMode := strings.TrimSpace(r.FormValue("schedule_mode"))
 	if scheduleMode != "" {
 		cfg.ScheduleMode = scheduleMode
 	}
-	if v, err := strconv.Atoi(r.FormValue("schedule_hour")); err == nil {
-		cfg.ScheduleHour = v
-	}
-	if v, err := strconv.Atoi(r.FormValue("schedule_minute")); err == nil {
-		cfg.ScheduleMinute = v
+
+	// FR-064: accept either `time=HH:MM` (new) or legacy `hour=N&minute=M`.
+	// New format wins when both are present. Log a deprecation warning on any
+	// receipt of the legacy fields (NFR-029 backwards-compat).
+	hourRaw := r.FormValue("schedule_hour")
+	minuteRaw := r.FormValue("schedule_minute")
+	timeRaw := strings.TrimSpace(r.FormValue("time"))
+	if timeRaw != "" {
+		h, m, err := parseScheduleTime(timeRaw)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		cfg.ScheduleHour = h
+		cfg.ScheduleMinute = m
+		if hourRaw != "" || minuteRaw != "" {
+			log.Printf(`level=warn msg="deprecated form-field" field=hour endpoint=/api/backup/config note="use time=HH:MM"`)
+		}
+	} else {
+		if hourRaw != "" {
+			h, err := RangeFor("schedule_hour").ParseAndValidate(hourRaw)
+			if err != nil {
+				http.Error(w, "hour must be 0..23", http.StatusBadRequest)
+				return
+			}
+			cfg.ScheduleHour = h
+			log.Printf(`level=warn msg="deprecated form-field" field=hour endpoint=/api/backup/config note="use time=HH:MM"`)
+		}
+		if minuteRaw != "" {
+			m, err := RangeFor("schedule_minute").ParseAndValidate(minuteRaw)
+			if err != nil {
+				http.Error(w, "minute must be 0..59", http.StatusBadRequest)
+				return
+			}
+			cfg.ScheduleMinute = m
+		}
 	}
 	mode := strings.TrimSpace(r.FormValue("destination_mode"))
 	if mode != "" {
@@ -89,12 +166,6 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 	cfg.LocalPath = cleanedLocalPath
 	cfg.EncryptEnabled = r.FormValue("encrypt_enabled") == "on"
 	cfg.EncryptionKeyRef = strings.TrimSpace(r.FormValue("encryption_key_ref"))
-	if v, err := strconv.Atoi(r.FormValue("upload_timeout_sec")); err == nil {
-		cfg.UploadTimeoutSec = v
-	}
-	if v, err := strconv.Atoi(r.FormValue("max_upload_size_mb")); err == nil {
-		cfg.MaxUploadSizeMB = v
-	}
 
 	if err := s.db.SaveBackupConfig(cfg); err != nil {
 		log.Printf("settings: failed to save backup config: %v", err)
