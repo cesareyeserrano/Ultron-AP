@@ -157,6 +157,12 @@ func (s *Server) ApplyPerformanceConfig(cfg database.PerformanceConfig) {
 	if s.systemd != nil && cfg.SystemdIntervalSec >= 5 {
 		s.systemd.SetInterval(time.Duration(cfg.SystemdIntervalSec) * time.Second)
 	}
+	if s.alertEng != nil {
+		s.alertEng.SetTransitionCooldowns(
+			time.Duration(cfg.DockerCooldownMin)*time.Minute,
+			time.Duration(cfg.SystemdCooldownMin)*time.Minute,
+		)
+	}
 }
 
 func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {

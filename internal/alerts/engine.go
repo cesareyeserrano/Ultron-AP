@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
@@ -32,9 +33,20 @@ type Engine struct {
 	recentAlerts []database.Alert
 	recentMu     sync.RWMutex
 
+	// Per-source cooldown overrides for state-transition rules (Docker /
+	// Systemd). Zero means "use default 15 min". Atomic so the runtime
+	// settings page can mutate them without locking the eval loop.
+	// (BL-001 / BG-023: fixes drift from FR-004 AC-002.)
+	dockerCooldownNs  atomic.Int64
+	systemdCooldownNs atomic.Int64
+
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 }
+
+// defaultTransitionCooldown is the historical literal — applied when the
+// runtime setter has not yet been called and the env config is also empty.
+const defaultTransitionCooldown = 15 * time.Minute
 
 // NewEngine creates an alert engine.
 func NewEngine(db *database.DB, collector *metrics.Collector, dockerMon *docker.Monitor, systemdMon *systemd.Monitor, interval time.Duration) *Engine {
@@ -53,6 +65,39 @@ func NewEngine(db *database.DB, collector *metrics.Collector, dockerMon *docker.
 // SetAlertCallback sets a callback invoked when an alert is created.
 func (e *Engine) SetAlertCallback(cb AlertCallback) {
 	e.onAlert = cb
+}
+
+// SetTransitionCooldowns sets the cooldown windows for Docker container
+// state-change and Systemd service state-change alerts. Each duration must
+// be >= 1 minute; non-positive values are silently ignored so a corrupt
+// settings row cannot disable cooldowns and flood notifications.
+//
+// @aitri-trace BG-023 BL-001 FR-004
+func (e *Engine) SetTransitionCooldowns(dockerCooldown, systemdCooldown time.Duration) {
+	if dockerCooldown >= time.Minute {
+		e.dockerCooldownNs.Store(int64(dockerCooldown))
+	}
+	if systemdCooldown >= time.Minute {
+		e.systemdCooldownNs.Store(int64(systemdCooldown))
+	}
+}
+
+// dockerCooldown returns the configured Docker transition cooldown,
+// falling back to defaultTransitionCooldown when no value was set.
+func (e *Engine) dockerCooldown() time.Duration {
+	if v := e.dockerCooldownNs.Load(); v > 0 {
+		return time.Duration(v)
+	}
+	return defaultTransitionCooldown
+}
+
+// systemdCooldown returns the configured Systemd transition cooldown,
+// falling back to defaultTransitionCooldown when no value was set.
+func (e *Engine) systemdCooldown() time.Duration {
+	if v := e.systemdCooldownNs.Load(); v > 0 {
+		return time.Duration(v)
+	}
+	return defaultTransitionCooldown
 }
 
 // Start begins the evaluation loop.
@@ -204,7 +249,7 @@ func (e *Engine) evaluateDockerChanges() {
 			key := fmt.Sprintf("docker:%s", c.Name)
 			e.mu.Lock()
 			last, exists := e.cooldowns[key]
-			if exists && time.Since(last) < 15*time.Minute {
+			if exists && time.Since(last) < e.dockerCooldown() {
 				e.mu.Unlock()
 				continue
 			}
@@ -246,7 +291,7 @@ func (e *Engine) evaluateSystemdChanges() {
 			key := fmt.Sprintf("systemd:%s", svc.Name)
 			e.mu.Lock()
 			last, exists := e.cooldowns[key]
-			if exists && time.Since(last) < 15*time.Minute {
+			if exists && time.Since(last) < e.systemdCooldown() {
 				e.mu.Unlock()
 				continue
 			}
