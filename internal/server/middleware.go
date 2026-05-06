@@ -59,8 +59,16 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "no-referrer")
 		h.Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-		// Enforce-ready CSP can break inline templates/scripts; run in report-only first.
-		h.Set("Content-Security-Policy-Report-Only", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
+		// CSP. Report-Only by default while /api/csp-report ingests
+		// browser violation reports; ULTRON_CSP_ENFORCE=1 flips to
+		// enforced once the policy is verified to break nothing.
+		// report-uri runs in both modes. (BL-012 / BG-032.)
+		const cspPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; report-uri /api/csp-report"
+		cspHeader := "Content-Security-Policy-Report-Only"
+		if s.cfg != nil && s.cfg.CSPEnforce {
+			cspHeader = "Content-Security-Policy"
+		}
+		h.Set(cspHeader, cspPolicy)
 		if isHTTPSRequest(r) {
 			h.Set("Strict-Transport-Security", "max-age=15552000; includeSubDomains")
 		}

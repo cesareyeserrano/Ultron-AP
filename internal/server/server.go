@@ -464,6 +464,10 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /health", s.handleHealth)
 	mux.HandleFunc("GET /login", s.handleLoginPage)
 	mux.HandleFunc("POST /login", s.handleLogin)
+	// CSP violation reports are emitted by the browser without session
+	// cookies or CSRF — they MUST NOT require auth. Body size and
+	// content-type are policed inside the handler.
+	mux.HandleFunc("POST /api/csp-report", s.handleCSPReport)
 
 	// Static files
 	staticFS, _ := fs.Sub(web.Static, "static")

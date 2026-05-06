@@ -29,6 +29,14 @@ type Config struct {
 	// destination.
 	BackupRoot string
 
+	// CSPEnforce, when true, sends Content-Security-Policy (enforced)
+	// instead of Content-Security-Policy-Report-Only. Both headers
+	// always include report-uri /api/csp-report. Default is false: ship
+	// reports to /api/csp-report for one release cycle, monitor the
+	// log, then flip ULTRON_CSP_ENFORCE=1 once the policy is verified
+	// to break nothing. See BL-012 / BG-032.
+	CSPEnforce bool
+
 	// TrustedProxies is the parsed list of upstream proxies whose
 	// X-Forwarded-For headers we believe. When empty (the default), every
 	// XFF value is ignored and the per-IP rate limit always uses the
@@ -126,6 +134,11 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("invalid helper timeout: must be >= 1s, got %v", d)
 		}
 		cfg.HelperTimeout = d
+	}
+
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("ULTRON_CSP_ENFORCE"))) {
+	case "1", "true", "yes", "on":
+		cfg.CSPEnforce = true
 	}
 
 	cfg.BackupRoot = filepath.Clean(filepath.Dir(cfg.DBPath))
