@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cesareyeserrano/ultron-ap/internal/logfilter"
 	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
 )
 
@@ -276,10 +277,10 @@ func handleLogs(source string, lines int) (string, error) {
 	switch source {
 	case "ultron-ap":
 		out, err := run(context.Background(), 10*time.Second, "journalctl", "-u", "ultron-ap", "-n", strconv.Itoa(lines), "--no-pager")
-		return string(out), err
+		return finalizeLog(out, err, logfilter.PolicyJournal)
 	case "docker":
 		out, err := run(context.Background(), 10*time.Second, "journalctl", "-u", "docker", "-n", strconv.Itoa(lines), "--no-pager")
-		return string(out), err
+		return finalizeLog(out, err, logfilter.PolicyJournal)
 	case "kernel":
 		out, err := run(context.Background(), 10*time.Second, "dmesg", "-T")
 		if err != nil {
@@ -289,13 +290,13 @@ func handleLogs(source string, lines int) (string, error) {
 		if len(parts) > lines {
 			parts = parts[len(parts)-lines:]
 		}
-		return strings.Join(parts, "\n"), nil
+		return finalizeLog([]byte(strings.Join(parts, "\n")), nil, logfilter.PolicyNone)
 	case "cpu":
 		out, err := run(context.Background(), 10*time.Second, "ps", "-eo", "pid,comm,%cpu,%mem", "--sort=-%cpu")
-		return string(out), err
+		return finalizeLog(out, err, logfilter.PolicyNone)
 	case "memory":
 		out, err := run(context.Background(), 10*time.Second, "ps", "-eo", "pid,comm,rss,%mem", "--sort=-rss")
-		return string(out), err
+		return finalizeLog(out, err, logfilter.PolicyNone)
 	case "pironman":
 		return runFirstServiceLogs(lines, "pironman5-service", "pironman5")
 	case "homeassistant":
@@ -307,10 +308,21 @@ func handleLogs(source string, lines int) (string, error) {
 				return "", fmt.Errorf("invalid service log source")
 			}
 			out, err := run(context.Background(), 10*time.Second, "journalctl", "-u", unit, "-n", strconv.Itoa(lines), "--no-pager")
-			return string(out), err
+			return finalizeLog(out, err, logfilter.PolicyJournal)
 		}
 		return "", fmt.Errorf("invalid log source")
 	}
+}
+
+// finalizeLog applies the selected redaction policy and the byte cap to
+// privileged command output before it crosses the IPC boundary back to
+// the unprivileged web process. err is propagated unchanged so the
+// caller still sees underlying systemctl/journalctl/dmesg failures.
+func finalizeLog(out []byte, err error, policy logfilter.Policy) (string, error) {
+	if err != nil {
+		return "", err
+	}
+	return string(logfilter.Filter(out, policy, 0)), nil
 }
 
 func runFirstServiceLogs(lines int, units ...string) (string, error) {
@@ -318,7 +330,7 @@ func runFirstServiceLogs(lines int, units ...string) (string, error) {
 	for _, unit := range units {
 		out, err := run(context.Background(), 10*time.Second, "journalctl", "-u", unit, "-n", strconv.Itoa(lines), "--no-pager")
 		if err == nil {
-			return string(out), nil
+			return finalizeLog(out, nil, logfilter.PolicyJournal)
 		}
 		lastErr = err
 	}
