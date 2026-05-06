@@ -146,8 +146,9 @@
       "title": "Feature: help-page — glossary & rule-verdict documentation in technical + non-technical voices",
       "priority": "P2",
       "problem": "/help (or /glossary) page documenting Ultron terminology and the verdicts produced by the insights-engine (BL-017). Each entry has two voices: technical (what the metric measures, thresholds, source code path) and non-technical (what it means for the user in plain language). Verdicts from BL-017 deep-link here. Bootstrap content: gateway/cloudflare/dns probe semantics, WAN state machine, jitter/loss/RTT, CPU/RAM/temp thresholds, services/containers health states, VPN peers.",
-      "status": "open",
-      "createdAt": "2026-05-05T14:42:33.339Z"
+      "status": "closed",
+      "createdAt": "2026-05-05T14:42:33.339Z",
+      "closedAt": "2026-05-06T02:09:24.099Z"
     },
     {
       "id": "BL-019",
