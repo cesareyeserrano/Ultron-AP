@@ -337,6 +337,25 @@ func (s *Server) performAutomatedBackup() error {
 		return fmt.Errorf("failed to create local backup: %w", err)
 	}
 	log.Printf("backup: local backup created at %s", backupPath)
+
+	// If the artefact will be uploaded, fail fast on size before paying
+	// the cost of encryption. Streaming encrypt bounds memory but disk
+	// I/O for a large DB is still worth skipping when the upload will
+	// reject it anyway. Plaintext size is a valid upper bound: V2
+	// streaming AEAD adds only ~22 B header + 21 B per 64 KiB chunk.
+	willUpload := destinationMode != "local_only"
+	if willUpload {
+		maxUploadMB := s.backupMaxUploadMB.Load()
+		if maxUploadMB < 1 {
+			maxUploadMB = 50
+		}
+		if info, err := os.Stat(backupPath); err == nil {
+			if info.Size() > maxUploadMB*1024*1024 {
+				return fmt.Errorf("backup artifact exceeds max upload size (%d MB)", maxUploadMB)
+			}
+		}
+	}
+
 	if s.backupEncrypt.Load() == 1 {
 		key, err := backupKeyFromRef(keyRef)
 		if err != nil {
@@ -369,18 +388,9 @@ func (s *Server) performAutomatedBackup() error {
 		}
 	}()
 
-	if destinationMode == "local_only" {
+	if !willUpload {
 		log.Printf("backup: destination=%s, skipping remote upload", destinationMode)
 		return nil
-	}
-	maxUploadMB := s.backupMaxUploadMB.Load()
-	if maxUploadMB < 1 {
-		maxUploadMB = 50
-	}
-	if info, err := os.Stat(backupPath); err == nil {
-		if info.Size() > maxUploadMB*1024*1024 {
-			return fmt.Errorf("backup artifact exceeds max upload size (%d MB)", maxUploadMB)
-		}
 	}
 
 	// 2. Send to Telegram if configured
