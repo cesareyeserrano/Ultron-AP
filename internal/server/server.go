@@ -103,7 +103,7 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 		},
 		cfg:        cfg,
 		db:         db,
-		bruteForce: auth.NewBruteForceTracker(),
+		bruteForce: auth.NewPersistentBruteForceTracker(db),
 		reader:     reader,
 		collector:  collector,
 		docker:     dockerMon,

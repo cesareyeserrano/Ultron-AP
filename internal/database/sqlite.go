@@ -147,6 +147,17 @@ CREATE TABLE IF NOT EXISTS rule_state (
 	transitions_in_window  INTEGER NOT NULL DEFAULT 0,
 	FOREIGN KEY (rule_id) REFERENCES rules(id)
 );
+
+-- Persistent brute-force lockout state. Survives binary restarts so an
+-- attacker's accumulated failure count is not reset by a service bounce
+-- (BL-009 / BG-022). first_at is unix nanoseconds, count is the number of
+-- failures within the lockout window.
+CREATE TABLE IF NOT EXISTS brute_force_attempts (
+	ip       TEXT    PRIMARY KEY,
+	count    INTEGER NOT NULL,
+	first_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_brute_force_first_at ON brute_force_attempts(first_at);
 `
 
 type DB struct {
