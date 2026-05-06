@@ -24,16 +24,18 @@
       "title": "Prune stale keys from alerts.Engine cooldowns map",
       "priority": "P3",
       "problem": "engine.go:28 cooldowns map grows unbounded for Docker/Systemd keys as container/service names churn. Either prune during evaluate() (drop entries > 2x max cooldown old) or limit the map size.",
-      "status": "open",
-      "createdAt": "2026-04-23T01:23:49.069Z"
+      "status": "closed",
+      "createdAt": "2026-04-23T01:23:49.069Z",
+      "closedAt": "2026-05-06T14:43:48.669Z"
     },
     {
       "id": "BL-004",
       "title": "ALTER TABLE migrations swallow all errors, not just duplicate-column",
       "priority": "P3",
       "problem": "sqlite.go:183-187 uses _,_ = db.Exec(...) so any failure mode that isn't 'column already exists' is silent. Replace with an error check that logs non-'duplicate column' errors and optionally aborts startup.",
-      "status": "open",
-      "createdAt": "2026-04-23T01:23:49.102Z"
+      "status": "closed",
+      "createdAt": "2026-04-23T01:23:49.102Z",
+      "closedAt": "2026-05-06T14:43:48.733Z"
     },
     {
       "id": "BL-005",
@@ -49,8 +51,9 @@
       "title": "Log template.Execute error in renderLogin",
       "priority": "P3",
       "problem": "handlers_auth.go:154 ignores tmpl.Execute error. Wrap errors with log.Printf and unify template error handling across handlers.",
-      "status": "open",
-      "createdAt": "2026-04-23T01:23:49.169Z"
+      "status": "closed",
+      "createdAt": "2026-04-23T01:23:49.169Z",
+      "closedAt": "2026-05-06T14:43:48.795Z"
     },
     {
       "id": "BL-007",
@@ -128,8 +131,9 @@
       "title": "Log JSON unmarshal errors in notification handlers",
       "priority": "P3",
       "problem": "internal/server/handlers_notifications.go:90 — json.Unmarshal error ignored in handleNotificationTest. If stored config is corrupted, the test sender uses zero-valued cfg fields and the user sees a confusing 'test failed' message instead of 'config corrupted'. Capture err, log it, return a clearer error to the UI. Reclassified from BG-007 (audit overstated impact — no data loss, just UX/observability).",
-      "status": "open",
-      "createdAt": "2026-05-04T00:05:55.657Z"
+      "status": "closed",
+      "createdAt": "2026-05-04T00:05:55.657Z",
+      "closedAt": "2026-05-06T14:43:48.857Z"
     },
     {
       "id": "BL-016",
