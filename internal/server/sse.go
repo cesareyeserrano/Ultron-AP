@@ -184,7 +184,7 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
 
-	clientIP := clientIPFromRequest(r)
+	clientIP := s.clientIPFromRequest(r)
 	client, ok := s.sseBroker.addClientForIP(clientIP)
 	if !ok {
 		s.auditLog(r, "security", "sse_reject", clientIP, "sse connection limit exceeded", false)
@@ -564,20 +564,62 @@ func countActiveServices(services []systemd.ServiceInfo) int {
 	return active
 }
 
-func clientIPFromRequest(r *http.Request) string {
-	xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
-	if xff != "" {
-		parts := strings.Split(xff, ",")
-		ip := strings.TrimSpace(parts[0])
-		if ip != "" {
-			return ip
+// clientIPFromRequest returns the IP that should be subject to the SSE
+// per-IP cap. X-Forwarded-For is honoured ONLY when the TCP peer
+// (RemoteAddr) appears in the configured ULTRON_TRUSTED_PROXIES allowlist;
+// otherwise the header is ignored and the TCP peer wins. With an empty
+// allowlist (the default), every XFF value is dropped — the safe posture for
+// a binary reached directly without a reverse proxy.
+//
+// @aitri-trace BG-020 BL-014
+func (s *Server) clientIPFromRequest(r *http.Request) string {
+	peer := tcpPeerIP(r.RemoteAddr)
+	if peer != "" && s.cfg != nil && len(s.cfg.TrustedProxies) > 0 && isTrustedPeer(peer, s.cfg.TrustedProxies) {
+		if xff := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); xff != "" {
+			// Walk the XFF chain right-to-left. Skip every hop that is itself
+			// trusted; the first untrusted hop is the original client. This
+			// matches the Forwarded-For header convention used by nginx/caddy.
+			parts := strings.Split(xff, ",")
+			for i := len(parts) - 1; i >= 0; i-- {
+				ip := strings.TrimSpace(parts[i])
+				if ip == "" {
+					continue
+				}
+				if !isTrustedPeer(ip, s.cfg.TrustedProxies) {
+					return ip
+				}
+			}
 		}
 	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err == nil {
-		return host
+	if peer != "" {
+		return peer
 	}
 	return r.RemoteAddr
+}
+
+// tcpPeerIP extracts the host portion of an http.Request.RemoteAddr.
+// Returns "" if the address is malformed.
+func tcpPeerIP(remoteAddr string) string {
+	host, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		return ""
+	}
+	return host
+}
+
+// isTrustedPeer reports whether ipStr is contained in any of the configured
+// trusted-proxy networks.
+func isTrustedPeer(ipStr string, trusted []*net.IPNet) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+	for _, n := range trusted {
+		if n.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }
 
 func collectProcessUsage() map[string]ProcessConsumer {
