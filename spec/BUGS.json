@@ -697,6 +697,28 @@
       "resolution": null,
       "fix_commit_sha": "2cbd1a569b3555892b8366362f57a63a16fae0bd",
       "fix_at": "2026-05-06T14:43:48.523Z"
+    },
+    {
+      "id": "BG-032",
+      "title": "CSP runs Report-Only with no /api/csp-report endpoint — violations untracked, no path to enforced",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "low",
+      "status": "verified",
+      "fr": null,
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-05-06T14:49:09.993Z",
+      "updated_at": "2026-05-06T15:00:52.591Z",
+      "resolution": null,
+      "fix_commit_sha": "bc1b2b5ae04e01a6a2c5b5bd48bebcc1feec3d3a",
+      "fix_at": "2026-05-06T15:00:52.492Z"
     }
   ]
 }

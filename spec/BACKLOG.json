@@ -105,8 +105,9 @@
       "title": "Promote CSP from Report-Only to enforced + add report endpoint",
       "priority": "P3",
       "problem": "internal/server/middleware.go:63 — CSP runs Report-Only with no /api/csp-report endpoint. Add the endpoint, log violations one release cycle, then flip the header to enforced.",
-      "status": "open",
-      "createdAt": "2026-05-03T23:51:43.879Z"
+      "status": "closed",
+      "createdAt": "2026-05-03T23:51:43.879Z",
+      "closedAt": "2026-05-06T15:00:52.665Z"
     },
     {
       "id": "BL-013",
