@@ -6,8 +6,9 @@
       "title": "Docker/Systemd alert cooldowns hardcoded (FR-004 drift)",
       "priority": "P2",
       "problem": "engine.go:206 and 248 use a literal 15-minute cooldown for Docker/Systemd transition alerts while FR-004 promises per-rule configurable cooldown. Either add cooldown config to Docker/Systemd rule types or document the divergence in FR-004.",
-      "status": "open",
-      "createdAt": "2026-04-23T01:23:49.007Z"
+      "status": "closed",
+      "createdAt": "2026-04-23T01:23:49.007Z",
+      "closedAt": "2026-05-06T02:43:48.434Z"
     },
     {
       "id": "BL-002",
@@ -81,8 +82,9 @@
       "title": "Bind action execution and audit log into one transaction",
       "priority": "P2",
       "problem": "internal/database/actions.go:21-27 — LogAction is a standalone insert. If a Docker action succeeds but the log write fails, audit trail is incomplete. Wrap action + LogAction in one sql.Tx.",
-      "status": "open",
-      "createdAt": "2026-05-03T23:51:43.815Z"
+      "status": "closed",
+      "createdAt": "2026-05-03T23:51:43.815Z",
+      "closedAt": "2026-05-06T02:47:02.548Z"
     },
     {
       "id": "BL-011",
