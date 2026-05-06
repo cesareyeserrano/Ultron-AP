@@ -15,8 +15,9 @@
       "title": "Stream-encrypt backup files instead of loading whole DB in RAM",
       "priority": "P2",
       "problem": "backup_crypto.go:32 reads entire backup file into memory before AES-GCM. On Pi with low RAM + growing DB, large backups risk OOM. Also encryption runs before max-upload-size check. Replace with chunked AEAD (age, NaCl secretstream, or manual counter+Seal per chunk).",
-      "status": "open",
-      "createdAt": "2026-04-23T01:23:49.039Z"
+      "status": "closed",
+      "createdAt": "2026-04-23T01:23:49.039Z",
+      "closedAt": "2026-05-06T14:32:24.666Z"
     },
     {
       "id": "BL-003",

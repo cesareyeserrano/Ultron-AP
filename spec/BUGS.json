@@ -587,6 +587,28 @@
       "resolution": null,
       "fix_commit_sha": "dce3c54afc5f7ec4051dea1b3a228ab0c5d449e7",
       "fix_at": "2026-05-06T14:06:11.657Z"
+    },
+    {
+      "id": "BG-027",
+      "title": "Backup encryption loads entire DB into RAM (OOM risk on Pi) — encrypt before max-size check",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "medium",
+      "status": "verified",
+      "fr": "FR-015",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-05-06T14:18:45.653Z",
+      "updated_at": "2026-05-06T14:32:24.601Z",
+      "resolution": null,
+      "fix_commit_sha": "25f6cd093d70a8c42bd538cec108a94152609129",
+      "fix_at": "2026-05-06T14:32:24.515Z"
     }
   ]
 }
