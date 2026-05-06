@@ -177,8 +177,9 @@
       "title": "Feature: settings-revamp — typed pickers, validation, structure (extends settings-page-ui-improvements)",
       "priority": "P2",
       "problem": "Settings page is the weakest UI in Ultron: raw inputs, no pickers, minimal validation, weak hierarchy. The existing backlog/settings-page-ui-improvements/ folder already has the seed (mobile-first layout, dangerous-action confirmation with countdown, design-token reuse). This BL extends it with: typed input pickers (time, intervals, thresholds, color-coded severity selectors), client+server validation with inline error states, sectioned navigation, search/filter for settings, and exposure of insights-engine (BL-017) rule thresholds as first-class settings once that ships. Sequenced AFTER ui-audit (BL-019) so concrete prioritization comes from the audit punch-list.",
-      "status": "open",
-      "createdAt": "2026-05-05T14:42:44.857Z"
+      "status": "closed",
+      "createdAt": "2026-05-05T14:42:44.857Z",
+      "closedAt": "2026-05-06T21:42:33.709Z"
     },
     {
       "id": "BL-021",
