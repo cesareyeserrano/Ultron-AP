@@ -39,8 +39,9 @@
       "title": "Validate backup local_path server-side (allowlist root, reject symlinks, forbid non-printable chars)",
       "priority": "P2",
       "problem": "server.go:305-308 + sqlite.go:210 accept any path the admin submits. Add validation: (a) must be absolute and under a configured BACKUP_ROOT, (b) reject symlinks, (c) reject NULL bytes and control chars (defense against SQL path injection in VACUUM INTO which cannot be parameterized).",
-      "status": "open",
-      "createdAt": "2026-04-23T01:23:49.136Z"
+      "status": "closed",
+      "createdAt": "2026-04-23T01:23:49.136Z",
+      "closedAt": "2026-05-06T13:43:06.692Z"
     },
     {
       "id": "BL-006",
@@ -160,8 +161,9 @@
       "title": "Task: ui-audit — analysis pass over all Ultron pages, output prioritized punch-list",
       "priority": "P2",
       "problem": "Analysis (NOT build) task. Walk every page (dashboard, network, services, docker, alerts, history, logs, settings, login) and produce a prioritized punch-list of: (1) layout inconsistencies, (2) card-disposition / visual-hierarchy issues, (3) duplicated info, (4) missing pickers / poor input ergonomics (esp. settings), (5) responsive breakpoints. Out of scope: visual redesign. Goal: feed concrete tickets into the settings-revamp feature and any focused UI cleanups. Output: backlog/ui-audit-2026-Q2.md (markdown punch-list, no code).",
-      "status": "open",
-      "createdAt": "2026-05-05T14:42:37.321Z"
+      "status": "closed",
+      "createdAt": "2026-05-05T14:42:37.321Z",
+      "closedAt": "2026-05-06T13:02:16.812Z"
     },
     {
       "id": "BL-020",
@@ -170,6 +172,14 @@
       "problem": "Settings page is the weakest UI in Ultron: raw inputs, no pickers, minimal validation, weak hierarchy. The existing backlog/settings-page-ui-improvements/ folder already has the seed (mobile-first layout, dangerous-action confirmation with countdown, design-token reuse). This BL extends it with: typed input pickers (time, intervals, thresholds, color-coded severity selectors), client+server validation with inline error states, sectioned navigation, search/filter for settings, and exposure of insights-engine (BL-017) rule thresholds as first-class settings once that ships. Sequenced AFTER ui-audit (BL-019) so concrete prioritization comes from the audit punch-list.",
       "status": "open",
       "createdAt": "2026-05-05T14:42:44.857Z"
+    },
+    {
+      "id": "BL-021",
+      "title": "Deploy verification: track binary SHA on Pi",
+      "priority": "P3",
+      "problem": "No way to verify whether the running prod binary matches the latest committed build. Today: SSH + sha256sum + manual compare. Need a /version endpoint exposing build commit SHA, or a Make target 'deploy-verify' that diffs local arm64 SHA vs remote Pi SHA. Bonus: emit current commit at startup. Also: stale copies exist at /usr/local/bin/ultron-ap and ~/ultron-ap/ — clean up as part of deploy hygiene.",
+      "status": "open",
+      "createdAt": "2026-05-06T12:52:28.745Z"
     }
   ]
 }
