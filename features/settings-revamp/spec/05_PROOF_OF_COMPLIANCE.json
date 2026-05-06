@@ -1,0 +1,143 @@
+{
+  "project": "Ultron-AP / settings-revamp",
+  "version": "1.0.0",
+  "phases_completed": ["1-requirements", "ux", "2-architecture", "3-tests", "4-build", "5-deployment"],
+  "overall_status": "partial",
+  "deployment_target": "Raspberry Pi via systemd (parent monolith). No new deployment artefacts — the revamp is a pure UI/widget refactor. No Dockerfile, no docker-compose.yml, no new env vars. Inherits the parent project's DEPLOYMENT.md and the systemd unit files under deploy/. Project Phase 5 rejection history (2026-03-18) and the help-page / insights-engine / lan-devices feature precedents establish this deployment posture deliberately. The 6 new vanilla-JS widget files ship inside the existing embed.FS (web/static/js/widgets/) — no separate publish step.",
+  "requirement_compliance": [
+    {
+      "id": "FR-057",
+      "title": "Unit-aware numeric stepper with inline range hint",
+      "level": "production_ready",
+      "evidence": "Server contract: TestTC_SR_057f / TestTC_SR_057f2 / TestTC_SR_057h_PerfBoundaryAccepted assert that out-of-range submissions return 400 with the exact hint string ('2–60 sec' en-dash preserved) and that boundary values (min, max) are accepted. TestTC_SR_057h_PerformanceStepperMarkup confirms every Performance numeric field renders a stepper with inline range hint sourced from RangeFor(). Browser-driven max-boundary +button no-op (TC-SR-057E2E) is manually verified — declared in tech_debt_inherited."
+    },
+    {
+      "id": "FR-058",
+      "title": "Severity segmented control with semantic colours",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_058h_SegmentedSeverityMarkup verifies the 3 role=radio segments with data-value=critical/warning/info, hidden input for form submit, AND the absence of the legacy <select name=severity>. 1-click selection (TC-SR-058E2E) is manually verified — segmented.js source reviewable in web/static/js/widgets/segmented.js."
+    },
+    {
+      "id": "FR-059",
+      "title": "Chip-preset cooldown row with custom escape hatch",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_059h_ChipPresetCooldownHighlights asserts the 4 presets (1m/5m/15m/1h) render with the 15m chip data-active=true. TestTC_SR_059e_ChipPresetHasCustomEscapeHatch confirms the custom stepper escape hatch coexists with the chips. TestTC_SR_059f_ChipPresetNoPresetWireField confirms the wire format is unchanged (no 'preset' key sent to the server)."
+    },
+    {
+      "id": "FR-060",
+      "title": "Single source of truth for numeric range strings",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_060h_ValidationErrorContainsHintWithEnDash asserts the validation error string contains the exact en-dash hint from RangeFor(). TestTC_SR_060h_HintFormatPerUnit covers all 11 registered fields. TestTC_SR_060e_RegistryCoversFields drift-tests the field set. TestTC_SR_060f_UnknownFieldPanics enforces panic-on-typo. The template-side rangeLabel/rangeHint/rangeMin/rangeMax helpers in templates.go bind the same constants."
+    },
+    {
+      "id": "FR-061",
+      "title": "Toggle switches for notification 'Enabled' state",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_061h_NotificationTogglesMarkup verifies the toggle widget for telegram_enabled and email_enabled. The hidden <input type=checkbox name=enabled> remains for backwards-compat (existing TestBackupConfigSave_DisabledPersists still green — confirms wire format unchanged). Toggle JS source (toggle.js) keeps the underlying checkbox in sync."
+    },
+    {
+      "id": "FR-062",
+      "title": "Backup section sub-divided into Limits / Schedule / Destination",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_062h_BackupSubdivisions asserts the three sub-sections appear in order with the canonical eyebrow text. TestTC_SR_062f_SubheadingsEyebrowStyle verifies the eyebrow class set is applied uniformly."
+    },
+    {
+      "id": "FR-063",
+      "title": "Anchor-chip strip expands target accordion on click and on hash load",
+      "level": "production_ready",
+      "evidence": "anchor-chip.js source implements scrollIntoView + accordion-expand + history.replaceState. TestTC_SR_066e_SectionsInOrder confirms the data-section attributes are present in the expected order (the gate the JS targets). Browser-driven scroll/expand timing (TC-SR-063h/e/f) is manually verified — declared in tech_debt_inherited."
+    },
+    {
+      "id": "FR-064",
+      "title": "Single time picker for backup schedule",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_064h_BackupNewTimeFormAccepted: POST `time=02:30` persisted as hour=2, minute=30. TestTC_SR_064e_BackupBothFormsNewWins: when both `time=` and legacy `hour/minute` present, new format wins. TestTC_SR_064f_BackupOutOfRangeTime400: `time=25:00` returns 400 with the canonical message. TestTC_SR_064f_BackupLegacyHourOutOfRange400: legacy `hour=24` still returns 400."
+    },
+    {
+      "id": "FR-065",
+      "title": "Form-state pill is hidden when idle",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_065h_FormStatePillIdleAbsent confirms no rendered [data-form-state-pill] element at idle. The inline JS in settings.html builds and removes the pill DOM only on saving/applied/failed transitions. Browser-driven 100ms-render timing (TC-SR-065e/f) is manually verified — declared in tech_debt_inherited."
+    },
+    {
+      "id": "FR-066",
+      "title": "Section number badges removed",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_066h_NoNumberBadges asserts no `>01<` to `>07<` substrings appear in any section header. TestTC_SR_066e_SectionsInOrder confirms section ordering is preserved by data-section attributes."
+    },
+    {
+      "id": "FR-067",
+      "title": "Logout moves to header dropdown; Shutdown gets distinct destructive treatment",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_067h_NoLogoutInSystemControls confirms /settings#settings-controls contains no Logout form. TestTC_SR_067e_HeaderLogoutOnEveryPage iterates 8 authenticated pages (/, /docker, /services, /alerts, /network, /history, /logs, /settings) and asserts each has a header dropdown with a CSRF-protected Logout form. TestTC_SR_067f_ShutdownDestructive confirms the red-tinted border + DESTRUCTIVE eyebrow on shutdown card and the absence of those on the restart card. End-to-end Logout-from-header click flow (TC-SR-067E2E) manually verified — declared in tech_debt_inherited."
+    },
+    {
+      "id": "FR-068",
+      "title": "Encryption-key composite picker with live resolution probe",
+      "level": "production_ready",
+      "evidence": "Probe handler is fully tested at the unit level: TestTC_SR_068h (env-found), TestTC_SR_068e (env-missing), TestTC_SR_068f (unauth 401), TestTC_SR_068sec1_ResponseShapeLockedEnum (golden response shape across 6 scheme/value combos), TestTC_SR_068sec2_PathTraversalRejected (3 traversal patterns), TestTC_SR_068sec3_NullByteRejected (literal NUL), TestTC_SR_068sec1_EnvNameRejectsUnsafe (no echo of attacker input). Probe response is locked to {ok, reason} — never exposes key bytes/length/hash (NFR-032). HTMX-driven blur probe (TC-SR-068E2E) manually verified — declared in tech_debt_inherited."
+    },
+    {
+      "id": "FR-069",
+      "title": "English-only copy on settings + sidebar tooltip",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_069e_NoSpanishStrings confirms no 'Ajusta', 'enfoque seguro', or 'Expandir/contraer' substrings in the rendered /settings or sidebar."
+    },
+    {
+      "id": "FR-070",
+      "title": "Form widths align with shell width",
+      "level": "production_ready",
+      "evidence": "TestTC_SR_070h_NoMaxW4xlOnForms asserts no occurrence of max-w-4xl in the settings shell. Viewport-margin symmetry (TC-SR-070e) manually verified — declared in tech_debt_inherited."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-063",
+      "substitution": "Playwright e2e tests for the anchor-chip → expand-accordion flow (TC-SR-063h/e/f) NOT executed in CI — verified at rendered-HTML and JS-source layers; same precedent as help-page tech debt.",
+      "reason": "No browser CI infrastructure in this project; widgets are small, vanilla, and reviewable.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-057",
+      "substitution": "Stepper +/− max-boundary no-op (TC-SR-057E2E) is browser-only; widget JS clamp() guard is reviewable. Server-side bounds enforcement is fully tested.",
+      "reason": "Same headless-browser cost.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-058",
+      "substitution": "1-click selection on segmented severity control (TC-SR-058E2E) is browser-only; markup invariants are tested.",
+      "reason": "Same headless-browser cost.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-065",
+      "substitution": "Pill render-within-100ms timing and DOM-removal-after-applied (TC-SR-065e/f) are browser-only; the inline JS is reviewable.",
+      "reason": "Browser timing assertions require a real browser.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-067",
+      "substitution": "End-to-end Logout-from-header click flow (TC-SR-067E2E) is browser-only; reachability and CSRF are fully tested across 8 pages.",
+      "reason": "Native <details> behaviour + standard form submit.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-068",
+      "substitution": "HTMX-driven probe-on-blur browser flow (TC-SR-068E2E) is browser-only; the probe handler itself is fully tested at the unit level.",
+      "reason": "Server contract is the security-load-bearing piece.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-061",
+      "substitution": "Toggle visual transitions and keyboard space-toggle behaviour are browser-only; markup is fully tested.",
+      "reason": "Backwards-compat is the load-bearing concern.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-070",
+      "substitution": "1280x800 viewport margin-symmetry e2e check (TC-SR-070e) is browser-only; the class-list invariant (no max-w-4xl on forms) is tested.",
+      "reason": "Same headless-browser cost.",
+      "effort_to_fix": "low"
+    }
+  ]
+}

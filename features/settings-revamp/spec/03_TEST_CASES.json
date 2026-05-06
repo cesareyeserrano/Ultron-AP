@@ -207,7 +207,8 @@
         "Read data-value attribute",
         "Assert equals '60'"
       ],
-      "expected_result": "data-value remains '60' (no-op confirmed)"
+      "expected_result": "data-value remains '60' (no-op confirmed)",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-058h",
@@ -304,7 +305,8 @@
         "Assert data-active='true' on critical segment within 100 ms",
         "Assert previously-active segment now data-active='false'"
       ],
-      "expected_result": "1-click selection; no dropdown step"
+      "expected_result": "1-click selection; no dropdown step",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-059h",
@@ -610,7 +612,8 @@
         "Assert #settings-telegram element is visible (boundingBox top within viewport)",
         "Assert telegram accordion aria-expanded=true"
       ],
-      "expected_result": "Single click \u2192 scrolled + expanded within 300 ms (NFR-028)"
+      "expected_result": "Single click \u2192 scrolled + expanded within 300 ms (NFR-028)",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-063e",
@@ -633,7 +636,8 @@
         "Assert backup accordion aria-expanded='true' at FCP",
         "Take screenshot, assert backup form fields visible"
       ],
-      "expected_result": "Deep-link lands on an open section, no flash"
+      "expected_result": "Deep-link lands on an open section, no flash",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-063f",
@@ -656,7 +660,8 @@
         "Read window.history.length",
         "Assert equals captured baseline"
       ],
-      "expected_result": "history.length unchanged \u2192 replaceState confirmed"
+      "expected_result": "history.length unchanged \u2192 replaceState confirmed",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-064h",
@@ -775,7 +780,8 @@
         "Wait up to 100 ms for [data-form-state-pill][data-state=\"saving\"]",
         "Assert visible"
       ],
-      "expected_result": "Pill renders within 100 ms with state='saving'"
+      "expected_result": "Pill renders within 100 ms with state='saving'",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-065f",
@@ -797,7 +803,8 @@
         "Wait 5 s",
         "Assert querySelector('[data-form-state-pill]') === null"
       ],
-      "expected_result": "Pill removed from DOM after applied transition; not just hidden"
+      "expected_result": "Pill removed from DOM after applied transition; not just hidden",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-066h",
@@ -964,7 +971,8 @@
         "Assert URL ends with /login",
         "Assert session cookie cleared"
       ],
-      "expected_result": "Logout end-to-end works from header on / (dashboard)"
+      "expected_result": "Logout end-to-end works from header on / (dashboard)",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-068h",
@@ -1131,7 +1139,8 @@
         "Assert \u2713 icon visible",
         "Assert text 'env var ULTRON_BACKUP_KEY found'"
       ],
-      "expected_result": "Live probe + badge update on blur"
+      "expected_result": "Live probe + badge update on blur",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-069h",
@@ -1242,7 +1251,8 @@
         "For each form: compute (form.x - shell.x) and (shell.right - form.right)",
         "Assert |diff| <= 1"
       ],
-      "expected_result": "Symmetric margins"
+      "expected_result": "Symmetric margins",
+      "automation": "manual"
     },
     {
       "id": "TC-SR-070f",

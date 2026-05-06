@@ -55,6 +55,36 @@ func TestTC_SR_058h_SegmentedSeverityMarkup(t *testing.T) {
 	assert.NotContains(t, body, `<select name="severity"`, "legacy <select name=severity> must be removed")
 }
 
+// TC-SR-059h — chip-preset cooldown row renders 4 presets (1m / 5m / 15m / 1h)
+// with the 15m chip data-active=true (default value).
+func TestTC_SR_059h_ChipPresetCooldownHighlights(t *testing.T) {
+	body := getSettingsBody(t)
+	assert.Contains(t, body, `data-widget="chip-preset"`)
+	assert.Contains(t, body, `data-field="cooldown_minutes"`)
+	for _, v := range []string{"1", "5", "15", "60"} {
+		assert.Contains(t, body, `data-preset-value="`+v+`"`, "preset %sm missing", v)
+	}
+	// Default cooldown=15 → chip 15m active.
+	assert.Contains(t, body, `data-preset-value="15" data-active="true"`)
+}
+
+// TC-SR-059e — chip-preset row coexists with the custom stepper (escape hatch).
+func TestTC_SR_059e_ChipPresetHasCustomEscapeHatch(t *testing.T) {
+	body := getSettingsBody(t)
+	assert.Contains(t, body, `data-widget="stepper"`)
+	assert.Contains(t, body, `data-field="cooldown"`)
+	assert.Contains(t, body, ">custom:<")
+}
+
+// TC-SR-059f — wire format: form input name is the existing "cooldown" key;
+// no new "preset" wire field is sent.
+func TestTC_SR_059f_ChipPresetNoPresetWireField(t *testing.T) {
+	body := getSettingsBody(t)
+	assert.Contains(t, body, `name="cooldown"`)
+	assert.NotContains(t, body, `name="preset"`)
+	assert.NotContains(t, body, `name="chip_preset"`)
+}
+
 // TC-SR-061h — Telegram + Email enabled toggles (replace checkboxes).
 func TestTC_SR_061h_NotificationTogglesMarkup(t *testing.T) {
 	body := getSettingsBody(t)

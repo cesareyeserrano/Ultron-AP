@@ -45,3 +45,4 @@ tailwindcss
 deploy/raspberry-stable/ultron-ap
 deploy/raspberry-stable/ultron-ap-linux-arm64
 bin/
+.claude/
