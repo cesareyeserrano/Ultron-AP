@@ -102,6 +102,17 @@ func TestSweep_ContextCancellation(t *testing.T) {
 	assert.Less(t, time.Since(start), 1500*time.Millisecond, "sweep should abort quickly under ctx cancel")
 }
 
+// Regression: production callers that omit Transport must not panic.
+func TestSweep_NilTransportUsesDefault(t *testing.T) {
+	cfg := Config{
+		CIDR:       "192.168.1.0/24",
+		HostFilter: func(string) bool { return false },
+	}
+	res, err := Sweep(context.Background(), cfg)
+	require.NoError(t, err)
+	assert.Equal(t, 0, res.Sent)
+}
+
 // expandCIDR — refuses /16
 func TestExpandCIDR_RefusesWideMask(t *testing.T) {
 	_, err := expandCIDR("10.0.0.0/16")

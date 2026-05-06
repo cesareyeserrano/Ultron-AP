@@ -41,10 +41,10 @@ type Result struct {
 
 // Config controls a sweep cycle.
 type Config struct {
-	CIDR       string        // e.g. "192.168.1.0/24"
-	Transport  Transport     // required
-	Workers    int           // default 32 if <= 0
-	Timeout    time.Duration // per-host wait; default 1 s
+	CIDR       string               // e.g. "192.168.1.0/24"
+	Transport  Transport            // defaults to production ICMP transport when nil
+	Workers    int                  // default 32 if <= 0
+	Timeout    time.Duration        // per-host wait; default 1 s
 	HostFilter func(ip string) bool // optional; skip IPs returning false
 }
 
@@ -52,6 +52,9 @@ type Config struct {
 // the in-flight cycle but only after currently-issued probes finish or hit
 // their timeouts (bounded by Timeout).
 func Sweep(ctx context.Context, cfg Config) (Result, error) {
+	if cfg.Transport == nil {
+		cfg.Transport = DefaultTransport()
+	}
 	if cfg.Workers <= 0 {
 		cfg.Workers = 32
 	}
