@@ -1,0 +1,639 @@
+{
+  "project_name": "Ultron-AP",
+  "project_summary": {
+    "feature": "settings-revamp",
+    "scope": "Revamp the /settings page to fix the 9 BL-020-tagged findings from the 2026 Q2 UI audit (BL-019). Replace eleven raw <input type=\"number\"> fields with unit-aware steppers (number + unit dropdown for sec/min/hr) and expose allowed ranges inline next to every label. Replace the alert-rule severity <select> with a 3-button colour-coded segmented control. Convert the Telegram and Email 'Enabled' checkboxes into toggle switches. Replace the two adjacent hour/minute inputs of the backup schedule with a single <input type=\"time\">. Offer chip-preset cooldowns (1m / 5m / 15m / 1h) with a custom escape hatch. Wire the top anchor-chip strip so a click both scrolls and expands the matching accordion section. Subdivide the 14-field Backup section into three labelled sub-groups: Limits, Schedule, Destination. Hide the per-section form-state pill while idle. Remove the 01–07 section number badges. Move Logout out of the System Controls grid into the header dropdown, and apply red-tinted card-border treatment to Shutdown only (Restart stays neutral). Drop the inner max-w-4xl form constraint. Replace Spanish strings on the settings header and the sidebar tooltip with English. Offer a two-field composite picker (scheme env|kms|file + value) for the backup encryption key reference, with live 'resolved at runtime: ✓ key found' or '✗ env var not set' feedback. Server-side validation must reject out-of-range values with the SAME range string already shown next to the label (no surprise round-trip). Inherits parent FR-007 (auth) — /settings stays gated; FR-009 (dark-mode tokens) — all new widgets reuse existing tokens, no new colour primitives; FR-012 (CSRF) — every settings POST keeps its token. Pure UI / form-widget refactor: no schema changes, no behaviour changes to the underlying alert engine, notify dispatcher, backup pipeline, or systemd helper. Existing stored values are 100% compatible — only the input widgets change.",
+    "product_analysis": {
+      "north_star_kpi": "Time-to-correct-configuration: from the moment a user opens /settings to the moment a setting is saved without an out-of-range / type-error round-trip. Concretely measured by: (a) every numeric field exposes its allowed range in the visible label (audit-checked: 11/11 fields), (b) zero out-of-range submissions in the manual smoke run because the stepper bounds the input, (c) anchor-chip clicks reach an expanded section in ≤300 ms (scroll + accordion expand combined), (d) severity selection happens in 1 click (segmented control) instead of 2 (open <select>, pick option), (e) Backup section visual scan time drops because the 14 inputs are grouped under 3 labelled sub-headings instead of one wall.",
+      "jtbd": "When I configure a threshold, schedule, cooldown, or notification channel on Ultron-AP, I hire the settings page to make the valid range obvious BEFORE I type, to make the choice visually one-step (severity, on/off), and to keep the page navigable from the chip strip — so I can tune my Pi monitor in seconds without trial-and-error save attempts and without paging through three different visual languages on the same page.",
+      "guardrail_metric": "The revamp MUST NOT change the underlying configuration schema, persisted values, or any side-effecting endpoint behaviour. Specifically: (1) every existing AlertConfig / NotifyConfig / BackupConfig / PerfConfig field is preserved with the same name, type, and validation rules; (2) every existing settings POST endpoint accepts the same request body it accepted before (server-side validation may now also accept richer formats like RFC 3339 'HH:MM' for backup time, but the legacy 'hour=N&minute=M' shape MUST still be accepted for one release for any external automation); (3) FR-007 (auth), FR-009 (dark-mode contrast WCAG 2.1 AA), and FR-012 (CSRF) regress to zero — verified by re-running the parent project's existing tests for those FRs against the revamped page; (4) the existing 'Test Telegram' and 'Test Email' buttons keep their current behaviour byte-for-byte (no change to notify content — that is a separate feature). If any guardrail is breached the build fails."
+    },
+    "idea_gaps": [
+      "FEATURE_IDEA does not specify the migration story for the backup-schedule HH/MM split fields. Resolved here by FR-064: the new <input type=\"time\"> renders the value as a single 'HH:MM' string and the existing endpoint accepts EITHER 'time=HH:MM' OR the legacy 'hour=N&minute=M' for one release; storage continues to use the existing two-column representation.",
+      "FEATURE_IDEA does not specify whether server-side validation messages must match the visible range hint verbatim. Resolved here by FR-060: the same range string ('2–60 sec', etc.) is rendered both inline next to the label AND returned as the validation error message — single source of truth (a constant per field).",
+      "FEATURE_IDEA does not specify the behaviour of the encryption key 'resolved at runtime' check on save vs on render. Resolved here by FR-068: the resolution probe runs on demand via a dedicated GET endpoint (called by HTMX on field blur) — never as a side effect of save, never silently at boot. Probe returns ✓/✗ + a one-line reason, never the resolved key value.",
+      "FEATURE_IDEA does not specify whether anchor-chip clicks should also update the URL hash and survive a hard reload. Resolved here by FR-063: clicks update window.location.hash via history.replaceState (no extra back-button entry), and on page load with an existing hash the matching accordion is auto-expanded so deep-links into a section land on an open section.",
+      "FEATURE_IDEA does not specify what happens to the chip-preset cooldown values when the rule's stored cooldown does not match any preset (e.g. legacy stored value of 7 min). Resolved here by FR-059: presets are visual shortcuts only; the 'custom' input always reflects the stored value verbatim, and an off-preset value renders with no preset chip highlighted (the 'custom' field is the source of truth).",
+      "FEATURE_IDEA does not specify the breakpoint behaviour of the new segmented severity control. Resolved here by FR-058: at <sm widths the segmented control collapses to a 3-icon row with severity dot + label below; the 1-click semantics are preserved at every breakpoint (no dropdown fallback)."
+    ],
+    "inherits_from_parent": [
+      "FR-007 auth — /settings remains behind the existing session cookie; an unauthenticated GET returns 302 to /login per existing parent middleware. No change.",
+      "FR-009 UI tokens / dark mode — every new widget (stepper, segmented control, toggle switch, chip-preset row, sub-section heading) uses existing semantic tokens (ok/warn/critical/muted, accent, border, card, text-muted). No new colour primitives, no new font, no new CSS files outside the existing Tailwind layer. Touch targets stay ≥44×44 px on touch devices.",
+      "FR-012 CSRF — every settings POST keeps its existing CSRF token; the new GET probe endpoint for FR-068 is a read-only resolution check and follows the same auth/CSRF rules as other GET endpoints (auth required, no CSRF for safe methods).",
+      "FR-004 alert engine, FR-005 Telegram, FR-006 Email, FR-015 backup pipeline — settings revamp is a pure form-widget refactor on the settings PAGE; the underlying engines, dispatchers, and pipelines are not touched. Their stored configuration shapes are preserved (guardrail).",
+      "FR-008 service controls / FR-011 privilege separation — the System Controls section keeps the existing typed-confirmation guard for Restart/Shutdown; only the visual layout (Logout removed, Shutdown red-bordered) changes. No new privileged action, no new helper IPC."
+    ]
+  },
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator (admin)",
+      "tech_level": "intermediate",
+      "goal": "Tune alert thresholds, notification channels, backup schedule, and performance intervals without trial-and-error save attempts — and navigate /settings as a navigation surface, not a wall of inputs",
+      "pain_point": "Today /settings has eleven raw number inputs whose valid ranges are invisible, a severity dropdown that hides options behind a click, a 14-field Backup section with no sub-grouping, and an anchor-chip strip that scrolls but leaves the target section collapsed. Configuring a Pi monitor takes more time than monitoring it does."
+    }
+  ],
+  "no_go_zone": [
+    "No changes to the underlying configuration schema (AlertConfig, NotifyConfig, BackupConfig, PerfConfig) — column names, types, defaults, and validation rules are preserved. This is a UI/widget refactor only.",
+    "No changes to alert-engine evaluation logic, notify dispatcher behaviour, backup pipeline, or systemd helper IPC. Their stored config shapes are inputs to this feature, not outputs of it.",
+    "No new persisted field, table, or migration. SQLite schema is untouched. Settings versioning / change history is explicitly excluded.",
+    "No Telegram or Email message-format changes — message content is the subject of a separate follow-up feature (telegram-message-ux). The 'Test Telegram' and 'Test Email' buttons keep their current behaviour byte-for-byte.",
+    "No insights-engine integration — exposing insights-engine rule thresholds as first-class settings is deferred per BL-020 (waiting on field telemetry).",
+    "No search/filter for settings — the page fits one viewport with chip nav; full-text search is not yet justified.",
+    "No i18n framework — we standardise on English-only and remove existing Spanish strings; proper multi-language support is a separate concern.",
+    "No visual redesign / new design tokens — every new widget reuses the existing token set (ok/warn/critical/muted, accent, border, card). The audit explicitly excludes a11y rework and visual redesign.",
+    "No changes to non-settings pages — the cross-page audit findings (event-row partial, chip-strip standardisation, header user menu, container-width policy) are separate tickets and explicitly out of scope here. The single exception: Logout is moved INTO the header dropdown (a one-link addition, no header redesign), because Logout cannot leave System Controls without a destination.",
+    "No new third-party JS dependency. Stepper, segmented control, and toggle switch are implemented in vanilla JS / HTMX with the existing Tailwind layer."
+  ],
+  "constraints": [
+    "Server-rendered Go templates under web/templates/ remain the rendering layer; HTMX for interactivity. No SPA framework introduced.",
+    "Existing settings POST endpoints (alert-rules, perf, schedule, backup, telegram, email, encryption-key-ref) MUST keep accepting their existing request bodies. The backup schedule endpoint MAY additionally accept 'time=HH:MM' but MUST still accept 'hour=N&minute=M' for one release.",
+    "No new runtime dependencies on the Pi (no Node, no Python). All client-side behaviour ships as static JS in web/static/js/ and is loaded with the existing asset-version cache-bust scheme.",
+    "WCAG 2.1 AA contrast preserved on every new widget against the existing dark-mode background tokens.",
+    "Touch target ≥44×44 px for stepper increment/decrement buttons, segmented-control segments, toggle switches, chip presets, and time-picker controls."
+  ],
+  "technology_preferences": [
+    "Vanilla JS for new widgets (stepper, segmented control, toggle, chip-preset row). No new framework.",
+    "HTMX for the encryption-key-ref live resolution probe (FR-068) — GET endpoint, hx-trigger='blur'.",
+    "Native <input type=\"time\"> for backup schedule (FR-064) — browsers handle the picker; the server splits HH:MM on submit.",
+    "Existing Tailwind layer; no new utility classes outside what the layer provides."
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-057",
+      "feature": "FT-057",
+      "type": "ux",
+      "priority": "MUST",
+      "title": "Unit-aware numeric stepper with inline range hint",
+      "description": "Replace every <input type=\"number\"> on /settings (Alert Rules thresholds, Perf intervals, Backup limits/timeouts, etc. — eleven fields total) with a stepper widget composed of: − / + buttons, the numeric value, and (where applicable) a unit dropdown (sec / min / hr). The label of every numeric field gains an inline range hint in the form 'Field name (min–max unit)', e.g. 'Dashboard refresh (2–60 sec)'.",
+      "acceptance_criteria": [
+        "Every legacy numeric input on /settings is replaced with a stepper or stepper+unit-dropdown widget — no raw <input type=\"number\"> remains on /settings except where the unit is fixed and obvious (e.g. percentages where the label already says '%')",
+        "Stepper − and + buttons are ≥44×44 px touch targets and obey the field's min/max — clicking + at max is a no-op, clicking − at min is a no-op",
+        "Every numeric label renders the allowed range inline in the form 'Field (min–max unit)', read from a single per-field constant shared with server-side validation",
+        "Stepper supports keyboard input — typing a number directly into the value cell still works; arrow-up / arrow-down also step",
+        "When the user types a value below min or above max, the field shows an inline error using the same range string already in the label (no surprise round-trip)",
+        "Initial value loaded from the stored config is rendered verbatim; off-step values (e.g. legacy 7-minute cooldown when the unit is min and step is 1) are accepted unchanged"
+      ]
+    },
+    {
+      "id": "FR-058",
+      "feature": "FT-058",
+      "type": "ux",
+      "priority": "MUST",
+      "title": "Severity segmented control with semantic colours",
+      "description": "Replace the alert-rule severity <select> with a 3-button segmented control. Each segment carries the severity's actual semantic colour (critical = bg-danger, warning = bg-yellow-400, info = bg-accent) when active, with neutral (bg-card border) when inactive. One click selects; no dropdown.",
+      "acceptance_criteria": [
+        "Severity is selected in exactly one click — no dropdown open step",
+        "Active segment renders with the severity's semantic colour token (critical/warning/info match the colours used on alert cards)",
+        "Inactive segments render neutral and have ≥4.5:1 contrast on the segment label against the dark-mode card background",
+        "At <sm viewport widths the control collapses to a 3-icon row with severity dot + label below — semantics preserved, no dropdown fallback",
+        "Keyboard accessible: arrow-left / arrow-right cycle, Space / Enter selects, focus ring uses existing token"
+      ]
+    },
+    {
+      "id": "FR-059",
+      "feature": "FT-059",
+      "type": "ux",
+      "priority": "SHOULD",
+      "title": "Chip-preset cooldown row with custom escape hatch",
+      "description": "On the alert-rule form, render a row of preset cooldown chips (1m / 5m / 15m / 1h) that, when clicked, set the cooldown value. A 'custom' chip reveals the underlying minute-stepper. The 'custom' input is the source of truth — a stored value that does not match a preset renders with no chip highlighted and the value visible in the custom field.",
+      "acceptance_criteria": [
+        "Clicking a preset chip sets the cooldown to the preset's minute value AND highlights only that chip",
+        "Clicking 'custom' (or typing into the custom field) clears any preset highlight and the custom field is the source of truth",
+        "A stored cooldown value that does not match any preset (e.g. 7 min) loads with no preset highlighted and the value visible in the custom field",
+        "Saving the form sends only the resolved minute value to the existing endpoint — no preset metadata is persisted"
+      ]
+    },
+    {
+      "id": "FR-060",
+      "feature": "FT-060",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Single source of truth for numeric range strings",
+      "description": "Define one constant per numeric settings field that holds the field's range string (e.g. 'Dashboard refresh (2–60 sec)'). The same constant is used to (a) render the label hint, (b) bound the stepper, (c) format the server-side validation error when an out-of-range value is submitted.",
+      "acceptance_criteria": [
+        "Every numeric field on /settings derives its label hint, stepper bounds, and server validation error from one shared constant — verified by code search showing no duplicated min/max literals between template and handler for the same field",
+        "Submitting an out-of-range value returns an error message that contains the same range string visible in the label",
+        "Changing a field's range requires editing exactly one location"
+      ]
+    },
+    {
+      "id": "FR-061",
+      "feature": "FT-061",
+      "type": "ux",
+      "priority": "MUST",
+      "title": "Toggle switches for notification 'Enabled' state",
+      "description": "Replace the Email and Telegram 'Enabled' checkboxes with toggle switches. Each switch is clearly labelled with the channel name and its current state ('Enabled' / 'Disabled'). The toggle is the single control that gates side-effecting notification dispatch.",
+      "acceptance_criteria": [
+        "Email and Telegram each render a toggle switch (not a checkbox)",
+        "Switch state matches the stored 'enabled' boolean for that channel and submits the same boolean on save",
+        "Switch is keyboard accessible (Space toggles); focus ring uses existing token",
+        "Touch target ≥44×44 px"
+      ]
+    },
+    {
+      "id": "FR-062",
+      "feature": "FT-062",
+      "type": "ux",
+      "priority": "MUST",
+      "title": "Backup section sub-divided into Limits / Schedule / Destination",
+      "description": "Subdivide the Backup section's 14+ inputs into three labelled sub-groups: Limits (interval, retention, timeout, max-size), Schedule (mode, time, enabled), Destination (mode, local-path, encryption-key-ref). Each sub-group is introduced by the existing uppercase-eyebrow heading style, matching the section's own heading style.",
+      "acceptance_criteria": [
+        "The Backup section renders three labelled sub-groups in order: Limits, Schedule, Destination",
+        "Each sub-group heading uses the same 'text-sm font-semibold text-text-muted uppercase tracking-wider' style as section headings elsewhere on the page",
+        "Every existing Backup input is assigned to exactly one sub-group; no input is orphaned",
+        "Sub-group headings have visible vertical breathing room (≥16 px above) so the page does not read as one undivided wall"
+      ]
+    },
+    {
+      "id": "FR-063",
+      "feature": "FT-063",
+      "type": "ux",
+      "priority": "MUST",
+      "title": "Anchor-chip strip expands target accordion on click and on hash load",
+      "description": "Wire the top anchor-chip strip on /settings so that clicking a chip both scrolls to the target section AND expands its accordion. On page load with an existing hash (e.g. /settings#telegram), the matching accordion is auto-expanded so deep links land on an open section. Hash updates use history.replaceState — no extra back-button entry per chip click.",
+      "acceptance_criteria": [
+        "Clicking any anchor chip scrolls to the target section AND expands its accordion (single click, no second action)",
+        "Loading /settings#<section> with a hash auto-expands the matching accordion before first paint",
+        "Hash updates use history.replaceState — clicking three chips in sequence does not add three browser-history entries",
+        "Other accordions remain in their current state when one is opened by a chip click — opening one does not collapse others (the existing global-collapse JS is overridden when invoked via chip)",
+        "Combined scroll + expand completes in ≤300 ms on a Pi 4 / Raspberry Pi OS Chromium"
+      ]
+    },
+    {
+      "id": "FR-064",
+      "feature": "FT-064",
+      "type": "ux",
+      "priority": "SHOULD",
+      "title": "Single time picker for backup schedule",
+      "description": "Replace the two adjacent number inputs (hour 0–23 / minute 0–59) of the backup schedule with a single <input type=\"time\">. The browser's native time picker handles validation; the value is sent as 'HH:MM'. The server endpoint accepts EITHER 'time=HH:MM' OR the legacy 'hour=N&minute=M' for one release, then logs a deprecation warning when the legacy form is received.",
+      "acceptance_criteria": [
+        "Backup-schedule UI renders a single <input type=\"time\"> instead of two number inputs",
+        "Loading the page with a stored hour/minute renders the picker with the same time",
+        "Submitting via the new picker sends 'time=HH:MM'",
+        "The server endpoint accepts both 'time=HH:MM' and 'hour=N&minute=M'",
+        "When 'hour=N&minute=M' is received, the server logs a single 'deprecated: use time=HH:MM' warning per request",
+        "Stored value continues to use the existing two-column representation in SQLite (no migration)"
+      ]
+    },
+    {
+      "id": "FR-065",
+      "feature": "FT-065",
+      "type": "ux",
+      "priority": "SHOULD",
+      "title": "Form-state pill is hidden when idle",
+      "description": "The per-section form-state pill (idle / saving / applied / failed) is rendered only when state ≠ idle. While idle the section header shows only the section title (and, after FR-067, no number badge). The pill appears for the saving / applied / failed transitions and is dismissed on next idle.",
+      "acceptance_criteria": [
+        "When form state is idle, no form-state pill is in the DOM (verified by querySelector returning null on a fresh page load)",
+        "On submit, the pill appears with state 'saving' within 100 ms",
+        "After a successful save, the pill renders 'applied' for ≥1.5 s and ≤4 s, then transitions back to idle (and is removed)",
+        "After a failed save, the pill renders 'failed' and remains visible until the next user interaction with the section"
+      ]
+    },
+    {
+      "id": "FR-066",
+      "feature": "FT-066",
+      "type": "ux",
+      "priority": "SHOULD",
+      "title": "Section number badges removed",
+      "description": "Remove the 01–07 number badges from every settings section header. The badges suggested a wizard flow that does not exist on a navigation surface.",
+      "acceptance_criteria": [
+        "No section header on /settings renders a number badge — verified by template grep showing no leading-zero numeric pill markup in any settings section block",
+        "Section ordering is preserved; only the badges disappear",
+        "Section heading style remains the existing uppercase-eyebrow + section title pair"
+      ]
+    },
+    {
+      "id": "FR-067",
+      "feature": "FT-067",
+      "type": "ux",
+      "priority": "SHOULD",
+      "title": "Logout moves to header dropdown; Shutdown gets distinct destructive treatment",
+      "description": "Move the Logout button out of the System Controls section into a small header dropdown on every authenticated page (item: 'Logout'). Within System Controls, Restart stays neutral and Shutdown gains a red-tinted card border + 'Destructive' eyebrow so the two destructive actions are no longer peers of a benign action.",
+      "acceptance_criteria": [
+        "Logout is no longer present in the System Controls grid on /settings",
+        "Logout is reachable in one click from the header dropdown on every authenticated page (dashboard, network, services, docker, alerts, history, logs, settings)",
+        "Shutdown's container card has a visible red-tinted border (border-danger token) AND a 'Destructive' eyebrow above its title",
+        "Restart's container card has the existing neutral border and no destructive eyebrow",
+        "The existing typed-confirmation guard for Restart and Shutdown is preserved unchanged"
+      ]
+    },
+    {
+      "id": "FR-068",
+      "feature": "FT-068",
+      "type": "logic",
+      "priority": "SHOULD",
+      "title": "Encryption-key-ref composite picker with live resolution probe",
+      "description": "Split the backup encryption-key-ref input into a composite of: scheme select (env / kms / file) + value input. On blur, an HTMX GET to /api/settings/encryption-key/probe returns ✓ + a one-line reason (e.g. 'env var ULTRON_BACKUP_KEY found') or ✗ + a one-line reason ('env var not set'). The probe NEVER returns the resolved key value, only the resolution status.",
+      "acceptance_criteria": [
+        "The encryption-key-ref UI renders a scheme select + value input + live status badge",
+        "On value blur (HTMX hx-trigger='blur'), a GET /api/settings/encryption-key/probe?scheme=…&value=… returns 200 with body '{\"ok\":true|false,\"reason\":\"…\"}'",
+        "The probe response NEVER contains the resolved key bytes, the resolved key length, or any data derivable from the key — only ok + reason",
+        "The probe is auth-gated by the existing session middleware",
+        "Saving the form continues to send the same composite string ('env:NAME' | 'kms://…' | 'file:/path') to the existing endpoint — no schema change",
+        "If scheme=file, the probe checks the path exists and is readable by the ultron-ap user — the probe DOES NOT read the file content"
+      ]
+    },
+    {
+      "id": "FR-069",
+      "feature": "FT-069",
+      "type": "ux",
+      "priority": "COULD",
+      "title": "English-only copy on settings + sidebar tooltip",
+      "description": "Replace the Spanish strings on the settings header ('Ajusta alertas, notificaciones, rendimiento y mantenimiento con enfoque seguro para servidor.') and the sidebar collapse tooltip ('Expandir/contraer barra lateral') with English equivalents.",
+      "acceptance_criteria": [
+        "The settings page header renders an English subtitle",
+        "The sidebar collapse tooltip renders 'Expand / collapse sidebar' (or equivalent English)",
+        "No Spanish copy remains in any template referenced by /settings or by the sidebar — verified by searching for 'Ajust', 'Expandir', 'contraer' under web/templates/"
+      ]
+    },
+    {
+      "id": "FR-070",
+      "feature": "FT-070",
+      "type": "ux",
+      "priority": "COULD",
+      "title": "Form widths align with shell width",
+      "description": "Drop the inner max-w-4xl on every settings form so forms span the full max-w-5xl shell (or apply mx-auto so the asymmetry is not visible).",
+      "acceptance_criteria": [
+        "No form inside #settings-shell renders narrower than the shell's max-w-5xl — verified by template grep showing no max-w-4xl on settings forms",
+        "Form left and right margins inside the shell are equal (mx-auto applied if needed)"
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-027",
+      "category": "Performance",
+      "requirement": "/settings server-side render time MUST stay <500 ms p99 on a Pi 4 / Raspberry Pi OS — measured by the existing perf middleware against the parent FR-001 baseline."
+    },
+    {
+      "id": "NFR-028",
+      "category": "Performance",
+      "requirement": "Anchor-chip click → target section visible AND expanded MUST complete in ≤300 ms on Chromium / Pi 4 (scroll + accordion expand combined)."
+    },
+    {
+      "id": "NFR-029",
+      "category": "Compatibility",
+      "requirement": "All existing settings POST endpoints MUST keep accepting their pre-revamp request bodies. The backup-schedule endpoint MAY additionally accept 'time=HH:MM' but MUST still accept 'hour=N&minute=M' for one release. Verified by re-running the parent project's existing handler tests against the revamped endpoints."
+    },
+    {
+      "id": "NFR-030",
+      "category": "Accessibility",
+      "requirement": "Every new widget (stepper, segmented control, toggle, chip preset, time picker, sub-section heading) MUST preserve WCAG 2.1 AA contrast against existing dark-mode background tokens; touch targets ≥44×44 px on stepper buttons, segments, toggles, and chips."
+    },
+    {
+      "id": "NFR-031",
+      "category": "Reliability",
+      "requirement": "No new runtime dependency on the Pi (no Node, no Python, no third-party JS bundle). All client-side behaviour ships as static JS in web/static/js/ and is loaded with the existing asset-version cache-bust scheme."
+    },
+    {
+      "id": "NFR-032",
+      "category": "Security",
+      "requirement": "FR-068 probe endpoint MUST never return resolved key bytes or key length; MUST be gated by the existing session auth middleware; MUST NOT bypass CSRF for any non-GET method (the probe is GET — safe by definition). Verified by handler test asserting probe response shape and an auth-required test asserting 401 when no session cookie."
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-057",
+      "requirement_id": "FR-057",
+      "as_a": "Pi operator tuning an alert threshold",
+      "i_want": "to see the allowed range next to every numeric field and to step the value with bounded − / + buttons",
+      "so_that": "I configure a valid value on the first attempt, without a save failing on a server-side range error",
+      "acceptance_criteria": [
+        {
+          "id": "AC-057-001",
+          "given": "I open /settings and view the Performance section",
+          "when": "I look at the 'Dashboard refresh' field",
+          "then": "the label reads 'Dashboard refresh (2–60 sec)' and the field renders as a stepper, not a raw number input"
+        },
+        {
+          "id": "AC-057-002",
+          "given": "the stepper is at the field's max (60)",
+          "when": "I click +",
+          "then": "the value does not change (no-op)"
+        },
+        {
+          "id": "AC-057-003",
+          "given": "I type 999 directly into the stepper value cell",
+          "when": "the field loses focus",
+          "then": "an inline error appears reading '2–60 sec' (the same string in the label)"
+        },
+        {
+          "id": "AC-057-004",
+          "given": "the stored value is 7 (minutes) and the field's step is 1",
+          "when": "the page loads",
+          "then": "the stepper renders 7 verbatim — off-step values are accepted unchanged"
+        }
+      ]
+    },
+    {
+      "id": "US-058",
+      "requirement_id": "FR-058",
+      "as_a": "Pi operator creating an alert rule",
+      "i_want": "to pick a severity in one click on a colour-coded segmented control",
+      "so_that": "the severity I choose visually matches the colour I will see on the alert card later",
+      "acceptance_criteria": [
+        {
+          "id": "AC-058-001",
+          "given": "I open the alert-rule form",
+          "when": "I look at the severity field",
+          "then": "I see a 3-button segmented control with critical/warning/info segments — no dropdown"
+        },
+        {
+          "id": "AC-058-002",
+          "given": "I click 'critical'",
+          "when": "the segment becomes active",
+          "then": "it renders with the bg-danger token and the previously-active segment becomes neutral"
+        },
+        {
+          "id": "AC-058-003",
+          "given": "I am on a phone in portrait (<sm width)",
+          "when": "the page renders",
+          "then": "the segmented control collapses to a 3-icon row with severity dot + label below — still 1-click"
+        }
+      ]
+    },
+    {
+      "id": "US-059",
+      "requirement_id": "FR-059",
+      "as_a": "Pi operator setting an alert cooldown",
+      "i_want": "preset chips for the common cooldowns (1m / 5m / 15m / 1h) with a custom escape hatch",
+      "so_that": "I rarely have to type a number — but can if I want a non-standard value",
+      "acceptance_criteria": [
+        {
+          "id": "AC-059-001",
+          "given": "the alert-rule form is open with cooldown=15",
+          "when": "I view the chip row",
+          "then": "only the '15m' chip is highlighted"
+        },
+        {
+          "id": "AC-059-002",
+          "given": "the stored cooldown is 7",
+          "when": "the page loads",
+          "then": "no preset chip is highlighted and 7 is visible in the custom field"
+        }
+      ]
+    },
+    {
+      "id": "US-060",
+      "requirement_id": "FR-060",
+      "as_a": "Pi operator submitting an out-of-range value",
+      "i_want": "the validation error to read the same range string I see next to the label",
+      "so_that": "I never wonder which is the source of truth between client and server",
+      "acceptance_criteria": [
+        {
+          "id": "AC-060-001",
+          "given": "the label reads '(2–60 sec)' and I submit value=999",
+          "when": "the server validates",
+          "then": "the response error message contains '2–60 sec' verbatim"
+        },
+        {
+          "id": "AC-060-002",
+          "given": "the codebase",
+          "when": "I grep for the field's min/max literals",
+          "then": "they appear in exactly one shared constant — not duplicated between template and handler"
+        }
+      ]
+    },
+    {
+      "id": "US-061",
+      "requirement_id": "FR-061",
+      "as_a": "Pi operator enabling Telegram notifications",
+      "i_want": "a toggle switch instead of a checkbox to gate the channel",
+      "so_that": "the on/off state is visually unambiguous on a side-effecting integration",
+      "acceptance_criteria": [
+        {
+          "id": "AC-061-001",
+          "given": "I open the Telegram section",
+          "when": "I look at the 'Enabled' control",
+          "then": "I see a toggle switch with a clear on/off label"
+        },
+        {
+          "id": "AC-061-002",
+          "given": "I press Space with the toggle focused",
+          "when": "the toggle changes state",
+          "then": "the form's saving pill appears within 100 ms (per FR-065)"
+        }
+      ]
+    },
+    {
+      "id": "US-062",
+      "requirement_id": "FR-062",
+      "as_a": "Pi operator configuring backups",
+      "i_want": "the Backup section subdivided into Limits / Schedule / Destination",
+      "so_that": "I can scan the section in 3 visual chunks instead of 14 ungrouped fields",
+      "acceptance_criteria": [
+        {
+          "id": "AC-062-001",
+          "given": "I scroll to the Backup section",
+          "when": "I scan it",
+          "then": "I see three sub-headings: Limits, Schedule, Destination — each in the existing uppercase-eyebrow style"
+        },
+        {
+          "id": "AC-062-002",
+          "given": "every legacy Backup input",
+          "when": "I locate it",
+          "then": "it is inside exactly one sub-group; no input is orphaned"
+        }
+      ]
+    },
+    {
+      "id": "US-063",
+      "requirement_id": "FR-063",
+      "as_a": "Pi operator using the anchor-chip nav",
+      "i_want": "a click to scroll AND expand the target section",
+      "so_that": "I land on an open section instead of having to click twice",
+      "acceptance_criteria": [
+        {
+          "id": "AC-063-001",
+          "given": "the Telegram accordion is collapsed and I click the 'Telegram' anchor chip",
+          "when": "the page scrolls",
+          "then": "the Telegram accordion is expanded by the time the scroll completes"
+        },
+        {
+          "id": "AC-063-002",
+          "given": "I open /settings#backup directly",
+          "when": "the page first paints",
+          "then": "the Backup accordion is already expanded — no flash of collapsed content"
+        },
+        {
+          "id": "AC-063-003",
+          "given": "I click three different chips in sequence",
+          "when": "I press the browser Back button",
+          "then": "I do NOT step through three intermediate hash entries — replaceState was used"
+        }
+      ]
+    },
+    {
+      "id": "US-064",
+      "requirement_id": "FR-064",
+      "as_a": "Pi operator setting the backup time",
+      "i_want": "a single time picker instead of two number inputs",
+      "so_that": "I pick the time the way I would on a phone clock — not by entering hour and minute separately",
+      "acceptance_criteria": [
+        {
+          "id": "AC-064-001",
+          "given": "the stored hour=2 and minute=30",
+          "when": "the page loads",
+          "then": "the <input type=\"time\"> renders 02:30"
+        },
+        {
+          "id": "AC-064-002",
+          "given": "I save with the new picker",
+          "when": "the request body is observed",
+          "then": "it contains 'time=02:30'"
+        },
+        {
+          "id": "AC-064-003",
+          "given": "an external automation submits 'hour=3&minute=15'",
+          "when": "the server processes the request",
+          "then": "it accepts the request AND logs a single 'deprecated: use time=HH:MM' warning"
+        }
+      ]
+    },
+    {
+      "id": "US-065",
+      "requirement_id": "FR-065",
+      "as_a": "Pi operator viewing the settings page at rest",
+      "i_want": "no form-state pills visible while nothing is happening",
+      "so_that": "the section headers do not carry visual clutter that competes with section titles",
+      "acceptance_criteria": [
+        {
+          "id": "AC-065-001",
+          "given": "/settings is loaded with no submission in flight",
+          "when": "I inspect the DOM",
+          "then": "querySelector('[data-form-state-pill]') returns null on every section"
+        },
+        {
+          "id": "AC-065-002",
+          "given": "I submit a section",
+          "when": "the request is in flight",
+          "then": "the pill appears with state 'saving' within 100 ms"
+        }
+      ]
+    },
+    {
+      "id": "US-066",
+      "requirement_id": "FR-066",
+      "as_a": "Pi operator scanning the settings page",
+      "i_want": "no '01' / '02' / '03' badges next to section titles",
+      "so_that": "I do not assume there is a wizard / step-by-step flow on a navigation surface",
+      "acceptance_criteria": [
+        {
+          "id": "AC-066-001",
+          "given": "the rendered /settings HTML",
+          "when": "I grep for the number-badge markup pattern",
+          "then": "I find zero matches in any section header"
+        }
+      ]
+    },
+    {
+      "id": "US-067",
+      "requirement_id": "FR-067",
+      "as_a": "Pi operator on any authenticated page",
+      "i_want": "Logout reachable from the header (not from System Controls)",
+      "so_that": "Logout is not a peer of Restart and Shutdown — and I can log out from any page without going to /settings",
+      "acceptance_criteria": [
+        {
+          "id": "AC-067-001",
+          "given": "I am on /dashboard",
+          "when": "I open the header dropdown",
+          "then": "I see a 'Logout' item that posts to the existing /logout endpoint"
+        },
+        {
+          "id": "AC-067-002",
+          "given": "I am on /settings",
+          "when": "I view the System Controls section",
+          "then": "Logout is not present in the grid"
+        },
+        {
+          "id": "AC-067-003",
+          "given": "I view Shutdown's container card",
+          "when": "the page renders",
+          "then": "the card has a red-tinted border and a 'Destructive' eyebrow above its title"
+        },
+        {
+          "id": "AC-067-004",
+          "given": "I click Restart or Shutdown",
+          "when": "the action is submitted",
+          "then": "the existing typed-confirmation guard fires unchanged"
+        }
+      ]
+    },
+    {
+      "id": "US-068",
+      "requirement_id": "FR-068",
+      "as_a": "Pi operator setting the backup encryption key reference",
+      "i_want": "live ✓/✗ feedback that the key resolves at runtime",
+      "so_that": "I do not save a typo that silently breaks backups",
+      "acceptance_criteria": [
+        {
+          "id": "AC-068-001",
+          "given": "the Encryption section is open",
+          "when": "I type 'env:ULTRON_BACKUP_KEY' and tab away",
+          "then": "an HTMX GET fires and the badge renders ✓ with reason 'env var ULTRON_BACKUP_KEY found' (when the env is set)"
+        },
+        {
+          "id": "AC-068-002",
+          "given": "I type 'env:DOES_NOT_EXIST'",
+          "when": "the probe returns",
+          "then": "the badge renders ✗ with reason 'env var not set'"
+        },
+        {
+          "id": "AC-068-003",
+          "given": "the probe response",
+          "when": "I inspect its body",
+          "then": "it contains only 'ok' and 'reason' — no key bytes, no key length, no derived data"
+        },
+        {
+          "id": "AC-068-004",
+          "given": "I am unauthenticated",
+          "when": "I call GET /api/settings/encryption-key/probe",
+          "then": "the response is 401"
+        }
+      ]
+    },
+    {
+      "id": "US-069",
+      "requirement_id": "FR-069",
+      "as_a": "English-speaking Pi operator",
+      "i_want": "every settings string in English",
+      "so_that": "the app does not mix locales and feel half-finished",
+      "acceptance_criteria": [
+        {
+          "id": "AC-069-001",
+          "given": "the rendered /settings page",
+          "when": "I read the header subtitle",
+          "then": "it is English"
+        },
+        {
+          "id": "AC-069-002",
+          "given": "the rendered sidebar",
+          "when": "I hover the collapse toggle",
+          "then": "the tooltip is English"
+        },
+        {
+          "id": "AC-069-003",
+          "given": "the codebase under web/templates/",
+          "when": "I grep for 'Ajust' / 'Expandir' / 'contraer'",
+          "then": "I find zero matches"
+        }
+      ]
+    },
+    {
+      "id": "US-070",
+      "requirement_id": "FR-070",
+      "as_a": "Pi operator viewing /settings on a wide monitor",
+      "i_want": "the forms to fill the same width as the page shell",
+      "so_that": "the right margin is not an unexplained 80 px gap",
+      "acceptance_criteria": [
+        {
+          "id": "AC-070-001",
+          "given": "any settings form",
+          "when": "I inspect its computed width",
+          "then": "it equals the shell's max-w-5xl width on a ≥1024 px viewport"
+        }
+      ]
+    }
+  ],
+  "original_brief": "## Feature\nTyped pickers, visible validation ranges, and structural cleanup for the settings page — addresses BL-020 and the 9 BL-020-tagged findings from the 2026 Q2 UI audit (BL-019).\n\n## Problem / Why\nThe settings page is the weakest UI surface in Ultron-AP. Eleven numeric fields across Alert Rules, Performance, Backup, and Schedule are raw `<input type=\"number\">` with no unit-aware widget. Allowed ranges are encoded only in HTML `min`/`max` attributes — users only learn bounds via round-trip server errors. Severity is a `<select>` instead of a colour-coded segmented control. Backup config crams 12+ inputs into one undivided section. The top anchor-chip strip scrolls but does not expand the target accordion. Section number badges (`01`…`07`) imply a wizard flow that doesn't exist. Settings is a navigation surface masquerading as a form wall.\n\n## Target Users\nThe single Pi operator (admin) configuring alert thresholds, notification channels, backup schedule, and performance intervals. Same persona as today — no new user type.\n\n## New Behavior\n- The system must replace all numeric interval/threshold/timeout inputs with a stepper + unit-dropdown widget where the unit (sec/min/hr) is part of the same control.\n- The system must render a single `<input type=\"time\">` for backup schedule (replacing the two adjacent hour/minute number inputs).\n- The system must offer chip-preset rows (1m / 5m / 15m / 1h) with a \"custom\" escape hatch for alert-rule cooldowns.\n- The system must render the allowed range inline next to every numeric field label (e.g. \"Dashboard refresh (2–60 sec)\").\n- The system must replace the severity `<select>` with a 3-button segmented control where each segment carries the actual severity colour (critical / warning / info).\n- The system must convert the email and Telegram \"Enabled\" checkboxes into toggle switches.\n- The system must wire the top anchor-chip strip to expand the target accordion section on click (not just scroll).\n- The system must subdivide the Backup section into three labelled sub-groups: Limits, Schedule, Destination.\n- The system must hide the per-section form-state pill when state is `idle`, and only render it during `saving` / `applied` / `failed` transitions.\n- The system must remove the `01`–`07` section number badges (they imply a non-existent wizard flow).\n- The system must move Logout out of the System Controls grid into the header dropdown (Logout is benign; Restart/Shutdown are destructive — they should not share visual weight).\n- The system must apply a stronger destructive treatment (red-tinted card border) to Shutdown only, not Restart.\n- The system must drop the inner `max-w-4xl` form constraint so forms span the same width as the `max-w-5xl` shell.\n- The system must replace Spanish strings on the settings header and sidebar tooltip with English.\n- The system must offer a two-field composite picker (scheme `env` / `kms` / `file` + value) for the backup encryption key reference, with live \"resolved at runtime\" feedback.\n\n## Success Criteria\n- Given a user opens settings, when they view any numeric input, then the allowed range is visible inline next to the label without trial-and-error.\n- Given a user clicks an anchor chip at the top of settings, when the page scrolls to the target section, then the matching accordion expands automatically.\n- Given a user opens the alert-rule form, when they pick a severity, then they see a 3-segment colour-coded control — no dropdown click required.\n- Given a user views the System Controls section, when they look for Logout, then it is no longer present (moved to header).\n- Given a user submits a numeric value out of range, when the server validates, then the inline error references the same range shown next to the label (no surprise round-trip).\n- Given a user opens the Backup section, when they scan it, then they see three sub-headings (Limits / Schedule / Destination) instead of an undivided 14-field grid.\n- Given the form is `idle`, when the user views any section header, then no form-state pill is rendered (zero clutter at rest).\n- All 9 BL-020-tagged audit findings resolved; no regressions on FR-007 (auth), FR-009 (dark-mode contrast), FR-012 (CSRF).\n\n## Out of Scope\n- Visual redesign / token theme overhaul (audit explicitly excludes a11y + visual redesign).\n- Changes to non-settings pages (services, docker, alerts, history, network, dashboard, logs) — those audit findings are separate tickets.\n- Telegram message content / formatting — separate follow-up feature.\n- Insights-engine rule threshold exposure as first-class settings (mentioned in BL-020; deferred until insights-engine field telemetry warrants it).\n- Search/filter for settings (BL-020 mentions; deferred — current page fits one viewport with chip nav, search not yet justified).\n- Settings versioning / change history.\n- Migrating existing stored settings values (schema unchanged — only input widgets change).\n"
+}
