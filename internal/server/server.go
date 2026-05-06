@@ -33,7 +33,15 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/web"
 )
 
-const Version = "v1.0.0"
+// Version and BuildCommit are populated by the linker at build time
+// via -ldflags "-X 'github.com/cesareyeserrano/ultron-ap/internal/server.Version=…' -X '…BuildCommit=…'".
+// Defaults below are what `go run ./cmd/ultron-ap` (no Makefile) sees;
+// the Makefile build / build-arm targets override them with the real
+// release tag and `git rev-parse --short HEAD`. (BL-021 / BG-033.)
+var (
+	Version     = "v1.0.0"
+	BuildCommit = "unknown"
+)
 
 type Server struct {
 	httpServer *http.Server
@@ -462,6 +470,7 @@ func (s *Server) invalidateAlertCount() {
 func (s *Server) registerRoutes(mux *http.ServeMux) {
 	// Public routes (no auth)
 	mux.HandleFunc("GET /health", s.handleHealth)
+	mux.HandleFunc("GET /version", s.handleVersion)
 	mux.HandleFunc("GET /login", s.handleLoginPage)
 	mux.HandleFunc("POST /login", s.handleLogin)
 	// CSP violation reports are emitted by the browser without session

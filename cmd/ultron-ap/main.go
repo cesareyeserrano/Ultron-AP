@@ -29,6 +29,13 @@ import (
 )
 
 func main() {
+	// First line in the journal so an operator inspecting the running
+	// service can confirm what build is on the box without SSHing in to
+	// hash the binary. Make build/build-arm inject the real commit via
+	// ldflags; an unbuilt-via-make `go run` reports BuildCommit=unknown.
+	// (BL-021 / BG-033.)
+	log.Printf("Ultron-AP starting: version=%s commit=%s", server.Version, server.BuildCommit)
+
 	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {

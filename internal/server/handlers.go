@@ -4,12 +4,29 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"runtime"
 )
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+// handleVersion returns the build metadata so an operator (or the
+// deploy-verify Make target) can confirm what is running without
+// SSHing in to sha256sum the binary. Unauthenticated by design — the
+// fields are public and exposing them lets external uptime / deploy
+// tooling poll without managing a session. (BL-021 / BG-033.)
+func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"version": Version,
+		"commit":  BuildCommit,
+		"go":      runtime.Version(),
+	})
 }
 
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
