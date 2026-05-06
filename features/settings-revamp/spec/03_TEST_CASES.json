@@ -1,0 +1,1399 @@
+{
+  "test_plan": {
+    "feature": "settings-revamp",
+    "scope": "Validate FR-057..FR-070 (stepper, segmented severity, chip-preset cooldown, range single-source-of-truth, toggle, backup sub-divisions, anchor-chip+accordion, time picker, form-state pill, number-badge removal, Logout move, encryption-key probe, English-only copy, form widths) plus NFR-027..NFR-032 (perf, chip-click latency, backwards-compat POST, a11y, no new deps, probe privacy).",
+    "approach": "Three-layer pyramid. Unit tests pin the range constants (settings_ranges.go) and the probe handler. Integration tests exercise the rendered /settings HTML through goquery, asserting widget markup, label hint substrings, sub-section headings, removal of number badges, and absence of Logout in System Controls. e2e tests use Playwright against a built test binary with seeded SQLite to drive: (a) anchor-chip click \u2192 scrolled-and-expanded section, (b) stepper out-of-range typing \u2192 inline error, (c) severity segmented control 1-click selection, (d) encryption-key probe HTMX flow with valid + invalid env-var values, (e) Logout reachable from header dropdown across multiple pages. Security-sensitive probe TCs use golden-file equality on the JSON response shape.",
+    "fixtures": [
+      "newTestServer(t) \u2014 starts an in-process httptest.Server with real handlers, real templates, real static FS, in-memory SQLite seeded with a fixed admin user (username=test, password-hash from bcrypt cost=4 for speed)",
+      "newTestSession(t, server) \u2014 POSTs to /login, returns a session cookie",
+      "seedAlertConfig(t, db, severity, threshold, cooldown) \u2014 inserts an alert rule for testing existing-value rendering",
+      "seedBackupConfig(t, db, hour, minute, schemeRef) \u2014 inserts a backup config row",
+      "envSet(t, k, v) \u2014 sets env var, t.Cleanup unsets",
+      "tempFile(t, mode) \u2014 writes a tmp file, returns path; t.Cleanup removes it (used for scheme=file probe)",
+      "playwrightCtx(t) \u2014 Playwright browser context with the test server URL and a logged-in storage state"
+    ],
+    "exit_criteria": "All TCs pass; goquery integration tests confirm zero <select name=\"severity\">, zero number-badge markup, zero `Ajust|Expandir|contraer` substrings on /settings; probe handler golden-file test passes; no new third-party Go or JS dependency added (verified by `go list -m all` diff and `git diff --stat web/static/js/`)."
+  },
+  "type_coverage_matrix": {
+    "FR-057": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-058": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-059": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-060": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-061": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-062": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-063": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-064": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-065": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-066": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "COULD"
+    },
+    "FR-067": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "MUST"
+    },
+    "FR-068": {
+      "unit": "MUST",
+      "integration": "MUST",
+      "e2e": "SHOULD"
+    },
+    "FR-069": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "COULD"
+    },
+    "FR-070": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "COULD"
+    }
+  },
+  "test_cases": [
+    {
+      "id": "TC-SR-057h",
+      "requirement_id": "FR-057",
+      "user_story_id": "US-057",
+      "ac_id": "AC-057-001",
+      "title": "Performance section renders Dashboard refresh as a stepper with inline range hint",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "An authenticated client with the test session cookie; PerfConfig.dashboard_refresh_sec stored value = 5",
+      "when": "Client issues GET /settings",
+      "then": "Response 200; goquery finds exactly one element matching `[data-widget=\"stepper\"][data-field=\"dashboard_refresh_sec\"]` whose label text contains the substring '(2\u201360 sec)' and whose `data-min=\"2\"`, `data-max=\"60\"`, `data-value=\"5\"` attributes are set",
+      "steps": [
+        "GET /settings with auth cookie",
+        "Parse body with goquery",
+        "Assert exactly 1 match for the selector",
+        "Assert label text contains '(2\u201360 sec)'",
+        "Assert data-min, data-max, data-value attribute values"
+      ],
+      "expected_result": "Status 200; selector matches exactly 1; label hint substring present; attrs match the stored value verbatim"
+    },
+    {
+      "id": "TC-SR-057e",
+      "requirement_id": "FR-057",
+      "user_story_id": "US-057",
+      "ac_id": "AC-057-004",
+      "title": "Off-step stored value (cooldown_minutes=7) renders verbatim in the stepper",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)",
+        "seedAlertConfig(t, db, severity='warning', threshold=80, cooldown=7)"
+      ],
+      "given": "An alert rule with cooldown_minutes=7 stored (off-preset value)",
+      "when": "Client GETs /settings and the alert-rule edit form for that rule renders",
+      "then": "The cooldown stepper renders `data-value=\"7\"` exactly; no preset chip in the chip-preset row carries the `data-active=\"true\"` attribute",
+      "steps": [
+        "Seed an alert rule via direct DB insert",
+        "GET /settings",
+        "Assert stepper data-value = '7'",
+        "Assert no [data-widget=\"chip-preset\"][data-field=\"cooldown_minutes\"] [data-active=\"true\"] elements"
+      ],
+      "expected_result": "data-value attribute is exactly '7'; zero active preset chips for cooldown"
+    },
+    {
+      "id": "TC-SR-057f",
+      "requirement_id": "FR-057",
+      "user_story_id": "US-057",
+      "ac_id": "AC-057-003",
+      "title": "Submitting dashboard_refresh_sec=999 returns inline error with the same range string as the label",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "An authenticated client; the field's range is 2..60 sec",
+      "when": "Client POSTs `dashboard_refresh_sec=999` to /api/settings/perf with the CSRF token",
+      "then": "Response status is 400 (Bad Request); response body contains the exact substring '2\u201360 sec'; the response is HTML (HTMX swap target) with class `text-error-text` on the inline error span",
+      "steps": [
+        "POST /api/settings/perf with form value 999",
+        "Assert resp.StatusCode == 400",
+        "Assert body contains '2\u201360 sec' substring",
+        "Assert body contains 'text-error-text'"
+      ],
+      "expected_result": "Status 400; error body carries the same '2\u201360 sec' string as the label"
+    },
+    {
+      "id": "TC-SR-057f2",
+      "requirement_id": "FR-057",
+      "user_story_id": "US-057",
+      "ac_id": "AC-057-003",
+      "title": "Submitting dashboard_refresh_sec=1 (one below min) returns the same inline error",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "An authenticated client; the field's range is 2..60 sec",
+      "when": "Client POSTs `dashboard_refresh_sec=1` to /api/settings/perf with the CSRF token",
+      "then": "Response status is 400; body contains '2\u201360 sec'",
+      "steps": [
+        "POST /api/settings/perf with form value 1",
+        "Assert resp.StatusCode == 400",
+        "Assert body contains '2\u201360 sec'"
+      ],
+      "expected_result": "Status 400; same range string in the body"
+    },
+    {
+      "id": "TC-SR-057E2E",
+      "requirement_id": "FR-057",
+      "user_story_id": "US-057",
+      "ac_id": "AC-057-002",
+      "title": "Stepper + button at max value is a no-op (Playwright)",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "playwrightCtx(t)",
+        "PerfConfig.dashboard_refresh_sec stored = 60 (max)"
+      ],
+      "given": "A logged-in browser context viewing /settings",
+      "when": "User clicks the stepper + button on dashboard_refresh_sec",
+      "then": "After click, `data-value` attribute on the stepper still equals '60'; the value cell still reads '60'",
+      "steps": [
+        "Navigate to /settings",
+        "Locate stepper for dashboard_refresh_sec",
+        "Click the + button once",
+        "Read data-value attribute",
+        "Assert equals '60'"
+      ],
+      "expected_result": "data-value remains '60' (no-op confirmed)"
+    },
+    {
+      "id": "TC-SR-058h",
+      "requirement_id": "FR-058",
+      "user_story_id": "US-058",
+      "ac_id": "AC-058-001",
+      "title": "Alert-rule form renders a 3-button segmented severity control (no <select>)",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings and inspects the alert-rule create form",
+      "then": "Body contains exactly one `[data-widget=\"segmented\"][data-field=\"severity\"]` with three `[role=\"radio\"]` children, in order: data-value=\"critical\", data-value=\"warning\", data-value=\"info\"; body contains zero `<select name=\"severity\">` elements anywhere on /settings",
+      "steps": [
+        "GET /settings",
+        "Assert 1 match for the segmented selector",
+        "Assert 3 role=radio children with the specific data-value values in order",
+        "Assert 0 <select name=\"severity\"> matches"
+      ],
+      "expected_result": "Segmented control present; legacy <select name=\"severity\"> entirely removed"
+    },
+    {
+      "id": "TC-SR-058e",
+      "requirement_id": "FR-058",
+      "user_story_id": "US-058",
+      "ac_id": "AC-058-002",
+      "title": "Existing-rule edit form pre-selects the stored severity segment",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)",
+        "seedAlertConfig(t, db, severity='critical', threshold=90, cooldown=15)"
+      ],
+      "given": "An alert rule with severity='critical' stored",
+      "when": "Client GETs /settings and the rule's edit form renders",
+      "then": "The segmented control has exactly one [data-active=\"true\"] child whose data-value is 'critical'; the other two segments carry data-active=\"false\"",
+      "steps": [
+        "Seed alert rule with critical severity",
+        "GET /settings",
+        "Assert 1 segment with [data-active=\"true\"][data-value=\"critical\"]",
+        "Assert 2 segments with [data-active=\"false\"]"
+      ],
+      "expected_result": "Stored severity is the active segment; one source of truth"
+    },
+    {
+      "id": "TC-SR-058f",
+      "requirement_id": "FR-058",
+      "user_story_id": "US-058",
+      "ac_id": "AC-058-001",
+      "title": "Submitting severity=banana to alert-rule create endpoint returns 400 with the allowed enum",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client POSTs to /api/alerts/rules with `severity=banana&metric=cpu&operator=>&threshold=80&cooldown_minutes=15`",
+      "then": "Response 400; body contains 'severity must be one of: critical, warning, info'",
+      "steps": [
+        "POST with severity=banana + valid other fields + CSRF",
+        "Assert status 400",
+        "Assert body contains 'severity must be one of: critical, warning, info'"
+      ],
+      "expected_result": "Status 400; allowed-enum error string present"
+    },
+    {
+      "id": "TC-SR-058E2E",
+      "requirement_id": "FR-058",
+      "user_story_id": "US-058",
+      "ac_id": "AC-058-001",
+      "title": "User selects severity in one click (Playwright)",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightCtx(t)"
+      ],
+      "given": "Logged-in browser at /settings, alert-rule form expanded",
+      "when": "User clicks the 'critical' segment of the severity segmented control",
+      "then": "Within 100 ms the segment's data-active attribute equals 'true' and the previously-active 'warning' segment's data-active equals 'false'; no dropdown was opened (no aria-expanded transition observed)",
+      "steps": [
+        "Open /settings, expand Alerts accordion",
+        "Locate segmented control for severity",
+        "Note current active segment",
+        "Click 'critical' segment",
+        "Assert data-active='true' on critical segment within 100 ms",
+        "Assert previously-active segment now data-active='false'"
+      ],
+      "expected_result": "1-click selection; no dropdown step"
+    },
+    {
+      "id": "TC-SR-059h",
+      "requirement_id": "FR-059",
+      "user_story_id": "US-059",
+      "ac_id": "AC-059-001",
+      "title": "Cooldown chip-preset row highlights the matching preset for stored=15",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)",
+        "seedAlertConfig(t, db, severity='warning', threshold=80, cooldown=15)"
+      ],
+      "given": "An alert rule with cooldown=15 stored",
+      "when": "Client GETs /settings",
+      "then": "Exactly one chip-preset element with `[data-field=\"cooldown_minutes\"][data-preset-value=\"15\"][data-active=\"true\"]`; the other 3 presets have data-active=\"false\"",
+      "steps": [
+        "GET /settings",
+        "Assert 1 active preset = 15",
+        "Assert other 3 presets are inactive"
+      ],
+      "expected_result": "Only the matching preset is active"
+    },
+    {
+      "id": "TC-SR-059e",
+      "requirement_id": "FR-059",
+      "user_story_id": "US-059",
+      "ac_id": "AC-059-002",
+      "title": "Off-preset stored value (7) leaves all preset chips inactive and shows 7 in the custom field",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)",
+        "seedAlertConfig(t, db, severity='info', threshold=50, cooldown=7)"
+      ],
+      "given": "An alert rule with cooldown=7 stored",
+      "when": "Client GETs /settings",
+      "then": "Zero chip-preset elements with data-active=\"true\" for cooldown_minutes; the custom stepper for cooldown shows data-value=\"7\"",
+      "steps": [
+        "Seed cooldown=7",
+        "GET /settings",
+        "Assert 0 active presets",
+        "Assert custom stepper data-value=7"
+      ],
+      "expected_result": "All presets inactive; custom field shows 7"
+    },
+    {
+      "id": "TC-SR-059f",
+      "requirement_id": "FR-059",
+      "user_story_id": "US-059",
+      "ac_id": "AC-059-001",
+      "title": "Saving the form sends only the resolved minute value (no preset metadata)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client posting an alert rule with cooldown_minutes=15",
+      "when": "Client POSTs to /api/alerts/rules with `severity=warning&metric=cpu&operator=>&threshold=80&cooldown_minutes=15`",
+      "then": "Response 200; the body sent over the wire (asserted by capturing in a test middleware) contains exactly the keys: severity, metric, operator, threshold, cooldown_minutes, name (or whatever the legacy contract is); NO key like 'preset' or 'chip_preset' is present",
+      "steps": [
+        "Wrap the handler with a body-capturing middleware",
+        "POST the rule",
+        "Assert captured body has exactly the legacy keys; no 'preset' key"
+      ],
+      "expected_result": "Wire format unchanged; preset is UI-only"
+    },
+    {
+      "id": "TC-SR-060h",
+      "requirement_id": "FR-060",
+      "user_story_id": "US-060",
+      "ac_id": "AC-060-001",
+      "title": "Validation error message for out-of-range value contains the exact range string from the label",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "settings_ranges.RangeFor(\"dashboard_refresh_sec\") returns Range{Min:2, Max:60, Unit:\"sec\"}",
+      "when": "Range.ValidationError(999) is called",
+      "then": "Returned error.Error() == \"value 999 out of range \u2014 Dashboard refresh (2\u201360 sec)\" (exact string match including the en-dash, not ASCII hyphen)",
+      "steps": [
+        "Call settings_ranges.RangeFor(\"dashboard_refresh_sec\")",
+        "Call .ValidationError(999)",
+        "Assert error.Error() equals the exact expected string"
+      ],
+      "expected_result": "Exact-string match; en-dash preserved (not normalized to ASCII)"
+    },
+    {
+      "id": "TC-SR-060e",
+      "requirement_id": "FR-060",
+      "user_story_id": "US-060",
+      "ac_id": "AC-060-002",
+      "title": "Single-source-of-truth: every numeric label substring on /settings matches RangeFor(field).Hint()",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "All numeric fields registered in settings_ranges.go",
+      "when": "Client GETs /settings; for each `[data-widget=\"stepper\"][data-field=\u2026]` the test reads the field's label text and the field's data-min/data-max",
+      "then": "For every field, the label text contains the substring `RangeFor(field).Hint()` AND data-min == RangeFor(field).Min AND data-max == RangeFor(field).Max",
+      "steps": [
+        "GET /settings",
+        "Iterate stepper widgets",
+        "For each: read data-field, label, data-min, data-max",
+        "Look up settings_ranges.RangeFor(field)",
+        "Assert label contains Hint()",
+        "Assert min/max attributes match"
+      ],
+      "expected_result": "Every field is consistent across template and constant \u2014 drift detected if any single field diverges"
+    },
+    {
+      "id": "TC-SR-060f",
+      "requirement_id": "FR-060",
+      "user_story_id": "US-060",
+      "ac_id": "AC-060-002",
+      "title": "Source-grep: no min/max literal duplicated between template and handler for the same field",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "The codebase",
+      "when": "A test scans web/templates/settings.html and internal/server/handlers_*.go for hard-coded min/max literals on registered fields",
+      "then": "Zero matches found \u2014 every numeric bound is referenced through RangeFor(); literals like `min=\"2\"` outside of the rangeHint helper output are reported as failures",
+      "steps": [
+        "List registered fields",
+        "Grep templates for literal `min=\"<n>\"` patterns matching registered field min values",
+        "Allow patterns generated by the rangeHint template helper; flag any others",
+        "Assert flagged set is empty"
+      ],
+      "expected_result": "No drift; fail-the-build if a future contributor inlines a literal"
+    },
+    {
+      "id": "TC-SR-061h",
+      "requirement_id": "FR-061",
+      "user_story_id": "US-061",
+      "ac_id": "AC-061-001",
+      "title": "Telegram and Email enabled flags render as toggle switches, not checkboxes",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "On /settings: exactly one `[data-widget=\"toggle\"][data-field=\"telegram_enabled\"]` and one `[data-widget=\"toggle\"][data-field=\"email_enabled\"]`; zero `<input type=\"checkbox\" name=\"telegram_enabled\">` and zero `<input type=\"checkbox\" name=\"email_enabled\">`",
+      "steps": [
+        "GET /settings",
+        "Assert toggle widget for telegram_enabled present",
+        "Assert toggle widget for email_enabled present",
+        "Assert no legacy <input type=\"checkbox\"> for either field"
+      ],
+      "expected_result": "Toggles replace checkboxes; legacy checkboxes fully removed"
+    },
+    {
+      "id": "TC-SR-061e",
+      "requirement_id": "FR-061",
+      "user_story_id": "US-061",
+      "ac_id": "AC-061-001",
+      "title": "Toggle reflects stored Telegram enabled=true",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)",
+        "seedNotifyConfig(t, db, channel='telegram', enabled=true)"
+      ],
+      "given": "Telegram is stored as enabled=true",
+      "when": "Client GETs /settings",
+      "then": "The telegram toggle has data-state=\"on\"",
+      "steps": [
+        "Seed enabled=true",
+        "GET /settings",
+        "Assert toggle data-state='on'"
+      ],
+      "expected_result": "Stored value drives toggle visual"
+    },
+    {
+      "id": "TC-SR-061f",
+      "requirement_id": "FR-061",
+      "user_story_id": "US-061",
+      "ac_id": "AC-061-001",
+      "title": "POST with malformed toggle value (telegram_enabled=banana) returns 400",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client POSTs `telegram_enabled=banana` to /api/settings/telegram",
+      "then": "Response 400; body contains 'telegram_enabled must be true or false'",
+      "steps": [
+        "POST malformed value with CSRF",
+        "Assert 400",
+        "Assert body substring"
+      ],
+      "expected_result": "Strict bool parsing"
+    },
+    {
+      "id": "TC-SR-062h",
+      "requirement_id": "FR-062",
+      "user_story_id": "US-062",
+      "ac_id": "AC-062-001",
+      "title": "Backup section renders three sub-headings in order: Limits, Schedule, Destination",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "Within `#settings-backup`, the test finds exactly three `[data-subsection-heading]` elements whose text content is, in document order: 'LIMITS', 'SCHEDULE', 'DESTINATION'",
+      "steps": [
+        "GET /settings",
+        "Locate #settings-backup",
+        "Find data-subsection-heading children, in order",
+        "Assert text content matches ['LIMITS','SCHEDULE','DESTINATION']"
+      ],
+      "expected_result": "Three sub-headings, correct order, correct text (uppercase tokens)"
+    },
+    {
+      "id": "TC-SR-062e",
+      "requirement_id": "FR-062",
+      "user_story_id": "US-062",
+      "ac_id": "AC-062-002",
+      "title": "Every backup input is inside exactly one sub-group (no orphans)",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "For each input/select/widget inside #settings-backup, the closest ancestor with `[data-subsection]` attribute is non-nil; the count of such inputs whose ancestor is the section root (not a sub-group) equals 0",
+      "steps": [
+        "GET /settings",
+        "Iterate inputs/widgets inside #settings-backup",
+        "For each, walk up to find data-subsection ancestor",
+        "Assert no input has ancestor === section root"
+      ],
+      "expected_result": "Zero orphan inputs"
+    },
+    {
+      "id": "TC-SR-062f",
+      "requirement_id": "FR-062",
+      "user_story_id": "US-062",
+      "ac_id": "AC-062-001",
+      "title": "Sub-section headings use the exact existing eyebrow-heading class set",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "Each `#settings-backup [data-subsection-heading]` element carries the classes `text-sm font-semibold text-text-muted uppercase tracking-wider` (asserted as a set match, not order-sensitive)",
+      "steps": [
+        "GET /settings",
+        "For each sub-heading, read class list",
+        "Assert set equals expected set"
+      ],
+      "expected_result": "Style consistency with section headings"
+    },
+    {
+      "id": "TC-SR-063h",
+      "requirement_id": "FR-063",
+      "user_story_id": "US-063",
+      "ac_id": "AC-063-001",
+      "title": "Anchor-chip click scrolls AND expands target accordion (Playwright)",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightCtx(t)"
+      ],
+      "given": "Logged-in browser at /settings; the Telegram accordion starts collapsed (aria-expanded=\"false\")",
+      "when": "User clicks the anchor chip with `[data-anchor=\"telegram\"]`",
+      "then": "Within 300 ms, `#settings-telegram` is in the viewport AND its accordion's `aria-expanded` attribute is 'true'",
+      "steps": [
+        "Navigate /settings",
+        "Assert telegram accordion aria-expanded=false",
+        "Click anchor chip [data-anchor=\"telegram\"]",
+        "Wait up to 300 ms",
+        "Assert #settings-telegram element is visible (boundingBox top within viewport)",
+        "Assert telegram accordion aria-expanded=true"
+      ],
+      "expected_result": "Single click \u2192 scrolled + expanded within 300 ms (NFR-028)"
+    },
+    {
+      "id": "TC-SR-063e",
+      "requirement_id": "FR-063",
+      "user_story_id": "US-063",
+      "ac_id": "AC-063-002",
+      "title": "Page load with hash auto-expands matching accordion before first paint (Playwright)",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "playwrightCtx(t)"
+      ],
+      "given": "A logged-in browser; URL is /settings#backup",
+      "when": "Page first paints (event: first-contentful-paint)",
+      "then": "By the FCP event, `#settings-backup`'s aria-expanded is 'true'; no flash of collapsed content observed (verified by a screenshot at FCP showing the Backup form fields visible)",
+      "steps": [
+        "Navigate to /settings#backup",
+        "Wait for first-contentful-paint",
+        "Assert backup accordion aria-expanded='true' at FCP",
+        "Take screenshot, assert backup form fields visible"
+      ],
+      "expected_result": "Deep-link lands on an open section, no flash"
+    },
+    {
+      "id": "TC-SR-063f",
+      "requirement_id": "FR-063",
+      "user_story_id": "US-063",
+      "ac_id": "AC-063-003",
+      "title": "Three rapid chip clicks add 0 history entries (replaceState used)",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "playwrightCtx(t)"
+      ],
+      "given": "Logged-in browser at /settings (initial history length L)",
+      "when": "User clicks 3 different chips in sequence",
+      "then": "After the 3 clicks, browser history length is still L (no pushState entries added) \u2014 assertable via `page.evaluate(() => window.history.length)`",
+      "steps": [
+        "Navigate /settings, capture history.length",
+        "Click chip A, then B, then C",
+        "Read window.history.length",
+        "Assert equals captured baseline"
+      ],
+      "expected_result": "history.length unchanged \u2192 replaceState confirmed"
+    },
+    {
+      "id": "TC-SR-064h",
+      "requirement_id": "FR-064",
+      "user_story_id": "US-064",
+      "ac_id": "AC-064-001",
+      "title": "Backup schedule renders <input type=\"time\"> with stored hour/minute",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)",
+        "seedBackupConfig(t, db, hour=2, minute=30, schemeRef='env:ULTRON_BACKUP_KEY')"
+      ],
+      "given": "Backup hour=2, minute=30 stored",
+      "when": "Client GETs /settings",
+      "then": "Body contains exactly one `<input type=\"time\" name=\"time\" value=\"02:30\">`; body contains zero `<input \u2026 name=\"hour\">` AND zero `<input \u2026 name=\"minute\">` (the legacy split inputs are entirely removed from the rendered form)",
+      "steps": [
+        "Seed config",
+        "GET /settings",
+        "Assert <input type=\"time\" name=\"time\" value=\"02:30\"> present",
+        "Assert no `name=\"hour\"` or `name=\"minute\"` inputs"
+      ],
+      "expected_result": "Single time picker with HH:MM = 02:30"
+    },
+    {
+      "id": "TC-SR-064e",
+      "requirement_id": "FR-064",
+      "user_story_id": "US-064",
+      "ac_id": "AC-064-003",
+      "title": "Server accepts legacy hour=N&minute=M form and logs a single deprecation warning",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t, withFakeLogger=true)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client POSTs `hour=3&minute=15` (no `time` field) to /api/settings/backup/schedule",
+      "then": "Response 200; fakeLogger.Count(\"deprecated form-field\") == 1; logged record has fields level=warn, msg=\"deprecated form-field\", field=\"hour\"",
+      "steps": [
+        "POST legacy form",
+        "Assert resp.StatusCode == 200",
+        "Assert fakeLogger.Count == 1",
+        "Assert logged structured fields"
+      ],
+      "expected_result": "Backwards-compat preserved; one structured warning emitted"
+    },
+    {
+      "id": "TC-SR-064f",
+      "requirement_id": "FR-064",
+      "user_story_id": "US-064",
+      "ac_id": "AC-064-002",
+      "title": "POST time=25:00 returns 400 'time must be HH:MM in 00:00..23:59'",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client POSTs `time=25:00` to /api/settings/backup/schedule",
+      "then": "Response 400; body contains 'time must be HH:MM in 00:00..23:59'",
+      "steps": [
+        "POST time=25:00 with CSRF",
+        "Assert 400",
+        "Assert body substring"
+      ],
+      "expected_result": "Out-of-range time rejected with explicit message"
+    },
+    {
+      "id": "TC-SR-065h",
+      "requirement_id": "FR-065",
+      "user_story_id": "US-065",
+      "ac_id": "AC-065-001",
+      "title": "Form-state pill is NOT in the DOM on idle page load",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client; page just loaded, no submission in flight",
+      "when": "Client GETs /settings",
+      "then": "Body contains zero elements matching `[data-form-state-pill]` \u2014 every section header has only the section title and its eyebrow",
+      "steps": [
+        "GET /settings",
+        "Count [data-form-state-pill] elements",
+        "Assert 0"
+      ],
+      "expected_result": "Zero pill elements at idle"
+    },
+    {
+      "id": "TC-SR-065e",
+      "requirement_id": "FR-065",
+      "user_story_id": "US-065",
+      "ac_id": "AC-065-002",
+      "title": "Pill appears with state 'saving' within 100 ms of submit (Playwright)",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "playwrightCtx(t)"
+      ],
+      "given": "Logged-in browser at /settings",
+      "when": "User changes Dashboard refresh stepper to 10 and clicks the section's Save button",
+      "then": "Within 100 ms after the click, `[data-form-state-pill][data-state=\"saving\"]` is visible in the perf section header",
+      "steps": [
+        "Open /settings, expand Performance",
+        "Change stepper to 10",
+        "Click Save",
+        "Wait up to 100 ms for [data-form-state-pill][data-state=\"saving\"]",
+        "Assert visible"
+      ],
+      "expected_result": "Pill renders within 100 ms with state='saving'"
+    },
+    {
+      "id": "TC-SR-065f",
+      "requirement_id": "FR-065",
+      "user_story_id": "US-065",
+      "ac_id": "AC-065-002",
+      "title": "Pill returns to NOT-IN-DOM after 'applied' transition completes",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [
+        "playwrightCtx(t)"
+      ],
+      "given": "User just saved a section successfully",
+      "when": "5 seconds elapse after the 'applied' state appeared",
+      "then": "[data-form-state-pill] is no longer in the DOM (querySelector returns null)",
+      "steps": [
+        "Save a section, wait for [data-state=\"applied\"]",
+        "Wait 5 s",
+        "Assert querySelector('[data-form-state-pill]') === null"
+      ],
+      "expected_result": "Pill removed from DOM after applied transition; not just hidden"
+    },
+    {
+      "id": "TC-SR-066h",
+      "requirement_id": "FR-066",
+      "user_story_id": "US-066",
+      "ac_id": "AC-066-001",
+      "title": "No section header on /settings renders a numbered badge",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "goquery search for `[data-section-number]` returns 0 elements; regex search of body for the pattern `>0[1-9]<` (the legacy badge text pattern) returns 0 matches in any element classed as a section header",
+      "steps": [
+        "GET /settings",
+        "Assert 0 [data-section-number] elements",
+        "Regex-scan section headers for >0[1-9]< pattern",
+        "Assert 0 matches"
+      ],
+      "expected_result": "Number badges fully removed"
+    },
+    {
+      "id": "TC-SR-066e",
+      "requirement_id": "FR-066",
+      "user_story_id": "US-066",
+      "ac_id": "AC-066-001",
+      "title": "Section ordering is preserved (badges removed, not the sections)",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "low",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "Sections, in document order, have data-section attributes equal to ['alerts','telegram','email','perf','backup','system','danger'] (or the existing established order)",
+      "steps": [
+        "GET /settings",
+        "Read [data-section] attributes in order",
+        "Assert equals expected ordered list"
+      ],
+      "expected_result": "Same sections, same order, no number-badge eyebrow"
+    },
+    {
+      "id": "TC-SR-066f",
+      "requirement_id": "FR-066",
+      "user_story_id": "US-066",
+      "ac_id": "AC-066-001",
+      "title": "Source-grep: zero `01`-`09` literal section badges remain in templates",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [],
+      "given": "Codebase",
+      "when": "Test scans web/templates/settings.html for the legacy badge markup pattern",
+      "then": "Zero matches",
+      "steps": [
+        "Grep templates for legacy badge HTML pattern",
+        "Assert empty result"
+      ],
+      "expected_result": "No latent badge markup in source"
+    },
+    {
+      "id": "TC-SR-067h",
+      "requirement_id": "FR-067",
+      "user_story_id": "US-067",
+      "ac_id": "AC-067-002",
+      "title": "Logout is removed from the System Controls grid on /settings",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "Within `#settings-system`, zero elements have `[data-action=\"logout\"]` AND zero <form action=\"/logout\"> elements; the section continues to contain Restart and Shutdown action cards",
+      "steps": [
+        "GET /settings",
+        "Within #settings-system, count [data-action=\"logout\"] \u2192 assert 0",
+        "Count <form action=\"/logout\"> \u2192 assert 0",
+        "Assert Restart and Shutdown cards still present"
+      ],
+      "expected_result": "Logout absent from System Controls; Restart/Shutdown intact"
+    },
+    {
+      "id": "TC-SR-067e",
+      "requirement_id": "FR-067",
+      "user_story_id": "US-067",
+      "ac_id": "AC-067-001",
+      "title": "Logout is reachable from the header dropdown on every authenticated page",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Test iterates through ['/','/docker','/services','/alerts','/network','/history','/logs','/settings'] with GET",
+      "then": "On every page, body contains exactly one `<details data-header-dropdown>` element AND exactly one `<form action=\"/logout\" method=\"POST\">` inside it; the form contains a CSRF token input",
+      "steps": [
+        "For each page in the list:",
+        "  GET page",
+        "  Assert one <details data-header-dropdown>",
+        "  Assert one <form action=\"/logout\"> inside",
+        "  Assert CSRF token input present"
+      ],
+      "expected_result": "Header Logout exists on all 8 pages with CSRF protection"
+    },
+    {
+      "id": "TC-SR-067f",
+      "requirement_id": "FR-067",
+      "user_story_id": "US-067",
+      "ac_id": "AC-067-003",
+      "title": "Shutdown card has red-tinted border and DESTRUCTIVE eyebrow; Restart does not",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "Within #settings-system: the shutdown card element has class containing 'border-danger' AND a child element with text 'DESTRUCTIVE'; the restart card element does NOT have class 'border-danger' AND has NO child with text 'DESTRUCTIVE'",
+      "steps": [
+        "GET /settings",
+        "Locate shutdown action card",
+        "Assert classlist contains 'border-danger'",
+        "Assert child text 'DESTRUCTIVE'",
+        "Locate restart action card",
+        "Assert no 'border-danger'",
+        "Assert no 'DESTRUCTIVE' child"
+      ],
+      "expected_result": "Visual destructive treatment applies only to Shutdown"
+    },
+    {
+      "id": "TC-SR-067E2E",
+      "requirement_id": "FR-067",
+      "user_story_id": "US-067",
+      "ac_id": "AC-067-001",
+      "title": "User clicks header-dropdown Logout from /dashboard and is redirected to /login (Playwright)",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "playwrightCtx(t)"
+      ],
+      "given": "Logged-in browser at /",
+      "when": "User clicks the header dropdown summary button, then clicks the Logout menu item",
+      "then": "Browser navigates to /login; the session cookie set by the test session is cleared (Set-Cookie header on the redirect response carries Max-Age=0 or empty value for the session cookie)",
+      "steps": [
+        "Open /",
+        "Click header-dropdown summary",
+        "Click Logout menu item",
+        "Wait for navigation",
+        "Assert URL ends with /login",
+        "Assert session cookie cleared"
+      ],
+      "expected_result": "Logout end-to-end works from header on / (dashboard)"
+    },
+    {
+      "id": "TC-SR-068h",
+      "requirement_id": "FR-068",
+      "user_story_id": "US-068",
+      "ac_id": "AC-068-001",
+      "title": "Probe with scheme=env returns ok:true when env var is set",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "envSet(t, 'ULTRON_BACKUP_KEY', 'something')"
+      ],
+      "given": "Auth-gated handler; env var set",
+      "when": "GET /api/settings/encryption-key/probe?scheme=env&value=ULTRON_BACKUP_KEY with valid session",
+      "then": "Response 200; Content-Type 'application/json; charset=utf-8'; body equals exactly {\"ok\":true,\"reason\":\"env var ULTRON_BACKUP_KEY found\"} (golden-file compare; key set is exactly {\"ok\",\"reason\"})",
+      "steps": [
+        "envSet ULTRON_BACKUP_KEY",
+        "GET probe with auth cookie",
+        "Assert resp 200, JSON content-type",
+        "Parse body, assert key set equals {\"ok\",\"reason\"}",
+        "Assert ok==true and reason exact match"
+      ],
+      "expected_result": "Probe returns the locked-shape \u2713 response"
+    },
+    {
+      "id": "TC-SR-068e",
+      "requirement_id": "FR-068",
+      "user_story_id": "US-068",
+      "ac_id": "AC-068-002",
+      "title": "Probe with scheme=env and unset env var returns ok:false 'env var not set'",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "envUnset(t, 'DOES_NOT_EXIST')"
+      ],
+      "given": "Env var DOES_NOT_EXIST is unset",
+      "when": "GET /api/settings/encryption-key/probe?scheme=env&value=DOES_NOT_EXIST with auth",
+      "then": "Body equals exactly {\"ok\":false,\"reason\":\"env var not set\"}",
+      "steps": [
+        "GET probe",
+        "Assert body exact JSON"
+      ],
+      "expected_result": "Locked \u2717 response"
+    },
+    {
+      "id": "TC-SR-068f",
+      "requirement_id": "FR-068",
+      "user_story_id": "US-068",
+      "ac_id": "AC-068-004",
+      "title": "Unauthenticated probe returns 401",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)"
+      ],
+      "given": "No session cookie",
+      "when": "GET /api/settings/encryption-key/probe?scheme=env&value=ULTRON_BACKUP_KEY",
+      "then": "Response 401; body contains no 'ok' or 'reason' keys (consistent with parent auth-required behaviour)",
+      "steps": [
+        "GET probe with no cookie",
+        "Assert 401",
+        "Assert body is the parent's standard auth-required response"
+      ],
+      "expected_result": "Auth boundary holds"
+    },
+    {
+      "id": "TC-SR-068sec1",
+      "requirement_id": "FR-068",
+      "user_story_id": "US-068",
+      "ac_id": "AC-068-003",
+      "title": "Probe response NEVER contains key length, key bytes, or key hash (golden-file shape lock)",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "A range of inputs spanning all schemes and both ok/!ok",
+      "when": "Test runs every (scheme, value) tuple from a fixed table {(env,SET), (env,UNSET), (file,EXISTS), (file,MISSING), (file,UNREADABLE), (kms,anything)}",
+      "then": "For every response: parsed JSON has exactly the key set {\"ok\",\"reason\"}; reason is one of the fixed enum strings: ['env var <NAME> found','env var not set','file readable','file not found','file not readable','kms scheme not supported in v1']; reason length \u2264 120 chars",
+      "steps": [
+        "For each tuple in the table:",
+        "  Set up the precondition (envSet, tempFile, etc.)",
+        "  GET probe",
+        "  Parse JSON",
+        "  Assert key set",
+        "  Assert reason in enum",
+        "  Assert reason length <= 120"
+      ],
+      "expected_result": "Response shape locked; future contributor cannot accidentally widen it"
+    },
+    {
+      "id": "TC-SR-068sec2",
+      "requirement_id": "FR-068",
+      "user_story_id": "US-068",
+      "ac_id": "AC-068-003",
+      "title": "Probe with scheme=file and path containing '../' returns 400 (path-traversal defence)",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "GET /api/settings/encryption-key/probe?scheme=file&value=/etc/ultron-ap/../../etc/passwd",
+      "then": "Response 400; body contains 'invalid path'",
+      "steps": [
+        "GET probe with traversal path",
+        "Assert 400",
+        "Assert body 'invalid path'"
+      ],
+      "expected_result": "Path traversal rejected at handler"
+    },
+    {
+      "id": "TC-SR-068sec3",
+      "requirement_id": "FR-068",
+      "user_story_id": "US-068",
+      "ac_id": "AC-068-003",
+      "title": "Probe with scheme=file and null byte in value returns 400",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "GET probe with `value=/etc/ultron-ap%00.env`",
+      "then": "Response 400; body contains 'invalid path'",
+      "steps": [
+        "URL-encoded null byte",
+        "GET probe",
+        "Assert 400"
+      ],
+      "expected_result": "Null bytes rejected"
+    },
+    {
+      "id": "TC-SR-068E2E",
+      "requirement_id": "FR-068",
+      "user_story_id": "US-068",
+      "ac_id": "AC-068-001",
+      "title": "Encryption-key probe HTMX flow: typing scheme=env and value, blur triggers \u2713 badge (Playwright)",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "playwrightCtx(t)",
+        "envSet(t, 'ULTRON_BACKUP_KEY', 'x')"
+      ],
+      "given": "Logged-in browser at /settings#backup",
+      "when": "User picks scheme='env' on the select, types 'ULTRON_BACKUP_KEY' into the value input, and tabs out",
+      "then": "Within 1 s, the badge `#enc-key-badge` displays a \u2713 icon and the text 'env var ULTRON_BACKUP_KEY found'",
+      "steps": [
+        "Navigate /settings#backup",
+        "Select scheme=env",
+        "Type value",
+        "Press Tab",
+        "Wait up to 1 s for #enc-key-badge to update",
+        "Assert \u2713 icon visible",
+        "Assert text 'env var ULTRON_BACKUP_KEY found'"
+      ],
+      "expected_result": "Live probe + badge update on blur"
+    },
+    {
+      "id": "TC-SR-069h",
+      "requirement_id": "FR-069",
+      "user_story_id": "US-069",
+      "ac_id": "AC-069-003",
+      "title": "Codebase grep: zero Spanish substrings in settings/sidebar templates",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "low",
+      "preconditions": [],
+      "given": "Codebase",
+      "when": "Test greps web/templates/settings.html and web/templates/partials/sidebar.html for ['Ajust','Expandir','contraer']",
+      "then": "Zero matches in any of the targeted files",
+      "steps": [
+        "Read each file",
+        "For each substring, assert not contained",
+        "Report any match"
+      ],
+      "expected_result": "Spanish copy removed from settings + sidebar templates"
+    },
+    {
+      "id": "TC-SR-069e",
+      "requirement_id": "FR-069",
+      "user_story_id": "US-069",
+      "ac_id": "AC-069-001",
+      "title": "Settings page subtitle is rendered in English",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "low",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "Within `[data-settings-subtitle]`, the text contains the substring 'alerts' or 'notifications' or 'maintenance' (English keyword) and does NOT contain 'Ajust' or 'enfoque' (Spanish substrings)",
+      "steps": [
+        "GET /settings",
+        "Read subtitle text",
+        "Assert English keyword present",
+        "Assert Spanish substrings absent"
+      ],
+      "expected_result": "Subtitle is English"
+    },
+    {
+      "id": "TC-SR-069f",
+      "requirement_id": "FR-069",
+      "user_story_id": "US-069",
+      "ac_id": "AC-069-002",
+      "title": "Sidebar collapse-toggle tooltip is in English",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs any authenticated page",
+      "then": "The sidebar collapse toggle's `title` (or aria-label) attribute matches /Expand|Collapse|Toggle/i and does NOT match /Expandir|contraer/",
+      "steps": [
+        "GET /",
+        "Locate sidebar collapse toggle",
+        "Assert title attr matches English regex"
+      ],
+      "expected_result": "Tooltip is English"
+    },
+    {
+      "id": "TC-SR-070h",
+      "requirement_id": "FR-070",
+      "user_story_id": "US-070",
+      "ac_id": "AC-070-001",
+      "title": "No settings form has class 'max-w-4xl'",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "low",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client GETs /settings",
+      "then": "Inside #settings-shell, every <form> has its computed-CSS max-width equal to the shell's max-width (asserted via class-list grep: zero forms have 'max-w-4xl' applied)",
+      "steps": [
+        "GET /settings",
+        "For every form inside #settings-shell, assert classlist does not contain 'max-w-4xl'"
+      ],
+      "expected_result": "max-w-4xl drift removed from settings forms"
+    },
+    {
+      "id": "TC-SR-070e",
+      "requirement_id": "FR-070",
+      "user_story_id": "US-070",
+      "ac_id": "AC-070-001",
+      "title": "Form left/right margins are equal at viewport \u22651024 px (Playwright)",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "low",
+      "preconditions": [
+        "playwrightCtx(t, viewport=1280x800)"
+      ],
+      "given": "Logged-in browser at viewport 1280x800",
+      "when": "User opens /settings",
+      "then": "For each form in #settings-shell, leftPadding == rightPadding (within 1 px tolerance) measured via `getBoundingClientRect()` of form vs shell",
+      "steps": [
+        "Open /settings at 1280x800",
+        "For each form: compute (form.x - shell.x) and (shell.right - form.right)",
+        "Assert |diff| <= 1"
+      ],
+      "expected_result": "Symmetric margins"
+    },
+    {
+      "id": "TC-SR-070f",
+      "requirement_id": "FR-070",
+      "user_story_id": "US-070",
+      "ac_id": "AC-070-001",
+      "title": "Source-grep: zero `max-w-4xl` literals on settings <form> tags",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [],
+      "given": "Codebase",
+      "when": "Test reads web/templates/settings.html and finds every <form> tag's class attribute",
+      "then": "No <form> tag in settings.html has 'max-w-4xl' in its class list",
+      "steps": [
+        "Read web/templates/settings.html",
+        "For each <form> tag, parse class attribute",
+        "Assert 'max-w-4xl' not present in any form's class list"
+      ],
+      "expected_result": "Latent max-w-4xl removed at source"
+    },
+    {
+      "id": "TC-SR-NFR029h",
+      "requirement_id": "FR-064",
+      "user_story_id": "US-064",
+      "ac_id": "AC-064-003",
+      "title": "Backwards compatibility: every legacy settings POST body still succeeds",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Test replays a fixed table of legacy form bodies (one per existing settings POST endpoint) \u2014 exact bodies copied from the parent project's existing handler tests",
+      "then": "Every replay returns the same status code as the parent test recorded; no body returns 4xx unless the parent test already expected 4xx",
+      "steps": [
+        "Build the table by parsing parent handlers_*_test.go for each successful POST body",
+        "For each entry: replay POST, compare status to recorded baseline",
+        "Assert all match"
+      ],
+      "expected_result": "Zero regressions on legacy POST bodies"
+    },
+    {
+      "id": "TC-SR-NFR029e",
+      "requirement_id": "FR-064",
+      "user_story_id": "US-064",
+      "ac_id": "AC-064-003",
+      "title": "Backwards-compat: backup-schedule POST with BOTH `time=HH:MM` and legacy `hour=N&minute=M` resolves to time= (new wins) and logs deprecation for the legacy fields",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t, withFakeLogger=true)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client POSTs `time=04:30&hour=9&minute=15` to /api/settings/backup/schedule",
+      "then": "Response 200; persisted backup hour=4 minute=30 (new format takes precedence); fakeLogger.Count(\"deprecated form-field\") == 1",
+      "steps": [
+        "POST mixed body",
+        "Assert 200",
+        "Read backup config from DB; assert hour=4, minute=30",
+        "Assert 1 deprecation warning logged"
+      ],
+      "expected_result": "New format wins; legacy fields still logged as deprecated"
+    },
+    {
+      "id": "TC-SR-NFR029f",
+      "requirement_id": "FR-064",
+      "user_story_id": "US-064",
+      "ac_id": "AC-064-002",
+      "title": "Backwards-compat: legacy POST with hour=24 (out of range) returns 400 with the same message it returned pre-revamp",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "newTestServer(t)",
+        "newTestSession(t, server)"
+      ],
+      "given": "Authenticated client",
+      "when": "Client POSTs `hour=24&minute=0` to /api/settings/backup/schedule",
+      "then": "Response 400; body contains 'hour must be 0..23' (the same exact substring the parent handler returned before the revamp)",
+      "steps": [
+        "POST hour=24",
+        "Assert 400",
+        "Assert body substring matches pre-revamp expectation captured from parent test"
+      ],
+      "expected_result": "Pre-existing validation behaviour preserved; legacy callers see the same error"
+    },
+    {
+      "id": "TC-SR-NFR031h",
+      "requirement_id": "FR-057",
+      "user_story_id": "US-058",
+      "ac_id": "AC-058-001",
+      "title": "No new third-party Go module added",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "go.mod from main vs go.mod after the feature branch",
+      "when": "Test runs `go list -m all` on both and diffs the result",
+      "then": "Diff is empty (zero added modules); the only allowed modification is the existing 'replace' directives if any",
+      "steps": [
+        "Capture base go list -m all",
+        "Capture branch go list -m all",
+        "Assert symmetric diff is empty"
+      ],
+      "expected_result": "No supply-chain expansion"
+    },
+    {
+      "id": "TC-SR-NFR031e",
+      "requirement_id": "FR-057",
+      "user_story_id": "US-058",
+      "ac_id": "AC-058-001",
+      "title": "No new JS dependency declared (no package.json at repo root, widget JS files are static)",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "Repo root after the feature branch",
+      "when": "Test asserts files",
+      "then": "No package.json, package-lock.json, yarn.lock, or pnpm-lock.yaml exists at repo root or under web/static/; widget JS files under web/static/js/widgets/ are plain ES2017 (parseable by Acorn ecmaVersion=2017 with no imports)",
+      "steps": [
+        "Assert no package.json/lock files exist",
+        "For each web/static/js/widgets/*.js: parse with Acorn",
+        "Assert AST has no ImportDeclaration nodes"
+      ],
+      "expected_result": "No JS bundler footprint"
+    },
+    {
+      "id": "TC-SR-NFR031f",
+      "requirement_id": "FR-057",
+      "user_story_id": "US-058",
+      "ac_id": "AC-058-001",
+      "title": "Total widget JS payload (4 widget files + anchor-chip.js) is \u22648 KB raw and \u22643 KB gzipped",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [],
+      "given": "Built static assets at web/static/js/widgets/",
+      "when": "Test sums byte sizes of stepper.js + segmented.js + toggle.js + chip-preset.js + anchor-chip.js, then gzips the concatenation",
+      "then": "Sum of raw bytes \u2264 8192; gzip-compressed length \u2264 3072",
+      "steps": [
+        "Read each file, sum sizes",
+        "Concatenate, gzip",
+        "Assert raw \u2264 8192",
+        "Assert gzip \u2264 3072"
+      ],
+      "expected_result": "Payload budget enforced (NFR-031 spirit: no bundler, no bloat)"
+    }
+  ]
+}

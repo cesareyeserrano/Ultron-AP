@@ -27,7 +27,7 @@ func probeRequest(t *testing.T, sessionID, scheme, value string) *http.Request {
 }
 
 // TC-SR-068h — env var SET → ok:true with locked reason shape.
-func TestProbe_EnvVarSet_ReturnsOKWithLockedReason(t *testing.T) {
+func TestTC_SR_068h_EnvVarSetReturnsOK(t *testing.T) {
 	t.Setenv("ULTRON_BACKUP_KEY_TEST_FOUND", "any-value")
 	srv, session := setupSSETestServer(t)
 
@@ -51,7 +51,7 @@ func TestProbe_EnvVarSet_ReturnsOKWithLockedReason(t *testing.T) {
 }
 
 // TC-SR-068e — env var UNSET → ok:false locked reason.
-func TestProbe_EnvVarUnset_ReturnsLockedNotSet(t *testing.T) {
+func TestTC_SR_068e_EnvVarUnsetReturnsLocked(t *testing.T) {
 	os.Unsetenv("DOES_NOT_EXIST_PROBE_TEST")
 	srv, session := setupSSETestServer(t)
 
@@ -68,7 +68,7 @@ func TestProbe_EnvVarUnset_ReturnsLockedNotSet(t *testing.T) {
 }
 
 // TC-SR-068f — unauthenticated probe returns 401.
-func TestProbe_Unauthenticated_Returns401(t *testing.T) {
+func TestTC_SR_068f_Unauthenticated401(t *testing.T) {
 	srv, _ := setupSSETestServer(t)
 	req := httptest.NewRequest(http.MethodGet, "/api/settings/encryption-key/probe?scheme=env&value=FOO", nil)
 	rec := httptest.NewRecorder()
@@ -79,7 +79,7 @@ func TestProbe_Unauthenticated_Returns401(t *testing.T) {
 // TC-SR-068sec1 — golden-shape: every (scheme, value) combo returns exactly
 // {ok, reason} with reason in the locked enum (or the env-var-found dynamic
 // pattern for the env-found case).
-func TestProbe_ResponseShape_LockedEnum(t *testing.T) {
+func TestTC_SR_068sec1_ResponseShapeLockedEnum(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 
 	tmpDir := t.TempDir()
@@ -138,7 +138,7 @@ func TestProbe_ResponseShape_LockedEnum(t *testing.T) {
 }
 
 // TC-SR-068sec2 — path traversal rejected with locked reason.
-func TestProbe_FileScheme_PathTraversalRejected(t *testing.T) {
+func TestTC_SR_068sec2_PathTraversalRejected(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 
 	cases := []string{
@@ -163,7 +163,7 @@ func TestProbe_FileScheme_PathTraversalRejected(t *testing.T) {
 }
 
 // TC-SR-068sec3 — null byte rejected.
-func TestProbe_FileScheme_NullByteRejected(t *testing.T) {
+func TestTC_SR_068sec3_NullByteRejected(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 	// Pass a literal NUL — url.Values{}.Encode() will percent-encode to %00,
 	// and r.URL.Query().Get("value") decodes it back to a real null byte.
@@ -180,7 +180,7 @@ func TestProbe_FileScheme_NullByteRejected(t *testing.T) {
 }
 
 // Defensive: env-name with weird chars rejected (no echo of attacker input).
-func TestProbe_EnvScheme_RejectsUnsafeName(t *testing.T) {
+func TestTC_SR_068sec1_EnvNameRejectsUnsafe(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 	req := probeRequest(t, session.ID, "env", "weird;NAME$")
 	rec := httptest.NewRecorder()

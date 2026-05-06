@@ -12,7 +12,7 @@ import (
 // TC-SR-060h — Validation error message for an out-of-range value contains
 // the exact range string from the label. The en-dash (U+2013) MUST be
 // preserved, not normalised to ASCII.
-func TestRange_ValidationError_ContainsExactHintStringWithEnDash(t *testing.T) {
+func TestTC_SR_060h_ValidationErrorContainsHintWithEnDash(t *testing.T) {
 	r := RangeFor("sse_interval_sec")
 	require.Equal(t, "Dashboard refresh", r.Label)
 	require.Equal(t, 2, r.Min)
@@ -31,7 +31,7 @@ func TestRange_ValidationError_ContainsExactHintStringWithEnDash(t *testing.T) {
 }
 
 // Hint() returns the parenthesised range string used inside the label.
-func TestRange_Hint_FormatPerUnit(t *testing.T) {
+func TestTC_SR_060h_HintFormatPerUnit(t *testing.T) {
 	cases := []struct {
 		field string
 		want  string
@@ -57,14 +57,14 @@ func TestRange_Hint_FormatPerUnit(t *testing.T) {
 
 // LabelWithHint() is the visible label string — same shape used in template
 // and validation error.
-func TestRange_LabelWithHint(t *testing.T) {
+func TestTC_SR_060h_LabelWithHint(t *testing.T) {
 	r := RangeFor("disk_interval_min")
 	assert.Equal(t, "Disk check (1–1440 min)", r.LabelWithHint())
 }
 
 // ParseAndValidate accepts in-range values, rejects out-of-range with the
 // same hint substring. Boundary values (min, max) are accepted.
-func TestRange_ParseAndValidate_BoundariesAndBeyond(t *testing.T) {
+func TestTC_SR_060h_ParseAndValidateBoundaries(t *testing.T) {
 	r := RangeFor("sse_interval_sec") // 2..60
 
 	// Min boundary OK
@@ -96,7 +96,7 @@ func TestRange_ParseAndValidate_BoundariesAndBeyond(t *testing.T) {
 
 // RangeFor on an unknown field panics — drift detection: the registry is the
 // only place these are declared, so a typo at the call site fails loudly.
-func TestRangeFor_UnknownFieldPanics(t *testing.T) {
+func TestTC_SR_060f_UnknownFieldPanics(t *testing.T) {
 	defer func() {
 		r := recover()
 		require.NotNil(t, r, "expected panic on unknown field")
@@ -111,7 +111,7 @@ func TestRangeFor_UnknownFieldPanics(t *testing.T) {
 // caught by an HTML-scan test. We assert the registry covers all fields the
 // template currently references; the live template scan happens in
 // templates_test.go (drift test on rendered HTML).
-func TestRegisteredRangeFields_CoversAllExpectedFields(t *testing.T) {
+func TestTC_SR_060e_RegistryCoversFields(t *testing.T) {
 	want := map[string]bool{
 		"sse_interval_sec":     true,
 		"disk_interval_min":    true,

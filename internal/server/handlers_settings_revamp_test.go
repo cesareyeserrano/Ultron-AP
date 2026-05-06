@@ -15,7 +15,7 @@ import (
 
 // TC-SR-057f — POSTing dashboard_refresh_sec=999 returns 400 with the same
 // hint string used in the visible label.
-func TestPerformanceSave_OutOfRange_Returns400WithHint(t *testing.T) {
+func TestTC_SR_057f_PerfOutOfRange400Hint(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 
 	form := url.Values{
@@ -35,7 +35,7 @@ func TestPerformanceSave_OutOfRange_Returns400WithHint(t *testing.T) {
 }
 
 // TC-SR-057f2 — value below min returns 400 with the same hint.
-func TestPerformanceSave_BelowMin_Returns400WithHint(t *testing.T) {
+func TestTC_SR_057f2_PerfBelowMin400Hint(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 	form := url.Values{
 		"csrf_token":       {session.CSRFToken},
@@ -52,7 +52,7 @@ func TestPerformanceSave_BelowMin_Returns400WithHint(t *testing.T) {
 }
 
 // Boundary OK — valid min and valid max accepted.
-func TestPerformanceSave_BoundaryValues_Accepted(t *testing.T) {
+func TestTC_SR_057h_PerfBoundaryAccepted(t *testing.T) {
 	for _, val := range []string{"2", "60"} {
 		t.Run(val, func(t *testing.T) {
 			srv, session := setupSSETestServer(t)
@@ -71,7 +71,7 @@ func TestPerformanceSave_BoundaryValues_Accepted(t *testing.T) {
 }
 
 // TC-SR-064h — backup config accepts the new `time=HH:MM` form.
-func TestBackupConfigSave_NewTimeForm_Accepted(t *testing.T) {
+func TestTC_SR_064h_BackupNewTimeFormAccepted(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 	form := url.Values{
 		"csrf_token": {session.CSRFToken},
@@ -93,7 +93,7 @@ func TestBackupConfigSave_NewTimeForm_Accepted(t *testing.T) {
 
 // TC-SR-064e — when both `time=HH:MM` and legacy `hour/minute` are present,
 // the new format wins.
-func TestBackupConfigSave_BothForms_NewWins(t *testing.T) {
+func TestTC_SR_064e_BackupBothFormsNewWins(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 	form := url.Values{
 		"csrf_token":      {session.CSRFToken},
@@ -116,7 +116,7 @@ func TestBackupConfigSave_BothForms_NewWins(t *testing.T) {
 }
 
 // TC-SR-064f — POST `time=25:00` returns 400 with the canonical message.
-func TestBackupConfigSave_OutOfRangeTime_Returns400(t *testing.T) {
+func TestTC_SR_064f_BackupOutOfRangeTime400(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 	form := url.Values{
 		"csrf_token": {session.CSRFToken},
@@ -134,7 +134,7 @@ func TestBackupConfigSave_OutOfRangeTime_Returns400(t *testing.T) {
 }
 
 // TC-SR-NFR029f — legacy `hour=24` returns 400 (out-of-range still rejected).
-func TestBackupConfigSave_LegacyHourOutOfRange_Returns400(t *testing.T) {
+func TestTC_SR_064f_BackupLegacyHourOutOfRange400(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 	form := url.Values{
 		"csrf_token":    {session.CSRFToken},

@@ -31,7 +31,7 @@ func getSettingsBody(t *testing.T) string {
 
 // TC-SR-057h — every Performance numeric field renders a stepper widget with
 // the exact range hint substring in its label.
-func TestSettings_PerformanceStepperMarkup_HasRangeHints(t *testing.T) {
+func TestTC_SR_057h_PerformanceStepperMarkup(t *testing.T) {
 	body := getSettingsBody(t)
 
 	for _, field := range []string{"sse_interval_sec", "disk_interval_min", "docker_interval_sec", "systemd_interval_sec"} {
@@ -45,7 +45,7 @@ func TestSettings_PerformanceStepperMarkup_HasRangeHints(t *testing.T) {
 }
 
 // TC-SR-058h — alert-rule form has segmented severity control; no <select name="severity">.
-func TestSettings_SegmentedSeverity_NoSelectVariant(t *testing.T) {
+func TestTC_SR_058h_SegmentedSeverityMarkup(t *testing.T) {
 	body := getSettingsBody(t)
 	assert.Contains(t, body, `data-widget="segmented"`)
 	assert.Contains(t, body, `data-field="severity"`)
@@ -56,7 +56,7 @@ func TestSettings_SegmentedSeverity_NoSelectVariant(t *testing.T) {
 }
 
 // TC-SR-061h — Telegram + Email enabled toggles (replace checkboxes).
-func TestSettings_NotificationToggles_NoLegacyCheckbox(t *testing.T) {
+func TestTC_SR_061h_NotificationTogglesMarkup(t *testing.T) {
 	body := getSettingsBody(t)
 	assert.Contains(t, body, `data-widget="toggle"`)
 	assert.Contains(t, body, `data-field="telegram_enabled"`)
@@ -68,7 +68,7 @@ func TestSettings_NotificationToggles_NoLegacyCheckbox(t *testing.T) {
 }
 
 // TC-SR-062h — Backup section renders Limits / Schedule / Destination sub-headings in order.
-func TestSettings_BackupSubdivisions_InOrder(t *testing.T) {
+func TestTC_SR_062h_BackupSubdivisions(t *testing.T) {
 	body := getSettingsBody(t)
 	idxL := strings.Index(body, `data-subsection="limits"`)
 	idxS := strings.Index(body, `data-subsection="schedule"`)
@@ -84,7 +84,7 @@ func TestSettings_BackupSubdivisions_InOrder(t *testing.T) {
 }
 
 // TC-SR-062f — sub-headings use the canonical eyebrow class set.
-func TestSettings_SubsectionHeadings_UseEyebrowStyle(t *testing.T) {
+func TestTC_SR_062f_SubheadingsEyebrowStyle(t *testing.T) {
 	body := getSettingsBody(t)
 	// Each data-subsection-heading must carry the eyebrow class set
 	// (text-sm font-semibold text-text-muted uppercase tracking-wider).
@@ -95,7 +95,7 @@ func TestSettings_SubsectionHeadings_UseEyebrowStyle(t *testing.T) {
 // TC-SR-065h — at idle, no [data-form-state-pill] HTML element is rendered
 // server-side. (The JS that creates pills on submit may reference the
 // attribute name as a string literal — that's expected and harmless.)
-func TestSettings_FormStatePill_NotPresentAtIdle(t *testing.T) {
+func TestTC_SR_065h_FormStatePillIdleAbsent(t *testing.T) {
 	body := getSettingsBody(t)
 	// An actual rendered element would have `data-form-state-pill="..."` —
 	// double-quoted attribute form, which the JS literal never produces.
@@ -106,7 +106,7 @@ func TestSettings_FormStatePill_NotPresentAtIdle(t *testing.T) {
 }
 
 // TC-SR-066h — no `01`-`07` numbered badge markup remains.
-func TestSettings_NoNumberedSectionBadges(t *testing.T) {
+func TestTC_SR_066h_NoNumberBadges(t *testing.T) {
 	body := getSettingsBody(t)
 	for _, n := range []string{`>01<`, `>02<`, `>03<`, `>04<`, `>05<`, `>06<`, `>07<`} {
 		assert.NotContains(t, body, n, "legacy section badge %q must not appear", n)
@@ -114,7 +114,7 @@ func TestSettings_NoNumberedSectionBadges(t *testing.T) {
 }
 
 // TC-SR-066e — section ordering preserved, identified by data-section attr.
-func TestSettings_SectionsInExpectedOrder(t *testing.T) {
+func TestTC_SR_066e_SectionsInOrder(t *testing.T) {
 	body := getSettingsBody(t)
 	expected := []string{"alerts", "telegram", "email", "performance", "backup", "maintenance", "controls"}
 	last := -1
@@ -127,7 +127,7 @@ func TestSettings_SectionsInExpectedOrder(t *testing.T) {
 }
 
 // TC-SR-067h — Logout NOT in #settings-controls.
-func TestSettings_NoLogoutInSystemControls(t *testing.T) {
+func TestTC_SR_067h_NoLogoutInSystemControls(t *testing.T) {
 	body := getSettingsBody(t)
 	// Find the controls section start
 	start := strings.Index(body, `id="settings-controls"`)
@@ -143,7 +143,7 @@ func TestSettings_NoLogoutInSystemControls(t *testing.T) {
 }
 
 // TC-SR-067e — header dropdown contains Logout on /settings AND on /.
-func TestSettings_HeaderDropdown_LogoutPresentEverywhere(t *testing.T) {
+func TestTC_SR_067e_HeaderLogoutOnEveryPage(t *testing.T) {
 	for _, page := range []string{"/", "/settings"} {
 		t.Run(page, func(t *testing.T) {
 			srv, session := setupSSETestServer(t)
@@ -163,7 +163,7 @@ func TestSettings_HeaderDropdown_LogoutPresentEverywhere(t *testing.T) {
 }
 
 // TC-SR-067f — Shutdown card has destructive treatment; Restart card does not.
-func TestSettings_ShutdownDestructiveTreatment(t *testing.T) {
+func TestTC_SR_067f_ShutdownDestructive(t *testing.T) {
 	body := getSettingsBody(t)
 	// Locate shutdown card block
 	start := strings.Index(body, `data-action-card="shutdown"`)
@@ -184,7 +184,7 @@ func TestSettings_ShutdownDestructiveTreatment(t *testing.T) {
 }
 
 // TC-SR-069e/f — English copy on settings + sidebar; no Spanish substrings.
-func TestSettings_NoSpanishStrings(t *testing.T) {
+func TestTC_SR_069e_NoSpanishStrings(t *testing.T) {
 	body := getSettingsBody(t)
 	for _, sp := range []string{"Ajusta", "enfoque seguro", "Expandir/contraer"} {
 		assert.NotContains(t, body, sp, "spanish substring %q must be removed", sp)
@@ -195,7 +195,7 @@ func TestSettings_NoSpanishStrings(t *testing.T) {
 }
 
 // TC-SR-070h — no settings <form> uses max-w-4xl.
-func TestSettings_NoMaxW4xlOnForms(t *testing.T) {
+func TestTC_SR_070h_NoMaxW4xlOnForms(t *testing.T) {
 	body := getSettingsBody(t)
 	// Find the settings shell, ensure no <form> with max-w-4xl
 	shellStart := strings.Index(body, `id="settings-shell"`)
