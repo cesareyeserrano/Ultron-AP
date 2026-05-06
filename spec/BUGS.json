@@ -411,6 +411,28 @@
       "fix_at": "2026-05-05T21:59:57.603Z",
       "close_commit_sha": "84e2480dca4a9240d0c36bc9b7d8d4966ef8c045",
       "close_at": "2026-05-05T22:00:53.982Z"
+    },
+    {
+      "id": "BG-019",
+      "title": "Sweep() panics when cfg.Transport is nil",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "medium",
+      "status": "verified",
+      "fr": "FR-030",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-05-06T01:39:48.097Z",
+      "updated_at": "2026-05-06T01:40:02.707Z",
+      "resolution": null,
+      "fix_commit_sha": "7eef3d0f86e8ec9710fda27b9cd8fe960b42070d",
+      "fix_at": "2026-05-06T01:39:52.088Z"
     }
   ]
 }
