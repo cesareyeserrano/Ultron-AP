@@ -92,8 +92,9 @@
       "title": "Filter helper log output before returning to web process",
       "priority": "P2",
       "problem": "cmd/ultron-helper/main.go:190-232 — dmesg/ps/journalctl raw output is shipped to the unprivileged web process. ps can include secrets in argv; journal can leak env. Cap byte size, strip sensitive ps fields, define per-source redaction policy.",
-      "status": "open",
-      "createdAt": "2026-05-03T23:51:43.847Z"
+      "status": "closed",
+      "createdAt": "2026-05-03T23:51:43.847Z",
+      "closedAt": "2026-05-06T14:06:11.806Z"
     },
     {
       "id": "BL-012",
