@@ -256,14 +256,31 @@ func (db *DB) ListAlertsBySeverity(severity string, limit int) ([]Alert, error) 
 
 // DeleteAlerts removes alerts. If severity is empty, removes all.
 func (db *DB) DeleteAlerts(severity string) (int64, error) {
+	return deleteAlertsExec(db, severity)
+}
+
+// DeleteAlertsTx is the in-transaction variant of DeleteAlerts. Use with
+// WithAuditTx to commit the delete and its audit log entry atomically.
+//
+// @aitri-trace BG-024 BL-010
+func (db *DB) DeleteAlertsTx(tx *sql.Tx, severity string) (int64, error) {
+	return deleteAlertsExec(tx, severity)
+}
+
+// dbExec is the common surface of *sql.DB and *sql.Tx — both expose Exec.
+type dbExec interface {
+	Exec(query string, args ...any) (sql.Result, error)
+}
+
+func deleteAlertsExec(x dbExec, severity string) (int64, error) {
 	var (
 		res sql.Result
 		err error
 	)
 	if severity == "" {
-		res, err = db.Exec("DELETE FROM Alert")
+		res, err = x.Exec("DELETE FROM Alert")
 	} else {
-		res, err = db.Exec("DELETE FROM Alert WHERE severity = ?", severity)
+		res, err = x.Exec("DELETE FROM Alert WHERE severity = ?", severity)
 	}
 	if err != nil {
 		return 0, fmt.Errorf("cannot delete alerts: %w", err)

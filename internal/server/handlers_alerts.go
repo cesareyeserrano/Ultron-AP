@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -102,13 +103,37 @@ func (s *Server) handleAlertsClear(w http.ResponseWriter, r *http.Request) {
 	if severity != "" && !isValidSeverity(severity) {
 		severity = ""
 	}
-	deleted, err := s.db.DeleteAlerts(severity)
+
+	var (
+		deleted int64
+		userID  *int64
+	)
+	if uid, ok := UserIDFromContext(r.Context()); ok {
+		userID = &uid
+	}
+	// Atomic: the delete and the audit log row commit together. If the
+	// audit insert fails, the alerts are NOT deleted — preserves the
+	// FR-006 invariant that no privileged mutation lands without a
+	// matching ActionLog row (BG-024 / BL-010).
+	err := s.db.WithAuditTx(func(tx *sql.Tx, entry *database.ActionLogEntry) error {
+		var dErr error
+		deleted, dErr = s.db.DeleteAlertsTx(tx, severity)
+		if dErr != nil {
+			return dErr
+		}
+		entry.UserID = userID
+		entry.Source = "alerts"
+		entry.Action = "clear"
+		entry.Target = severity
+		entry.Result = "success"
+		entry.Details = fmt.Sprintf("deleted=%d", deleted)
+		return nil
+	})
 	if err != nil {
 		log.Printf("alerts: failed to clear: %v", err)
 		http.Error(w, "Failed to clear alerts", http.StatusInternalServerError)
 		return
 	}
-	s.auditLog(r, "alerts", "clear", severity, fmt.Sprintf("deleted=%d", deleted), true)
 	if r.Header.Get("HX-Request") == "true" {
 		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast":{"message":"Cleared %d alerts","type":"success"}}`, deleted))
 		s.renderAlertsList(w, r)

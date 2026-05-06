@@ -27,6 +27,69 @@ func (db *DB) LogAction(userID *int64, source, action, target, result, details s
 	return err
 }
 
+// ActionLogEntry holds the values captured by an audit log row. Used by
+// WithAuditTx to populate the audit record alongside a database mutation
+// in the same transaction.
+//
+// @aitri-trace BG-024 BL-010
+type ActionLogEntry struct {
+	UserID  *int64
+	Source  string
+	Action  string
+	Target  string
+	Result  string
+	Details string
+}
+
+// LogActionTx is the in-transaction variant of LogAction. Pass a *sql.Tx
+// to record the audit entry inside an open transaction so it commits or
+// rolls back together with the surrounding database mutation. Direct
+// callers that don't need atomicity should keep using LogAction.
+//
+// @aitri-trace BG-024 BL-010
+func (db *DB) LogActionTx(tx *sql.Tx, e ActionLogEntry) error {
+	_, err := tx.Exec(
+		`INSERT INTO ActionLog (user_id, source, action, target, result, details) VALUES (?, ?, ?, ?, ?, ?)`,
+		e.UserID, e.Source, e.Action, e.Target, e.Result, e.Details,
+	)
+	return err
+}
+
+// WithAuditTx runs fn inside a database transaction. fn receives the tx
+// and a pointer to an ActionLogEntry which it populates with the audit
+// metadata for whatever it just did. If fn returns nil, the audit entry
+// is inserted via the same transaction and the transaction commits; if
+// fn returns an error or audit-insertion fails, both the database
+// mutation and the audit record roll back so neither lands without the
+// other (FR-006 audit-trail integrity, BG-024 / BL-010).
+//
+// Use this for handlers where a SQLite mutation must not commit without
+// its audit record (alerts clear, alert-rule mutations, etc.). External
+// operations (Docker start/stop, systemctl, OS reboot) cannot be wrapped
+// because they are not database state — keep using the non-atomic
+// LogAction for those.
+//
+// @aitri-trace BG-024 BL-010
+func (db *DB) WithAuditTx(fn func(*sql.Tx, *ActionLogEntry) error) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("audit tx: begin: %w", err)
+	}
+	defer tx.Rollback() //nolint:errcheck — no-op after Commit
+
+	var entry ActionLogEntry
+	if err := fn(tx, &entry); err != nil {
+		return err
+	}
+	if err := db.LogActionTx(tx, entry); err != nil {
+		return fmt.Errorf("audit tx: log action: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("audit tx: commit: %w", err)
+	}
+	return nil
+}
+
 // ListActionLogs returns the most recent action log entries (newest first).
 func (db *DB) ListActionLogs(limit int) ([]ActionLog, error) {
 	rows, err := db.Query(
