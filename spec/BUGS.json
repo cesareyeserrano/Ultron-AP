@@ -719,6 +719,28 @@
       "resolution": null,
       "fix_commit_sha": "bc1b2b5ae04e01a6a2c5b5bd48bebcc1feec3d3a",
       "fix_at": "2026-05-06T15:00:52.492Z"
+    },
+    {
+      "id": "BG-033",
+      "title": "No way to verify deployed binary matches committed build — no /version endpoint, no deploy-verify Make target",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "low",
+      "status": "verified",
+      "fr": null,
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-05-06T15:05:11.435Z",
+      "updated_at": "2026-05-06T15:17:10.062Z",
+      "resolution": null,
+      "fix_commit_sha": "a252b46b5bb5e11cd2260e9efad3478e1ebe0331",
+      "fix_at": "2026-05-06T15:17:09.978Z"
     }
   ]
 }

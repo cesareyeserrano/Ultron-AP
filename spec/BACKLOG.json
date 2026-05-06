@@ -185,8 +185,9 @@
       "title": "Deploy verification: track binary SHA on Pi",
       "priority": "P3",
       "problem": "No way to verify whether the running prod binary matches the latest committed build. Today: SSH + sha256sum + manual compare. Need a /version endpoint exposing build commit SHA, or a Make target 'deploy-verify' that diffs local arm64 SHA vs remote Pi SHA. Bonus: emit current commit at startup. Also: stale copies exist at /usr/local/bin/ultron-ap and ~/ultron-ap/ — clean up as part of deploy hygiene.",
-      "status": "open",
-      "createdAt": "2026-05-06T12:52:28.745Z"
+      "status": "closed",
+      "createdAt": "2026-05-06T12:52:28.745Z",
+      "closedAt": "2026-05-06T15:17:10.125Z"
     }
   ]
 }
