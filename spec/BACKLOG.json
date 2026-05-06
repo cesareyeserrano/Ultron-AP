@@ -72,8 +72,9 @@
       "title": "Persist brute-force lockout to SQLite + background cleanup",
       "priority": "P2",
       "problem": "internal/auth/bruteforce.go:29-62 — attempts/locks are in-memory only; restart wipes them. Cleanup is lazy, only on next login attempt. Move to SQLite, run cleanupExpiredBruteForceAttempts on a 5-minute ticker.",
-      "status": "open",
-      "createdAt": "2026-05-03T23:51:43.781Z"
+      "status": "closed",
+      "createdAt": "2026-05-03T23:51:43.781Z",
+      "closedAt": "2026-05-06T02:26:13.040Z"
     },
     {
       "id": "BL-010",
@@ -104,16 +105,18 @@
       "title": "Add SO_PEERCRED check in helper IPC (defense-in-depth)",
       "priority": "P2",
       "problem": "cmd/ultron-helper/main.go:43-105 — current Unix socket protection (mode 0o660 + group) is the standard pattern, but adding SO_PEERCRED to verify the connecting process UID matches the configured ultron-ap user provides defense-in-depth against group misconfiguration. Reclassified from BG-004 (audit overcalled severity — current behavior is correct, this is hardening).",
-      "status": "open",
-      "createdAt": "2026-05-04T00:05:55.591Z"
+      "status": "closed",
+      "createdAt": "2026-05-04T00:05:55.591Z",
+      "closedAt": "2026-05-06T02:21:55.020Z"
     },
     {
       "id": "BL-014",
       "title": "SSE per-IP cap should not blindly trust X-Forwarded-For",
       "priority": "P2",
       "problem": "internal/server/sse.go:479-493 — clientIPFromRequest trusts XFF first value with no proxy allowlist. Real on a proxied deployment but the actual deploy is direct on LAN/VPN, so impact is bounded. Either ignore XFF or only honor when RemoteAddr is in trusted-proxy list. Reclassified from BG-006.",
-      "status": "open",
-      "createdAt": "2026-05-04T00:05:55.624Z"
+      "status": "closed",
+      "createdAt": "2026-05-04T00:05:55.624Z",
+      "closedAt": "2026-05-06T02:14:08.195Z"
     },
     {
       "id": "BL-015",
