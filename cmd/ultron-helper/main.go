@@ -24,10 +24,34 @@ import (
 
 var serviceNameRe = regexp.MustCompile(`^[a-zA-Z0-9_.@\-]+$`)
 
+// allowedUIDs holds the set of caller UIDs the helper will accept on its
+// Unix socket. It is populated once in main() from environment variables
+// and the resolved 'ultron' user account, then read-only for the lifetime
+// of the process. An empty set means "accept any UID" (legacy / dev-mode
+// behaviour with a loud startup warning) — production callers always
+// configure at least one entry via ULTRON_HELPER_ALLOWED_UID/UIDS or by
+// having the 'ultron' user resolvable.
+//
+// @aitri-trace BG-021 BL-013
+var allowedUIDs map[uint32]struct{}
+
 func main() {
 	socket := strings.TrimSpace(os.Getenv("ULTRON_HELPER_SOCKET"))
 	if socket == "" {
 		socket = privileged.DefaultSocketPath
+	}
+
+	allowedUIDs = resolveAllowedUIDs()
+	if !peerCredSupported {
+		log.Printf("warning: SO_PEERCRED not supported on this platform — socket-mode permissions are the only auth")
+	} else if len(allowedUIDs) == 0 {
+		log.Printf("warning: no caller UID enforcement configured (no ULTRON_HELPER_ALLOWED_UID/UIDS set, 'ultron' user not resolvable) — every UID with socket access will be served")
+	} else {
+		uids := make([]uint32, 0, len(allowedUIDs))
+		for u := range allowedUIDs {
+			uids = append(uids, u)
+		}
+		log.Printf("ultron-helper: SO_PEERCRED enforcement on, allowed_uids=%v", uids)
 	}
 
 	if err := os.MkdirAll("/run", 0o755); err != nil {
@@ -88,6 +112,20 @@ func handleConn(conn net.Conn) {
 	defer conn.Close()
 	_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
 
+	if peerCredSupported && len(allowedUIDs) > 0 {
+		uid, err := getPeerUID(conn)
+		if err != nil {
+			log.Printf("peercred lookup failed, rejecting connection: %v", err)
+			writeResp(conn, privileged.Response{OK: false, Message: "auth failed"})
+			return
+		}
+		if _, ok := allowedUIDs[uid]; !ok {
+			log.Printf("rejected helper connection from unauthorised uid=%d", uid)
+			writeResp(conn, privileged.Response{OK: false, Message: "forbidden"})
+			return
+		}
+	}
+
 	reader := bufio.NewReader(conn)
 	line, err := reader.ReadBytes('\n')
 	if err != nil {
@@ -102,6 +140,50 @@ func handleConn(conn net.Conn) {
 
 	resp := dispatch(req)
 	writeResp(conn, resp)
+}
+
+// resolveAllowedUIDs builds the helper's caller-UID allowlist from (in
+// precedence order):
+//  1. ULTRON_HELPER_ALLOWED_UIDS — comma-separated UIDs (e.g. "1000,1001")
+//  2. ULTRON_HELPER_ALLOWED_UID  — single UID (e.g. "1000")
+//  3. user.Lookup("ultron")      — derive from the parent project's user
+//
+// Returns an empty map (meaning "no enforcement") only if none of the above
+// resolves; the caller logs a loud warning in that case.
+//
+// @aitri-trace BG-021 BL-013
+func resolveAllowedUIDs() map[uint32]struct{} {
+	out := make(map[uint32]struct{}, 2)
+	if csv := strings.TrimSpace(os.Getenv("ULTRON_HELPER_ALLOWED_UIDS")); csv != "" {
+		for _, part := range strings.Split(csv, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			u, err := strconv.ParseUint(part, 10, 32)
+			if err != nil {
+				log.Printf("warning: ULTRON_HELPER_ALLOWED_UIDS entry %q is not a UID, ignoring: %v", part, err)
+				continue
+			}
+			out[uint32(u)] = struct{}{}
+		}
+	}
+	if v := strings.TrimSpace(os.Getenv("ULTRON_HELPER_ALLOWED_UID")); v != "" {
+		if u, err := strconv.ParseUint(v, 10, 32); err == nil {
+			out[uint32(u)] = struct{}{}
+		} else {
+			log.Printf("warning: ULTRON_HELPER_ALLOWED_UID=%q is not a UID: %v", v, err)
+		}
+	}
+	if len(out) == 0 {
+		// Fall back to the parent project's user account.
+		if u, err := user.Lookup("ultron"); err == nil {
+			if uid, err := strconv.ParseUint(u.Uid, 10, 32); err == nil {
+				out[uint32(uid)] = struct{}{}
+			}
+		}
+	}
+	return out
 }
 
 func writeResp(conn net.Conn, resp privileged.Response) {
