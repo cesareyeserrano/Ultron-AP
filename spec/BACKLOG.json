@@ -189,6 +189,15 @@
       "status": "closed",
       "createdAt": "2026-05-06T12:52:28.745Z",
       "closedAt": "2026-05-06T15:17:10.125Z"
+    },
+    {
+      "id": "BL-022",
+      "title": "telegram-message-ux dispatcher wiring (FR-020/021/022/029 partials + NFR-007)",
+      "priority": "P2",
+      "problem": "Phase 4 of telegram-message-ux declared 5 partials in the implementation_manifest's technical_debt: FR-022 trend hint, FR-020 systemd surface block, FR-021 docker surface block, FR-029 live CPU% in ProcReader, NFR-007 structured 9-field log line. The renderer fully supported these from day 1 — the missing pieces were small dispatcher adapters (read metrics ring buffer + systemd/docker monitors + drive cause derivation + emit obs log line). Without these wired, production messages render the rule context but lack the surface body, trend hint, top-process cause, and structured log audit trail.",
+      "status": "closed",
+      "createdAt": "2026-05-07T19:05:05.967Z",
+      "closedAt": "2026-05-07T19:05:28.273Z"
     }
   ]
 }
