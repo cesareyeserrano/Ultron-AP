@@ -98,9 +98,21 @@ func main() {
 	dispatcher.Start()
 	defer dispatcher.Stop()
 
-	// Start alert engine
+	// Start alert engine. Rich callback wires through to DispatchEvent so
+	// the renderer receives FirstFiredAt + Rule context.
+	//
+	// @aitri-trace FR-016 FR-019 FR-024
 	alertEng := alerts.NewEngine(db, collector, dockerMon, systemdMon, cfg.MetricsInterval)
-	alertEng.SetAlertCallback(dispatcher.Dispatch)
+	alertEng.SetRichAlertCallback(func(alert *database.Alert, rule *database.AlertConfig, firstFiredAt time.Time) {
+		evt := &notify.Event{
+			Alert:        alert,
+			Rule:         rule,
+			Kind:         notify.EventFire,
+			Surface:      notify.SurfaceFromSource(alert.Source),
+			FirstFiredAt: firstFiredAt,
+		}
+		dispatcher.DispatchEvent(evt)
+	})
 	alertEng.Start(context.Background())
 	defer alertEng.Stop()
 

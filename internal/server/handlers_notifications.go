@@ -11,7 +11,47 @@ import (
 
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
+	"github.com/cesareyeserrano/ultron-ap/internal/notify/cause"
 )
+
+// buildTestNotificationEvent returns a synthetic CPU-fire Event that
+// exercises every resource-surface renderer branch (subject, threshold-aware
+// metric line, elapsed-since-breach, trend hint, probable-cause line,
+// deep-link footer) per FR-026. Both fields are clearly marked "TEST — " so
+// a real operator never mistakes the preview for a production fire.
+//
+// @aitri-trace FR-026
+func buildTestNotificationEvent() *notify.Event {
+	value := 92.4
+	cfgID := int64(0)
+	now := time.Now().UTC()
+	alert := &database.Alert{
+		Severity:  "critical",
+		Message:   "TEST — synthetic CPU fire from settings page",
+		Source:    "cpu",
+		Value:     &value,
+		ConfigID:  &cfgID,
+		CreatedAt: now,
+	}
+	rule := &database.AlertConfig{
+		ID:        0,
+		Name:      "TEST — High CPU",
+		Metric:    "cpu",
+		Operator:  ">",
+		Threshold: 80.0,
+		Severity:  "critical",
+	}
+	return &notify.Event{
+		Alert:        alert,
+		Rule:         rule,
+		Kind:         notify.EventFire,
+		Surface:      notify.SurfaceResource,
+		FirstFiredAt: now.Add(-90 * time.Second),
+	}
+}
+
+// _ keeps cause imported for future surface-specific test message variants.
+var _ = cause.SourceProc
 
 // handleNotificationSave handles POST /api/notifications/{channel}
 func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) {
@@ -93,25 +133,24 @@ func (s *Server) handleNotificationTest(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	alert := &database.Alert{
-		Severity:  "info",
-		Message:   "This is a test notification from Ultron-AP.",
-		Source:    "test",
-		CreatedAt: time.Now(),
-	}
+	// Build a synthetic CPU-fire event so the preview exercises every
+	// renderer branch a real fire would (FR-026).
+	//
+	// @aitri-trace FR-026
+	evt := buildTestNotificationEvent()
 
 	var testErr error
 	switch channel {
 	case "telegram":
 		sender := notify.NewTelegramSender(cfg["bot_token"], cfg["chat_id"])
-		testErr = sender.Send(alert)
+		testErr = sender.Notify(r.Context(), evt)
 	case "email":
 		sender := notify.NewEmailSender(
 			cfg["smtp_host"], cfg["smtp_port"],
 			cfg["smtp_user"], cfg["smtp_password"],
 			cfg["from"], cfg["to"],
 		)
-		testErr = sender.Send(alert)
+		testErr = sender.Notify(r.Context(), evt)
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

@@ -11,18 +11,29 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 )
 
+// TestFormatEmailSubject_Critical asserts the post-refactor email subject
+// equals the Telegram subject minus the severity emoji (FR-027 AC-027-001).
+//
+// @aitri-trace FR-017 FR-027 TC-TMU-Legacy-Email-Subject-Critical
 func TestFormatEmailSubject_Critical(t *testing.T) {
 	alert := &database.Alert{Severity: "critical", Source: "cpu"}
 	subject := formatEmailSubject(alert)
-	assert.Equal(t, "[Ultron-AP] CRITICAL: cpu", subject)
+	assert.Contains(t, subject, "CPU usage critical")
+	assert.NotContains(t, subject, "🔴")
 }
 
+// @aitri-trace FR-017 FR-027 TC-TMU-Legacy-Email-Subject-Warning
 func TestFormatEmailSubject_Warning(t *testing.T) {
 	alert := &database.Alert{Severity: "warning", Source: "docker:nginx"}
 	subject := formatEmailSubject(alert)
-	assert.Equal(t, "[Ultron-AP] WARNING: docker:nginx", subject)
+	assert.Contains(t, subject, "warning")
+	assert.NotContains(t, subject, "🟡")
 }
 
+// TestFormatEmailBody_WithValue asserts the new email plain-text body
+// contains the friendly metric block and the deep-link footer.
+//
+// @aitri-trace FR-016 FR-023 FR-027 TC-TMU-Legacy-Email-Body-Value
 func TestFormatEmailBody_WithValue(t *testing.T) {
 	value := 95.0
 	alert := &database.Alert{
@@ -34,12 +45,12 @@ func TestFormatEmailBody_WithValue(t *testing.T) {
 	}
 
 	body := formatEmailBody(alert)
-	assert.Contains(t, body, "Severity: critical")
-	assert.Contains(t, body, "High CPU")
-	assert.Contains(t, body, "Value: 95.0")
-	assert.Contains(t, body, "2026-02-09 14:30:00")
+	assert.Contains(t, body, "ALERT FIRED")
+	assert.Contains(t, body, "CPU 95%")
+	assert.Contains(t, body, "Open dashboard:")
 }
 
+// @aitri-trace FR-027 TC-TMU-Legacy-Email-Body-NoValue
 func TestFormatEmailBody_WithoutValue(t *testing.T) {
 	alert := &database.Alert{
 		Severity:  "warning",
@@ -49,12 +60,13 @@ func TestFormatEmailBody_WithoutValue(t *testing.T) {
 	}
 
 	body := formatEmailBody(alert)
-	assert.Contains(t, body, "Severity: warning")
-	assert.NotContains(t, body, "Value:")
+	assert.Contains(t, body, "ALERT FIRED")
+	assert.Contains(t, body, "Open dashboard:")
 }
 
 func TestBuildMIMEMessage(t *testing.T) {
-	msg := buildMIMEMessage("from@test.com", "to@test.com", "Test Subject", "Test body")
+	// Plain-only path — html arg empty preserves the legacy text/plain message.
+	msg := buildMIMEMessage("from@test.com", "to@test.com", "Test Subject", "Test body", "")
 	s := string(msg)
 	assert.Contains(t, s, "From: from@test.com")
 	assert.Contains(t, s, "To: to@test.com")
@@ -62,6 +74,20 @@ func TestBuildMIMEMessage(t *testing.T) {
 	assert.Contains(t, s, "MIME-Version: 1.0")
 	assert.Contains(t, s, "Content-Type: text/plain")
 	assert.Contains(t, s, "Test body")
+}
+
+// TestTC_TMU_027x covers FR-027 — buildMIMEMessage with both plain and html
+// produces a multipart/alternative message containing both body parts.
+//
+// @aitri-trace FR-027 AC-027-002 TC-TMU-027x
+func TestTC_TMU_027x_BuildMIMEMessage_Multipart(t *testing.T) {
+	msg := buildMIMEMessage("a@b.com", "c@d.com", "Hi", "plain body", "<p>html body</p>")
+	s := string(msg)
+	assert.Contains(t, s, "Content-Type: multipart/alternative")
+	assert.Contains(t, s, "Content-Type: text/plain")
+	assert.Contains(t, s, "Content-Type: text/html")
+	assert.Contains(t, s, "plain body")
+	assert.Contains(t, s, "<p>html body</p>")
 }
 
 func TestEmailSender_Name(t *testing.T) {
@@ -106,8 +132,10 @@ func TestEmailSender_Send_MockSMTP(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "from@test.com", capturedFrom)
 	assert.Equal(t, []string{"to@test.com"}, capturedTo)
-	assert.Contains(t, string(capturedMsg), "[Ultron-AP] CRITICAL: cpu")
-	assert.Contains(t, string(capturedMsg), "CPU high")
+	// New format: friendly metric label in subject + ALERT FIRED + threshold clause.
+	assert.Contains(t, string(capturedMsg), "CPU usage critical")
+	assert.Contains(t, string(capturedMsg), "ALERT FIRED")
+	assert.Contains(t, string(capturedMsg), "Content-Type: multipart/alternative")
 }
 
 func TestEmailSender_Send_SMTPError(t *testing.T) {

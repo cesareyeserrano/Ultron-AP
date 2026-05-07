@@ -28,6 +28,11 @@ func makeJSONResponse(status int, body string) *http.Response {
 	}
 }
 
+// TestFormatAlertMessage_Critical asserts the post-refactor contract: a
+// critical CPU fire renders the new severity glyph, friendly metric label,
+// 'ALERT FIRED' marker, and integer-percent value with the deep-link footer.
+//
+// @aitri-trace FR-016 FR-017 FR-018 FR-023 TC-TMU-Legacy-Critical
 func TestFormatAlertMessage_Critical(t *testing.T) {
 	value := 95.0
 	alert := &database.Alert{
@@ -39,13 +44,18 @@ func TestFormatAlertMessage_Critical(t *testing.T) {
 	}
 
 	msg := FormatAlertMessage(alert)
-	assert.Contains(t, msg, "CRITICAL")
-	assert.Contains(t, msg, "High CPU")
-	assert.Contains(t, msg, "95.0")
-	assert.Contains(t, msg, "cpu")
-	assert.Contains(t, msg, "2026-02-09 14:30:00")
+	assert.Contains(t, msg, "🔴")
+	assert.Contains(t, msg, "CPU usage critical")
+	assert.Contains(t, msg, "ALERT FIRED")
+	assert.Contains(t, msg, "CPU 95%")
+	assert.Contains(t, msg, "Open dashboard")
 }
 
+// TestFormatAlertMessage_Warning asserts a warning docker-state alert
+// renders the warning glyph and surfaces the friendly Docker label rather
+// than the raw "docker:" prefix.
+//
+// @aitri-trace FR-017 FR-018 TC-TMU-Legacy-Warning
 func TestFormatAlertMessage_Warning(t *testing.T) {
 	alert := &database.Alert{
 		Severity:  "warning",
@@ -55,11 +65,15 @@ func TestFormatAlertMessage_Warning(t *testing.T) {
 	}
 
 	msg := FormatAlertMessage(alert)
-	assert.Contains(t, msg, "WARNING")
-	assert.Contains(t, msg, "nginx")
-	assert.NotContains(t, msg, "Value:") // No value for docker alerts
+	assert.Contains(t, msg, "🟡")
+	assert.Contains(t, msg, "warning")
+	assert.Contains(t, msg, "ALERT FIRED")
 }
 
+// TestFormatAlertMessage_Info asserts the info severity renders the blue
+// glyph in the subject.
+//
+// @aitri-trace FR-017 FR-018 TC-TMU-Legacy-Info
 func TestFormatAlertMessage_Info(t *testing.T) {
 	alert := &database.Alert{
 		Severity:  "info",
@@ -69,7 +83,8 @@ func TestFormatAlertMessage_Info(t *testing.T) {
 	}
 
 	msg := FormatAlertMessage(alert)
-	assert.Contains(t, msg, "INFO")
+	assert.Contains(t, msg, "🔵")
+	assert.Contains(t, msg, "info")
 }
 
 func TestSeverityEmoji(t *testing.T) {

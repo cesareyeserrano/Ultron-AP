@@ -17,6 +17,19 @@ import (
 // AlertCallback is called when a new alert is created.
 type AlertCallback func(alert *database.Alert)
 
+// RichAlertCallback is the FR-016/019/024-aware variant. It carries the
+// matching AlertConfig and the first_fired_at timestamp so the dispatcher
+// can build a notify.Event without round-tripping to the DB. When set, it
+// is called INSTEAD of the legacy AlertCallback.
+//
+// firstFiredAt is the wall clock at which this rule first fired in the
+// current breach (set on the very first fire after a cooldown gap; reset
+// on cooldown prune). For Docker and Systemd transition alerts the engine
+// uses the moment of state transition.
+//
+// @aitri-trace FR-016 FR-019 FR-024
+type RichAlertCallback func(alert *database.Alert, rule *database.AlertConfig, firstFiredAt time.Time)
+
 // Engine evaluates alert rules against current system state.
 type Engine struct {
 	db        *database.DB
@@ -25,9 +38,11 @@ type Engine struct {
 	systemd   *systemd.Monitor
 	interval  time.Duration
 	onAlert   AlertCallback
+	onRich    RichAlertCallback
 
 	mu           sync.Mutex
 	cooldowns    map[string]time.Time // ruleKey -> last triggered
+	firingFirst  map[string]time.Time // ruleKey -> first_fired_at (FR-019)
 	prevDocker   map[string]string    // containerName -> state
 	prevSystemd  map[string]string    // serviceName -> activeState
 	recentAlerts []database.Alert
@@ -57,14 +72,25 @@ func NewEngine(db *database.DB, collector *metrics.Collector, dockerMon *docker.
 		systemd:     systemdMon,
 		interval:    interval,
 		cooldowns:   make(map[string]time.Time),
+		firingFirst: make(map[string]time.Time),
 		prevDocker:  make(map[string]string),
 		prevSystemd: make(map[string]string),
 	}
 }
 
-// SetAlertCallback sets a callback invoked when an alert is created.
+// SetAlertCallback sets the legacy callback invoked when an alert is created.
+// Used for backwards compat with code paths that only need the bare Alert.
 func (e *Engine) SetAlertCallback(cb AlertCallback) {
 	e.onAlert = cb
+}
+
+// SetRichAlertCallback sets the FR-016/019/024-aware callback. When set,
+// fires emit the rich callback INSTEAD of the legacy AlertCallback so each
+// fire reaches the dispatcher exactly once.
+//
+// @aitri-trace FR-016 FR-019 FR-024
+func (e *Engine) SetRichAlertCallback(cb RichAlertCallback) {
+	e.onRich = cb
 }
 
 // SetTransitionCooldowns sets the cooldown windows for Docker container
@@ -221,6 +247,15 @@ func (e *Engine) pruneCooldowns() {
 			delete(e.cooldowns, k)
 		}
 	}
+	// Reap firingFirst entries beyond the same retention window so the map
+	// can't grow unbounded as docker/systemd source names churn.
+	//
+	// @aitri-trace FR-019
+	for k, ts := range e.firingFirst {
+		if ts.Before(cutoff) {
+			delete(e.firingFirst, k)
+		}
+	}
 }
 
 func (e *Engine) evaluateMetricRule(cfg database.AlertConfig, snap *metrics.Snapshot) {
@@ -235,13 +270,21 @@ func (e *Engine) evaluateMetricRule(cfg database.AlertConfig, snap *metrics.Snap
 
 	// Check cooldown
 	key := fmt.Sprintf("metric:%d", cfg.ID)
+	now := time.Now()
 	e.mu.Lock()
 	last, exists := e.cooldowns[key]
-	if exists && time.Since(last) < time.Duration(cfg.CooldownMinutes)*time.Minute {
+	if exists && now.Sub(last) < time.Duration(cfg.CooldownMinutes)*time.Minute {
 		e.mu.Unlock()
 		return
 	}
-	e.cooldowns[key] = time.Now()
+	e.cooldowns[key] = now
+	// Record first_fired_at for FR-019 elapsed-since-breach. Set only on
+	// the first fire after a cooldown gap; existing entries are preserved.
+	firstFiredAt, hadFirst := e.firingFirst[key]
+	if !hadFirst {
+		firstFiredAt = now
+		e.firingFirst[key] = now
+	}
 	e.mu.Unlock()
 
 	// Create alert
@@ -254,7 +297,23 @@ func (e *Engine) evaluateMetricRule(cfg database.AlertConfig, snap *metrics.Snap
 	}
 	if err := e.db.CreateAlert(alert); err != nil {
 		log.Printf("alerts: failed to create alert: %v", err)
-	} else if e.onAlert != nil {
+		return
+	}
+	cfgCopy := cfg
+	e.emitFire(alert, &cfgCopy, firstFiredAt)
+}
+
+// emitFire dispatches a fire event to whichever callback is wired. The rich
+// callback is preferred; falling back to the legacy callback when only the
+// legacy one is set.
+//
+// @aitri-trace FR-016 FR-019 FR-024
+func (e *Engine) emitFire(alert *database.Alert, rule *database.AlertConfig, firstFiredAt time.Time) {
+	if e.onRich != nil {
+		e.onRich(alert, rule, firstFiredAt)
+		return
+	}
+	if e.onAlert != nil {
 		e.onAlert(alert)
 	}
 }
@@ -274,13 +333,19 @@ func (e *Engine) evaluateDockerChanges() {
 		// Detect transition to bad state
 		if prev != c.State && (c.State == "exited" || c.Health == docker.HealthError) {
 			key := fmt.Sprintf("docker:%s", c.Name)
+			now := time.Now()
 			e.mu.Lock()
 			last, exists := e.cooldowns[key]
-			if exists && time.Since(last) < e.dockerCooldown() {
+			if exists && now.Sub(last) < e.dockerCooldown() {
 				e.mu.Unlock()
 				continue
 			}
-			e.cooldowns[key] = time.Now()
+			e.cooldowns[key] = now
+			firstFiredAt, hadFirst := e.firingFirst[key]
+			if !hadFirst {
+				firstFiredAt = now
+				e.firingFirst[key] = now
+			}
 			e.mu.Unlock()
 
 			alert := &database.Alert{
@@ -290,9 +355,9 @@ func (e *Engine) evaluateDockerChanges() {
 			}
 			if err := e.db.CreateAlert(alert); err != nil {
 				log.Printf("alerts: failed to create docker alert: %v", err)
-			} else if e.onAlert != nil {
-				e.onAlert(alert)
+				continue
 			}
+			e.emitFire(alert, nil, firstFiredAt)
 		}
 	}
 
@@ -316,13 +381,19 @@ func (e *Engine) evaluateSystemdChanges() {
 		// Detect transition to failed
 		if prev != "failed" && svc.ActiveState == "failed" {
 			key := fmt.Sprintf("systemd:%s", svc.Name)
+			now := time.Now()
 			e.mu.Lock()
 			last, exists := e.cooldowns[key]
-			if exists && time.Since(last) < e.systemdCooldown() {
+			if exists && now.Sub(last) < e.systemdCooldown() {
 				e.mu.Unlock()
 				continue
 			}
-			e.cooldowns[key] = time.Now()
+			e.cooldowns[key] = now
+			firstFiredAt, hadFirst := e.firingFirst[key]
+			if !hadFirst {
+				firstFiredAt = now
+				e.firingFirst[key] = now
+			}
 			e.mu.Unlock()
 
 			alert := &database.Alert{
@@ -332,9 +403,9 @@ func (e *Engine) evaluateSystemdChanges() {
 			}
 			if err := e.db.CreateAlert(alert); err != nil {
 				log.Printf("alerts: failed to create systemd alert: %v", err)
-			} else if e.onAlert != nil {
-				e.onAlert(alert)
+				continue
 			}
+			e.emitFire(alert, nil, firstFiredAt)
 		}
 	}
 
