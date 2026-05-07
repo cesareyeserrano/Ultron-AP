@@ -23,6 +23,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/network/landevices"
 	landevicesstore "github.com/cesareyeserrano/ultron-ap/internal/network/landevices/store"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
+	"github.com/cesareyeserrano/ultron-ap/internal/notify/cause"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
@@ -93,8 +94,21 @@ func main() {
 		log.Fatalf("Failed to seed default alert configs: %v", err)
 	}
 
-	// Start notification dispatcher
+	// Start notification dispatcher. The metrics / systemd / docker
+	// monitors are passed in so resource alerts can populate FR-022
+	// trend hints, systemd alerts can populate FR-020 surface blocks,
+	// and docker alerts can populate FR-021 surface blocks. The cause
+	// deriver wires FR-029 probable-cause lines.
+	//
+	// @aitri-trace FR-020 FR-021 FR-022 FR-029
 	dispatcher := notify.NewDispatcher(db)
+	dispatcher.SetMetricsReader(collector)
+	dispatcher.SetSystemdReader(systemdMon)
+	dispatcher.SetDockerReader(dockerMon)
+	procSampler := cause.NewProcessSampler()
+	procSampler.Start()
+	defer procSampler.Stop()
+	dispatcher.SetCauseDeriver(cause.New(procSampler))
 	dispatcher.Start()
 	defer dispatcher.Stop()
 

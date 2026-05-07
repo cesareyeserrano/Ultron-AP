@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
+	"github.com/cesareyeserrano/ultron-ap/internal/notify/cause"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify/render"
 )
 
@@ -52,6 +53,27 @@ type Event struct {
 	ResolvedAt   time.Time
 	Hostname     string
 	PublicURL    string
+
+	// Trend, when non-nil, is the FR-022 5-minute prior-vs-current sample
+	// for resource fires. The dispatcher populates this from the metrics
+	// ring buffer; resolves and non-resource surfaces leave it nil.
+	Trend *render.Trend
+
+	// Cause, when non-nil, is the FR-029 probable-cause line. The
+	// dispatcher populates this via the cause package; nil ⇒ omit the
+	// situation line.
+	Cause *cause.Cause
+
+	// Systemd, when non-nil, is the FR-020 surface block (unit + state
+	// + active-since + journal tail). Populated by the dispatcher for
+	// systemd-surface fires; the renderer omits the surface block on
+	// nil.
+	Systemd *render.SystemdData
+
+	// Docker, when non-nil, is the FR-021 surface block (container +
+	// image + state + exit code + log tail). Populated by the dispatcher
+	// for docker-surface fires.
+	Docker *render.DockerData
 }
 
 // SurfaceFromSource maps an Alert.Source value to the renderer's surface

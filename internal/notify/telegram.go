@@ -340,6 +340,10 @@ func buildRenderInputFromEvent(evt *Event) render.Input {
 		ResolvedAt:   evt.ResolvedAt,
 		Hostname:     evt.Hostname,
 		PublicURL:    evt.PublicURL,
+		Trend:        evt.Trend,
+		Cause:        evt.Cause,
+		Systemd:      evt.Systemd,
+		Docker:       evt.Docker,
 	}
 	return in
 }
