@@ -213,8 +213,9 @@
       "title": "Storm-edit HTTP integration test (FR-024)",
       "priority": "P3",
       "problem": "FR-024 dispatch path is currently covered at the storm.Cache unit level (8 tests) and verified manually in production. The end-to-end TelegramSender.Notify path that decides between sendMessage and editMessageText based on storm.Cache state is exercised in production but not in CI. Add an httptest-based integration test that intercepts api.telegram.org calls, fires the same rule twice within the 60s window, and asserts: sendMessage called exactly once + editMessageText called exactly once + body contains '(2 fires)'.",
-      "status": "open",
-      "createdAt": "2026-05-07T20:40:52.650Z"
+      "status": "closed",
+      "createdAt": "2026-05-07T20:40:52.650Z",
+      "closedAt": "2026-05-07T20:42:40.824Z"
     }
   ]
 }
