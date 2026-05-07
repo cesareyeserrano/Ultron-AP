@@ -741,6 +741,30 @@
       "resolution": null,
       "fix_commit_sha": "a252b46b5bb5e11cd2260e9efad3478e1ebe0331",
       "fix_at": "2026-05-06T15:17:09.978Z"
+    },
+    {
+      "id": "BG-034",
+      "title": "MarkdownV2 parse error — '(' rejected when alert fires (telegram-message-ux)",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "high",
+      "status": "closed",
+      "fr": "FR-025",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-05-07T18:02:20.746Z",
+      "updated_at": "2026-05-07T18:03:09.294Z",
+      "resolution": null,
+      "fix_commit_sha": "5eff340360d05cd5246e0fd9e9ffc96515cf7399",
+      "fix_at": "2026-05-07T18:03:02.381Z",
+      "close_commit_sha": "5eff340360d05cd5246e0fd9e9ffc96515cf7399",
+      "close_at": "2026-05-07T18:03:09.294Z"
     }
   ]
 }
