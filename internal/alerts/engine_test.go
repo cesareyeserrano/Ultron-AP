@@ -368,3 +368,117 @@ func TestSystemdServiceHealth_Reference(t *testing.T) {
 	assert.Equal(t, systemd.ServiceFailed, systemd.MapServiceHealth("failed"))
 	assert.Equal(t, systemd.ServiceActive, systemd.MapServiceHealth("active"))
 }
+
+// --- Resolve-event emission tests (FR-018 / BL-023) ---
+
+// TestTC_TMU_018i_MetricResolveEmittedWhenBreachClears covers FR-018:
+// after a metric rule fires and then drops back below threshold on a
+// subsequent evaluation, the engine emits a resolve callback with the
+// fire-window timestamps; no resolve fires when the rule never fired.
+//
+// @aitri-trace FR-018 BL-023 TC-TMU-018i
+func TestTC_TMU_018i_MetricResolveEmittedWhenBreachClears(t *testing.T) {
+	db := setupTestDB(t)
+	ac := &database.AlertConfig{Name: "CPU", Metric: "cpu", Operator: ">", Threshold: 90, Severity: "critical", Enabled: true, CooldownMinutes: 0}
+	require.NoError(t, db.CreateAlertConfig(ac))
+
+	eng := NewEngine(db, nil, nil, nil, time.Minute)
+	var resolves []resolveCall
+	eng.SetResolveCallback(func(rule *database.AlertConfig, sourceID, severity string, firstFiredAt, resolvedAt time.Time) {
+		resolves = append(resolves, resolveCall{rule, sourceID, severity, firstFiredAt, resolvedAt})
+	})
+
+	// Fire it.
+	eng.evaluateMetricRule(*ac, &metrics.Snapshot{CPU: metrics.CPUMetrics{TotalPercent: 95}})
+	if len(resolves) != 0 {
+		t.Fatalf("resolves emitted on initial fire: %d", len(resolves))
+	}
+
+	// Now drops back below threshold → resolve.
+	eng.evaluateMetricRule(*ac, &metrics.Snapshot{CPU: metrics.CPUMetrics{TotalPercent: 50}})
+
+	if len(resolves) != 1 {
+		t.Fatalf("len(resolves) = %d; want 1", len(resolves))
+	}
+	got := resolves[0]
+	if got.sourceID != "metric:cpu" {
+		t.Errorf("sourceID = %q; want 'metric:cpu'", got.sourceID)
+	}
+	if got.severity != "critical" {
+		t.Errorf("severity = %q; want 'critical'", got.severity)
+	}
+	if got.firstFiredAt.IsZero() {
+		t.Errorf("firstFiredAt is zero; want a non-zero fire timestamp")
+	}
+	if got.resolvedAt.IsZero() || got.resolvedAt.Before(got.firstFiredAt) {
+		t.Errorf("resolvedAt = %v; want >= firstFiredAt %v", got.resolvedAt, got.firstFiredAt)
+	}
+}
+
+// TestTC_TMU_018i_NoResolveWhenNeverFired confirms a non-firing rule
+// that drops further below threshold doesn't spuriously emit a resolve.
+//
+// @aitri-trace FR-018 BL-023 TC-TMU-018i-no-spurious
+func TestTC_TMU_018i_NoResolveWhenNeverFired(t *testing.T) {
+	db := setupTestDB(t)
+	ac := &database.AlertConfig{Name: "CPU", Metric: "cpu", Operator: ">", Threshold: 90, Severity: "critical", Enabled: true, CooldownMinutes: 0}
+	require.NoError(t, db.CreateAlertConfig(ac))
+
+	eng := NewEngine(db, nil, nil, nil, time.Minute)
+	var resolves []resolveCall
+	eng.SetResolveCallback(func(rule *database.AlertConfig, sourceID, severity string, firstFiredAt, resolvedAt time.Time) {
+		resolves = append(resolves, resolveCall{rule, sourceID, severity, firstFiredAt, resolvedAt})
+	})
+
+	// Always below threshold.
+	eng.evaluateMetricRule(*ac, &metrics.Snapshot{CPU: metrics.CPUMetrics{TotalPercent: 30}})
+	eng.evaluateMetricRule(*ac, &metrics.Snapshot{CPU: metrics.CPUMetrics{TotalPercent: 10}})
+
+	if len(resolves) != 0 {
+		t.Fatalf("len(resolves) = %d; want 0 (rule never fired)", len(resolves))
+	}
+}
+
+// TestTC_TMU_018i_FireResolveFireSequence confirms a re-fire after
+// resolve is treated as a fresh breach (firstFiredAt is reset).
+//
+// @aitri-trace FR-018 BL-023 TC-TMU-018i-cycle
+func TestTC_TMU_018i_FireResolveFireSequence(t *testing.T) {
+	db := setupTestDB(t)
+	ac := &database.AlertConfig{Name: "CPU", Metric: "cpu", Operator: ">", Threshold: 90, Severity: "critical", Enabled: true, CooldownMinutes: 0}
+	require.NoError(t, db.CreateAlertConfig(ac))
+
+	eng := NewEngine(db, nil, nil, nil, time.Minute)
+	var resolves []resolveCall
+	eng.SetResolveCallback(func(rule *database.AlertConfig, sourceID, severity string, firstFiredAt, resolvedAt time.Time) {
+		resolves = append(resolves, resolveCall{rule, sourceID, severity, firstFiredAt, resolvedAt})
+	})
+
+	// Fire → resolve → fire again.
+	eng.evaluateMetricRule(*ac, &metrics.Snapshot{CPU: metrics.CPUMetrics{TotalPercent: 95}})
+	firstAlerts, _ := db.ListAlerts(10)
+
+	eng.evaluateMetricRule(*ac, &metrics.Snapshot{CPU: metrics.CPUMetrics{TotalPercent: 50}})
+	if len(resolves) != 1 {
+		t.Fatalf("after resolve: len(resolves) = %d; want 1", len(resolves))
+	}
+
+	// Tiny delay so the new firstFiredAt is strictly later.
+	time.Sleep(2 * time.Millisecond)
+	eng.evaluateMetricRule(*ac, &metrics.Snapshot{CPU: metrics.CPUMetrics{TotalPercent: 95}})
+
+	secondAlerts, _ := db.ListAlerts(10)
+	if len(secondAlerts) <= len(firstAlerts) {
+		t.Fatalf("re-fire after resolve did not produce a new alert row")
+	}
+}
+
+// resolveCall captures a SetResolveCallback invocation for the test
+// assertions above.
+type resolveCall struct {
+	rule         *database.AlertConfig
+	sourceID     string
+	severity     string
+	firstFiredAt time.Time
+	resolvedAt   time.Time
+}

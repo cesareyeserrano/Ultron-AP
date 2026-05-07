@@ -127,6 +127,37 @@ func main() {
 		}
 		dispatcher.DispatchEvent(evt)
 	})
+	// Resolve callback: build a synthetic Alert (no DB row) so the
+	// renderer has Severity/Source for the subject line, and emit a
+	// notify.Event{Kind: EventResolve} with the fire-window timestamps.
+	//
+	// @aitri-trace FR-018 BL-023
+	alertEng.SetResolveCallback(func(rule *database.AlertConfig, sourceID, severity string, firstFiredAt, resolvedAt time.Time) {
+		alert := &database.Alert{
+			Severity:  severity,
+			Source:    strings.TrimPrefix(strings.TrimPrefix(sourceID, "metric:"), ""),
+			CreatedAt: resolvedAt,
+		}
+		// metric:cpu → "cpu"; docker:nginx stays as-is so SurfaceFromSource
+		// picks the docker surface.
+		if strings.HasPrefix(sourceID, "metric:") {
+			alert.Source = strings.TrimPrefix(sourceID, "metric:")
+		} else {
+			alert.Source = sourceID
+		}
+		if rule != nil {
+			alert.ConfigID = &rule.ID
+		}
+		evt := &notify.Event{
+			Alert:        alert,
+			Rule:         rule,
+			Kind:         notify.EventResolve,
+			Surface:      notify.SurfaceFromSource(alert.Source),
+			FirstFiredAt: firstFiredAt,
+			ResolvedAt:   resolvedAt,
+		}
+		dispatcher.DispatchEvent(evt)
+	})
 	alertEng.Start(context.Background())
 	defer alertEng.Stop()
 

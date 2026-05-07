@@ -30,6 +30,23 @@ type AlertCallback func(alert *database.Alert)
 // @aitri-trace FR-016 FR-019 FR-024
 type RichAlertCallback func(alert *database.Alert, rule *database.AlertConfig, firstFiredAt time.Time)
 
+// ResolveCallback is invoked when a previously-firing rule clears: a
+// metric drops back below threshold, a container transitions from exited
+// to running, a systemd unit transitions from failed to active. The
+// callback receives the rule context plus the fire-window timestamps so
+// the dispatcher can render a "✓ RESOLVED" message with the FR-019 active
+// duration. There is NO database alert row for resolves — they are
+// notification-layer-only events (no schema change, per Phase 1
+// no_go_zone).
+//
+// rule may be nil for transition-based resolves (docker/systemd) where
+// the engine has only the source name; in that case sourceID carries the
+// "docker:<name>" / "systemd:<name>" identifier so the dispatcher can
+// look up the matching ServiceInfo / ContainerInfo for the surface block.
+//
+// @aitri-trace FR-018 BL-023
+type ResolveCallback func(rule *database.AlertConfig, sourceID string, severity string, firstFiredAt, resolvedAt time.Time)
+
 // Engine evaluates alert rules against current system state.
 type Engine struct {
 	db        *database.DB
@@ -39,6 +56,7 @@ type Engine struct {
 	interval  time.Duration
 	onAlert   AlertCallback
 	onRich    RichAlertCallback
+	onResolve ResolveCallback
 
 	mu           sync.Mutex
 	cooldowns    map[string]time.Time // ruleKey -> last triggered
@@ -91,6 +109,16 @@ func (e *Engine) SetAlertCallback(cb AlertCallback) {
 // @aitri-trace FR-016 FR-019 FR-024
 func (e *Engine) SetRichAlertCallback(cb RichAlertCallback) {
 	e.onRich = cb
+}
+
+// SetResolveCallback sets the FR-018 resolve-event callback. When set,
+// the engine emits a resolve event each time a previously-firing rule's
+// condition becomes false again (metric drops below threshold, container
+// returns to running, systemd unit returns to active).
+//
+// @aitri-trace FR-018 BL-023
+func (e *Engine) SetResolveCallback(cb ResolveCallback) {
+	e.onResolve = cb
 }
 
 // SetTransitionCooldowns sets the cooldown windows for Docker container
@@ -264,13 +292,28 @@ func (e *Engine) evaluateMetricRule(cfg database.AlertConfig, snap *metrics.Snap
 		return
 	}
 
-	if !compareValue(value, cfg.Operator, cfg.Threshold) {
+	key := fmt.Sprintf("metric:%d", cfg.ID)
+	now := time.Now()
+	breaching := compareValue(value, cfg.Operator, cfg.Threshold)
+
+	if !breaching {
+		// Not currently breaching — if the rule was previously firing,
+		// this is a resolve transition (FR-018).
+		e.mu.Lock()
+		firstFiredAt, wasFiring := e.firingFirst[key]
+		if wasFiring {
+			delete(e.firingFirst, key)
+			delete(e.cooldowns, key)
+		}
+		e.mu.Unlock()
+		if wasFiring {
+			cfgCopy := cfg
+			e.emitResolve(&cfgCopy, "metric:"+cfg.Metric, cfg.Severity, firstFiredAt, now)
+		}
 		return
 	}
 
-	// Check cooldown
-	key := fmt.Sprintf("metric:%d", cfg.ID)
-	now := time.Now()
+	// Currently breaching — fire (subject to cooldown).
 	e.mu.Lock()
 	last, exists := e.cooldowns[key]
 	if exists && now.Sub(last) < time.Duration(cfg.CooldownMinutes)*time.Minute {
@@ -318,6 +361,18 @@ func (e *Engine) emitFire(alert *database.Alert, rule *database.AlertConfig, fir
 	}
 }
 
+// emitResolve dispatches a resolve event when a previously-firing rule's
+// condition becomes false. Silently no-op when no resolve callback is
+// wired (legacy callers that only set SetAlertCallback never see resolves).
+//
+// @aitri-trace FR-018 BL-023
+func (e *Engine) emitResolve(rule *database.AlertConfig, sourceID, severity string, firstFiredAt, resolvedAt time.Time) {
+	if e.onResolve == nil {
+		return
+	}
+	e.onResolve(rule, sourceID, severity, firstFiredAt, resolvedAt)
+}
+
 func (e *Engine) evaluateDockerChanges() {
 	containers := e.docker.Containers()
 	current := make(map[string]string, len(containers))
@@ -330,10 +385,27 @@ func (e *Engine) evaluateDockerChanges() {
 			continue // First cycle for this container, skip
 		}
 
+		key := fmt.Sprintf("docker:%s", c.Name)
+		now := time.Now()
+		isBadState := c.State == "exited" || c.Health == docker.HealthError
+
+		// Resolve detection: container was firing AND has now returned
+		// to a healthy state (running). FR-018.
+		if !isBadState && c.State == "running" {
+			e.mu.Lock()
+			firstFiredAt, wasFiring := e.firingFirst[key]
+			if wasFiring {
+				delete(e.firingFirst, key)
+				delete(e.cooldowns, key)
+			}
+			e.mu.Unlock()
+			if wasFiring {
+				e.emitResolve(nil, "docker:"+c.Name, "warning", firstFiredAt, now)
+			}
+		}
+
 		// Detect transition to bad state
-		if prev != c.State && (c.State == "exited" || c.Health == docker.HealthError) {
-			key := fmt.Sprintf("docker:%s", c.Name)
-			now := time.Now()
+		if prev != c.State && isBadState {
 			e.mu.Lock()
 			last, exists := e.cooldowns[key]
 			if exists && now.Sub(last) < e.dockerCooldown() {
@@ -378,10 +450,26 @@ func (e *Engine) evaluateSystemdChanges() {
 			continue
 		}
 
+		key := fmt.Sprintf("systemd:%s", svc.Name)
+		now := time.Now()
+
+		// Resolve detection: unit was firing (failed) and is now back
+		// to active. FR-018.
+		if svc.ActiveState == "active" {
+			e.mu.Lock()
+			firstFiredAt, wasFiring := e.firingFirst[key]
+			if wasFiring {
+				delete(e.firingFirst, key)
+				delete(e.cooldowns, key)
+			}
+			e.mu.Unlock()
+			if wasFiring {
+				e.emitResolve(nil, "systemd:"+svc.Name, "critical", firstFiredAt, now)
+			}
+		}
+
 		// Detect transition to failed
 		if prev != "failed" && svc.ActiveState == "failed" {
-			key := fmt.Sprintf("systemd:%s", svc.Name)
-			now := time.Now()
 			e.mu.Lock()
 			last, exists := e.cooldowns[key]
 			if exists && now.Sub(last) < e.systemdCooldown() {
