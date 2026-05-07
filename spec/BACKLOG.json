@@ -198,6 +198,15 @@
       "status": "closed",
       "createdAt": "2026-05-07T19:05:05.967Z",
       "closedAt": "2026-05-07T19:05:28.273Z"
+    },
+    {
+      "id": "BL-023",
+      "title": "Engine resolve-event emission (FR-018)",
+      "priority": "P2",
+      "problem": "Phase 1 of telegram-message-ux declared engine-side resolve detection out of scope (no_go_zone item #1). The renderer fully supports resolve templates (✓ RESOLVED + active-for duration, FR-018 AC-018-002). Today the engine only emits fires; when an alert clears naturally (CPU drops below threshold, container goes back to running, service goes back to active), the operator gets nothing — leaving them unsure whether the issue is still ongoing. Wiring resolve detection now: track currently-firing rules in-memory; on each evaluation cycle, for each firing rule, check if condition still holds and emit a resolve event when it doesn't.",
+      "status": "closed",
+      "createdAt": "2026-05-07T20:26:59.605Z",
+      "closedAt": "2026-05-07T20:34:51.576Z"
     }
   ]
 }
