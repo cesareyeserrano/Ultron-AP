@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-alpha.27",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-07T18:03:40.418Z",
+  "updatedAt": "2026-05-07T19:46:00.208Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,31 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-06T14:06:18.572Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-06T14:06:18.658Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0
-    },
-    {
-      "at": "2026-05-06T14:09:03.748Z",
-      "event": "normalize-resolved",
-      "phase": null,
-      "files": 4,
-      "method": "git",
-      "baseRefFrom": "614b78b016b507781625c453f25881707593c0e1",
-      "baseRefTo": "dce3c54afc5f7ec4051dea1b3a228ab0c5d449e7"
-    },
     {
       "at": "2026-05-06T14:32:30.814Z",
       "event": "verify-run",
@@ -200,6 +175,31 @@
       "method": "git",
       "baseRefFrom": "1da806b715cac140cf806e8b6ce4c52d03f9e221",
       "baseRefTo": "e7252bafd3725e76bdaae24fd00c20488bfee69b"
+    },
+    {
+      "at": "2026-05-07T19:05:40.342Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-07T19:05:40.442Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-07T19:46:00.173Z",
+      "event": "normalize-resolved",
+      "phase": null,
+      "files": 7,
+      "method": "git",
+      "baseRefFrom": "e7252bafd3725e76bdaae24fd00c20488bfee69b",
+      "baseRefTo": "8cd50110abc1fb7568bab2e14903e632c40dd6c4"
     }
   ],
   "verifyPassed": true,
@@ -211,9 +211,9 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-05-07T18:03:26.935Z",
+  "verifyRanAt": "2026-05-07T19:05:40.342Z",
   "lastSession": {
-    "at": "2026-05-07T18:03:40.417Z",
+    "at": "2026-05-07T19:46:00.208Z",
     "agent": "unknown",
     "event": "normalize --resolve",
     "files_touched": [
@@ -224,10 +224,10 @@
   "auditLastAt": "2026-05-03T22:42:15.435Z",
   "upgradeFindings": [],
   "normalizeState": {
-    "baseRef": "e7252bafd3725e76bdaae24fd00c20488bfee69b",
+    "baseRef": "8cd50110abc1fb7568bab2e14903e632c40dd6c4",
     "method": "git",
     "status": "resolved",
-    "lastRun": "2026-05-07T18:03:40.390Z"
+    "lastRun": "2026-05-07T19:46:00.171Z"
   },
   "verifySummary": {
     "total": 45,
