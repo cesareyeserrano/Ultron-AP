@@ -1,0 +1,659 @@
+{
+  "project_name": "Ultron-AP",
+  "feature_name": "telegram-message-ux",
+  "version": "1.0.0",
+  "source": "features/telegram-message-ux/IDEA.md",
+  "project_summary": {
+    "scope": "Replace the generic 5-line Telegram alert template (internal/notify/telegram.go FormatAlertMessage) with rule-aware, surface-specific messages that tell the operator what fired, where, why and what to do — without requiring a dashboard trip.",
+    "north_star_kpi": "Operator decision-without-dashboard rate: ≥80% of fired alerts contain enough Telegram-side context (threshold, host, surface specifics, probable cause, deep link) that the operator can decide acknowledge/act/ignore without opening /alerts.",
+    "jtbd": "When an alert fires while I am away from my desk, help me understand what is broken, where, why, and how bad it is — from my phone's lock-screen, in under 5 seconds.",
+    "guardrail_metric": "Telegram delivery latency from alert fire to message receipt must not regress beyond the existing baseline (currently <2s on the LAN). New rendering work must add ≤50ms p95 to message composition; cause-derivation subprocesses (top process, journal grep) must stay under their own 500ms budget.",
+    "idea_gaps": []
+  },
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator (mobile triage)",
+      "tech_level": "intermediate",
+      "goal": "Decide in seconds, from a phone, whether a fired alert needs immediate action or can wait until I am back at my desk",
+      "pain_point": "Today's Telegram message shows '92.4' and 'cpu_usage' — no threshold, no host, no rule, no surface context, no idea what caused it — so I have to open the dashboard anyway, which defeats the point of the notification"
+    }
+  ],
+  "no_go_zone": [
+    "Alert engine, evaluation logic, or alert-rule schema — message rendering only consumes existing alert data; no new fields collected by the engine. Reason: avoid scope coupling with FR-004 which is already implemented and stable.",
+    "Telegram inline buttons (acknowledge / mute / silence from chat) — requires bot-side state machine, webhook receiver, and CSRF-equivalent for chat actions. Reason: out of scope per IDEA.md; defer to a follow-up feature.",
+    "Daily digest email format — referenced by FR-006 but not modified here; this feature only touches the per-alert email body for parity with Telegram. Reason: digest cadence is a separate UX problem.",
+    "Internationalisation / i18n — message strings remain English-only. Reason: single operator persona, English-speaking, per existing project context.",
+    "Settings page UI changes — token, chat ID, enable/disable toggles are owned by the settings-revamp feature. Reason: avoid double-touching settings-revamp's just-approved baseline.",
+    "SQLite schema or stored-config shape changes — message rendering reads existing alert rows + rule definitions. Reason: keeps backup/restore (FR-015) compatibility intact.",
+    "Pironman 5, Tailscale, WAN-monitor surfaces — these surfaces do not currently fire Telegram alerts; not in this feature. Reason: avoid scope creep.",
+    "New notifier channels (Slack / Discord / SMS / Webhook) — Telegram + Email only. Reason: one channel-pair at a time; channel selection is a separate product decision.",
+    "Bot-side commands or two-way chat — outbound notifications only. Reason: requires Telegram getUpdates loop and command parser, large new surface.",
+    "Root-cause analysis beyond a single 'top process / last error line' heuristic — no causal graph, no anomaly detection, no log clustering. Reason: probable-cause line is a hint, not a diagnosis."
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-016",
+      "feature": "FT-016",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Threshold-aware metric line in alert messages",
+      "description": "Every threshold-based fire (CPU, RAM, Disk, Temperature) must render a single line containing the current value, the configured comparison operator, and the threshold (e.g. 'CPU 92% (threshold > 80%)'). When the rule's operator or threshold is missing from the alert payload, the line must fall back to '<value> (threshold n/a)' rather than fabricating a value.",
+      "acceptance_criteria": [
+        "Given a CPU rule with operator '>' and threshold 80, fire payload value=92.4 → message contains the substring 'CPU 92% (threshold > 80%)'",
+        "Given a fire with a missing threshold field → message contains '(threshold n/a)' and the rule_id is logged at warn level once per render"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-017",
+      "feature": "FT-016",
+      "type": "UX",
+      "priority": "MUST",
+      "title": "Human-readable subject line with host + friendly metric label",
+      "description": "Every alert message starts with a single subject line of the form '<severity emoji> <Friendly Metric> <severity word> on <host>' — never the raw metric ID. Friendly labels are mapped from a fixed table (cpu_usage→'CPU usage', mem_usage→'RAM usage', disk_usage→'Disk usage', cpu_temp→'CPU temperature', docker_state→'Docker container', systemd_state→'Service'). Host name is read from os.Hostname() at process start and cached.",
+      "acceptance_criteria": [
+        "Given metric_id='cpu_usage', severity='critical', hostname='ultron' → subject line is '🔴 CPU usage critical on ultron'",
+        "Given metric_id='unknown_metric_xyz' → subject line falls back to a title-cased form of the metric_id (e.g. 'Unknown Metric Xyz') and the unmapped id is logged at info level so it can be added later",
+        "Subject line never contains the raw snake_case metric ID when a friendly label is mapped",
+        "Subject line is ≤80 characters so it fits on a single line in Telegram's mobile-phone notification preview (test: render at 80-char terminal width without wrap)",
+        "Subject line renders in ≤2ms (measured by BenchmarkRenderSubjectLine over 1000 iterations on linux/arm64)"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-018",
+      "feature": "FT-016",
+      "type": "UX",
+      "priority": "MUST",
+      "title": "Distinct fire vs resolve templates",
+      "description": "Fire events render with a severity-coloured circle (🔴 critical, 🟡 warning, 🔵 info) and the literal phrase 'ALERT FIRED'. Resolve events render with a green ✓ and the literal phrase 'RESOLVED', and include the duration the alert was active (computed as resolved_at − first_fired_at, formatted as Xm Ys or Xh Ym).",
+      "acceptance_criteria": [
+        "Fire message contains exactly one of {🔴, 🟡, 🔵} matching severity AND the substring 'ALERT FIRED'",
+        "Resolve message contains '✓' AND 'RESOLVED' AND a duration token matching the regex '\\d+(h\\s\\d+m|m\\s\\d+s|s)'",
+        "A fire and a resolve message for the same rule never share the same first 3 characters"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-019",
+      "feature": "FT-016",
+      "type": "UX",
+      "priority": "MUST",
+      "title": "Elapsed-since-breach or absolute timestamp",
+      "description": "When the alert engine has provided first_fired_at for the rule, the message includes 'for <Xm Ys>' on the metric line. When first_fired_at is unavailable, the message includes a single timestamp line of the form '<UTC ISO-8601> (local: <YYYY-MM-DD HH:MM:SS TZ>)' using the system's configured timezone.",
+      "acceptance_criteria": [
+        "Given first_fired_at=now-80s → metric line ends with 'for 1m 20s'",
+        "Given first_fired_at is nil/zero → message contains an ISO-8601 UTC timestamp AND a local timestamp with a non-empty IANA timezone or offset",
+        "Both forms never appear in the same message"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-020",
+      "feature": "FT-016",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Systemd-surface alert body (service name, state, active-since, journal tail)",
+      "description": "When the alert source is a systemd unit, the message body must include: unit name, current ActiveState (active|inactive|failed|activating|deactivating), ActiveEnterTimestamp formatted as 'active since <timestamp>', and the last 3 lines of journalctl -u <unit> --no-pager -n 3. Journal output is truncated so the journal block does not exceed 600 characters; truncation appends '… (truncated)'.",
+      "acceptance_criteria": [
+        "Given a fire for unit 'nginx.service' in state 'failed' → message contains 'nginx.service' AND 'failed' AND 'active since' AND a journal block",
+        "Given journalctl returns 1500 chars of log text → the journal block in the message is ≤600 chars and ends with '… (truncated)'",
+        "Given journalctl returns 0 lines → message contains 'no recent journal entries' and does not error",
+        "Given journalctl errors (exit non-zero) → message contains 'journal unavailable: <short reason>' and the alert send still succeeds"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-021",
+      "feature": "FT-016",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Docker-surface alert body (container, image, state, exit code, log tail)",
+      "description": "When the alert source is a Docker container, the message body must include: container name, image reference, current state (running|exited|paused|restarting|dead), exit code (when state=exited), and the last 3 lines of `docker logs --tail 3 <container>` truncated to 600 chars with the same '… (truncated)' suffix as systemd.",
+      "acceptance_criteria": [
+        "Given a fire for container 'mealie' in state 'exited' with exit code 137 → message contains 'mealie', the image reference, 'exited' and 'exit code 137'",
+        "Given docker logs returns 1500 chars → the log block is ≤600 chars and ends with '… (truncated)'",
+        "Given the docker daemon is unreachable → message contains 'docker logs unavailable: <reason>' and send still succeeds",
+        "Given state != 'exited' → exit code is omitted from the message (not rendered as 'exit code 0')"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-022",
+      "feature": "FT-016",
+      "type": "reporting",
+      "priority": "SHOULD",
+      "title": "5-minute trend hint for resource alerts",
+      "description": "For CPU, RAM, Disk and Temperature alerts, when the metrics ring buffer holds a sample taken between 4m30s and 5m30s ago, the message includes a 'trend' line of the form 'trend: <prior> → <current> (Δ <signed>)' with values rounded to the metric's display precision. When no sample is available in that window, the trend line is omitted entirely (not rendered as 'n/a').",
+      "acceptance_criteria": [
+        "Given prior=78%, current=92% → message contains 'trend: 78% → 92% (Δ +14%)'",
+        "Given the ring buffer has no sample in the 4m30s–5m30s window → message does not contain the substring 'trend:'",
+        "Given the metric is non-resource (docker_state, systemd_state) → trend line is never rendered"
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-023",
+      "feature": "FT-016",
+      "type": "UX",
+      "priority": "MUST",
+      "title": "Deep-link footer to /alerts page",
+      "description": "Every alert message ends with a footer containing a clickable link labelled 'Open dashboard' that points to <base>/alerts where <base> is the value of ULTRON_PUBLIC_URL when set, otherwise 'http://<configured-host>:<configured-port>' read from existing app config. The link uses Telegram Markdown link syntax.",
+      "acceptance_criteria": [
+        "Given ULTRON_PUBLIC_URL='https://ultron.example.com' → footer contains '[Open dashboard](https://ultron.example.com/alerts)'",
+        "Given ULTRON_PUBLIC_URL unset and configured port 8080 + host 'ultron.local' → footer contains '[Open dashboard](http://ultron.local:8080/alerts)'",
+        "Footer appears as the last non-empty line of every fire and resolve message"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-024",
+      "feature": "FT-016",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Storm protection: group same-rule fires within 60s via editMessageText",
+      "description": "When a rule fires and another fire for the same rule_id was sent to Telegram within the last 60 seconds, the new fire does NOT create a new chat row; instead the original message is updated via Telegram's editMessageText API and a counter '(<N> fires)' is appended/updated in the subject line. The 60-second window is reset by a resolve message; resolves always create a new chat row.",
+      "acceptance_criteria": [
+        "Given fire #1 at t=0 for rule_id=R1 → a new Telegram message is posted; its message_id is cached against R1 with timestamp t=0",
+        "Given fire #2 at t=45s for rule_id=R1 → editMessageText is called against the cached message_id; the subject line now contains '(2 fires)'; no new sendMessage call is made",
+        "Given fire #3 at t=70s for rule_id=R1 (cache age > 60s) → a new sendMessage is issued and the cache for R1 is replaced",
+        "Given a resolve at t=50s for rule_id=R1 → a new sendMessage is issued (resolve is its own chat row) and the fire-cache for R1 is cleared",
+        "Given editMessageText returns 400 'message is not modified' → the error is swallowed and not surfaced as a delivery failure"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-025",
+      "feature": "FT-016",
+      "type": "security",
+      "priority": "MUST",
+      "title": "Markdown escaping for user-controlled fields",
+      "description": "All user-controlled or environment-controlled fields rendered into the Telegram body — service names, container names, image references, journal/log lines, hostname, process names — must be passed through a Markdown-escape helper that escapes the Telegram MarkdownV2 special set (_*[]()~`>#+-=|{}.!) before interpolation. Static template strings that the developer authored are not escaped.",
+      "acceptance_criteria": [
+        "Given a service named 'foo_bar.service' → the rendered message parses successfully against Telegram's MarkdownV2 grammar (no 400 'can't parse entities' error from the API in tests)",
+        "Given a journal line containing '*danger*' → the rendered output contains '\\*danger\\*' inside the journal block, not bold text",
+        "Given a hostname 'pi-1.local' → the dot is escaped as '\\.'",
+        "Static developer-authored substrings ('ALERT FIRED', 'Open dashboard', 'threshold') remain unescaped so formatting still applies"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-026",
+      "feature": "FT-016",
+      "type": "UX",
+      "priority": "MUST",
+      "title": "Test Telegram button previews the new format end-to-end",
+      "description": "The existing 'Test Telegram' button in settings sends a synthetic CPU fire alert that exercises every renderer branch present for resource alerts: subject, threshold-aware metric line, elapsed-since-breach, trend hint, probable-cause line, deep-link footer. The synthetic alert is clearly marked as a test (e.g. 'TEST — ' prefix) so a real operator does not mistake it for a production fire.",
+      "acceptance_criteria": [
+        "Clicking 'Test Telegram' in settings causes the bot to deliver one message whose first line begins with 'TEST — '",
+        "The test message contains all of: a severity emoji, a friendly metric label, a threshold clause, a trend line, a probable-cause line, a deep-link footer",
+        "The test message does NOT include systemd journal or docker log blocks (those branches are tested by their own debug surfaces, not by the public Test button)",
+        "End-to-end latency from button click to Telegram message receipt is ≤3000ms on the LAN (measured in TestTelegramSendButton_E2E with a stubbed Telegram API at 127.0.0.1)",
+        "Test message body length is ≥120 chars and ≤800 chars so the preview is meaningful but never truncated"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-027",
+      "feature": "FT-016",
+      "type": "UX",
+      "priority": "MUST",
+      "title": "Email notifier mirrors Telegram body in HTML",
+      "description": "The Email notifier (FR-006) renders the same logical content blocks as Telegram — subject, metric line with threshold, elapsed/timestamp, surface-specific block (systemd or docker), trend hint, probable-cause line, deep-link footer — formatted as semantic HTML (h2, p, code, ul) with inline styling sufficient for a plain mail client. No new behavior beyond layout: subjects, recipients, send conditions, daily-digest, and SMTP config are unchanged.",
+      "acceptance_criteria": [
+        "For the same input alert, Telegram and Email message bodies render the same logical blocks in the same order",
+        "Email body is valid HTML5 (passes a strict parser without warnings) and includes a plain-text fallback",
+        "Email subject line equals the Telegram subject line minus the leading severity emoji (e.g. 'CPU usage critical on ultron')",
+        "Existing TestEmail_* tests still pass — no SMTP-config or recipient logic is altered"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-028",
+      "feature": "FT-016",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Hard cap on Telegram message length (4096 chars)",
+      "description": "The composed Telegram body must never exceed Telegram's 4096-character limit. The renderer applies truncation in this order until the cap is met: (1) journal/log block to 300 chars, then (2) trend line removed, then (3) probable-cause line removed, then (4) journal/log block to 100 chars + '… (truncated)'. If after all reductions the message still exceeds the cap, the renderer emits a minimal fallback containing only severity, friendly metric label, host, value, threshold and the deep-link footer.",
+      "acceptance_criteria": [
+        "Given a synthetic input that would render to 6000 chars → the final message is ≤4096 chars",
+        "Given truncation occurred → an info-level log entry records the rule_id and the truncation step that fired",
+        "Given the minimal fallback path is taken → the message still contains the deep-link footer"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-029",
+      "feature": "FT-016",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Probable-cause / situation line in plain language",
+      "description": "Every fire message includes a single 'situation' line that explains in plain English what is happening AND, when derivable from cheap local sources, what likely originated it. Resolves do NOT include this line. The line is derived per surface:\n  - cpu_usage: top 1 process by CPU% from a one-shot read of /proc — format 'top: <comm> (<pct>%)'\n  - mem_usage: top 1 process by RSS from /proc — format 'top: <comm> (<RSS in MB> MB)'\n  - disk_usage: '<mount> at <pct>% — <free human-readable> free' (e.g. '/ at 95% — 1.2 GB free')\n  - cpu_temp: 'temperature <current>°C, climbing|stable|cooling vs 5m ago' (uses the same ring buffer as FR-022)\n  - systemd_state: the most recent journal line matching /(?i)error|fatal|fail|panic/ within the last 3; if none match, the last non-empty journal line; prefixed with 'last error: '\n  - docker_state: a fixed mapping for known exit codes ('OOM-killed (137)', 'segfault (139)', 'SIGTERM (143)', 'SIGKILL (137)') OR last non-empty docker log line; prefixed with 'cause: '\nThe line is OMITTED entirely (not rendered as 'cause: unknown') when no source data is available. Probable-cause derivation must run in ≤200ms; on timeout the line is omitted and a warn log records the timeout.",
+      "acceptance_criteria": [
+        "Given a CPU fire and `ffmpeg` is the top process at 78% CPU → message contains 'top: ffmpeg (78%)'",
+        "Given a RAM fire and `chromium` holds 1200MB RSS as the top consumer → message contains 'top: chromium (1200 MB)'",
+        "Given a disk fire on '/' at 95% with 1.2 GB free → message contains '/ at 95% — 1.2 GB free'",
+        "Given a temperature fire and the trend is upward by ≥2°C vs 5m ago → message contains 'climbing'; if Δ is between -1°C and +1°C → 'stable'; if Δ ≤ -2°C → 'cooling'",
+        "Given a systemd fire and the last 3 journal lines contain one matching 'error|fatal|fail|panic' → that line is rendered after 'last error: '",
+        "Given a docker fire with exit code 137 → message contains 'cause: OOM-killed (137)'",
+        "Given a resolve event of any surface → the situation line is absent",
+        "Given probable-cause derivation exceeds 200ms (subprocess slow) → the line is absent and a single warn log records rule_id + timeout",
+        "Given /proc, journalctl, or docker logs returns no usable data → the line is absent (never rendered as 'cause: unknown')"
+      ],
+      "implementation_level": "production_ready"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-005",
+      "category": "Performance",
+      "requirement": "Message composition (input alert struct → final Telegram body string, excluding network I/O and excluding cause-derivation subprocess time) must complete in ≤50ms p95 on the target Pi 5 ARM64 platform. Cause-derivation (FR-029) and journal/log fetches (FR-020/FR-021) run in parallel goroutines with their own 200ms / 500ms budgets; on timeout each block is omitted with an 'unavailable' note rather than blocking the send.",
+      "acceptance_criteria": [
+        "Benchmark BenchmarkRenderTelegramAlert reports ≤50ms p95 over 1000 iterations on linux/arm64 (cause-derivation stubbed)",
+        "Given journalctl is artificially slowed to 800ms in test → render returns in <600ms with 'journal unavailable: timeout'",
+        "Given /proc top-process scan is artificially slowed to 400ms in test → render returns with the situation line omitted and a warn log entry"
+      ]
+    },
+    {
+      "id": "NFR-006",
+      "category": "Reliability",
+      "requirement": "Telegram message rendering errors (template panic, escape failure, journal/docker subprocess error, /proc parse error) must NEVER prevent alert delivery. The renderer must always return a non-empty body — falling back to a minimal severity+metric+value+threshold+deep-link line when full rendering fails — and log the original error with rule_id and severity at error level.",
+      "acceptance_criteria": [
+        "Given any rendering helper panics → recover() returns the minimal fallback string and logs the panic with rule_id",
+        "Telegram sendMessage receives a non-empty body in 100% of fire/resolve paths under fault injection in tests"
+      ]
+    },
+    {
+      "id": "NFR-007",
+      "category": "Observability",
+      "requirement": "Every fire and resolve send logs a single structured line containing: rule_id, severity, surface (resource|systemd|docker), bytes_sent, render_ms, telegram_status_code, edited (bool), truncated_step (none|journal_300|trend|cause|journal_100|minimal), cause_source (proc|journal|exitcode|none). Render warnings (unmapped metric_id, missing threshold, journal/docker/cause unavailable) log at warn level with the same rule_id.",
+      "acceptance_criteria": [
+        "A successful fire produces exactly one info log line containing all nine fields above",
+        "An unmapped metric_id produces a warn line that names the unmapped id"
+      ]
+    },
+    {
+      "id": "NFR-008",
+      "category": "Security",
+      "requirement": "API security category — applies to subprocess execution. The journalctl, docker logs, and probable-cause subprocess invocations performed by the renderer must use exec.Command with explicit argv (no shell), and the unit/container/process name passed in must be validated against the allow-list patterns already used by FR-011's privileged helper before being passed as an argv element. /proc reads must use os.Open on the canonical /proc/<pid>/* paths only — no user-controlled path components.",
+      "acceptance_criteria": [
+        "Static analysis: no exec.Command(\"sh\", \"-c\", ...) or os/exec invocations with a single concatenated string in the renderer package",
+        "Given a unit name 'nginx; rm -rf /' → validation rejects it before exec and the message renders 'invalid unit name' instead",
+        "Given a /proc read for a non-numeric pid → the read is rejected and the situation line is omitted"
+      ]
+    },
+    {
+      "id": "NFR-009",
+      "category": "CI/CD",
+      "requirement": "The full existing test suite (TestTelegram_*, TestEmail_*, TestAlertEngine_*, integration suite under verify) plus the new TestRenderTelegramAlert_*, TestRenderEmailAlert_*, and TestProbableCause_* tests must pass on every push to main; no test is excluded or skipped to accommodate this feature.",
+      "acceptance_criteria": [
+        "make verify exits 0 on the merge candidate",
+        "Coverage of internal/notify package does not regress below the pre-feature baseline (current baseline to be captured at start of phase 4)"
+      ]
+    },
+    {
+      "id": "NFR-010",
+      "category": "Reliability",
+      "requirement": "Healthcheck not applicable in the new sense — no new HTTP endpoint is introduced. Existing GET /health continues to return 200 unchanged. Declared explicitly to satisfy the operational-NFR coverage rule."
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-016",
+      "requirement_id": "FR-016",
+      "as_a": "Raspberry Pi operator on my phone",
+      "i_want": "to see the configured threshold next to the current value in every alert message",
+      "so_that": "I can tell at a glance whether the breach is marginal or severe without opening the dashboard",
+      "acceptance_criteria": [
+        {
+          "id": "AC-016-001",
+          "given": "a CPU rule with operator '>' and threshold 80 fires with value 92.4",
+          "when": "the Telegram message is composed",
+          "then": "the body contains the substring 'CPU 92% (threshold > 80%)'"
+        },
+        {
+          "id": "AC-016-002",
+          "given": "a fire payload missing the threshold field",
+          "when": "the renderer runs",
+          "then": "the body contains '(threshold n/a)' and a single warn-level log line names the rule_id"
+        }
+      ]
+    },
+    {
+      "id": "US-017",
+      "requirement_id": "FR-017",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "the message subject to use a friendly metric name and the host name",
+      "so_that": "I instantly recognise which device and which subsystem fired without parsing snake_case identifiers",
+      "acceptance_criteria": [
+        {
+          "id": "AC-017-001",
+          "given": "metric_id='cpu_usage', severity='critical', hostname='ultron'",
+          "when": "the subject line renders",
+          "then": "it equals '🔴 CPU usage critical on ultron'"
+        },
+        {
+          "id": "AC-017-002",
+          "given": "metric_id='unknown_metric_xyz' (not in the friendly-label table)",
+          "when": "the subject renders",
+          "then": "the subject contains a title-cased fallback (no raw snake_case) and the unmapped id is logged at info level"
+        }
+      ]
+    },
+    {
+      "id": "US-018",
+      "requirement_id": "FR-018",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "fire and resolve messages to look visually distinct",
+      "so_that": "I never confuse a recovery for a new incident at a glance",
+      "acceptance_criteria": [
+        {
+          "id": "AC-018-001",
+          "given": "a critical fire event",
+          "when": "the message renders",
+          "then": "it contains '🔴' and the literal string 'ALERT FIRED'"
+        },
+        {
+          "id": "AC-018-002",
+          "given": "a resolve event for an alert that was active 4m12s",
+          "when": "the resolve message renders",
+          "then": "it contains '✓', 'RESOLVED', and a duration token like '4m 12s'"
+        }
+      ]
+    },
+    {
+      "id": "US-019",
+      "requirement_id": "FR-019",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "to see how long the breach has been ongoing",
+      "so_that": "I can prioritise a 5-minute breach over a 5-second spike",
+      "acceptance_criteria": [
+        {
+          "id": "AC-019-001",
+          "given": "first_fired_at is 80 seconds ago",
+          "when": "the metric line renders",
+          "then": "it ends with 'for 1m 20s'"
+        },
+        {
+          "id": "AC-019-002",
+          "given": "first_fired_at is unavailable",
+          "when": "the message renders",
+          "then": "it contains exactly one ISO-8601 UTC timestamp and one local timestamp with timezone, and the 'for <duration>' phrase is absent"
+        }
+      ]
+    },
+    {
+      "id": "US-020",
+      "requirement_id": "FR-020",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "systemd alerts to include the unit's current state and a short journal tail",
+      "so_that": "I can decide from the chat whether a restart is likely to fix it",
+      "acceptance_criteria": [
+        {
+          "id": "AC-020-001",
+          "given": "a fire for unit 'nginx.service' in state 'failed'",
+          "when": "the message renders",
+          "then": "it contains 'nginx.service', 'failed', 'active since', and a journal block of ≤600 chars"
+        },
+        {
+          "id": "AC-020-002",
+          "given": "journalctl errors with exit non-zero",
+          "when": "the message renders",
+          "then": "it contains 'journal unavailable: <reason>' and the Telegram send still succeeds"
+        }
+      ]
+    },
+    {
+      "id": "US-021",
+      "requirement_id": "FR-021",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "Docker container alerts to include image, state, exit code and a short log tail",
+      "so_that": "I can distinguish OOM-killed (137) from clean exits without SSH",
+      "acceptance_criteria": [
+        {
+          "id": "AC-021-001",
+          "given": "container 'mealie' exited with code 137",
+          "when": "the message renders",
+          "then": "it contains 'mealie', the image reference, 'exited' and 'exit code 137'"
+        },
+        {
+          "id": "AC-021-002",
+          "given": "the docker daemon is unreachable",
+          "when": "the message renders",
+          "then": "it contains 'docker logs unavailable: <reason>' and the send still succeeds"
+        }
+      ]
+    },
+    {
+      "id": "US-022",
+      "requirement_id": "FR-022",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "to see the value 5 minutes ago alongside the current value for resource alerts",
+      "so_that": "I can tell whether the system is climbing fast or stable at a high level",
+      "acceptance_criteria": [
+        {
+          "id": "AC-022-001",
+          "given": "the ring buffer holds prior=78% and current=92%",
+          "when": "the message renders",
+          "then": "it contains 'trend: 78% → 92% (Δ +14%)'"
+        },
+        {
+          "id": "AC-022-002",
+          "given": "no sample exists in the 4m30s–5m30s window",
+          "when": "the message renders",
+          "then": "the substring 'trend:' is absent (not rendered as 'trend: n/a')"
+        }
+      ]
+    },
+    {
+      "id": "US-023",
+      "requirement_id": "FR-023",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "every alert message to end with a tap-able link to the dashboard alerts page",
+      "so_that": "I can open the full context in one tap when the chat summary isn't enough",
+      "acceptance_criteria": [
+        {
+          "id": "AC-023-001",
+          "given": "ULTRON_PUBLIC_URL='https://ultron.example.com'",
+          "when": "the footer renders",
+          "then": "it contains '[Open dashboard](https://ultron.example.com/alerts)'"
+        },
+        {
+          "id": "AC-023-002",
+          "given": "ULTRON_PUBLIC_URL is unset, configured host='ultron.local', port=8080",
+          "when": "the footer renders",
+          "then": "it contains '[Open dashboard](http://ultron.local:8080/alerts)'"
+        }
+      ]
+    },
+    {
+      "id": "US-024",
+      "requirement_id": "FR-024",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "rapid same-rule fires to collapse into one chat row instead of spamming my phone",
+      "so_that": "a 30-second metric oscillation around a threshold doesn't cause 10 push notifications",
+      "acceptance_criteria": [
+        {
+          "id": "AC-024-001",
+          "given": "fire #1 at t=0 for rule R1 was just sent",
+          "when": "fire #2 arrives at t=45s for the same rule",
+          "then": "editMessageText is called against the cached message_id, the subject contains '(2 fires)', and no new sendMessage is issued"
+        },
+        {
+          "id": "AC-024-002",
+          "given": "fire #1 at t=0, no further activity",
+          "when": "fire #2 arrives at t=70s",
+          "then": "a new sendMessage is issued and the cache for R1 is replaced"
+        },
+        {
+          "id": "AC-024-003",
+          "given": "a resolve arrives for R1",
+          "when": "the resolve is processed",
+          "then": "a new sendMessage is issued and the fire-cache entry for R1 is cleared"
+        }
+      ]
+    },
+    {
+      "id": "US-025",
+      "requirement_id": "FR-025",
+      "as_a": "Operator with services or containers named with underscores or special characters",
+      "i_want": "the message to render without breaking Telegram Markdown",
+      "so_that": "I never receive a 'can't parse entities' error from Telegram or see partially-formatted garbage",
+      "acceptance_criteria": [
+        {
+          "id": "AC-025-001",
+          "given": "a service named 'foo_bar.service'",
+          "when": "the message is composed and sent in a test against a Telegram-grammar validator",
+          "then": "no MarkdownV2 parse error is raised"
+        },
+        {
+          "id": "AC-025-002",
+          "given": "a journal line containing '*danger*'",
+          "when": "the journal block renders",
+          "then": "the asterisks appear as escaped literals, not bold"
+        }
+      ]
+    },
+    {
+      "id": "US-026",
+      "requirement_id": "FR-026",
+      "as_a": "Operator configuring a fresh install",
+      "i_want": "the Test Telegram button to preview the full new format",
+      "so_that": "I can verify my bot is reaching me and the formatting renders on my phone before I trust it for real alerts",
+      "acceptance_criteria": [
+        {
+          "id": "AC-026-001",
+          "given": "the bot token and chat ID are configured",
+          "when": "I click 'Test Telegram'",
+          "then": "exactly one Telegram message arrives whose first line begins with 'TEST — '"
+        },
+        {
+          "id": "AC-026-002",
+          "given": "the test message arrives",
+          "when": "I read it",
+          "then": "it contains a severity emoji, a friendly metric label, a threshold clause, a trend line, a probable-cause line, and a deep-link footer"
+        }
+      ]
+    },
+    {
+      "id": "US-027",
+      "requirement_id": "FR-027",
+      "as_a": "Operator who also receives email notifications",
+      "i_want": "the email body to mirror Telegram's content in HTML",
+      "so_that": "the two surfaces stay consistent and I can quote-forward an email with the full context",
+      "acceptance_criteria": [
+        {
+          "id": "AC-027-001",
+          "given": "the same alert input is delivered to both notifiers",
+          "when": "the bodies are rendered",
+          "then": "the same logical blocks (subject, metric line, elapsed/timestamp, surface block, trend, probable-cause, deep link) appear in the same order"
+        },
+        {
+          "id": "AC-027-002",
+          "given": "the email is composed",
+          "when": "its body is parsed by a strict HTML5 parser",
+          "then": "no warnings or errors are raised AND a plain-text fallback alternative is present"
+        }
+      ]
+    },
+    {
+      "id": "US-028",
+      "requirement_id": "FR-028",
+      "as_a": "Operator monitoring a chatty container",
+      "i_want": "messages to never be rejected by Telegram for being over 4096 chars",
+      "so_that": "I always receive a notification, even when log/journal output is huge",
+      "acceptance_criteria": [
+        {
+          "id": "AC-028-001",
+          "given": "a synthetic input that would render to 6000 chars",
+          "when": "the renderer applies its truncation order",
+          "then": "the final body is ≤4096 chars and an info log records which truncation step fired"
+        },
+        {
+          "id": "AC-028-002",
+          "given": "all reductions are exhausted and the body is still over the cap",
+          "when": "the minimal fallback path is taken",
+          "then": "the message still contains the deep-link footer and severity+metric+value+threshold"
+        }
+      ]
+    },
+    {
+      "id": "US-029",
+      "requirement_id": "FR-029",
+      "as_a": "Raspberry Pi operator on my phone",
+      "i_want": "every fire message to include a single plain-language line explaining the situation and, when possible, what likely caused it",
+      "so_that": "I can decide whether to act now or wait, without opening a terminal or the dashboard to figure out who is eating the CPU",
+      "acceptance_criteria": [
+        {
+          "id": "AC-029-001",
+          "given": "a CPU fire and `ffmpeg` is the top process at 78% CPU",
+          "when": "the message renders",
+          "then": "it contains the line 'top: ffmpeg (78%)'"
+        },
+        {
+          "id": "AC-029-002",
+          "given": "a RAM fire and `chromium` holds 1200MB RSS",
+          "when": "the message renders",
+          "then": "it contains 'top: chromium (1200 MB)'"
+        },
+        {
+          "id": "AC-029-003",
+          "given": "a disk fire on '/' at 95% with 1.2 GB free",
+          "when": "the message renders",
+          "then": "it contains '/ at 95% — 1.2 GB free'"
+        },
+        {
+          "id": "AC-029-004",
+          "given": "a temperature fire and the trend has climbed ≥2°C vs 5m ago",
+          "when": "the message renders",
+          "then": "the situation line contains 'climbing'"
+        },
+        {
+          "id": "AC-029-005",
+          "given": "a systemd fire whose last 3 journal lines include 'connect() failed'",
+          "when": "the message renders",
+          "then": "the situation line is 'last error: connect() failed' (escaped per FR-025)"
+        },
+        {
+          "id": "AC-029-006",
+          "given": "a docker fire with exit code 137",
+          "when": "the message renders",
+          "then": "the situation line contains 'cause: OOM-killed (137)'"
+        },
+        {
+          "id": "AC-029-007",
+          "given": "a resolve event of any surface",
+          "when": "the message renders",
+          "then": "the situation line is absent"
+        },
+        {
+          "id": "AC-029-008",
+          "given": "probable-cause derivation exceeds 200ms",
+          "when": "the message renders",
+          "then": "the situation line is absent and a single warn log records the rule_id and timeout"
+        },
+        {
+          "id": "AC-029-009",
+          "given": "/proc, journalctl, or docker logs returns no usable data",
+          "when": "the message renders",
+          "then": "the situation line is absent (never rendered as 'cause: unknown')"
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    "Existing alert engine struct (AlertEvent / AlertRule) is the read-only input to this feature — no fields may be added or renamed in this feature. If a field is missing, render falls back gracefully.",
+    "Existing internal/notify/telegram.go FormatAlertMessage entry point may be replaced internally but its public Notifier.Send signature must remain identical so callers in the alert engine are not modified.",
+    "Telegram MarkdownV2 is the parse mode (already in use); HTML parse mode is not introduced.",
+    "ULTRON_PUBLIC_URL env var is read once at process start; runtime changes require restart (consistent with rest of project).",
+    "Probable-cause derivation must use only local sources already accessible to the unprivileged web process (/proc, journalctl as the configured user, docker logs via existing socket access). No new privileges, no new sudoers entries."
+  ],
+  "technology_preferences": [
+    "Go 1.22+ standard library + existing zerolog for structured logs (no new logging library)",
+    "text/template for message composition (no new template engine; same package family as existing code)",
+    "Existing telegram-bot-api wrapper used today by FR-005 — extend, do not replace",
+    "No new third-party deps for Markdown escaping — implement a small inline escaper for the MarkdownV2 character set",
+    "No new third-party deps for /proc parsing — use the existing metrics collector's process-list code path if present, otherwise a small inline reader"
+  ],
+  "original_brief": "## Feature\nRicher, context-aware Telegram alert messages that immediately tell the operator **what fired, where, why, and what to do** — replacing today's 5-line generic block from `internal/notify/telegram.go:143` (`FormatAlertMessage`).\n\n## Problem / Why\nToday's Telegram message is:\n```\n🔴 CRITICAL ALERT\n*Message:* <whatever caller passed>\n*Source:* `cpu_usage`\n*Current Value:* `92.4`\n*Time:* 2026-05-06 11:14:02\n```\nProblems:\n- No threshold shown — `92.4` has no reference point.\n- \"Source\" is an opaque metric ID (`cpu_usage`), not \"CPU on Pi-Ultron\" — the operator can't tell at a glance what's affected.\n- No rule name, no cooldown context, no link back to the dashboard.\n- Resolved alerts use the same template as fire events — confusing.\n- For systemd / Docker alerts the message lacks the service / container name and any log tail.\n- No visual hierarchy beyond bold labels.\n- No suggested next action.\nThe result is the user pulling up the dashboard anyway to figure out what's going on — the notification adds zero context the dashboard didn't already have.\n\n## Target Users\nThe single Pi operator (admin) on a phone, often away from the dashboard. Same persona as today — no new user type.\n\n## New Behavior\n- The system must include the **rule's configured threshold and operator** alongside the current value (e.g. `CPU 92% (threshold > 80%)`).\n- The system must include a **human-readable subject line** with the host name and a friendly metric label (e.g. `CPU usage critical on Ultron`) — never just the metric ID.\n- The system must include the **elapsed time since the rule started breaching** when known, otherwise a UTC + local timestamp.\n- The system must render distinct templates for **fire** vs **resolve** events — fire = red/yellow/blue circle + \"ALERT FIRED\"; resolve = green ✓ + \"RESOLVED\" + duration the alert was active.\n- The system must, for **systemd service** alerts, include the service name, current state, active-since timestamp, and the last 3 lines of the service journal (truncated to keep the message under Telegram's 4096-char cap).\n- The system must, for **Docker container** alerts, include the container name, image, current state, exit code (if exited), and the last 3 lines of `docker logs --tail 3`.\n- The system must, for **disk / RAM / CPU / temperature** alerts, include a short trend hint (current vs 5-minute-ago value) when the metrics ring buffer has the prior sample.\n- The system must include a footer line with a **deep link** back to `/alerts` (or the relevant page on the dashboard) — using `ULTRON_PUBLIC_URL` if set, falling back to `http://<pi-host>:<port>` from existing config.\n- The system must group multiple simultaneous fires of the same rule within a 60-second window into a single chat row (storm protection) — second and subsequent fires append to the original message via Telegram's `editMessageText`.\n- The system must escape Markdown special characters in user-controlled fields (service names, container names, journal output) so a service named `foo_bar` does not break Markdown parsing.\n- The system must keep the same delivery contract for the existing `Test Telegram` button — sending a sample alert that previews the new format end-to-end.\n- The system must mirror the same body content (with HTML formatting) in the Email notifier so notification surfaces stay consistent — layout-only changes; no new behaviour beyond what Telegram gains.\n\n## Success Criteria\n- Given a CPU alert fires at 92% with threshold 80%, when the Telegram message arrives, then it shows: `🔴 CPU usage critical on Ultron — 92% (threshold > 80%) — for 1m20s`, plus a 5-min trend line and a `/alerts` deep link.\n- Given a systemd service alert fires for `nginx.service` failed, when the Telegram message arrives, then it includes the service name, current state, active-since timestamp, and the last 3 journal lines (truncated to ≤600 chars).\n- Given a Docker container exits non-zero, when the Telegram message arrives, then it includes the container name, image, exit code, and the last 3 lines of `docker logs --tail 3`.\n- Given an alert resolves, when the resolve message arrives, then it uses a distinct green ✓ template and shows how long the alert was active (e.g. \"active for 4m12s\").\n- Given the same rule fires 3 times in 60 seconds, when the messages arrive, then the user sees one chat row with an incremented \"(3 fires)\" counter — not 3 separate notifications.\n- Given a service is named `foo_bar` (or `_underscore_chat_id`), when the Telegram message renders, then Markdown does not break.\n- Given the user clicks \"Test Telegram\" in settings, when the test message arrives, then it demonstrates the full new format using a synthetic CPU alert sample.\n- No regressions on FR-005 (Telegram delivery) or FR-006 (Email delivery) — existing TestTelegram_* and TestEmail_* tests continue to pass.\n\n## Out of Scope\n- Changes to the alert engine, alert-rule schema, or alert evaluation logic.\n- Telegram **inline buttons** (acknowledge / mute from chat) — adds bot-side state machine, defer to a follow-up feature.\n- Daily digest email format (FR-006 mention) — defer.\n- New languages / i18n — message text is English-only.\n- Settings page changes (covered by `settings-revamp`).\n- Changes to the SQLite schema or stored config shapes.\n- Changes to Pironman 5 / Tailscale / WAN-monitor surfaces.\n- Adding a Slack / Discord / SMS notifier (out of scope; one channel pair at a time).\n"
+}

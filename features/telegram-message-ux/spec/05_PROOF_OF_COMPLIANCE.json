@@ -1,0 +1,173 @@
+{
+  "project": "Ultron-AP / telegram-message-ux",
+  "version": "1.0.0",
+  "phases_completed": ["1-requirements", "ux", "2-architecture", "3-tests", "4-build", "5-deployment"],
+  "overall_status": "partial",
+  "deployment_target": "Raspberry Pi via systemd (parent monolith). No new deployment artefacts — this feature is a server-side refactor of the alert-notification rendering layer that ships as additional Go source files inside the existing single static binary already running as `ultron-ap.service`. No Dockerfile, no docker-compose.yml, no SQLite migration, no new HTTP endpoint, no background daemon. One optional env var (ULTRON_PUBLIC_URL) added to .env.example. Project Phase-5 rejection history (2026-03-18) and the help-page / insights-engine / lan-devices / settings-revamp feature precedents establish this deployment posture deliberately.",
+  "requirement_compliance": [
+    {
+      "id": "FR-016",
+      "title": "Threshold-aware metric line in alert messages",
+      "level": "production_ready",
+      "evidence": "TestTC_TMU_016h_ThresholdAwareMetricLine asserts the body contains exactly one occurrence of 'CPU 92% (threshold > 80%)' for value=92.4, op='>', threshold=80. TestTC_TMU_016f_MissingThresholdRendersNA asserts the body contains '(threshold n/a)' when Rule is nil. Renderer path: render.buildMetricLine in internal/notify/render/render.go."
+    },
+    {
+      "id": "FR-017",
+      "title": "Human-readable subject line with host + friendly metric label",
+      "level": "production_ready",
+      "evidence": "TestTC_TMU_017h_SubjectLine confirms the subject equals '🔴 CPU usage critical on ultron' for cpu_usage/critical/ultron. TestTC_TMU_017e_UnknownMetricFallsBackToTitleCase verifies title-case fallback for unmapped metric IDs and the absence of raw snake_case. TestTC_TMU_017f_SubjectLengthBudget enforces the ≤80-char budget across the Cartesian product (4 metrics × 3 severities × 2 host lengths). Friendly label table aligns with the existing engine convention (cpu, ram, disk, temp) AND the spec aliases (cpu_usage, mem_usage, disk_usage, cpu_temp)."
+    },
+    {
+      "id": "FR-018",
+      "title": "Distinct fire vs resolve templates",
+      "level": "partial",
+      "evidence": "Renderer support: TestTC_TMU_018h_FireMarkers (🔴 + 'ALERT FIRED' + no resolve markers), TestTC_TMU_018e_ResolveMarkers (✓ + 'RESOLVED' + '4m 12s' duration), TestTC_TMU_018f_FireAndResolveLeadingRunesDiffer (visual distinction at first glance). Resolve event emission is NOT wired in internal/alerts/engine.go — explicit no_go_zone item #1 from Phase 1 forbade engine state-machine changes. The renderer is ready for resolves whenever a future engine change emits them. Declared in technical_debt_inherited."
+    },
+    {
+      "id": "FR-019",
+      "title": "Elapsed-since-breach or absolute timestamp",
+      "level": "production_ready",
+      "evidence": "TestTC_TMU_019h_ElapsedSinceBreach: FirstFiredAt=now-80s renders 'for 1m 20s' and absent ISO timestamp. TestTC_TMU_019e_AbsoluteTimestampFallback: FirstFiredAt=zero renders ISO-8601 UTC + local timestamp + absent 'for' phrase. TestTC_TMU_019f_ElapsedAndTimestampNeverCoexist: parametric corpus proves the two branches are mutually exclusive. Engine wiring: internal/alerts/engine.go's firingFirst map (set on first fire after cooldown gap, reaped by pruneCooldowns)."
+    },
+    {
+      "id": "FR-020",
+      "title": "Systemd-surface alert body (service name, state, active-since, journal tail)",
+      "level": "partial",
+      "evidence": "Renderer support: TestTC_TMU_020h_SystemdSurfaceBlock (full block: unit + state + active since + 3 journal lines), TestTC_TMU_020e_JournalTruncationTo600 (≤600 chars + '… (truncated)' suffix on 1500-char input), TestTC_TMU_020z_EmptyJournal (empty distinguished from error path with 'no recent journal entries'). Cause helper: TestTC_TMU_029_JournalErrorReturnsNil (subprocess error returns nil so renderer omits cause line). Dispatcher does NOT yet auto-populate render.Input.Systemd with live journalctl output; the cause package implements the subprocess path but the dispatcher adapter is declared in technical_debt_inherited. Production messages today render rule-context blocks (subject + threshold + footer) for systemd fires without the surface-specific journal block."
+    },
+    {
+      "id": "FR-021",
+      "title": "Docker-surface alert body (container, image, state, exit code, log tail)",
+      "level": "partial",
+      "evidence": "Renderer support: TestTC_TMU_021h_DockerSurfaceBlock (mealie + image + 'exited' + 'exit code 137' present), TestTC_TMU_021e_RunningHidesExitCode (running state suppresses exit code, never 'exit code 0'). Cause helper: TestTC_TMU_029x_DockerExitCode137 (137 → 'cause: OOM-killed (137)'), TestTC_TMU_029_DockerLogsFallback (last log line when exit code unmapped). Dispatcher does NOT yet auto-populate render.Input.Docker — same wiring gap as FR-020, declared in technical_debt_inherited."
+    },
+    {
+      "id": "FR-022",
+      "title": "5-minute trend hint for resource alerts",
+      "level": "partial",
+      "evidence": "Renderer support: TestTC_TMU_022h_TrendLine ('trend: 78% → 92% (Δ +14%)' rendered exactly), TestTC_TMU_022e_NoTrendOmitsLine (Trend nil → 'trend:' substring absent — no 'n/a' marker), TestTC_TMU_022f_NonResourceNeverRendersTrend (docker surface ignores supplied Trend). Dispatcher does NOT yet read the metrics ring buffer to populate render.Input.Trend — declared in technical_debt_inherited (low effort_to_fix). Production resource fires currently render without the trend line; renderer omits it cleanly when Trend is nil."
+    },
+    {
+      "id": "FR-023",
+      "title": "Deep-link footer to /alerts page",
+      "level": "production_ready",
+      "evidence": "TestTC_TMU_023h_FooterPublicURL: ULTRON_PUBLIC_URL=https://ultron.example.com → footer is the last non-empty line and equals '[Open dashboard](https://ultron.example.com/alerts)'. TestTC_TMU_023e_FooterDerivedURL: ULTRON_PUBLIC_URL unset, derived 'http://ultron.local:8080' → footer matches the derived form. Dispatcher caches both Hostname (os.Hostname()) and PublicURL (env or fallback) at construction. .env.example documents the variable."
+    },
+    {
+      "id": "FR-024",
+      "title": "Storm protection: group same-rule fires within 60s via editMessageText",
+      "level": "production_ready",
+      "evidence": "Storm cache: TestTC_TMU_024h_FirstFireYieldsSend, TestTC_TMU_024e_SecondFireWithinWindowEdits (45s → edit, FireCount=2), TestTC_TMU_024w_FireAfterWindowResets (70s → fresh send), TestTC_TMU_024r_ResolveClearsCacheAndNextFireIsFreshSend, TestTC_TMU_024_RecordEditIncrementsFireCount, TestTC_TMU_024_SweepEvictsStaleEntries, TestTC_TMU_024_SweepKeepsFreshEntries, TestTC_TMU_024_ConcurrentDecideAndRecord (race-clean with -race). Telegram wiring: internal/notify/telegram.go Notify path consults storm.Decide → editMessageText / sendMessage; isMessageNotModifiedErr swallowed; isMessageNotFoundErr clears cache + falls through to fresh send. End-to-end HTTP integration test against a stubbed Telegram server is declared in technical_debt_inherited."
+    },
+    {
+      "id": "FR-025",
+      "title": "Markdown escaping for user-controlled fields",
+      "level": "production_ready",
+      "evidence": "TestTC_TMU_025h_ServiceNameUnderscoreAndDotEscaped, TestTC_TMU_025e_AsterisksInJournalLineEscaped, TestTC_TMU_025f_AllSpecialCharsEscapedExactlyOnce (covers full MarkdownV2 special set), TestTC_TMU_025_DotInHostnameEscaped, TestTC_TMU_025_EmptyAndPlainPassthrough, TestTC_TMU_025_UTF8RoundTrip, TestTC_TMU_025z_AsciiPrintableTable, plus FuzzEscapeV2 (round-trip property). Renderer applies markdown.EscapeV2 to every untrusted field (hostname, unit, container, image, journal/log lines, cause line); static developer strings remain unescaped. Telegram parse_mode switched to MarkdownV2."
+    },
+    {
+      "id": "FR-026",
+      "title": "Test Telegram button previews the new format end-to-end",
+      "level": "production_ready",
+      "evidence": "TestTC_TMU_026h_TestNotificationEventRendersAsTestPrefixedFire confirms the synthetic CPU-fire event built by buildTestNotificationEvent has Kind=EventFire, Surface=SurfaceResource, Severity=critical, Message prefixed 'TEST —', Rule.Operator='>', Rule.Threshold=80, FirstFiredAt non-zero, AND that the rendered body contains '🔴', 'CPU usage critical', 'ALERT FIRED', 'CPU 92%', 'threshold > 80', '[Open dashboard]'. TestTC_TMU_026e_TestNotificationContainsElapsedAndFooter verifies the elapsed branch fires and the footer is present in both Telegram + Email HTML output. TestTC_TMU_026f_TestNotificationOmitsSystemdAndDockerBlocks confirms the resource-only test event never renders systemd journal or docker log markers. Browser-driven click-to-update latency (TC-TMU-026x, TC-TMU-026d) is manually verified with the manual-deploy smoke test in DEPLOYMENT.md — declared in technical_debt_inherited; same precedent as settings-revamp / help-page (no headless-browser stack in project)."
+    },
+    {
+      "id": "FR-027",
+      "title": "Email notifier mirrors Telegram body in HTML",
+      "level": "production_ready",
+      "evidence": "TestTC_TMU_027h_BlockSequenceMatch: HTML data-block attributes appear in the same canonical order as the Telegram body ('subject', 'metric', 'trend', 'cause', 'footer'). TestTC_TMU_027f_EmailSubjectStripsEmoji: Telegram subject minus leading severity glyph equals EmailSubject. TestTC_TMU_027x_BuildMIMEMessage_Multipart: buildMIMEMessage produces a multipart/alternative body with both text/plain and text/html parts. Backwards compat: TestEmailSender_Send_MockSMTP, TestEmailSender_NotConfigured, TestEmailSender_Send_SMTPError, TestEmailSender_Name continue to pass."
+    },
+    {
+      "id": "FR-028",
+      "title": "Hard cap on Telegram message length (4096 chars)",
+      "level": "production_ready",
+      "evidence": "TestTC_TMU_028h_HardCap: 5000-char synthetic input renders to ≤4096 bytes with TruncatedStep != 'none' (chain engaged). TestTC_TMU_028e_SurfaceBlockSelfCap: 1500-char journal line is pre-capped at 600 chars with the '… (truncated)' suffix. TestTC_TMU_028f_MinimalFallbackHasFooterAndThreshold: minimal-fallback path retains '🔴', 'Open dashboard', value, threshold-operator. TestTC_TMU_NFR006_PanicRecoversToFallback: nil-Alert input recovers to a non-empty body containing the footer. Truncation chain order: journal_300 → trend → cause → journal_100 → minimal."
+    },
+    {
+      "id": "FR-029",
+      "title": "Probable-cause / situation line in plain language",
+      "level": "partial",
+      "evidence": "Cause derivation: TestTC_TMU_029h_CPUTopProcess ('top: ffmpeg (78%)'), TestTC_TMU_029m_RAMTopProcess ('top: chromium (1200 MB)'), TestTC_TMU_029d_DiskFreeSpace ('/ at 95% — 1.2 GB free'), TestTC_TMU_029t_TemperatureClimbing, TestTC_TMU_029_TempStableAndCooling, TestTC_TMU_029s_SystemdLastErrorLine, TestTC_TMU_029x_DockerExitCode137, TestTC_TMU_029_DockerLogsFallback, TestTC_TMU_029f_TimeoutOmitsLine (200ms budget enforced; line absent on timeout), TestTC_TMU_029n_NoDataOmits (never 'cause: unknown'), TestTC_TMU_029r_UnknownMetricReturnsNil, TestTC_TMU_029_JournalErrorReturnsNil, TestTC_TMU_NFR008b_MaliciousUnitNameRejected, TestTC_TMU_NFR008c_MaliciousContainerNameRejected. Renderer integration: TestTC_TMU_029h_RenderUsesCauseLine, TestTC_TMU_029r_ResolveSuppressesCause. ProcFSReader does NOT yet compute live CPU% (only Comm + RSS) — declared in technical_debt_inherited; CPU-fire 'top: <comm> (0%)' until the metrics-collector adapter lands. Memory + exit-code-mapped paths are production_ready today."
+    },
+    {
+      "id": "NFR-005",
+      "title": "Performance — render ≤50ms p95; per-source 200/500ms budgets",
+      "level": "partial",
+      "evidence": "Renderer is pure (text/template + html/template; no I/O). Per-source ctx.WithTimeout enforced in cause.Resource / Systemd / Docker — proven by TestTC_TMU_029f_TimeoutOmitsLine (300ms-delayed source under a 50ms ctx returns nil within ~250ms). The actual BenchmarkRenderTelegramAlert / BenchmarkRenderSubjectLine benchmark runs are NOT executed in CI (would need a -bench gate); the test cases TC-TMU-NFR005p / TC-TMU-017p are declared in 03_TEST_CASES.json with a manual-bench measurement plan. Listed under technical_debt_inherited."
+    },
+    {
+      "id": "NFR-006",
+      "title": "Reliability — render panics never block delivery",
+      "level": "production_ready",
+      "evidence": "TestTC_TMU_NFR006_PanicRecoversToFallback: a nil-input render returns a non-empty body containing the footer. render.Render's outer defer recovers and produces the minimal fallback (severity emoji + friendly label + value + threshold + footer). Telegram sender's per-block fallbacks (journal unavailable, docker logs unavailable) ensure a non-empty body in 100% of paths."
+    },
+    {
+      "id": "NFR-007",
+      "title": "Observability — single structured log line per send",
+      "level": "functionally_present",
+      "evidence": "Existing log.Printf calls cover the operational visibility need. The 9-field structured zerolog line (rule_id, severity, surface, bytes_sent, render_ms, telegram_status_code, edited, truncated_step, cause_source) is NOT yet emitted; render.Output already exposes TruncatedStep and CauseSource for that wiring. Declared in technical_debt_inherited (low effort_to_fix)."
+    },
+    {
+      "id": "NFR-008",
+      "title": "API security — argv-only subprocess + allow-list validation",
+      "level": "production_ready",
+      "evidence": "Static enforcement: cause.New uses defaultExec which calls exec.CommandContext with explicit argv (no shell). Allow-list validation: validUnitName regex (^[A-Za-z0-9@:_\\-.\\\\]+\\.(service|socket|timer|target|mount|path|slice|scope)$) and validContainerName regex (Docker's documented charset) reject malicious inputs before exec — proven by TestTC_TMU_NFR008b_MaliciousUnitNameRejected ('nginx; rm -rf /') and TestTC_TMU_NFR008c_MaliciousContainerNameRejected ('$(reboot)'). Both confirm exec.Command is NEVER called when validation fails."
+    },
+    {
+      "id": "NFR-009",
+      "title": "CI/CD — full test suite runs on every push to main",
+      "level": "partial",
+      "evidence": "All new tests (TestTC_TMU_*) plus the existing TestTelegram_*, TestEmail_*, TestAlertEngine_*, TestNotificationSave_* suites run via `go test ./...` and pass on the merge candidate. The aitri-managed test_runner is `go test -C ../.. ./internal/notify/... ./internal/server/... -run TestTC_TMU -v`. CI workflow file (.github/workflows/ci.yml) wiring is project-wide (inherited from parent) — not a per-feature artefact for this refactor."
+    },
+    {
+      "id": "NFR-010",
+      "title": "Reliability — healthcheck not applicable",
+      "level": "production_ready",
+      "evidence": "Declared explicitly: this feature introduces no new HTTP endpoint or background daemon. Existing GET /health returns 200 unchanged. NFR satisfied by declaration."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-024",
+      "substitution": "Storm-protection integration tests (TC-TMU-024h/024e/024w/024r/024f/024d) are NOT executed against a stubbed Telegram HTTP server. The storm package itself has full unit coverage (8 tests including concurrency under -race), but the dispatcher → telegram → editMessageText / sendMessage decision wiring is exercised only via direct unit tests of storm.Cache.",
+      "reason": "storm.Cache itself is unit-tested with deterministic clock injection; the editMessageText HTTP path is covered by manual smoke testing on the Pi.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-026",
+      "substitution": "Playwright-based e2e test for the Test Telegram button (TC-TMU-026x click-to-update ≤3s) is NOT executed in CI — same precedent as settings-revamp / help-page. The handler is exercised at the integration layer via the existing TestTelegram_* / TestEmail_* suites; the synthetic CPU-fire Event is built by the new buildTestNotificationEvent() helper which is straightforwardly inspectable.",
+      "reason": "No headless-browser stack in this Go project; a single-feature addition of Playwright would be disproportionate.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-029",
+      "substitution": "ProcFSReader.TopProcesses does NOT compute live CPU% (it only reports Comm + RSS from /proc). The 78% top-process figure in FR-029 AC-029-001 is satisfied at the rendering layer (cause.Resource consumes the value verbatim from a ProcReader); production deployment should swap in an adapter wrapping the existing metrics-collector's process snapshot when one is added.",
+      "reason": "A real CPU% sampler needs a 100ms sleep between two /proc/stat reads, which would blow the 200ms budget for cause derivation. Belongs in a follow-up alongside the metrics collector's existing process-list path.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-018",
+      "substitution": "Resolve event emission is NOT wired in internal/alerts/engine.go. The renderer fully supports the resolve template (FR-018 AC-018-002 covered by TC-TMU-018e), but the engine today only emits fires (it uses a cooldown-based model, not a state machine).",
+      "reason": "Wiring resolve detection requires tracking 'currently active' rules in the engine — explicit no_go_zone item from Phase 1. The rendering capability is in place for when that work lands.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-022",
+      "substitution": "Trend hint (5-minute prior sample) is NOT auto-populated by the dispatcher today. The renderer accepts a Trend struct but the dispatcher does not yet wire the metrics ring buffer in.",
+      "reason": "Wiring the metrics package read into the dispatcher is a small additional step; deferred to keep the build surface focused on the rendering contract.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-020",
+      "substitution": "Dispatcher does NOT yet auto-populate render.Input.Systemd / Docker surface data with journal/log fetches. The rendering, truncation, and fallback paths are fully tested at the renderer level; wiring journalctl + docker logs fetches into the dispatcher requires a small adapter.",
+      "reason": "The cause package already implements the journalctl + docker logs subprocess paths; the missing piece is a small dispatcher adapter that reads them and populates render.Input. Deferred to keep this refactor focused on the renderer contract.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "NFR-007",
+      "substitution": "Structured-log line per send (NFR-007's 9-field info entry) is NOT emitted yet. The values are all available from the Notifier.Notify path; emitting them requires a small log-line builder.",
+      "reason": "Existing log lines cover the operational visibility need; NFR-007 is a richer-format follow-up.",
+      "effort_to_fix": "low"
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "feature": "telegram-message-ux",
+  "phase": "build",
+  "stack": "Go 1.25 · stdlib net/http (Telegram) · stdlib net/smtp (Email) · stdlib text/template + html/template (rendering) · zerolog (existing) · SQLite (unchanged) · systemd on Pi ARM64",
+  "files_created": [
+    "../../internal/notify/event.go",
+    "../../internal/notify/markdown/markdown.go",
+    "../../internal/notify/markdown/markdown_test.go",
+    "../../internal/notify/storm/storm.go",
+    "../../internal/notify/storm/storm_test.go",
+    "../../internal/notify/cause/cause.go",
+    "../../internal/notify/cause/cause_test.go",
+    "../../internal/notify/render/render.go",
+    "../../internal/notify/render/render_test.go",
+    "../../internal/server/handlers_notifications_test.go"
+  ],
+  "files_modified": [
+    "../../internal/notify/notifier.go",
+    "../../internal/notify/dispatcher.go",
+    "../../internal/notify/telegram.go",
+    "../../internal/notify/telegram_test.go",
+    "../../internal/notify/email.go",
+    "../../internal/notify/email_test.go",
+    "../../internal/alerts/engine.go",
+    "../../internal/server/handlers_notifications.go",
+    "../../cmd/ultron-ap/main.go"
+  ],
+  "setup_commands": [
+    "go build ./...",
+    "go test ./..."
+  ],
+  "environment_variables": [
+    {
+      "name": "ULTRON_PUBLIC_URL",
+      "default": "(unset; the dispatcher derives http://<configured-host>:<configured-port> as a fallback at process start)"
+    }
+  ],
+  "test_runner": "go test -C ../.. ./internal/notify/... ./internal/server/... -run TestTC_TMU -v",
+  "test_files": [
+    "../../internal/notify/markdown/markdown_test.go",
+    "../../internal/notify/storm/storm_test.go",
+    "../../internal/notify/cause/cause_test.go",
+    "../../internal/notify/render/render_test.go",
+    "../../internal/notify/telegram_test.go",
+    "../../internal/notify/email_test.go",
+    "../../internal/server/handlers_notifications_test.go"
+  ],
+  "technical_debt": [
+    {
+      "fr_id": "FR-024",
+      "substitution": "Storm-protection integration tests (TC-TMU-024h/024e/024w/024r/024f/024d) are NOT executed against a stubbed Telegram HTTP server. The storm package itself has full unit coverage (8 tests including concurrency under -race), but the dispatcher → telegram → editMessageText / sendMessage decision wiring is exercised only via direct unit tests of storm.Cache. Adding an httptest-stubbed integration test would require restructuring the existing telegram_test.go which uses a roundTripFunc shim; deferred to keep the refactor blast radius small. Storm-cache state machine is mathematically simple and fully covered by unit tests.",
+      "reason": "storm.Cache itself is unit-tested with deterministic clock injection; the editMessageText HTTP path is covered by manual smoke testing on the Pi.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-026",
+      "substitution": "Playwright-based e2e test for the Test Telegram button (TC-TMU-026x click-to-update ≤3s) is NOT executed in CI — same precedent as settings-revamp / help-page. The handler is exercised at the integration layer via the existing TestTelegram_* / TestEmail_* suites; the synthetic CPU-fire Event is built by the new buildTestNotificationEvent() helper which is straightforwardly inspectable.",
+      "reason": "No headless-browser stack in this Go project; a single-feature addition of Playwright would be disproportionate.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-029",
+      "substitution": "ProcFSReader.TopProcesses does NOT compute live CPU% (it only reports Comm + RSS from /proc). The 78% top-process figure in FR-029 AC-029-001 is satisfied at the rendering layer (cause.Resource consumes the value verbatim from a ProcReader); production deployment should swap in an adapter wrapping the existing metrics-collector's process snapshot when one is added. Until then, top-by-RSS works for memory alerts and top-by-CPU returns the first available process.",
+      "reason": "A real CPU% sampler needs a 100ms sleep between two /proc/stat reads, which would blow the 200ms budget for cause derivation. Belongs in a follow-up alongside the metrics collector's existing process-list path.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-018",
+      "substitution": "Resolve event emission is NOT wired in internal/alerts/engine.go. The renderer fully supports the resolve template (FR-018 AC-018-002 covered by TC-TMU-018e), but the engine today only emits fires (it uses a cooldown-based model, not a state machine). Resolves can be emitted by future code paths that detect breach-cleared transitions or by manual triggers. This is consistent with the no_go_zone item #1 (\"Alert engine, evaluation logic, or alert-rule schema — no new fields collected by the engine\").",
+      "reason": "Wiring resolve detection requires tracking 'currently active' rules in the engine — explicit no_go_zone item from Phase 1. The rendering capability is in place for when that work lands.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-022",
+      "substitution": "Trend hint (5-minute prior sample) is NOT auto-populated by the dispatcher today. The renderer accepts a Trend struct (FR-022 covered by TC-TMU-022h/022e/022f at the renderer level), but the dispatcher does not yet wire the metrics ring buffer in. Resource-fire messages currently render without the trend block; the renderer correctly omits the line when Trend is nil rather than producing an 'n/a' marker.",
+      "reason": "Wiring the metrics package read into the dispatcher is a small additional step; deferred to keep the build surface focused on the rendering contract.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-020",
+      "substitution": "Dispatcher does NOT yet auto-populate render.Input.Systemd / Docker surface data with journal/log fetches. The rendering, truncation, and fallback paths are fully tested at the renderer level (TC-TMU-020h/020e/020z/021h/021e). Wiring journalctl + docker logs fetches into the dispatcher requires a small adapter; existing notify_test.go already proves the contract by passing pre-built SystemdData / DockerData. Production messages today render only the rule-context block (subject + threshold + footer) for systemd / docker fires; once the adapter lands, the surface block appears automatically.",
+      "reason": "The cause package already implements the journalctl + docker logs subprocess paths; the missing piece is a small dispatcher adapter that reads them and populates render.Input. Deferred to keep this refactor focused on the renderer contract.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "NFR-007",
+      "substitution": "Structured-log line per send (NFR-007's 9-field info entry) is NOT emitted yet. The dispatcher currently relies on the existing log.Printf calls; structured zerolog wiring with rule_id / severity / surface / bytes_sent / render_ms / telegram_status_code / edited / truncated_step / cause_source is a follow-up. The values are all available from the Notifier.Notify path; emitting them requires a small log-line builder.",
+      "reason": "Existing log lines cover the operational visibility need; NFR-007 is a richer-format follow-up.",
+      "effort_to_fix": "low"
+    }
+  ]
+}

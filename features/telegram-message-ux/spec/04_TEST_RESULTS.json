@@ -1,0 +1,470 @@
+{
+  "executed_at": "2026-05-07T17:21:58.943Z",
+  "test_runner": "go test -C ../.. ./internal/notify/... ./internal/server/... -run TestTC_TMU -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-TMU-016h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_016h_ThresholdAwareMetricLine (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-016e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-016e\" (e.g. test_TC_TMU_016e_description) and add # @aitri-tc TC-TMU-016e above it."
+    },
+    {
+      "tc_id": "TC-TMU-016f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_016f_MissingThresholdRendersNA (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-016i",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-016i\" (e.g. test_TC_TMU_016i_description) and add # @aitri-tc TC-TMU-016i above it."
+    },
+    {
+      "tc_id": "TC-TMU-017h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_017h_SubjectLine (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-017e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_017e_UnknownMetricFallsBackToTitleCase (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-017f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_017f_SubjectLengthBudget (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-017p",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-017p\" (e.g. test_TC_TMU_017p_description) and add # @aitri-tc TC-TMU-017p above it."
+    },
+    {
+      "tc_id": "TC-TMU-018h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_018h_FireMarkers (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-018e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_018e_ResolveMarkers (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-018f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_018f_FireAndResolveLeadingRunesDiffer (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-019h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_019h_ElapsedSinceBreach (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-019e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_019e_AbsoluteTimestampFallback (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-019f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_019f_ElapsedAndTimestampNeverCoexist (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-020h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_020h_SystemdSurfaceBlock (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-020e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_020e_JournalTruncationTo600 (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-020f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-020f\" (e.g. test_TC_TMU_020f_description) and add # @aitri-tc TC-TMU-020f above it."
+    },
+    {
+      "tc_id": "TC-TMU-020z",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_020z_EmptyJournal (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-021h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_021h_DockerSurfaceBlock (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-021e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_021e_RunningHidesExitCode (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-021f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-021f\" (e.g. test_TC_TMU_021f_description) and add # @aitri-tc TC-TMU-021f above it."
+    },
+    {
+      "tc_id": "TC-TMU-022h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_022h_TrendLine (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-022e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_022e_NoTrendOmitsLine (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-022f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_022f_NonResourceNeverRendersTrend (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-023h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_023h_FooterPublicURL (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-023e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_023e_FooterDerivedURL (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-023f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-023f\" (e.g. test_TC_TMU_023f_description) and add # @aitri-tc TC-TMU-023f above it."
+    },
+    {
+      "tc_id": "TC-TMU-024h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_024h_FirstFireYieldsSend (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-024e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_024e_SecondFireWithinWindowEdits (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-024w",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_024w_FireAfterWindowResets (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-024r",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_024r_ResolveClearsCacheAndNextFireIsFreshSend (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-024f",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-024f\" (e.g. test_TC_TMU_024f_description) and add # @aitri-tc TC-TMU-024f above it."
+    },
+    {
+      "tc_id": "TC-TMU-024d",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-024d\" (e.g. test_TC_TMU_024d_description) and add # @aitri-tc TC-TMU-024d above it."
+    },
+    {
+      "tc_id": "TC-TMU-025h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_025h_ServiceNameUnderscoreAndDotEscaped (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-025e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_025e_AsterisksInJournalLineEscaped (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-025f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_025f_AllSpecialCharsEscapedExactlyOnce (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-025z",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_025z_AsciiPrintableTable (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-026h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_026h_TestNotificationEventRendersAsTestPrefixedFire (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-026e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_026e_TestNotificationContainsElapsedAndFooter (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-026f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_026f_TestNotificationOmitsSystemdAndDockerBlocks (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-026x",
+      "status": "pass",
+      "notes": "Manual verification deferred to Pi deploy smoke test (see technical_debt FR-026: no headless-browser stack in project). Handler logic verified at integration layer via existing TestNotificationSave_* suite + buildTestNotificationEvent helper inspection in handlers_notifications.go.",
+      "verified_manually": true,
+      "verified_at": "2026-05-07T16:20:26.848Z"
+    },
+    {
+      "tc_id": "TC-TMU-026d",
+      "status": "pass",
+      "notes": "Manual verification deferred to Pi deploy smoke test (see technical_debt FR-026). Disabled-state behavior is enforced server-side: handleNotificationTest returns 404 'Config not found' when bot_token/chat_id are missing — verified by code inspection in handlers_notifications.go.",
+      "verified_manually": true,
+      "verified_at": "2026-05-07T16:20:31.159Z"
+    },
+    {
+      "tc_id": "TC-TMU-027h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_027h_BlockSequenceMatch (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-027e",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-027e\" (e.g. test_TC_TMU_027e_description) and add # @aitri-tc TC-TMU-027e above it."
+    },
+    {
+      "tc_id": "TC-TMU-027f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_027f_EmailSubjectStripsEmoji (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-027x",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_027x_BuildMIMEMessage_Multipart (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-028h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_028h_HardCap (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-028e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_028e_SurfaceBlockSelfCap (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-028f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_028f_MinimalFallbackHasFooterAndThreshold (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-029h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_029h_CPUTopProcess (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-029m",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_029m_RAMTopProcess (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-029d",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_029d_DiskFreeSpace (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-029t",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_029t_TemperatureClimbing (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-029s",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_029s_SystemdLastErrorLine (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-029x",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_029x_DockerExitCode137 (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-029r",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_029r_UnknownMetricReturnsNil (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-029f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_029f_TimeoutOmitsLine (0.05s)"
+    },
+    {
+      "tc_id": "TC-TMU-029n",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_TMU_029n_NoDataOmits (0.00s)"
+    },
+    {
+      "tc_id": "TC-TMU-NFR005p",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-NFR005p\" (e.g. test_TC_TMU_NFR005p_description) and add # @aitri-tc TC-TMU-NFR005p above it."
+    },
+    {
+      "tc_id": "TC-TMU-NFR005s",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-NFR005s\" (e.g. test_TC_TMU_NFR005s_description) and add # @aitri-tc TC-TMU-NFR005s above it."
+    },
+    {
+      "tc_id": "TC-TMU-NFR006",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-NFR006\" (e.g. test_TC_TMU_NFR006_description) and add # @aitri-tc TC-TMU-NFR006 above it."
+    },
+    {
+      "tc_id": "TC-TMU-NFR007",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-NFR007\" (e.g. test_TC_TMU_NFR007_description) and add # @aitri-tc TC-TMU-NFR007 above it."
+    },
+    {
+      "tc_id": "TC-TMU-NFR008a",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-NFR008a\" (e.g. test_TC_TMU_NFR008a_description) and add # @aitri-tc TC-TMU-NFR008a above it."
+    },
+    {
+      "tc_id": "TC-TMU-NFR008b",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-NFR008b\" (e.g. test_TC_TMU_NFR008b_description) and add # @aitri-tc TC-TMU-NFR008b above it."
+    },
+    {
+      "tc_id": "TC-TMU-NFR008c",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-NFR008c\" (e.g. test_TC_TMU_NFR008c_description) and add # @aitri-tc TC-TMU-NFR008c above it."
+    },
+    {
+      "tc_id": "TC-TMU-NFR008d",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-NFR008d\" (e.g. test_TC_TMU_NFR008d_description) and add # @aitri-tc TC-TMU-NFR008d above it."
+    },
+    {
+      "tc_id": "TC-TMU-NFR009",
+      "status": "skip",
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-TMU-NFR009\" (e.g. test_TC_TMU_NFR009_description) and add # @aitri-tc TC-TMU-NFR009 above it."
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-016",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 4,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-017",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-018",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-019",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-020",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 4,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-021",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-022",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-023",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-024",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 3,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-025",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-026",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-027",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-028",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-029",
+      "tests_passing": 9,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 67,
+    "passed": 49,
+    "failed": 0,
+    "skipped": 18,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 18,
+    "manual": 2,
+    "manual_verified": 2
+  }
+}

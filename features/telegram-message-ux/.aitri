@@ -1,0 +1,205 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "telegram-message-ux",
+  "createdAt": "2026-05-06T22:42:40.566Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-05-07T17:22:46.710Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-05-07T16:18:19.387Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 67,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-07T16:18:35.489Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 23,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-07T16:18:38.890Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 23,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-07T16:20:22.305Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 21,
+      "manual": 2
+    },
+    {
+      "at": "2026-05-07T16:25:51.823Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 49,
+      "failed": 0,
+      "skipped": 18,
+      "manual": 2
+    },
+    {
+      "at": "2026-05-07T16:25:55.216Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 49,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-07T16:53:05.528Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-07T16:56:20.140Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-07T17:10:59.325Z",
+      "event": "approved",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-07T17:18:47.253Z",
+      "event": "approved",
+      "phase": 3,
+      "afterDrift": true
+    },
+    {
+      "at": "2026-05-07T17:19:24.231Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-07T17:21:20.783Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-07T17:21:39.041Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-07T17:21:39.695Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 49,
+      "failed": 0,
+      "skipped": 18,
+      "manual": 2
+    },
+    {
+      "at": "2026-05-07T17:21:39.793Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 49,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-07T17:21:39.893Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-07T17:21:58.944Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 49,
+      "failed": 0,
+      "skipped": 18,
+      "manual": 2
+    },
+    {
+      "at": "2026-05-07T17:22:01.836Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 49,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-07T17:22:04.798Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-07T17:22:46.672Z",
+      "event": "approved",
+      "phase": 5
+    }
+  ],
+  "artifactHashes": {
+    "1": "10d72a7d48e84302f8ca178d02215f23c0595b5427cd831a1b08b87094591399",
+    "2": "0dec8f952dbeebec856137f0406989d93920d492b992f8dff1c45e111b12c6d7",
+    "3": "6250e8e2109a46b628fc182baaf2d2004728f95cd4bcad5d8ee7b38f9b80afb8",
+    "4": "46d18bf32135d88f0fe852340ac901c102878cd542ca10bd3119eeeb30685bfb",
+    "5": "24d8abf9c41c71e3c1e90db8f14e92dcda4f222619dc932f71c343b153d1c44d",
+    "ux": "af52790681c281bec32ddfb5bf76d1ead92cc46dfc69eb379cb7afb9099f2ae9"
+  },
+  "lastSession": {
+    "at": "2026-05-07T17:22:46.710Z",
+    "agent": "unknown",
+    "event": "approve deploy",
+    "files_touched": [
+      ".aitri/config.json",
+      ".env.example",
+      "cmd/ultron-ap/main.go",
+      "internal/alerts/engine.go",
+      "internal/notify/dispatcher.go",
+      "internal/notify/email.go",
+      "internal/notify/email_test.go",
+      "internal/notify/notifier.go",
+      "internal/notify/telegram.go",
+      "internal/notify/telegram_test.go",
+      "internal/server/handlers_notifications.go"
+    ]
+  },
+  "verifyRanAt": "2026-05-07T17:21:58.944Z",
+  "verifyPassed": true,
+  "normalizeState": {
+    "baseRef": "659df1e27d3ec6fcd60eb5e2cf77bbbbe330c5ec",
+    "method": "git",
+    "status": "resolved",
+    "lastRun": "2026-05-07T17:21:39.040Z"
+  },
+  "verifySummary": {
+    "total": 67,
+    "passed": 49,
+    "failed": 0,
+    "skipped": 18,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 18,
+    "manual": 2,
+    "manual_verified": 2
+  }
+}
