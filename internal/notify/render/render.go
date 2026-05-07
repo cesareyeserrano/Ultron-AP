@@ -362,7 +362,7 @@ func buildSubject(in Input) (string, bool) {
 	hostEsc := markdown.EscapeV2(host)
 
 	if in.Kind == KindResolve {
-		dur := durationStr(in.ResolvedAt.Sub(in.FirstFiredAt))
+		dur := markdown.EscapeV2(durationStr(in.ResolvedAt.Sub(in.FirstFiredAt)))
 		// Resolve subject: ✓ <Friendly Metric> RESOLVED on host — active for X
 		label, _ := metricLabel(in)
 		labelEsc := markdown.EscapeV2(label)
@@ -424,15 +424,22 @@ func buildMetricLine(in Input) (blockOut, bool) {
 	// already carries "usage" / "temperature" so the metric line uses the
 	// shorter family token.
 	short := strings.SplitN(label, " ", 2)[0]
-	threshold := "(threshold n/a)"
+	// Static template text uses MarkdownV2-escaped literal forms for the
+	// 18 reserved characters: _*[]()~`>#+-=|{}.!  — Telegram rejects any
+	// occurrence of these outside their formatting role, even in
+	// developer-authored text. The link-syntax in the footer is the only
+	// place where `[`, `]`, `(`, `)` remain unescaped.
+	//
+	// @aitri-trace FR-025 BG-fix
+	threshold := `\(threshold n/a\)`
 	if in.Rule != nil && in.Rule.Operator != "" {
-		// Render thresholds as integer when a resource metric is involved.
 		unit := metricUnit(safeMetricID(in))
+		op := markdown.EscapeV2(in.Rule.Operator)
 		switch unit {
 		case "%", "°C":
-			threshold = fmt.Sprintf("(threshold %s %.0f%s)", in.Rule.Operator, in.Rule.Threshold, unit)
+			threshold = fmt.Sprintf("\\(threshold %s %.0f%s\\)", op, in.Rule.Threshold, unit)
 		default:
-			threshold = fmt.Sprintf("(threshold %s %.1f)", in.Rule.Operator, in.Rule.Threshold)
+			threshold = fmt.Sprintf("\\(threshold %s %.1f\\)", op, in.Rule.Threshold)
 		}
 	}
 
@@ -440,11 +447,11 @@ func buildMetricLine(in Input) (blockOut, bool) {
 	if !in.FirstFiredAt.IsZero() {
 		d := in.Now.Sub(in.FirstFiredAt)
 		if d > 0 {
-			suffix = " for " + durationStr(d)
+			suffix = " for " + markdown.EscapeV2(durationStr(d))
 		}
 	}
 
-	main := fmt.Sprintf("ALERT FIRED — %s %s %s%s", short, value, threshold, suffix)
+	main := fmt.Sprintf("ALERT FIRED — %s %s %s%s", short, markdown.EscapeV2(value), threshold, suffix)
 	return blockOut{
 		name:       "metric",
 		telegramMD: main,
@@ -471,12 +478,14 @@ func buildTimestampLine(in Input) (blockOut, bool) {
 		local = in.Now
 	}
 	localStr := local.Format("2006-01-02 15:04:05 MST")
-	main := fmt.Sprintf("%s (local: %s)", utcStr, localStr)
+	plain := fmt.Sprintf("%s (local: %s)", utcStr, localStr)
+	// Telegram body needs the parens AND the dashes in dates escaped.
+	telegram := fmt.Sprintf("%s \\(local: %s\\)", markdown.EscapeV2(utcStr), markdown.EscapeV2(localStr))
 	return blockOut{
 		name:       "timestamp",
-		telegramMD: markdown.EscapeV2(main),
-		plain:      main,
-		html:       "<p data-block=\"timestamp\">" + htmlEscape(main) + "</p>",
+		telegramMD: telegram,
+		plain:      plain,
+		html:       "<p data-block=\"timestamp\">" + htmlEscape(plain) + "</p>",
 	}, true
 }
 
@@ -598,13 +607,18 @@ func buildTrendLine(in Input) (blockOut, bool) {
 	if unit == "" {
 		unit = "%"
 	}
-	main := fmt.Sprintf("trend: %.0f%s → %.0f%s (Δ %s%.0f%s)",
+	plain := fmt.Sprintf("trend: %.0f%s → %.0f%s (Δ %s%.0f%s)",
 		in.Trend.Prior, unit, in.Trend.Current, unit, sign, delta, unit)
+	// MarkdownV2 body: parens, plus, equals are specials. Numbers + °C +
+	// % are safe. → and Δ are non-ASCII, also safe.
+	tg := fmt.Sprintf("trend: %.0f%s → %.0f%s \\(Δ %s%.0f%s\\)",
+		in.Trend.Prior, unit, in.Trend.Current, unit,
+		markdown.EscapeV2(sign), delta, unit)
 	return blockOut{
 		name:       "trend",
-		telegramMD: markdown.EscapeV2(main),
-		plain:      main,
-		html:       `<p data-block="trend">` + htmlEscape(main) + `</p>`,
+		telegramMD: tg,
+		plain:      plain,
+		html:       `<p data-block="trend">` + htmlEscape(plain) + `</p>`,
 	}, true
 }
 
@@ -643,6 +657,11 @@ func buildFooter(in Input) (blockOut, bool) {
 // renderMinimalFallback is the NFR-006 last-resort path. It NEVER reads from
 // in.Trend / in.Cause / in.Systemd / in.Docker so a panic in any of those
 // blocks cannot cascade.
+//
+// Like the main render path, every literal `(`, `)`, `.`, `-`, `>`, etc.
+// must be backslash-escaped so the body parses under MarkdownV2 (FR-025).
+// The link-syntax `[Open dashboard](url)` is the one place where the
+// parens and brackets remain unescaped.
 func renderMinimalFallback(in Input, reason string) Output {
 	host := hostnameOrDefault(in.Hostname)
 	label, _ := metricLabel(in)
@@ -653,20 +672,24 @@ func renderMinimalFallback(in Input, reason string) Output {
 	if in.Alert != nil && in.Alert.Value != nil {
 		value = fmt.Sprintf("%.1f", *in.Alert.Value)
 	}
-	threshold := "n/a"
+	thresholdPlain := "n/a"
+	thresholdTG := `n/a`
 	if in.Rule != nil && in.Rule.Operator != "" {
-		threshold = fmt.Sprintf("%s %.1f", in.Rule.Operator, in.Rule.Threshold)
+		thresholdPlain = fmt.Sprintf("%s %.1f", in.Rule.Operator, in.Rule.Threshold)
+		thresholdTG = fmt.Sprintf("%s %.1f", markdown.EscapeV2(in.Rule.Operator), in.Rule.Threshold)
+		// Number formatting can include "." which is special.
+		thresholdTG = strings.ReplaceAll(thresholdTG, ".", `\.`)
 	}
 	url := strings.TrimRight(in.PublicURL, "/") + "/alerts"
 
 	subject := fmt.Sprintf("%s %s %s on %s", glyph, markdown.EscapeV2(label), severity, markdown.EscapeV2(host))
-	body := fmt.Sprintf("%s\n%s %s (threshold %s)\n[Open dashboard](%s)",
-		subject, short, value, threshold, url)
+	body := fmt.Sprintf("%s\n%s %s \\(threshold %s\\)\n[Open dashboard](%s)",
+		subject, short, markdown.EscapeV2(value), thresholdTG, url)
 	emailSubject := fmt.Sprintf("%s %s on %s", label, severity, host)
 	emailPlain := fmt.Sprintf("%s\n%s %s (threshold %s)\nOpen dashboard: %s",
-		emailSubject, short, value, threshold, url)
+		emailSubject, short, value, thresholdPlain, url)
 	emailHTML := fmt.Sprintf(`<h2 data-block="subject">%s</h2><p>%s %s (threshold %s)</p><p><a href="%s">Open dashboard</a></p>`,
-		htmlEscape(emailSubject), htmlEscape(short), htmlEscape(value), htmlEscape(threshold), htmlAttr(url))
+		htmlEscape(emailSubject), htmlEscape(short), htmlEscape(value), htmlEscape(thresholdPlain), htmlAttr(url))
 
 	_ = reason // logged by the dispatcher via NFR-006; kept for future field
 	return Output{

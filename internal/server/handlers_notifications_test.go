@@ -49,12 +49,14 @@ func TestTC_TMU_026h_TestNotificationEventRendersAsTestPrefixedFire(t *testing.T
 	out := render.Render(in)
 
 	body := out.TelegramMD
+	// MarkdownV2 escapes '>', '(', ')', '.', etc. The escapes render as
+	// invisible to the user on Telegram; the test asserts the wire form.
 	for _, want := range []string{
 		"🔴",
 		"CPU usage critical",
 		"ALERT FIRED",
 		"CPU 92%",
-		"threshold > 80",
+		`threshold \> 80`,
 		"[Open dashboard]",
 	} {
 		if !strings.Contains(body, want) {

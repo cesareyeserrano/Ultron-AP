@@ -53,7 +53,10 @@ func resourceFire(opts ...func(*Input)) Input {
 // @aitri-trace FR-016 US-016 AC-016-001 TC-TMU-016h
 func TestTC_TMU_016h_ThresholdAwareMetricLine(t *testing.T) {
 	out := Render(resourceFire())
-	want := "CPU 92% (threshold > 80%)"
+	// Telegram MarkdownV2 escapes parens and '>' — Telegram renders the
+	// backslashes as invisible escapes, so on screen the user sees
+	// "CPU 92% (threshold > 80%)" verbatim.
+	want := `CPU 92% \(threshold \> 80%\)`
 	if !strings.Contains(out.TelegramMD, want) {
 		t.Fatalf("body does not contain %q;\n%s", want, out.TelegramMD)
 	}
@@ -68,8 +71,9 @@ func TestTC_TMU_016h_ThresholdAwareMetricLine(t *testing.T) {
 func TestTC_TMU_016f_MissingThresholdRendersNA(t *testing.T) {
 	in := resourceFire(func(in *Input) { in.Rule = nil })
 	out := Render(in)
-	if !strings.Contains(out.TelegramMD, "(threshold n/a)") {
-		t.Fatalf("body should contain '(threshold n/a)'; got:\n%s", out.TelegramMD)
+	// MarkdownV2-escaped form on the wire (renders as "(threshold n/a)").
+	if !strings.Contains(out.TelegramMD, `\(threshold n/a\)`) {
+		t.Fatalf("body should contain escaped '\\(threshold n/a\\)'; got:\n%s", out.TelegramMD)
 	}
 }
 
@@ -495,7 +499,9 @@ func TestTC_TMU_028f_MinimalFallbackHasFooterAndThreshold(t *testing.T) {
 	if out.TruncatedStep != "minimal" {
 		t.Errorf("TruncatedStep=%q; want 'minimal'", out.TruncatedStep)
 	}
-	for _, want := range []string{"🔴", "Open dashboard", "92.4", ">"} {
+	// MarkdownV2 escapes the dot in 92.4 → 92\.4 and '>' → \>; user sees
+	// the escapes rendered as invisible.
+	for _, want := range []string{"🔴", "Open dashboard", `92\.4`, `\>`} {
 		if !strings.Contains(out.TelegramMD, want) {
 			t.Errorf("minimal fallback missing %q; got:\n%s", want, out.TelegramMD)
 		}
