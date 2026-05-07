@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-alpha.27",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-07T17:11:05.330Z",
+  "updatedAt": "2026-05-07T17:36:31.565Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,15 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-06T12:42:37.324Z",
-      "event": "normalize-resolved",
-      "phase": null,
-      "files": 9,
-      "method": "git",
-      "baseRefFrom": "2280c07d2c6627ad9803ade84f8417b9feca9a2f",
-      "baseRefTo": "5cda5951b6158cfec667f0d4b9693b06c186ac68"
-    },
     {
       "at": "2026-05-06T13:43:11.163Z",
       "event": "verify-run",
@@ -200,6 +191,15 @@
       "method": "git",
       "baseRefFrom": "a252b46b5bb5e11cd2260e9efad3478e1ebe0331",
       "baseRefTo": "dc9bf74559000aa9f19d8213920c8df4531b9f14"
+    },
+    {
+      "at": "2026-05-07T17:36:31.527Z",
+      "event": "normalize-resolved",
+      "phase": null,
+      "files": 25,
+      "method": "git",
+      "baseRefFrom": "dc9bf74559000aa9f19d8213920c8df4531b9f14",
+      "baseRefTo": "1da806b715cac140cf806e8b6ce4c52d03f9e221"
     }
   ],
   "verifyPassed": true,
@@ -213,17 +213,20 @@
   },
   "verifyRanAt": "2026-05-06T15:17:18.646Z",
   "lastSession": {
-    "at": "2026-05-06T22:42:40.580Z",
+    "at": "2026-05-07T17:36:31.565Z",
     "agent": "unknown",
-    "event": "feature init telegram-message-ux"
+    "event": "normalize --resolve",
+    "files_touched": [
+      ".aitri/config.json"
+    ]
   },
   "auditLastAt": "2026-05-03T22:42:15.435Z",
   "upgradeFindings": [],
   "normalizeState": {
-    "baseRef": "dc9bf74559000aa9f19d8213920c8df4531b9f14",
+    "baseRef": "1da806b715cac140cf806e8b6ce4c52d03f9e221",
     "method": "git",
     "status": "resolved",
-    "lastRun": "2026-05-07T17:11:05.328Z"
+    "lastRun": "2026-05-07T17:36:31.525Z"
   },
   "verifySummary": {
     "total": 45,
