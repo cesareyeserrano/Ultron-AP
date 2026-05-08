@@ -765,6 +765,31 @@
       "fix_at": "2026-05-07T18:03:02.381Z",
       "close_commit_sha": "5eff340360d05cd5246e0fd9e9ffc96515cf7399",
       "close_at": "2026-05-07T18:03:09.294Z"
+    },
+    {
+      "id": "BG-035",
+      "title": "Panel marca peers compartidos como Connected aunque no usen la VPN (status.go usa Online en vez de Active)",
+      "description": "El panel de Ultron AP muestra como \"Connected\" a peers de Tailscale que en realidad no están utilizando la VPN. El problema es especialmente visible con dispositivos compartidos desde otro tailnet (ShareeNode: true). Caso real: usuario XIMENA GONZALEZ (ximenagonzalez0001@gmail.com), IP 100.85.52.11, mostrado como \"Connected\" pese a que el dispositivo no estaba conectado. Causa raíz: en internal/tailscale/status.go:78 se asigna Online: p.Online directamente desde la respuesta de Tailscale. El campo Online de Tailscale significa \"el demonio del peer está vivo y registrado en el control plane\", no \"el túnel está siendo usado\". Tailscale ya expone el dato correcto en el mismo JSON: el campo Active indica si el túnel está realmente en uso. Componente: internal/tailscale/status.go. Fix propuesto (Opción A, mínima): añadir Active bool `json:\"Active\"` al struct rawPeer (líneas 34–41) y cambiar Online: p.Online por Online: p.Active en el bucle que construye los peers (líneas 71–81), o renombrar Peer.Online → Peer.Active y propagar a la plantilla web. Opción B (más completa): mantener ambos campos en Peer (Online = demonio vivo, Active = túnel en uso) y dejar que la UI elija. Notas: verificar también el manejo de LastSeen zero-value (0001-01-01T00:00:00Z) — tratarlo como \"nunca visto\" y renderizar \"—\".",
+      "steps_to_reproduce": [
+        "Compartir un dispositivo desde otro tailnet hacia el tailnet de Ultron (ShareeNode: true).",
+        "Apagar o desconectar el dispositivo compartido para que no esté usando la VPN.",
+        "Abrir el panel de Ultron AP y observar el estado del peer.",
+        "Comparar con la salida de `tailscale status --json` para ese peer."
+      ],
+      "expected_result": "El indicador \"Connected\" del panel debe reflejar uso real del túnel, no solo el estado del demonio remoto. Si el peer no está activo (Active=false) y/o no tiene handshake reciente, el panel debe mostrarlo como No conectado. Solo si Active=true (o hay tráfico/handshake reciente) debe mostrarse como Conectado.",
+      "actual_result": "El panel muestra el peer como \"Connected\" porque status.go usa el campo Online de Tailscale, que solo indica que el demonio remoto está vivo en el control plane. El peer aparece conectado aunque Active=false, LastHandshake/LastSeen/LastWrite estén en valor cero, RxBytes=TxBytes=0 e InEngine=false.",
+      "environment": "Ultron AP — internal/tailscale/status.go",
+      "severity": "medium",
+      "status": "open",
+      "fr": null,
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": "tailscale status --json para el peer afectado: { \"HostName\": \"device-of-shared-to-user\", \"Online\": true, \"Active\": false, \"LastSeen\": \"0001-01-01T00:00:00Z\", \"LastHandshake\": \"0001-01-01T00:00:00Z\", \"LastWrite\": \"0001-01-01T00:00:00Z\", \"RxBytes\": 0, \"TxBytes\": 0, \"InEngine\": false, \"ShareeNode\": true }",
+      "reported_by": "cesareyeserrano",
+      "created_at": "2026-05-08T22:13:17.737Z",
+      "updated_at": "2026-05-08T22:13:17.737Z",
+      "resolution": null
     }
   ]
 }

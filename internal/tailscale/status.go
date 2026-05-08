@@ -37,6 +37,7 @@ type rawPeer struct {
 	OS           string    `json:"OS"`
 	TailscaleIPs []string  `json:"TailscaleIPs"`
 	Online       bool      `json:"Online"`
+	Active       bool      `json:"Active"`
 	LastSeen     time.Time `json:"LastSeen"`
 }
 
@@ -51,7 +52,13 @@ func GetStatus() (*Status, error) {
 	if err != nil {
 		return nil, fmt.Errorf("tailscale status: %w", err)
 	}
+	return parseStatus(out)
+}
 
+// parseStatus decodes `tailscale status --json` output into Status.
+// Online on Peer reflects active tunnel use (Tailscale's Active field), not
+// just whether the remote daemon is registered with the control plane.
+func parseStatus(out []byte) (*Status, error) {
 	var raw rawStatus
 	if err := json.Unmarshal(out, &raw); err != nil {
 		return nil, fmt.Errorf("tailscale parse: %w", err)
@@ -64,7 +71,7 @@ func GetStatus() (*Status, error) {
 			DeviceName:   pickDeviceName(raw.Self),
 			IPs:          raw.Self.TailscaleIPs,
 			OS:           raw.Self.OS,
-			Online:       true, // self is always online
+			Online:       true, // self is always active
 		},
 	}
 
@@ -75,7 +82,7 @@ func GetStatus() (*Status, error) {
 			DeviceName:   pickDeviceName(p),
 			IPs:          p.TailscaleIPs,
 			OS:           p.OS,
-			Online:       p.Online,
+			Online:       p.Active,
 			LastSeen:     p.LastSeen,
 		})
 	}
