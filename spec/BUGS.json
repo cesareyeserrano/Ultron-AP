@@ -780,7 +780,7 @@
       "actual_result": "El panel muestra el peer como \"Connected\" porque status.go usa el campo Online de Tailscale, que solo indica que el demonio remoto está vivo en el control plane. El peer aparece conectado aunque Active=false, LastHandshake/LastSeen/LastWrite estén en valor cero, RxBytes=TxBytes=0 e InEngine=false.",
       "environment": "Ultron AP — internal/tailscale/status.go",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -788,7 +788,56 @@
       "evidence": "tailscale status --json para el peer afectado: { \"HostName\": \"device-of-shared-to-user\", \"Online\": true, \"Active\": false, \"LastSeen\": \"0001-01-01T00:00:00Z\", \"LastHandshake\": \"0001-01-01T00:00:00Z\", \"LastWrite\": \"0001-01-01T00:00:00Z\", \"RxBytes\": 0, \"TxBytes\": 0, \"InEngine\": false, \"ShareeNode\": true }",
       "reported_by": "cesareyeserrano",
       "created_at": "2026-05-08T22:13:17.737Z",
-      "updated_at": "2026-05-08T22:13:17.737Z",
+      "updated_at": "2026-05-08T22:39:35.057Z",
+      "resolution": null,
+      "fix_commit_sha": "aadcfc591f91d9b66d4900148f3e6554e70a7d4e",
+      "fix_at": "2026-05-08T22:21:48.178Z",
+      "close_commit_sha": "aadcfc591f91d9b66d4900148f3e6554e70a7d4e",
+      "close_at": "2026-05-08T22:39:35.057Z"
+    },
+    {
+      "id": "BG-036",
+      "title": "Telegram notifications fail with MarkdownV2 reserved characters (silent loss)",
+      "description": "",
+      "steps_to_reproduce": [
+        "Trigger any alert whose body contains a MarkdownV2 reserved char (-, ., (, ), =, |, etc.) — e.g. rule_id=11 fire",
+        "Observe ultron-ap.service journal"
+      ],
+      "expected_result": "Notification is delivered to Telegram; failed=0",
+      "actual_result": "Telegram API returns 400 Bad Request: \"Character '-' is reserved and must be escaped with the preceding '\\\\'\"; notify.send logs failed=1 and the message is silently dropped",
+      "environment": "Pi 192.168.1.29 / ultron-ap.service / production",
+      "severity": "medium",
+      "status": "open",
+      "fr": null,
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": "journal 2026-05-08: notify: telegram notify failed: telegram: API returned 400 ... rule_id=11 severity=info surface=resource kind=fire channels=1 failed=1",
+      "reported_by": "cesar",
+      "created_at": "2026-05-08T22:22:54.345Z",
+      "updated_at": "2026-05-08T22:22:54.345Z",
+      "resolution": null
+    },
+    {
+      "id": "BG-037",
+      "title": "Alert rule rule_id=11 flaps between fire and resolve every 15-20 min (no hysteresis / for-duration)",
+      "description": "",
+      "steps_to_reproduce": [
+        "Run the alert engine (interval=5s) with rule_id=11 (resource, cause_source=proc) and observe the journal across several hours"
+      ],
+      "expected_result": "A fire only when the threshold breach is sustained for a configurable for_duration (e.g. 60-120s); resolve only after the condition stays clear for resolve_for_duration; optional cooldown before the next fire",
+      "actual_result": "Engine evaluates the threshold every 5s and emits fire/resolve immediately on each crossing. Cycles fire→resolve last 3-30s and repeat every 15-20 min, generating spurious alerts and notification noise",
+      "environment": "Pi 192.168.1.29 / ultron-ap.service / Alert engine started (interval=5s)",
+      "severity": "low",
+      "status": "open",
+      "fr": null,
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": "journal 2026-05-08 (5h window): 11:41:56 fire / 11:41:59 resolve / 11:56:04 fire / 12:11:09 fire / 12:11:49 resolve / 12:17:44 resolve / 14:08:39 fire / 14:08:59 resolve / 16:35:29 fire / 16:35:44 resolve / 16:56:24 fire / 16:56:29 resolve — all rule_id=11 cause_source=proc",
+      "reported_by": "cesar",
+      "created_at": "2026-05-08T22:23:06.519Z",
+      "updated_at": "2026-05-08T22:23:06.519Z",
       "resolution": null
     }
   ]
