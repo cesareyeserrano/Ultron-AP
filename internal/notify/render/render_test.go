@@ -388,6 +388,58 @@ func TestTC_TMU_022h_TrendLine(t *testing.T) {
 	}
 }
 
+// TestBG036_TrendNegativeDeltaEscapesMinus is the regression guard for
+// BG-036: when Current < Prior the rendered Δ used to leak an unescaped
+// "-" into the MarkdownV2 body, which made Telegram reject the entire
+// sendMessage with 400 "Character '-' is reserved".
+func TestBG036_TrendNegativeDeltaEscapesMinus(t *testing.T) {
+	in := resourceFire(func(in *Input) {
+		in.Trend = &Trend{Prior: 92, Current: 78, Unit: "%"}
+	})
+	out := Render(in)
+	if !strings.Contains(out.TelegramMD, `\(Δ \-14%\)`) {
+		t.Errorf("expected escaped negative delta '\\(Δ \\-14%%\\)'; got:\n%s", out.TelegramMD)
+	}
+	if strings.Contains(out.TelegramMD, "Δ -14") {
+		t.Errorf("body contains unescaped '-' in trend delta; got:\n%s", out.TelegramMD)
+	}
+	if !strings.Contains(out.EmailPlain, "(Δ -14%)") {
+		t.Errorf("plain body should keep unescaped '-' for humans; got:\n%s", out.EmailPlain)
+	}
+}
+
+// TestBG036_TrendZeroDeltaHasNoSign exercises the delta==0 branch so the
+// rendered token is "(Δ 0%)" without a leading "+" or "-".
+func TestBG036_TrendZeroDeltaHasNoSign(t *testing.T) {
+	in := resourceFire(func(in *Input) {
+		in.Trend = &Trend{Prior: 80, Current: 80, Unit: "%"}
+	})
+	out := Render(in)
+	if !strings.Contains(out.TelegramMD, `\(Δ 0%\)`) {
+		t.Errorf("expected '\\(Δ 0%%\\)' for zero delta; got:\n%s", out.TelegramMD)
+	}
+}
+
+// TestBG036_DecimalThresholdEscapesDot covers the latent sibling bug: the
+// non-percent threshold formatter used to emit "%.1f" verbatim, leaving the
+// "." (a MarkdownV2 special) unescaped. Use a metric with no friendly unit
+// so the `default` branch in buildMetricLine fires.
+func TestBG036_DecimalThresholdEscapesDot(t *testing.T) {
+	in := resourceFire(func(in *Input) {
+		in.Alert.Source = "load"
+		in.Rule.Metric = "load"
+		in.Rule.Operator = ">"
+		in.Rule.Threshold = 1.5
+	})
+	out := Render(in)
+	if !strings.Contains(out.TelegramMD, `\(threshold \> 1\.5\)`) {
+		t.Errorf("expected escaped decimal threshold; got:\n%s", out.TelegramMD)
+	}
+	if strings.Contains(out.TelegramMD, "1.5") {
+		t.Errorf("body contains unescaped '.' in threshold; got:\n%s", out.TelegramMD)
+	}
+}
+
 // TestTC_TMU_022e covers FR-022 / AC-022-002 — Trend nil ⇒ no 'trend:'.
 //
 // @aitri-trace FR-022 AC-022-002 TC-TMU-022e

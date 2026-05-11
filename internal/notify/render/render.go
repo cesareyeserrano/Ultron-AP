@@ -435,12 +435,17 @@ func buildMetricLine(in Input) (blockOut, bool) {
 	if in.Rule != nil && in.Rule.Operator != "" {
 		unit := metricUnit(safeMetricID(in))
 		op := markdown.EscapeV2(in.Rule.Operator)
+		// Escape the formatted threshold value so any reserved characters in
+		// the number itself ("-" for negative thresholds, "." in decimal
+		// formats) are emitted as literals. BG-036.
+		var valStr string
 		switch unit {
 		case "%", "°C":
-			threshold = fmt.Sprintf("\\(threshold %s %.0f%s\\)", op, in.Rule.Threshold, unit)
+			valStr = fmt.Sprintf("%.0f%s", in.Rule.Threshold, unit)
 		default:
-			threshold = fmt.Sprintf("\\(threshold %s %.1f\\)", op, in.Rule.Threshold)
+			valStr = fmt.Sprintf("%.1f", in.Rule.Threshold)
 		}
+		threshold = fmt.Sprintf("\\(threshold %s %s\\)", op, markdown.EscapeV2(valStr))
 	}
 
 	suffix := ""
@@ -599,21 +604,28 @@ func buildTrendLine(in Input) (blockOut, bool) {
 		return blockOut{}, false
 	}
 	delta := in.Trend.Current - in.Trend.Prior
-	sign := "+"
-	if delta < 0 {
-		sign = ""
+	// Split sign from magnitude so MarkdownV2 escaping handles "-" and "+"
+	// uniformly. Letting %.0f emit a literal "-" leaks an unescaped reserved
+	// character into the body and Telegram rejects the whole send with 400
+	// (BG-036).
+	sign := ""
+	magnitude := delta
+	switch {
+	case delta > 0:
+		sign = "+"
+	case delta < 0:
+		sign = "-"
+		magnitude = -delta
 	}
 	unit := in.Trend.Unit
 	if unit == "" {
 		unit = "%"
 	}
 	plain := fmt.Sprintf("trend: %.0f%s → %.0f%s (Δ %s%.0f%s)",
-		in.Trend.Prior, unit, in.Trend.Current, unit, sign, delta, unit)
-	// MarkdownV2 body: parens, plus, equals are specials. Numbers + °C +
-	// % are safe. → and Δ are non-ASCII, also safe.
+		in.Trend.Prior, unit, in.Trend.Current, unit, sign, magnitude, unit)
 	tg := fmt.Sprintf("trend: %.0f%s → %.0f%s \\(Δ %s%.0f%s\\)",
 		in.Trend.Prior, unit, in.Trend.Current, unit,
-		markdown.EscapeV2(sign), delta, unit)
+		markdown.EscapeV2(sign), magnitude, unit)
 	return blockOut{
 		name:       "trend",
 		telegramMD: tg,
@@ -676,9 +688,10 @@ func renderMinimalFallback(in Input, reason string) Output {
 	thresholdTG := `n/a`
 	if in.Rule != nil && in.Rule.Operator != "" {
 		thresholdPlain = fmt.Sprintf("%s %.1f", in.Rule.Operator, in.Rule.Threshold)
-		thresholdTG = fmt.Sprintf("%s %.1f", markdown.EscapeV2(in.Rule.Operator), in.Rule.Threshold)
-		// Number formatting can include "." which is special.
-		thresholdTG = strings.ReplaceAll(thresholdTG, ".", `\.`)
+		// Escape the formatted threshold value so "." (decimal) and any "-"
+		// for negative thresholds become MarkdownV2 literals. BG-036.
+		valStr := fmt.Sprintf("%.1f", in.Rule.Threshold)
+		thresholdTG = fmt.Sprintf("%s %s", markdown.EscapeV2(in.Rule.Operator), markdown.EscapeV2(valStr))
 	}
 	url := strings.TrimRight(in.PublicURL, "/") + "/alerts"
 
