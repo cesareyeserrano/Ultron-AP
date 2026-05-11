@@ -846,18 +846,17 @@
     },
     {
       "id": "BG-038",
-      "title": "Settings alert widgets don't update form values; no UI to create network alert rules",
-      "description": "",
+      "title": "Settings alert widgets dead when navigating via sidebar (hx-boost doesn't reload head)",
+      "description": "Scoped to FR-058 widget script loading. Network alert rules UI/engine (FR-022) gap split out to BG-039.",
       "steps_to_reproduce": [
-        "Open /settings → scroll to Alert rules section",
-        "Click any severity segmented button (low/medium/high/critical)",
-        "Click any cooldown chip preset (1m/5m/15m/1h)",
-        "Click +/− on the numeric stepper",
-        "Submit the form",
-        "Open /network and look for an 'Add alert rule' form or Network → Settings → Alert rules tab"
+        "Open any non-settings page (e.g. /dashboard)",
+        "Click 'Settings' in the sidebar (hx-boost link)",
+        "Scroll to Alert rules section",
+        "Click any severity segmented button, cooldown chip preset, or +/− stepper",
+        "Observe: nothing happens"
       ],
-      "expected_result": "Segmented severity click updates hidden <input name=severity>; chip preset populates cooldown field; stepper increments/decrements value; POST carries the chosen values. Network page exposes a UI to create/edit alert rules (FR-022, 01_UX_SPEC.md line 40).",
-      "actual_result": "Widgets render the correct HTML (data-widget=segmented/chip-preset/stepper) but JS click handlers never propagate values to the form's hidden inputs, so severity buttons, presets and steppers do nothing visible/functional. The form submits with default/empty values, making alert customization impossible. Network page (web/templates/network.html) has no Settings sub-tab and no AlertRulesTable — the UI for creating network alert rules was never implemented despite being specified.",
+      "expected_result": "Segmented severity click updates hidden <input name=severity>; chip preset populates cooldown field; stepper increments/decrements value; POST carries the chosen values — regardless of how the user got to /settings (direct URL, hard refresh, or hx-boost sidebar navigation).",
+      "actual_result": "Widget scripts in base.html <head> are gated by {{if eq .ActivePage \"settings\"}}. hx-boost swaps the body but NOT the head, so when users navigate to /settings from any other page via the sidebar, the widget JS never loads. Widgets render correct HTML (data-widget=segmented/chip-preset/stepper) but have no click handlers attached. Direct URL load / hard refresh works correctly. The form submits with default/empty values, making alert customization impossible.",
       "environment": "local — settings-revamp + network-monitoring features, both marked verify ✅ in pipeline",
       "severity": "medium",
       "status": "open",
@@ -869,6 +868,30 @@
       "reported_by": "cesar",
       "created_at": "2026-05-11T17:59:30.247Z",
       "updated_at": "2026-05-11T17:59:30.247Z",
+      "resolution": null
+    },
+    {
+      "id": "BG-039",
+      "title": "FR-022 network alert rules: engine + UI never implemented",
+      "description": "",
+      "steps_to_reproduce": [
+        "Open /settings → Alert rules → click Metric select",
+        "Look for: latency / loss / dns_failure / wan_outage / public_ip_change",
+        "Open /network and look for an alert-rule creation tab/section"
+      ],
+      "expected_result": "Metric select includes network metric types (FR-022). Settings (or /network) exposes UI to create network rules with sustained-duration parameter (BG-037 hysteresis is part of this). Alert engine evaluates these rule types and fires via existing notification channels.",
+      "actual_result": "isValidMetric() in internal/server/handlers_settings.go only accepts cpu/ram/disk/temp. Alert engine in internal/alerts/engine.go has zero references to latency/loss/dns/wan/public_ip. network.html has no alert-rule UI. The acceptance criterion 'Network rules render in the existing alerts panel ... mutable from the same settings UI patterns' is unmet. This is a substantial implementation gap and should be routed via aitri feature init network-alerts (or fr-change), not a maintenance-path bug-fix.",
+      "environment": "Pi 192.168.1.29 / production / pipeline marked verify ✅ but FR-022 partially implemented",
+      "severity": "medium",
+      "status": "open",
+      "fr": "FR-022",
+      "tc_reference": null,
+      "phase_detected": 5,
+      "detected_by": "manual",
+      "evidence": "internal/server/handlers_settings.go:82-88, internal/alerts/engine.go (no network metric handling), web/templates/network.html (no rule UI), spec/BUGS.json BG-038 (split source)",
+      "reported_by": "claude (split from BG-038)",
+      "created_at": "2026-05-11T21:18:15.882Z",
+      "updated_at": "2026-05-11T21:18:15.882Z",
       "resolution": null
     }
   ]
