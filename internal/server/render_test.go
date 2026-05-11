@@ -67,6 +67,24 @@ func TestDashboard_Returns200(t *testing.T) {
 	assert.Contains(t, rec.Header().Get("Content-Type"), "text/html")
 }
 
+// BG-038 — widget scripts must load on every page so they survive an
+// hx-boost body-swap into /settings (hx-boost does not update <head>).
+func TestDashboard_LoadsWidgetScripts(t *testing.T) {
+	srv, session := setupTestServerWithSession(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req = addSessionContext(req, session)
+	rec := httptest.NewRecorder()
+
+	srv.handleDashboard(rec, req)
+
+	body := rec.Body.String()
+	for _, w := range []string{"stepper.js", "segmented.js", "toggle.js", "chip-preset.js"} {
+		assert.Contains(t, body, "/static/js/widgets/"+w,
+			"widget %s must be loaded on every page (BG-038)", w)
+	}
+}
+
 func TestDashboard_ContainsSidebar(t *testing.T) {
 	srv, session := setupTestServerWithSession(t)
 

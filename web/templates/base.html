@@ -11,14 +11,15 @@
     {{if eq .ActivePage "dashboard"}}
     <script src="/static/js/sse.js?v=20260227ux3"></script>
     {{end}}
-    {{if eq .ActivePage "settings"}}
-    <script src="/static/js/widgets/stepper.js?v=20260506sr1" defer></script>
-    <script src="/static/js/widgets/segmented.js?v=20260506sr1" defer></script>
-    <script src="/static/js/widgets/toggle.js?v=20260506sr1" defer></script>
-    <script src="/static/js/widgets/chip-preset.js?v=20260506sr1" defer></script>
-    <script src="/static/js/widgets/anchor-chip.js?v=20260506sr1" defer></script>
-    <script src="/static/js/widgets/encryption-key.js?v=20260506sr1" defer></script>
-    {{end}}
+    <!-- BG-038: widget scripts must load on every page so they survive hx-boost
+         body-swaps to /settings (hx-boost doesn't update <head>). Each widget
+         IIFE is idempotent (__*Bound guards) and binds htmx:afterSwap. -->
+    <script src="/static/js/widgets/stepper.js?v=20260511bg038" defer></script>
+    <script src="/static/js/widgets/segmented.js?v=20260511bg038" defer></script>
+    <script src="/static/js/widgets/toggle.js?v=20260511bg038" defer></script>
+    <script src="/static/js/widgets/chip-preset.js?v=20260511bg038" defer></script>
+    <script src="/static/js/widgets/anchor-chip.js?v=20260511bg038" defer></script>
+    <script src="/static/js/widgets/encryption-key.js?v=20260511bg038" defer></script>
 </head>
 <body class="ux-shell bg-base text-text font-sans min-h-screen flex" hx-boost="true" data-active-page="{{.ActivePage}}">
     <!-- Mobile overlay -->
