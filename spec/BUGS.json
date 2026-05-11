@@ -807,7 +807,7 @@
       "actual_result": "Telegram API returns 400 Bad Request: \"Character '-' is reserved and must be escaped with the preceding '\\\\'\"; notify.send logs failed=1 and the message is silently dropped",
       "environment": "Pi 192.168.1.29 / ultron-ap.service / production",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -815,8 +815,12 @@
       "evidence": "journal 2026-05-08: notify: telegram notify failed: telegram: API returned 400 ... rule_id=11 severity=info surface=resource kind=fire channels=1 failed=1",
       "reported_by": "cesar",
       "created_at": "2026-05-08T22:22:54.345Z",
-      "updated_at": "2026-05-08T22:22:54.345Z",
-      "resolution": null
+      "updated_at": "2026-05-11T19:56:09.938Z",
+      "resolution": null,
+      "fix_commit_sha": "37bce4eae4e73a04567c8773b30cc01be4e44656",
+      "fix_at": "2026-05-11T19:55:36.420Z",
+      "close_commit_sha": "37bce4eae4e73a04567c8773b30cc01be4e44656",
+      "close_at": "2026-05-11T19:56:09.938Z"
     },
     {
       "id": "BG-037",
@@ -838,6 +842,33 @@
       "reported_by": "cesar",
       "created_at": "2026-05-08T22:23:06.519Z",
       "updated_at": "2026-05-08T22:23:06.519Z",
+      "resolution": null
+    },
+    {
+      "id": "BG-038",
+      "title": "Settings alert widgets don't update form values; no UI to create network alert rules",
+      "description": "",
+      "steps_to_reproduce": [
+        "Open /settings → scroll to Alert rules section",
+        "Click any severity segmented button (low/medium/high/critical)",
+        "Click any cooldown chip preset (1m/5m/15m/1h)",
+        "Click +/− on the numeric stepper",
+        "Submit the form",
+        "Open /network and look for an 'Add alert rule' form or Network → Settings → Alert rules tab"
+      ],
+      "expected_result": "Segmented severity click updates hidden <input name=severity>; chip preset populates cooldown field; stepper increments/decrements value; POST carries the chosen values. Network page exposes a UI to create/edit alert rules (FR-022, 01_UX_SPEC.md line 40).",
+      "actual_result": "Widgets render the correct HTML (data-widget=segmented/chip-preset/stepper) but JS click handlers never propagate values to the form's hidden inputs, so severity buttons, presets and steppers do nothing visible/functional. The form submits with default/empty values, making alert customization impossible. Network page (web/templates/network.html) has no Settings sub-tab and no AlertRulesTable — the UI for creating network alert rules was never implemented despite being specified.",
+      "environment": "local — settings-revamp + network-monitoring features, both marked verify ✅ in pipeline",
+      "severity": "medium",
+      "status": "open",
+      "fr": "FR-058",
+      "tc_reference": null,
+      "phase_detected": 5,
+      "detected_by": "manual",
+      "evidence": "web/templates/settings.html:73-807, web/static/js/widgets/segmented.js, web/static/js/widgets/chip-preset.js, web/static/js/widgets/stepper.js, web/templates/network.html, internal/server/handlers_settings_markup_test.go:34-69, internal/server/handlers_settings_revamp_test.go:15-153",
+      "reported_by": "cesar",
+      "created_at": "2026-05-11T17:59:30.247Z",
+      "updated_at": "2026-05-11T17:59:30.247Z",
       "resolution": null
     }
   ]
