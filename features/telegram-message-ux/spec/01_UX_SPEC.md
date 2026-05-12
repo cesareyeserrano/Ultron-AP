@@ -148,7 +148,7 @@ Even though Telegram's theme is out of our control, the tokens we DO control are
 ### Severity glyphs — Telegram (the only "color" we control there)
 | Token | Value | Reason |
 |---|---|---|
-| `severity.critical.glyph` | 🔴 | Established convention in IDEA.md and FR-018 ("red circle"); matches dashboard `critical` semantic token |
+| `severity.critical.glyph` | 🔴 | Established convention in `01_REQUIREMENTS.json#original_brief` and FR-018 ("red circle"); matches dashboard `critical` semantic token |
 | `severity.warning.glyph` | 🟡 | Yellow circle; matches dashboard `warn` token (FR-009) |
 | `severity.info.glyph` | 🔵 | Blue circle; matches dashboard `info` (low-importance) tier |
 | `severity.resolved.glyph` | ✓ | Plain check; pairs with green CSS color in HTML email; the only non-circle glyph, deliberately distinct from fires |

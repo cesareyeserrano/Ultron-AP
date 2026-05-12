@@ -56,7 +56,7 @@
     {
       "id": "FR-024",
       "title": "Storm protection: group same-rule fires within 60s via editMessageText",
-      "level": "production_ready",
+      "level": "partial",
       "evidence": "Storm cache: TestTC_TMU_024h_FirstFireYieldsSend, TestTC_TMU_024e_SecondFireWithinWindowEdits (45s → edit, FireCount=2), TestTC_TMU_024w_FireAfterWindowResets (70s → fresh send), TestTC_TMU_024r_ResolveClearsCacheAndNextFireIsFreshSend, TestTC_TMU_024_RecordEditIncrementsFireCount, TestTC_TMU_024_SweepEvictsStaleEntries, TestTC_TMU_024_SweepKeepsFreshEntries, TestTC_TMU_024_ConcurrentDecideAndRecord (race-clean with -race). Telegram wiring: internal/notify/telegram.go Notify path consults storm.Decide → editMessageText / sendMessage; isMessageNotModifiedErr swallowed; isMessageNotFoundErr clears cache + falls through to fresh send. End-to-end HTTP integration test against a stubbed Telegram server is declared in technical_debt_inherited."
     },
     {
@@ -68,7 +68,7 @@
     {
       "id": "FR-026",
       "title": "Test Telegram button previews the new format end-to-end",
-      "level": "production_ready",
+      "level": "partial",
       "evidence": "TestTC_TMU_026h_TestNotificationEventRendersAsTestPrefixedFire confirms the synthetic CPU-fire event built by buildTestNotificationEvent has Kind=EventFire, Surface=SurfaceResource, Severity=critical, Message prefixed 'TEST —', Rule.Operator='>', Rule.Threshold=80, FirstFiredAt non-zero, AND that the rendered body contains '🔴', 'CPU usage critical', 'ALERT FIRED', 'CPU 92%', 'threshold > 80', '[Open dashboard]'. TestTC_TMU_026e_TestNotificationContainsElapsedAndFooter verifies the elapsed branch fires and the footer is present in both Telegram + Email HTML output. TestTC_TMU_026f_TestNotificationOmitsSystemdAndDockerBlocks confirms the resource-only test event never renders systemd journal or docker log markers. Browser-driven click-to-update latency (TC-TMU-026x, TC-TMU-026d) is manually verified with the manual-deploy smoke test in DEPLOYMENT.md — declared in technical_debt_inherited; same precedent as settings-revamp / help-page (no headless-browser stack in project)."
     },
     {
@@ -117,7 +117,7 @@
       "id": "NFR-009",
       "title": "CI/CD — full test suite runs on every push to main",
       "level": "partial",
-      "evidence": "All new tests (TestTC_TMU_*) plus the existing TestTelegram_*, TestEmail_*, TestAlertEngine_*, TestNotificationSave_* suites run via `go test ./...` and pass on the merge candidate. The aitri-managed test_runner is `go test -C ../.. ./internal/notify/... ./internal/server/... -run TestTC_TMU -v`. CI workflow file (.github/workflows/ci.yml) wiring is project-wide (inherited from parent) — not a per-feature artefact for this refactor."
+      "evidence": ".github/workflows/security-gate.yml exists and runs on push to main plus pull_request. It checks out the repo, installs Go from go.mod, and runs `go test ./...`, which is broader than the feature runner and covers TestTC_TMU_* along with the existing suites. It does not run the exact aitri-managed test_runner command (`go test -C ../.. ./internal/notify/... ./internal/server/... -run TestTC_TMU -v`) as a separate CI step, so compliance remains partial rather than production_ready."
     },
     {
       "id": "NFR-010",

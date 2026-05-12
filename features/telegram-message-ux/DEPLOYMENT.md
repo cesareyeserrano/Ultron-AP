@@ -16,6 +16,15 @@ Per the project's Phase-5 rejection history (2026-03-18) and the `settings-revam
 - (Optional) SMTP credentials configured in the settings page (FR-006, unchanged).
 - (Optional) `ULTRON_PUBLIC_URL` env var set in `/etc/ultron-ap/ultron-ap.env` — controls the deep-link footer URL. Falls back to `http://<configured-host>:<configured-port>` when unset (FR-023).
 
+## Environment variables
+
+| Name | Type | Required | Example | Purpose |
+|---|---|---:|---|---|
+| `ULTRON_PUBLIC_URL` | URL string | No | `https://ultron.example.com` | Base URL for the `[Open dashboard](.../alerts)` footer in Telegram and email alerts. |
+| `TELEGRAM_BOT_TOKEN` | Secret string | Existing FR-005 config | `123456:REDACTED` | Existing Telegram bot credential. Stored through the settings flow, unchanged by this feature. |
+| `TELEGRAM_CHAT_ID` | String/integer | Existing FR-005 config | `123456789` | Existing Telegram chat target. Stored through the settings flow, unchanged by this feature. |
+| `SMTP_*` | Existing SMTP settings | Existing FR-006 config | `SMTP_HOST=smtp.example.com` | Existing email notifier configuration. Unchanged by this feature. |
+
 ## Dev setup
 
 ```bash
