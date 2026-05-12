@@ -833,7 +833,7 @@
       "actual_result": "Engine evaluates the threshold every 5s and emits fire/resolve immediately on each crossing. Cycles fire→resolve last 3-30s and repeat every 15-20 min, generating spurious alerts and notification noise",
       "environment": "Pi 192.168.1.29 / ultron-ap.service / Alert engine started (interval=5s)",
       "severity": "low",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -841,8 +841,12 @@
       "evidence": "journal 2026-05-08 (5h window): 11:41:56 fire / 11:41:59 resolve / 11:56:04 fire / 12:11:09 fire / 12:11:49 resolve / 12:17:44 resolve / 14:08:39 fire / 14:08:59 resolve / 16:35:29 fire / 16:35:44 resolve / 16:56:24 fire / 16:56:29 resolve — all rule_id=11 cause_source=proc",
       "reported_by": "cesar",
       "created_at": "2026-05-08T22:23:06.519Z",
-      "updated_at": "2026-05-08T22:23:06.519Z",
-      "resolution": null
+      "updated_at": "2026-05-12T02:46:14.284Z",
+      "resolution": null,
+      "fix_commit_sha": "001fd885a945741d463a52f000ba212dfb423e14",
+      "fix_at": "2026-05-12T02:46:03.682Z",
+      "close_commit_sha": "001fd885a945741d463a52f000ba212dfb423e14",
+      "close_at": "2026-05-12T02:46:14.284Z"
     },
     {
       "id": "BG-038",
@@ -887,7 +891,7 @@
       "actual_result": "isValidMetric() in internal/server/handlers_settings.go only accepts cpu/ram/disk/temp. Alert engine in internal/alerts/engine.go has zero references to latency/loss/dns/wan/public_ip. network.html has no alert-rule UI. The acceptance criterion 'Network rules render in the existing alerts panel ... mutable from the same settings UI patterns' is unmet. This is a substantial implementation gap and should be routed via aitri feature init network-alerts (or fr-change), not a maintenance-path bug-fix.",
       "environment": "Pi 192.168.1.29 / production / pipeline marked verify ✅ but FR-022 partially implemented",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": "FR-022",
       "tc_reference": null,
       "phase_detected": 5,
@@ -895,8 +899,12 @@
       "evidence": "internal/server/handlers_settings.go:82-88, internal/alerts/engine.go (no network metric handling), web/templates/network.html (no rule UI), spec/BUGS.json BG-038 (split source)",
       "reported_by": "claude (split from BG-038)",
       "created_at": "2026-05-11T21:18:15.882Z",
-      "updated_at": "2026-05-11T21:18:15.882Z",
-      "resolution": null
+      "updated_at": "2026-05-12T02:46:00.267Z",
+      "resolution": null,
+      "fix_commit_sha": "001fd885a945741d463a52f000ba212dfb423e14",
+      "fix_at": "2026-05-12T02:45:53.294Z",
+      "close_commit_sha": "001fd885a945741d463a52f000ba212dfb423e14",
+      "close_at": "2026-05-12T02:46:00.267Z"
     }
   ]
 }
