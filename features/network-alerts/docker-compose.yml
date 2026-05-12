@@ -1,0 +1,27 @@
+services:
+  ultron-ap:
+    build:
+      context: ../..
+      dockerfile: features/network-alerts/Dockerfile
+    image: ultron-ap:network-alerts
+    user: "1000:1000"
+    ports:
+      - "${ULTRON_PORT:-8080}:8080"
+    environment:
+      ULTRON_PORT: "8080"
+      ULTRON_DB_PATH: "/data/ultron.db"
+      ULTRON_ADMIN_PASS: "${ULTRON_ADMIN_PASS:?set ULTRON_ADMIN_PASS}"
+      ULTRON_SECRET_KEY: "${ULTRON_SECRET_KEY:-change-me-in-production}"
+      ULTRON_NET_TARGETS: "${ULTRON_NET_TARGETS:-gateway,1.1.1.1=1.1.1.1,8.8.8.8=8.8.8.8,dns:dns=1.1.1.1/cloudflare.com}"
+    volumes:
+      - ultron-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health | grep -q '\"status\":\"ok\"'"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  ultron-data:

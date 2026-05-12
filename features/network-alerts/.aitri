@@ -1,0 +1,179 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "network-alerts",
+  "createdAt": "2026-05-11T21:26:35.424Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-05-12T02:10:25.167Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-05-11T21:46:32.801Z",
+      "event": "started",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-05-11T21:48:13.822Z",
+      "event": "completed",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-05-11T21:49:44.423Z",
+      "event": "approved",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-05-11T21:49:47.349Z",
+      "event": "started",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-11T21:51:50.536Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-12T00:54:33.756Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-05-12T00:54:36.606Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-12T00:57:04.897Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-12T01:26:49.335Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-05-12T01:26:52.706Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-12T02:03:34.566Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-12T02:07:39.397Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-12T02:07:47.053Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 24,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-12T02:08:00.076Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-12T02:08:04.980Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-05-12T02:08:09.688Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-12T02:08:16.551Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 24,
+      "failed": 0
+    },
+    {
+      "at": "2026-05-12T02:08:21.443Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-12T02:10:02.921Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-05-12T02:10:25.149Z",
+      "event": "approved",
+      "phase": 5
+    }
+  ],
+  "artifactHashes": {
+    "1": "5e286f8c41a14394b0243e3e693c9359e3ab749221d95a0ac52bf12c962469a8",
+    "2": "3bce462076308a17b6c18e43a179c4e520cccbba307e65d02437185a3995fda6",
+    "3": "1b699538cf9c9336d8470e2f3c5c16b9510b7b238e0f0a052e69ef308762f58e",
+    "4": "721fb0d1baf8fba9ae45234ebd51240725078aa56ba4409a6e82acacd5ef2a98",
+    "5": "3e1e879a96dbca1f1a5665ae0e73024bd3ece53211103c513bde30eb2958b9bb",
+    "ux": "e107cd8aeb55e80fa6814b6365c8020f5639c3ad47ea0be6ef0a7db43a213922"
+  },
+  "lastSession": {
+    "at": "2026-05-12T02:10:25.167Z",
+    "agent": "unknown",
+    "event": "approve deploy",
+    "files_touched": [
+      ".aitri/config.json",
+      "cmd/ultron-ap/main.go",
+      "internal/alerts/engine.go",
+      "internal/database/alerts.go",
+      "internal/database/network.go",
+      "internal/database/sqlite.go",
+      "internal/server/handlers_alert_rules.go",
+      "internal/server/handlers_settings.go",
+      "web/templates/partials/alert-rules-table.html",
+      "web/templates/settings.html"
+    ]
+  },
+  "verifyRanAt": "2026-05-12T02:08:09.688Z",
+  "verifyPassed": true,
+  "normalizeState": {
+    "baseRef": "94ee47eb1ddbaf3d472d24f20eb307ce6f506044",
+    "method": "git",
+    "status": "resolved",
+    "lastRun": "2026-05-12T02:08:04.979Z"
+  },
+  "verifySummary": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}

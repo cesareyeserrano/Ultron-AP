@@ -17,26 +17,9 @@ func (s *Server) handleAlertRuleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	threshold, err := strconv.ParseFloat(r.FormValue("threshold"), 64)
-	if err != nil || threshold < 0 {
-		http.Error(w, "Invalid threshold", http.StatusBadRequest)
-		return
-	}
-
-	cooldown, err := strconv.Atoi(r.FormValue("cooldown"))
-	if err != nil || cooldown < 0 {
-		cooldown = 15
-	}
-
 	metric := r.FormValue("metric")
 	if !isValidMetric(metric) {
 		http.Error(w, "Invalid metric", http.StatusBadRequest)
-		return
-	}
-
-	operator := r.FormValue("operator")
-	if !isValidOperator(operator) {
-		http.Error(w, "Invalid operator", http.StatusBadRequest)
 		return
 	}
 
@@ -46,14 +29,75 @@ func (s *Server) handleAlertRuleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cooldown, err := strconv.Atoi(r.FormValue("cooldown"))
+	if err != nil || cooldown < 0 {
+		cooldown = 15
+	}
+
+	sustained, err := strconv.Atoi(r.FormValue("sustained_duration"))
+	if r.FormValue("sustained_duration") == "" {
+		sustained = 0
+		err = nil
+	}
+	if err != nil || sustained < 0 || sustained > 3600 {
+		http.Error(w, "Invalid sustained duration", http.StatusBadRequest)
+		return
+	}
+
+	operator := r.FormValue("operator")
+	threshold := 0.0
+	var target *string
+
+	if isThresholdMetric(metric) {
+		if !isValidOperator(operator) {
+			http.Error(w, "Invalid operator", http.StatusBadRequest)
+			return
+		}
+		threshold, err = strconv.ParseFloat(r.FormValue("threshold"), 64)
+		if err != nil || threshold < 0 {
+			http.Error(w, "Invalid threshold", http.StatusBadRequest)
+			return
+		}
+	} else {
+		operator = "=="
+		sustained = 0
+	}
+
+	if isTargetMetric(metric) {
+		t := strings.TrimSpace(r.FormValue("target"))
+		if t == "" || !s.isValidAlertTarget(t) {
+			http.Error(w, "Invalid target", http.StatusBadRequest)
+			return
+		}
+		target = &t
+	}
+
+	switch metric {
+	case "wan_outage":
+		if severity != "critical" {
+			http.Error(w, "WAN outage alerts use critical severity", http.StatusBadRequest)
+			return
+		}
+	case "public_ip_change":
+		if severity != "info" {
+			http.Error(w, "Public IP change alerts use info severity", http.StatusBadRequest)
+			return
+		}
+		if r.FormValue("cooldown") == "" {
+			cooldown = 60
+		}
+	}
+
 	ac := &database.AlertConfig{
-		Name:            r.FormValue("name"),
-		Metric:          metric,
-		Operator:        operator,
-		Threshold:       threshold,
-		Severity:        severity,
-		Enabled:         true,
-		CooldownMinutes: cooldown,
+		Name:              r.FormValue("name"),
+		Metric:            metric,
+		Operator:          operator,
+		Threshold:         threshold,
+		Target:            target,
+		SustainedDuration: sustained,
+		Severity:          severity,
+		Enabled:           true,
+		CooldownMinutes:   cooldown,
 	}
 
 	if ac.Name == "" {

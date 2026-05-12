@@ -56,6 +56,26 @@ func (db *DB) RecentNetSamples(target string, limit int) ([]NetSample, error) {
 	return scanNetSamples(rows)
 }
 
+// RecentNetSamplesByKind returns up to limit most-recent samples for a probe
+// kind, newest first. It is used by alert rules that aggregate DNS resolver
+// health across all configured resolver targets.
+//
+// @aitri-trace FR-ID: FR-073, US-ID: US-073, AC-ID: AC-073-001, TC-ID: TC-NA-073h
+func (db *DB) RecentNetSamplesByKind(kind string, limit int) ([]NetSample, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	rows, err := db.Query(
+		`SELECT id, ts, target, kind, rtt_ms, status
+		 FROM NetSample WHERE kind = ? ORDER BY ts DESC LIMIT ?`,
+		kind, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query recent net samples by kind: %w", err)
+	}
+	return scanNetSamples(rows)
+}
+
 // PruneNetSamples deletes NetSample rows older than days. Returns rows removed.
 func (db *DB) PruneNetSamples(days int) (int64, error) {
 	cutoff := time.Now().AddDate(0, 0, -days).UnixMilli()

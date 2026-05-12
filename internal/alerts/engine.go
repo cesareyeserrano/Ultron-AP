@@ -2,8 +2,11 @@ package alerts
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"math"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -63,6 +66,8 @@ type Engine struct {
 	firingFirst  map[string]time.Time // ruleKey -> first_fired_at (FR-019)
 	prevDocker   map[string]string    // containerName -> state
 	prevSystemd  map[string]string    // serviceName -> activeState
+	sustained    map[int64]*sustainedWindow
+	processedNet map[string]struct{}
 	recentAlerts []database.Alert
 	recentMu     sync.RWMutex
 
@@ -81,18 +86,62 @@ type Engine struct {
 // runtime setter has not yet been called and the env config is also empty.
 const defaultTransitionCooldown = 15 * time.Minute
 
+type sustainedSample struct {
+	at        time.Time
+	breaching bool
+}
+
+type sustainedWindow struct {
+	duration time.Duration
+	interval time.Duration
+	samples  []sustainedSample
+}
+
+func (w *sustainedWindow) add(ruleID int64, at time.Time, breaching bool) bool {
+	if w.duration <= 0 {
+		return breaching
+	}
+	if len(w.samples) > 0 {
+		prev := w.samples[len(w.samples)-1].at
+		if at.Sub(prev) > 2*w.interval {
+			w.samples = w.samples[:0]
+			log.Printf("alerts: sustained reset rule_id=%d reason=sample_gap gap=%s", ruleID, at.Sub(prev))
+		}
+	}
+	if !breaching {
+		w.samples = w.samples[:0]
+		return false
+	}
+	w.samples = append(w.samples, sustainedSample{at: at, breaching: true})
+	cutoff := at.Add(-w.duration)
+	first := 0
+	for first < len(w.samples) && w.samples[first].at.Before(cutoff) {
+		first++
+	}
+	if first > 0 {
+		copy(w.samples, w.samples[first:])
+		w.samples = w.samples[:len(w.samples)-first]
+	}
+	if len(w.samples) == 0 {
+		return false
+	}
+	return !w.samples[0].at.After(cutoff)
+}
+
 // NewEngine creates an alert engine.
 func NewEngine(db *database.DB, collector *metrics.Collector, dockerMon *docker.Monitor, systemdMon *systemd.Monitor, interval time.Duration) *Engine {
 	return &Engine{
-		db:          db,
-		collector:   collector,
-		docker:      dockerMon,
-		systemd:     systemdMon,
-		interval:    interval,
-		cooldowns:   make(map[string]time.Time),
-		firingFirst: make(map[string]time.Time),
-		prevDocker:  make(map[string]string),
-		prevSystemd: make(map[string]string),
+		db:           db,
+		collector:    collector,
+		docker:       dockerMon,
+		systemd:      systemdMon,
+		interval:     interval,
+		cooldowns:    make(map[string]time.Time),
+		firingFirst:  make(map[string]time.Time),
+		prevDocker:   make(map[string]string),
+		prevSystemd:  make(map[string]string),
+		sustained:    make(map[int64]*sustainedWindow),
+		processedNet: make(map[string]struct{}),
 	}
 }
 
@@ -222,11 +271,18 @@ func (e *Engine) evaluate() {
 	}
 
 	// Evaluate metric-based rules
-	snapshot := e.collector.Latest()
+	var snapshot *metrics.Snapshot
+	if e.collector != nil {
+		snapshot = e.collector.Latest()
+	}
 	if snapshot != nil {
 		for _, cfg := range configs {
 			e.evaluateMetricRule(cfg, snapshot)
 		}
+	}
+
+	for _, cfg := range configs {
+		e.evaluateNetworkRule(cfg)
 	}
 
 	// Evaluate Docker state changes
@@ -295,6 +351,16 @@ func (e *Engine) evaluateMetricRule(cfg database.AlertConfig, snap *metrics.Snap
 	key := fmt.Sprintf("metric:%d", cfg.ID)
 	now := time.Now()
 	breaching := compareValue(value, cfg.Operator, cfg.Threshold)
+	if cfg.SustainedDuration > 0 {
+		e.mu.Lock()
+		w := e.sustained[cfg.ID]
+		if w == nil || w.duration != time.Duration(cfg.SustainedDuration)*time.Second {
+			w = &sustainedWindow{duration: time.Duration(cfg.SustainedDuration) * time.Second, interval: e.interval}
+			e.sustained[cfg.ID] = w
+		}
+		breaching = w.add(cfg.ID, now, breaching)
+		e.mu.Unlock()
+	}
 
 	if !breaching {
 		// Not currently breaching — if the rule was previously firing,
@@ -340,6 +406,169 @@ func (e *Engine) evaluateMetricRule(cfg database.AlertConfig, snap *metrics.Snap
 	}
 	if err := e.db.CreateAlert(alert); err != nil {
 		log.Printf("alerts: failed to create alert: %v", err)
+		return
+	}
+	cfgCopy := cfg
+	e.emitFire(alert, &cfgCopy, firstFiredAt)
+}
+
+// evaluateNetworkRule evaluates FR-022 network alert rules using the existing
+// SQLite-backed NetSample and NetEvent streams.
+//
+// @aitri-trace FR-ID: FR-071 FR-072 FR-073 FR-074 FR-075, US-ID: US-071 US-072 US-073 US-074 US-075, AC-ID: AC-071-001 AC-072-001 AC-073-001 AC-074-001 AC-075-001, TC-ID: TC-NA-071h TC-NA-072h TC-NA-073h TC-NA-074h TC-NA-075h
+func (e *Engine) evaluateNetworkRule(cfg database.AlertConfig) {
+	switch cfg.Metric {
+	case "latency":
+		e.evaluateNetThreshold(cfg, "latency")
+	case "loss":
+		e.evaluateNetThreshold(cfg, "loss")
+	case "dns_failure_rate":
+		e.evaluateDNSFailureRule(cfg)
+	case "wan_outage", "public_ip_change":
+		e.evaluateNetEvents(cfg)
+	}
+}
+
+func (e *Engine) evaluateNetThreshold(cfg database.AlertConfig, metric string) {
+	if cfg.Target == nil || *cfg.Target == "" {
+		return
+	}
+	duration := time.Duration(cfg.SustainedDuration) * time.Second
+	if duration < 0 {
+		return
+	}
+	limit := samplesLimit(duration, e.interval)
+	samples, err := e.db.RecentNetSamples(*cfg.Target, limit)
+	if err != nil {
+		log.Printf("alerts: network samples query failed rule_id=%d metric=%s target=%s err=%v", cfg.ID, metric, *cfg.Target, err)
+		return
+	}
+	sort.Slice(samples, func(i, j int) bool { return samples[i].TS.Before(samples[j].TS) })
+	var value float64
+	var ok bool
+	switch metric {
+	case "latency":
+		value, ok = sustainedLatencyValue(cfg, samples, duration, e.interval)
+	case "loss":
+		value, ok = sustainedLossValue(cfg, samples, duration, e.interval)
+	}
+	log.Printf("ts=%s rule_id=%d metric=%s target=%s value=%.1f threshold=%.1f sustained=%d in_window=%t fired=%t",
+		time.Now().Format(time.RFC3339), cfg.ID, metric, *cfg.Target, value, cfg.Threshold, cfg.SustainedDuration, ok, false)
+	if !ok {
+		return
+	}
+	e.fireConfiguredRule(cfg, metric, value, fmt.Sprintf("%s: target=%s current=%.1f threshold %.1f sustained=%ds", cfg.Name, *cfg.Target, value, cfg.Threshold, cfg.SustainedDuration))
+}
+
+func (e *Engine) evaluateDNSFailureRule(cfg database.AlertConfig) {
+	duration := time.Duration(cfg.SustainedDuration) * time.Second
+	limit := samplesLimit(duration, e.interval) * 4
+	samples, err := e.db.RecentNetSamplesByKind("dns", limit)
+	if err != nil {
+		log.Printf("alerts: dns samples query failed rule_id=%d err=%v", cfg.ID, err)
+		return
+	}
+	if len(samples) < 2 {
+		log.Printf("ts=%s rule_id=%d metric=dns_failure_rate target=- value=0 threshold=%.1f sustained=%d in_window=false fired=false reason=insufficient_dns_samples",
+			time.Now().Format(time.RFC3339), cfg.ID, cfg.Threshold, cfg.SustainedDuration)
+		return
+	}
+	value, resolver, ok := dnsFailureValue(cfg, samples, duration)
+	if !ok {
+		return
+	}
+	e.fireConfiguredRule(cfg, "dns_failure_rate", value, fmt.Sprintf("%s: resolver=%s failure_rate=%.1f threshold %.1f sustained=%ds", cfg.Name, resolver, value, cfg.Threshold, cfg.SustainedDuration))
+}
+
+func (e *Engine) evaluateNetEvents(cfg database.AlertConfig) {
+	events, err := e.db.RecentNetEvents(50)
+	if err != nil {
+		log.Printf("alerts: net events query failed rule_id=%d metric=%s err=%v", cfg.ID, cfg.Metric, err)
+		return
+	}
+	sort.Slice(events, func(i, j int) bool { return events[i].TS.Before(events[j].TS) })
+	for _, ev := range events {
+		key := fmt.Sprintf("%d:%d:%s", cfg.ID, ev.ID, ev.Kind)
+		if _, done := e.processedNet[key]; done {
+			continue
+		}
+		switch cfg.Metric {
+		case "wan_outage":
+			e.processedNet[key] = struct{}{}
+			e.handleWANEvent(cfg, ev)
+		case "public_ip_change":
+			if ev.Kind == "public_ip_changed" {
+				e.processedNet[key] = struct{}{}
+				e.handlePublicIPEvent(cfg, ev)
+			}
+		}
+	}
+}
+
+func (e *Engine) handleWANEvent(cfg database.AlertConfig, ev database.NetEvent) {
+	switch ev.Kind {
+	case "wan_down":
+		e.fireConfiguredRule(cfg, "wan_outage", 0, "WAN DOWN — "+ev.Detail)
+	case "wan_up":
+		key := fmt.Sprintf("metric:%d", cfg.ID)
+		e.mu.Lock()
+		firstFiredAt, wasFiring := e.firingFirst[key]
+		if wasFiring {
+			delete(e.firingFirst, key)
+			delete(e.cooldowns, key)
+		}
+		e.mu.Unlock()
+		if wasFiring {
+			cfgCopy := cfg
+			e.emitResolve(&cfgCopy, "wan_outage", "info", firstFiredAt, ev.TS)
+			log.Printf("ts=%s rule_id=%d metric=wan_outage event=resolve duration=%s", time.Now().Format(time.RFC3339), cfg.ID, ev.TS.Sub(firstFiredAt))
+		}
+	}
+}
+
+func (e *Engine) handlePublicIPEvent(cfg database.AlertConfig, ev database.NetEvent) {
+	var payload struct {
+		Old string `json:"old"`
+		New string `json:"new"`
+	}
+	if err := json.Unmarshal([]byte(ev.Detail), &payload); err != nil {
+		log.Printf("alerts: public_ip_changed detail parse failed rule_id=%d err=%v", cfg.ID, err)
+		return
+	}
+	if payload.Old == "" || payload.New == "" || payload.Old == payload.New {
+		return
+	}
+	e.fireConfiguredRule(cfg, "public_ip_change", 0, fmt.Sprintf("Public IP changed old=%s new=%s at=%s", payload.Old, payload.New, ev.TS.Format(time.RFC3339)))
+}
+
+func (e *Engine) fireConfiguredRule(cfg database.AlertConfig, source string, value float64, message string) {
+	key := fmt.Sprintf("metric:%d", cfg.ID)
+	now := time.Now()
+	cooldown := time.Duration(cfg.CooldownMinutes) * time.Minute
+	e.mu.Lock()
+	last, exists := e.cooldowns[key]
+	if exists && now.Sub(last) < cooldown {
+		e.mu.Unlock()
+		return
+	}
+	e.cooldowns[key] = now
+	firstFiredAt, hadFirst := e.firingFirst[key]
+	if !hadFirst {
+		firstFiredAt = now
+		e.firingFirst[key] = now
+	}
+	e.mu.Unlock()
+	alert := &database.Alert{
+		ConfigID: &cfg.ID,
+		Severity: cfg.Severity,
+		Message:  message,
+		Source:   source,
+	}
+	if source != "wan_outage" && source != "public_ip_change" {
+		alert.Value = &value
+	}
+	if err := e.db.CreateAlert(alert); err != nil {
+		log.Printf("alerts: failed to create network alert: %v", err)
 		return
 	}
 	cfgCopy := cfg
@@ -529,6 +758,106 @@ func extractMetricValue(metric string, snap *metrics.Snapshot) (float64, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func samplesLimit(duration, interval time.Duration) int {
+	if interval <= 0 {
+		interval = 5 * time.Second
+	}
+	if duration <= 0 {
+		return 2
+	}
+	return int(math.Ceil(float64(duration)/float64(interval))) + 2
+}
+
+func sustainedLatencyValue(cfg database.AlertConfig, samples []database.NetSample, duration, interval time.Duration) (float64, bool) {
+	if len(samples) == 0 {
+		return 0, false
+	}
+	if duration <= 0 {
+		last := samples[len(samples)-1]
+		if last.RTTMs == nil || last.Status != "ok" {
+			return 0, false
+		}
+		return *last.RTTMs, compareValue(*last.RTTMs, cfg.Operator, cfg.Threshold)
+	}
+	start := samples[0].TS
+	lastTS := start
+	var lastValue float64
+	for i, s := range samples {
+		if i > 0 && s.TS.Sub(lastTS) > 2*interval {
+			return 0, false
+		}
+		lastTS = s.TS
+		if s.RTTMs == nil || s.Status != "ok" || !compareValue(*s.RTTMs, cfg.Operator, cfg.Threshold) {
+			return 0, false
+		}
+		lastValue = *s.RTTMs
+	}
+	if lastTS.Sub(start) < duration-interval {
+		return 0, false
+	}
+	return lastValue, true
+}
+
+func sustainedLossValue(cfg database.AlertConfig, samples []database.NetSample, duration, interval time.Duration) (float64, bool) {
+	if len(samples) == 0 {
+		return 0, false
+	}
+	sort.Slice(samples, func(i, j int) bool { return samples[i].TS.Before(samples[j].TS) })
+	if duration > 0 && samples[len(samples)-1].TS.Sub(samples[0].TS) < duration-interval {
+		return 0, false
+	}
+	failures := 0
+	for i, s := range samples {
+		if i > 0 && s.TS.Sub(samples[i-1].TS) > 2*interval {
+			return 0, false
+		}
+		if s.Status != "ok" {
+			failures++
+		}
+	}
+	loss := float64(failures) / float64(len(samples)) * 100
+	return loss, compareValue(loss, cfg.Operator, cfg.Threshold)
+}
+
+func dnsFailureValue(cfg database.AlertConfig, samples []database.NetSample, duration time.Duration) (float64, string, bool) {
+	type counts struct{ total, fail int }
+	byTarget := map[string]counts{}
+	now := time.Time{}
+	for _, s := range samples {
+		if s.TS.After(now) {
+			now = s.TS
+		}
+	}
+	for _, s := range samples {
+		if duration > 0 && now.Sub(s.TS) > duration {
+			continue
+		}
+		c := byTarget[s.Target]
+		c.total++
+		if s.Status != "ok" {
+			c.fail++
+		}
+		byTarget[s.Target] = c
+	}
+	var worstTarget string
+	var worst float64
+	for target, c := range byTarget {
+		if c.total < 2 {
+			continue
+		}
+		rate := float64(c.fail) / float64(c.total) * 100
+		if rate > worst {
+			worst = rate
+			worstTarget = target
+		}
+	}
+	if worstTarget == "" {
+		log.Printf("alerts: metric=dns_failure_rate reason=insufficient_dns_samples")
+		return 0, "", false
+	}
+	return worst, worstTarget, compareValue(worst, cfg.Operator, cfg.Threshold)
 }
 
 // compareValue evaluates value <operator> threshold.

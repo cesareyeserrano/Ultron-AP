@@ -7,7 +7,9 @@
             <tr class="border-b border-border text-text-muted text-xs uppercase">
                 <th class="text-left py-2 px-3">Name</th>
                 <th class="text-left py-2 px-3">Metric</th>
+                <th class="text-left py-2 px-3">Target</th>
                 <th class="text-left py-2 px-3">Condition</th>
+                <th class="text-left py-2 px-3">Sustained</th>
                 <th class="text-left py-2 px-3">Severity</th>
                 <th class="text-left py-2 px-3">Cooldown</th>
                 <th class="text-center py-2 px-3">Enabled</th>
@@ -19,7 +21,9 @@
             <tr class="border-b border-border/50 hover:bg-card/50">
                 <td class="py-2 px-3 text-text">{{.Name}}</td>
                 <td class="py-2 px-3 text-text-muted uppercase text-xs">{{.Metric}}</td>
-                <td class="py-2 px-3 font-mono text-text">{{.Operator}} {{printf "%.1f" .Threshold}}</td>
+                <td class="py-2 px-3 font-mono text-text-muted text-xs">{{.TargetDisplay}}</td>
+                <td class="py-2 px-3 font-mono text-text">{{.ConditionDisplay}}</td>
+                <td class="py-2 px-3 font-mono text-text-muted text-xs">{{.SustainedDisplay}}</td>
                 <td class="py-2 px-3">
                     <span class="text-xs px-1.5 py-0.5 rounded {{if eq .Severity "critical"}}bg-danger/20 text-danger{{else if eq .Severity "warning"}}bg-yellow-400/20 text-yellow-400{{else}}bg-accent/20 text-accent{{end}}">{{.Severity}}</span>
                 </td>

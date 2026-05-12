@@ -1,0 +1,94 @@
+{
+  "project": "Ultron-AP — network-alerts",
+  "version": "0.1.0",
+  "phases_completed": [1, 2, 3, 4, 5],
+  "overall_status": "partial",
+  "requirement_compliance": [
+    {
+      "id": "FR-071",
+      "title": "Sustained-latency network alert rule type",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-071h, TC-NA-071e, TC-NA-071f. Aitri verify-run: 3 passing, 0 failing, 0 skipped for FR-071."
+    },
+    {
+      "id": "FR-072",
+      "title": "Sustained packet-loss network alert rule type",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-072h, TC-NA-072e, TC-NA-072f. Aitri verify-run: 3 passing, 0 failing, 0 skipped for FR-072."
+    },
+    {
+      "id": "FR-073",
+      "title": "DNS-resolver failure-rate alert rule type",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-073h, TC-NA-073e, TC-NA-073f. Aitri verify-run: 3 passing, 0 failing, 0 skipped for FR-073."
+    },
+    {
+      "id": "FR-074",
+      "title": "WAN outage transition alerts (critical fire + info resolve)",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-074h, TC-NA-074e, TC-NA-074f. Aitri verify-run: 3 passing, 0 failing, 0 skipped for FR-074."
+    },
+    {
+      "id": "FR-075",
+      "title": "Public-IP change alert",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-075h, TC-NA-075e, TC-NA-075f. Aitri verify-run: 3 passing, 0 failing, 0 skipped for FR-075."
+    },
+    {
+      "id": "FR-076",
+      "title": "Sustained-duration parameter on all alert rules",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-076h, TC-NA-076e, TC-NA-076f. Aitri verify-run: 3 passing, 0 failing, 0 skipped for FR-076."
+    },
+    {
+      "id": "FR-077",
+      "title": "Settings alert-rule form supports network metric types",
+      "level": "partial",
+      "evidence": "Covered by TC-NA-077h, TC-NA-077e, TC-NA-077f with 3 passing tests. Level is partial because Phase 4 declared a test substitution: browser e2e checks are implemented as authenticated Go handler/template tests, not Playwright."
+    },
+    {
+      "id": "FR-078",
+      "title": "AlertConfig schema extension and forward-only migration",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-078h, TC-NA-078e, TC-NA-078f. Aitri verify-run: 3 passing, 0 failing, 0 skipped for FR-078."
+    },
+    {
+      "id": "NFR-033",
+      "title": "Network rule evaluation p95 <=50ms per engine tick",
+      "level": "functionally_present",
+      "evidence": "Implementation uses bounded indexed SQLite reads and bounded sustained windows, and the full Go suite passes. No dedicated p95 benchmark TC was present in 04_TEST_RESULTS.json, so this is not upgraded to production_ready."
+    },
+    {
+      "id": "NFR-034",
+      "title": "Sustained-window state is process-local and resets on restart",
+      "level": "production_ready",
+      "evidence": "Covered by sustained-window reset behavior in TC-NA-076f and by architecture/implementation using process-local Engine.sustained state with no DB persistence."
+    },
+    {
+      "id": "NFR-035",
+      "title": "POST /api/alerts/rules validates targets by whitelist",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-071f and TC-NA-072f. Malicious target '8.8.8.8; rm -rf /' returns HTTP 400 'Invalid target' and no AlertConfig row is persisted."
+    },
+    {
+      "id": "NFR-036",
+      "title": "Network-rule evaluations emit structured journal lines",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-073f and TC-NA-076f log assertions for skip/gap paths plus implementation log lines containing ts, rule_id, metric, target, value, threshold, sustained, in_window, fired."
+    },
+    {
+      "id": "NFR-037",
+      "title": "Existing host alert behavior preserved for sustained_duration=0",
+      "level": "production_ready",
+      "evidence": "Covered by TC-NA-076h: host CPU rule with sustained_duration=0 fires immediately with the same persisted alert behavior as legacy rules."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-077",
+      "substitution": "The three FR-077 browser e2e test cases are implemented as authenticated Go handler/template tests that verify the rendered metric option order, transition-rule disclosure script, and HTMX rules-table partial swap. No Playwright runner was added.",
+      "reason": "The parent Ultron repo does not have a browser e2e stack for feature verification, and adding one would introduce a new runtime dependency contrary to the single-binary/no-new-runtime constraint. The tested server-rendered HTML and inline disclosure script are the implementation surface used by the browser.",
+      "effort_to_fix": "medium"
+    }
+  ]
+}

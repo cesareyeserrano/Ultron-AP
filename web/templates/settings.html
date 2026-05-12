@@ -50,13 +50,26 @@
                         <div>
                             <label class="text-[11px] text-text-muted">Metric</label>
                             <select name="metric" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
-                                <option value="cpu">CPU</option>
-                                <option value="ram">RAM</option>
-                                <option value="disk">Disk</option>
-                                <option value="temp">Temperature</option>
+                                <option value="cpu">cpu</option>
+                                <option value="ram">ram</option>
+                                <option value="disk">disk</option>
+                                <option value="temp">temp</option>
+                                <option value="latency">latency</option>
+                                <option value="loss">loss</option>
+                                <option value="dns_failure_rate">dns_failure_rate</option>
+                                <option value="wan_outage">wan_outage</option>
+                                <option value="public_ip_change">public_ip_change</option>
                             </select>
                         </div>
-                        <div>
+                        <div data-rule-field="target" class="hidden">
+                            <label class="text-[11px] text-text-muted">Target</label>
+                            <select name="target" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                                {{range .Content.NetworkTargets}}
+                                <option value="{{.}}">{{.}}</option>
+                                {{end}}
+                            </select>
+                        </div>
+                        <div data-rule-field="operator">
                             <label class="text-[11px] text-text-muted">Operator</label>
                             <select name="operator" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                                 <option value=">">&gt;</option>
@@ -66,9 +79,18 @@
                                 <option value="==">==</option>
                             </select>
                         </div>
-                        <div>
+                        <div data-rule-field="threshold">
                             <label class="text-[11px] text-text-muted">Threshold</label>
                             <input type="number" name="threshold" step="0.1" min="0" required class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                        </div>
+                        <div data-rule-field="sustained">
+                            <label class="text-[11px] text-text-muted">Sustained duration (0-3600 sec)</label>
+                            <span data-widget="stepper" data-field="sustained_duration" data-min="0" data-max="3600" data-value="0" class="mt-1 inline-flex items-center gap-1 w-full">
+                                <button type="button" data-step="-5" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                <input type="number" name="sustained_duration" value="0" min="0" max="3600" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                <button type="button" data-step="5" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                            </span>
+                            <p class="mt-1 text-[10px] text-text-muted">0 = fire immediately; nonzero requires continuous breach.</p>
                         </div>
                         <!-- FR-058: severity segmented control replaces <select> -->
                         <div>
@@ -103,6 +125,53 @@
                     </form>
                     <div id="alerts-rule-status" class="min-h-[2rem]" aria-live="polite"></div>
                 </div>
+                <script>
+                (function () {
+                    var form = document.querySelector('#settings-alerts form[hx-post="/api/alerts/rules"]');
+                    if (!form || form.dataset.networkAlertsReady === 'true') return;
+                    form.dataset.networkAlertsReady = 'true';
+                    var metric = form.querySelector('[name="metric"]');
+                    var target = form.querySelector('[data-rule-field="target"]');
+                    var operator = form.querySelector('[data-rule-field="operator"]');
+                    var threshold = form.querySelector('[data-rule-field="threshold"]');
+                    var sustained = form.querySelector('[data-rule-field="sustained"]');
+                    var severity = form.querySelector('[name="severity"]');
+                    function setField(node, visible) {
+                        if (!node) return;
+                        node.classList.toggle('hidden', !visible);
+                        node.querySelectorAll('input, select, button').forEach(function (el) {
+                            if (el.name === 'severity') return;
+                            el.disabled = !visible;
+                        });
+                    }
+                    function setSeverity(value, locked) {
+                        if (!severity) return;
+                        severity.value = value || severity.value;
+                        var group = severity.closest('[data-widget="segmented"]');
+                        if (!group) return;
+                        group.querySelectorAll('button[data-value]').forEach(function (btn) {
+                            var active = btn.dataset.value === severity.value;
+                            btn.dataset.active = String(active);
+                            btn.setAttribute('aria-checked', String(active));
+                            btn.disabled = !!locked;
+                        });
+                    }
+                    function update() {
+                        var m = metric.value;
+                        var transition = m === 'wan_outage' || m === 'public_ip_change';
+                        var targetScoped = m === 'latency' || m === 'loss';
+                        setField(target, targetScoped);
+                        setField(operator, !transition);
+                        setField(threshold, !transition);
+                        setField(sustained, !transition);
+                        if (m === 'wan_outage') setSeverity('critical', true);
+                        else if (m === 'public_ip_change') setSeverity('info', true);
+                        else setSeverity(severity ? severity.value : 'critical', false);
+                    }
+                    metric.addEventListener('change', update);
+                    update();
+                }());
+                </script>
             </section>
 
             <section id="settings-telegram" data-settings-section data-section="telegram" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">

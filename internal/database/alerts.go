@@ -8,16 +8,18 @@ import (
 
 // AlertConfig represents a configured alert rule.
 type AlertConfig struct {
-	ID              int64
-	Name            string
-	Metric          string
-	Operator        string
-	Threshold       float64
-	Severity        string
-	Enabled         bool
-	CooldownMinutes int
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID                int64
+	Name              string
+	Metric            string
+	Operator          string
+	Threshold         float64
+	Target            *string
+	SustainedDuration int
+	Severity          string
+	Enabled           bool
+	CooldownMinutes   int
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // Alert represents a triggered alert record.
@@ -32,6 +34,27 @@ type Alert struct {
 	CreatedAt    time.Time
 }
 
+func (ac AlertConfig) TargetDisplay() string {
+	if ac.Target == nil || *ac.Target == "" {
+		return "-"
+	}
+	return *ac.Target
+}
+
+func (ac AlertConfig) SustainedDisplay() string {
+	if ac.Metric == "wan_outage" || ac.Metric == "public_ip_change" {
+		return "-"
+	}
+	return fmt.Sprintf("%ds", ac.SustainedDuration)
+}
+
+func (ac AlertConfig) ConditionDisplay() string {
+	if ac.Metric == "wan_outage" || ac.Metric == "public_ip_change" {
+		return "-"
+	}
+	return fmt.Sprintf("%s %.1f", ac.Operator, ac.Threshold)
+}
+
 // CreateAlertConfig inserts a new alert rule.
 func (db *DB) CreateAlertConfig(ac *AlertConfig) error {
 	enabled := 0
@@ -39,9 +62,9 @@ func (db *DB) CreateAlertConfig(ac *AlertConfig) error {
 		enabled = 1
 	}
 	result, err := db.Exec(
-		`INSERT INTO AlertConfig (name, metric, operator, threshold, severity, enabled, cooldown_minutes)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		ac.Name, ac.Metric, ac.Operator, ac.Threshold, ac.Severity, enabled, ac.CooldownMinutes,
+		`INSERT INTO AlertConfig (name, metric, operator, threshold, target, sustained_duration, severity, enabled, cooldown_minutes)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		ac.Name, ac.Metric, ac.Operator, ac.Threshold, ac.Target, ac.SustainedDuration, ac.Severity, enabled, ac.CooldownMinutes,
 	)
 	if err != nil {
 		return fmt.Errorf("cannot create alert config: %w", err)
@@ -53,7 +76,7 @@ func (db *DB) CreateAlertConfig(ac *AlertConfig) error {
 // ListAlertConfigs returns all alert configs.
 func (db *DB) ListAlertConfigs() ([]AlertConfig, error) {
 	rows, err := db.Query(
-		`SELECT id, name, metric, operator, threshold, severity, enabled, cooldown_minutes, created_at, updated_at
+		`SELECT id, name, metric, operator, threshold, target, sustained_duration, severity, enabled, cooldown_minutes, created_at, updated_at
 		 FROM AlertConfig ORDER BY id`,
 	)
 	if err != nil {
@@ -65,9 +88,13 @@ func (db *DB) ListAlertConfigs() ([]AlertConfig, error) {
 	for rows.Next() {
 		var ac AlertConfig
 		var enabled int
+		var target sql.NullString
 		if err := rows.Scan(&ac.ID, &ac.Name, &ac.Metric, &ac.Operator, &ac.Threshold,
-			&ac.Severity, &enabled, &ac.CooldownMinutes, &ac.CreatedAt, &ac.UpdatedAt); err != nil {
+			&target, &ac.SustainedDuration, &ac.Severity, &enabled, &ac.CooldownMinutes, &ac.CreatedAt, &ac.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("cannot scan alert config: %w", err)
+		}
+		if target.Valid {
+			ac.Target = &target.String
 		}
 		ac.Enabled = enabled == 1
 		configs = append(configs, ac)
@@ -78,7 +105,7 @@ func (db *DB) ListAlertConfigs() ([]AlertConfig, error) {
 // ListEnabledAlertConfigs returns only enabled alert configs.
 func (db *DB) ListEnabledAlertConfigs() ([]AlertConfig, error) {
 	rows, err := db.Query(
-		`SELECT id, name, metric, operator, threshold, severity, enabled, cooldown_minutes, created_at, updated_at
+		`SELECT id, name, metric, operator, threshold, target, sustained_duration, severity, enabled, cooldown_minutes, created_at, updated_at
 		 FROM AlertConfig WHERE enabled = 1 ORDER BY id`,
 	)
 	if err != nil {
@@ -90,9 +117,13 @@ func (db *DB) ListEnabledAlertConfigs() ([]AlertConfig, error) {
 	for rows.Next() {
 		var ac AlertConfig
 		var enabled int
+		var target sql.NullString
 		if err := rows.Scan(&ac.ID, &ac.Name, &ac.Metric, &ac.Operator, &ac.Threshold,
-			&ac.Severity, &enabled, &ac.CooldownMinutes, &ac.CreatedAt, &ac.UpdatedAt); err != nil {
+			&target, &ac.SustainedDuration, &ac.Severity, &enabled, &ac.CooldownMinutes, &ac.CreatedAt, &ac.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("cannot scan alert config: %w", err)
+		}
+		if target.Valid {
+			ac.Target = &target.String
 		}
 		ac.Enabled = enabled == 1
 		configs = append(configs, ac)
@@ -158,13 +189,17 @@ func (db *DB) AlertConfigCount() (int, error) {
 func (db *DB) GetAlertConfig(id int64) (*AlertConfig, error) {
 	var ac AlertConfig
 	var enabled int
+	var target sql.NullString
 	err := db.QueryRow(
-		`SELECT id, name, metric, operator, threshold, severity, enabled, cooldown_minutes, created_at, updated_at
+		`SELECT id, name, metric, operator, threshold, target, sustained_duration, severity, enabled, cooldown_minutes, created_at, updated_at
 		 FROM AlertConfig WHERE id = ?`, id,
 	).Scan(&ac.ID, &ac.Name, &ac.Metric, &ac.Operator, &ac.Threshold,
-		&ac.Severity, &enabled, &ac.CooldownMinutes, &ac.CreatedAt, &ac.UpdatedAt)
+		&target, &ac.SustainedDuration, &ac.Severity, &enabled, &ac.CooldownMinutes, &ac.CreatedAt, &ac.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
+	}
+	if target.Valid {
+		ac.Target = &target.String
 	}
 	if err != nil {
 		return nil, fmt.Errorf("cannot get alert config: %w", err)
@@ -180,9 +215,9 @@ func (db *DB) UpdateAlertConfig(ac *AlertConfig) error {
 		enabled = 1
 	}
 	_, err := db.Exec(
-		`UPDATE AlertConfig SET name=?, metric=?, operator=?, threshold=?, severity=?, enabled=?, cooldown_minutes=?, updated_at=CURRENT_TIMESTAMP
+		`UPDATE AlertConfig SET name=?, metric=?, operator=?, threshold=?, target=?, sustained_duration=?, severity=?, enabled=?, cooldown_minutes=?, updated_at=CURRENT_TIMESTAMP
 		 WHERE id=?`,
-		ac.Name, ac.Metric, ac.Operator, ac.Threshold, ac.Severity, enabled, ac.CooldownMinutes, ac.ID,
+		ac.Name, ac.Metric, ac.Operator, ac.Threshold, ac.Target, ac.SustainedDuration, ac.Severity, enabled, ac.CooldownMinutes, ac.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("cannot update alert config %d: %w", ac.ID, err)

@@ -1,0 +1,38 @@
+{
+  "feature": "network-alerts",
+  "phase": 4,
+  "stack": "Go monolith + html/template + HTMX + SQLite (modernc.org/sqlite) + systemd binary deployment. No new runtime dependencies.",
+  "files_created": [
+    "../../internal/alerts/network_alerts_aitri_test.go",
+    "../../internal/server/network_alerts_aitri_test.go",
+    "../../internal/database/network_alerts_aitri_test.go",
+    "../.env.example"
+  ],
+  "files_modified": [
+    "../../cmd/ultron-ap/main.go",
+    "../../internal/alerts/engine.go",
+    "../../internal/database/alerts.go",
+    "../../internal/database/network.go",
+    "../../internal/database/sqlite.go",
+    "../../internal/server/handlers_alert_rules.go",
+    "../../internal/server/handlers_settings.go",
+    "../../web/templates/settings.html",
+    "../../web/templates/partials/alert-rules-table.html"
+  ],
+  "setup_commands": [],
+  "environment_variables": [],
+  "technical_debt": [
+    {
+      "fr_id": "FR-077",
+      "substitution": "The three FR-077 browser e2e test cases are implemented as authenticated Go handler/template tests that verify the rendered metric option order, transition-rule disclosure script, and HTMX rules-table partial swap. No Playwright runner was added.",
+      "reason": "The parent Ultron repo does not have a browser e2e stack for feature verification, and adding one would introduce a new runtime dependency contrary to the single-binary/no-new-runtime constraint. The tested server-rendered HTML and inline disclosure script are the implementation surface used by the browser.",
+      "effort_to_fix": "medium"
+    }
+  ],
+  "test_runner": "go test -C ../.. ./... -v",
+  "test_files": [
+    "../../internal/alerts/network_alerts_aitri_test.go",
+    "../../internal/server/network_alerts_aitri_test.go",
+    "../../internal/database/network_alerts_aitri_test.go"
+  ]
+}

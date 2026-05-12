@@ -1,0 +1,380 @@
+{
+  "project_name": "Ultron-AP — network-alerts",
+  "feature": "network-alerts",
+  "version": "0.1.0",
+  "source": "features/network-alerts/FEATURE_IDEA.md",
+  "project_summary": {
+    "intent": "Close the FR-022 gap left by the network-monitoring rollout. The alert engine can already observe WAN, DNS, latency, loss, and public-IP state via FR-016/018/021/026 but never produces a notification for any of them. Add network rule types, a sustained-duration parameter (which also closes BG-037 host-rule flapping), and the settings UI to manage them — reusing the existing Telegram/email channels.",
+    "north_star_kpi": "Percentage of operator-perceptible network incidents (WAN outage, sustained loss >5% for >=120s, sustained latency above target threshold, DNS-resolver failure, public-IP change) that produce exactly one Telegram alert within 1 minute of the incident start — target >=95% on the home lab, measured against ultron-ap.service journal correlated with FR-018/FR-021/FR-026 events.",
+    "jtbd": "When my home internet is actually broken — not flapping, not silent — tell me on Telegram once, with enough context that I know whether to drive home and reboot the router.",
+    "guardrail_metric": "Existing host alert rules (CPU/RAM/Disk/Temp, Docker, Systemd) MUST continue to fire on the same conditions and with the same latency they have today; sustained_duration defaults to 0 for migrated rows so legacy behavior is byte-identical until an operator opts in.",
+    "scope_anchor": "FR-022 acceptance criteria from features/network-monitoring/spec/01_REQUIREMENTS.json, plus BG-037 (flapping) and BG-039 (FR-022 split) in spec/BUGS.json."
+  },
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator",
+      "tech_level": "intermediate",
+      "goal": "Be paged on Telegram (and optionally email) within one minute of a real network incident at home, with enough context to act, without being woken up by single-tick blips.",
+      "pain_point": "Ultron-AP already collects WAN/DNS/latency/public-IP telemetry but the alert engine ignores those metrics, so the operator either misses incidents entirely or relies on Telegram traffic from rule_id=11 that flaps every 15–20 minutes (BG-037)."
+    }
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-071",
+      "feature": "network-alerts",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Sustained-latency network alert rule type",
+      "description": "Extend the alert engine to evaluate latency rules of the shape `metric=latency`, `target=<host>`, `operator`, `threshold` (milliseconds), `sustained_duration` (seconds). The engine reads RTT samples from the FR-016 gateway probe / FR-018 WAN probe ring buffer and fires exactly one alert when every sample within the trailing `sustained_duration` window satisfies the operator/threshold, respecting the existing per-rule cooldown.",
+      "acceptance_criteria": [
+        "Engine recognises metric=latency in AlertConfig and accepts target in {gateway, 8.8.8.8, 1.1.1.1} (FR-016 configured target list) — unknown targets are rejected at rule create time with HTTP 400",
+        "Given threshold=100, operator='>', sustained_duration=120: when every RTT sample for >=120s is >100ms, exactly one alert is created on the transition and no further alert is created for the next 15 minutes (existing cooldown)",
+        "Given any sample within the 120s window is <=100ms: no alert is created — the sustained window resets on the offending sample",
+        "Failure path — sample stream gap >2 ticks (ultron-ap restarted, monitor stalled): the sustained window resets and does not produce a stale alert against pre-restart samples"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-072",
+      "feature": "network-alerts",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Sustained packet-loss network alert rule type",
+      "description": "Same shape as FR-071 with metric=loss, threshold in percentage (0–100). Reads loss percentage from the same FR-016 probe samples.",
+      "acceptance_criteria": [
+        "Engine recognises metric=loss with operator/threshold/target and uses the same sustained-window evaluator as FR-071",
+        "Given threshold=5, operator='>', sustained_duration=60, target=gateway: when loss%>5 for every sample in the trailing 60s, exactly one alert is created; alert body includes target, current loss% and configured threshold",
+        "Given alternating samples around the threshold: no alert is created (the window only fires when the entire window is in breach)",
+        "Cooldown — same 15-minute default as host rules; per-rule override honoured"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-073",
+      "feature": "network-alerts",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "DNS-resolver failure-rate alert rule type",
+      "description": "metric=dns_failure_rate, threshold in percentage. Reads failure rate from the FR-016 DNS probe over the trailing `sustained_duration` window. One rule covers all configured resolvers — the alert body names the resolver with the worst rate.",
+      "acceptance_criteria": [
+        "Engine recognises metric=dns_failure_rate with no target (the rule observes all configured resolvers as one population)",
+        "Given threshold=20, operator='>', sustained_duration=120: when the configured resolvers' aggregate failure rate is >20% for every sampled tick in the trailing 120s, exactly one alert fires; the body names the resolver(s) that contributed",
+        "Given <2 DNS samples observed in the window (resolver list empty / probe disabled): the rule is skipped and no alert is created — observability log line records the skip with reason",
+        "Cooldown — existing 15-minute default applies"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-074",
+      "feature": "network-alerts",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "WAN outage transition alerts (critical fire + info resolve)",
+      "description": "Transition-based, NOT sustained: when the FR-018 outage_start event fires, emit a critical alert immediately; when outage_end fires, emit an info resolve alert. The engine treats this rule like the existing Docker/Systemd transition rules — no threshold, no sustained-duration field, just an enabled flag.",
+      "acceptance_criteria": [
+        "Rule type metric=wan_outage has no threshold or operator — only enabled + severity_override(default=critical) + cooldown",
+        "Given FR-018 emits outage_start (>=N consecutive failed gateway+resolver probes): a critical alert is fired in the next engine tick with WAN-down body (interfaces, last successful probe timestamp)",
+        "Given FR-018 emits outage_end while a previous outage_start is still within the cooldown window: an info resolve alert is fired immediately (existing FR-018 resolve path), the fire counter is reset, and the next outage_start (if any) is not suppressed by the prior cooldown",
+        "Given the rule is disabled: neither fire nor resolve is dispatched even when outage events are observed",
+        "Persistence — outage_start fires are recorded in alerts table with type=wan_outage; resolve alerts are notification-only (no DB row, matches existing FR-018 resolve semantics)"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-075",
+      "feature": "network-alerts",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Public-IP change alert",
+      "description": "Transition-based: when FR-026 detects a public IP change, fire one info alert containing the old IP and new IP. Suppress on the first observation after ultron-ap startup (so a fresh DB does not page on every boot).",
+      "acceptance_criteria": [
+        "Rule type metric=public_ip_change has no threshold/operator; severity is fixed at info; cooldown is configurable (default 60 min to suppress carrier IP rotations)",
+        "Given FR-026 emits public_ip_changed{old=A, new=B} with A!=B and A is non-empty: one info alert is fired with body containing old=A new=B and the change timestamp",
+        "Given ultron-ap starts and FR-026 emits its first observation (old='' new=B): no alert is fired (the engine treats empty old IP as 'no prior observation')",
+        "Given the rule is disabled: no alert is fired even when changes are observed"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-076",
+      "feature": "network-alerts",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Sustained-duration parameter on all alert rules",
+      "description": "Add a `sustained_duration` field (integer seconds, >=0, default 0) to AlertConfig. The field applies to threshold-style rules (FR-004 host rules and FR-071/FR-072/FR-073 network rules). When sustained_duration=0 the engine fires on first breach (legacy behavior — backward compatible). When >0 the engine fires only after every sample in the trailing window is in breach. This single field closes BG-037 (rule_id=11 flapping) for host rules as well.",
+      "acceptance_criteria": [
+        "Host CPU rule with sustained_duration=0 retains identical fire behavior to today (single-tick breach fires immediately) — verified via TC comparing fire count before/after migration on a recorded sample stream",
+        "Host CPU rule with sustained_duration=180 only fires after CPU is above threshold continuously for 180s; intermittent breaches reset the window",
+        "BG-037 closure — rule_id=11 (the flapping rule) with sustained_duration=300 fires at most once per cooldown window in a recorded 60-minute alternating-breach trace",
+        "Failure path — sample gap >2 engine ticks resets the sustained window without firing (covers process restart, monitor stall, time-skew)"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-077",
+      "feature": "network-alerts",
+      "type": "UX",
+      "priority": "MUST",
+      "title": "Settings alert-rule form supports network metric types",
+      "description": "Extend the existing /settings → Alert rules form (FR-058 widgets — segmented severity, chip-preset cooldown, stepper) so the operator can create any rule type defined by FR-071..FR-075 from the same form, without a separate /network sub-page. The metric <select> gains entries for latency / loss / dns_failure_rate / wan_outage / public_ip_change. A target picker becomes visible only when metric ∈ {latency, loss}, populated from the FR-016 configured target list. A sustained-duration stepper becomes visible only when metric is threshold-style (host + latency/loss/dns_failure_rate).",
+      "acceptance_criteria": [
+        "Metric <select> renders exactly these options in this order: cpu, ram, disk, temp, latency, loss, dns_failure_rate, wan_outage, public_ip_change",
+        "Selecting metric=latency or loss reveals a target <select> populated from the FR-016 configured target list (server-rendered via template helper, not client-side fetch) — the target field is name='target' and is required for these metrics",
+        "Selecting metric ∈ {wan_outage, public_ip_change} hides target, threshold, operator, and sustained-duration fields — only severity (locked to critical for wan_outage, info for public_ip_change) and cooldown remain visible",
+        "Sustained-duration stepper is visible for cpu/ram/disk/temp/latency/loss/dns_failure_rate; data-min=0 data-max=3600; default 0; uses the FR-057 stepper widget so chip-preset / arrow-key affordances are preserved",
+        "Form submit posts to existing /api/alerts/rules; server returns the same rules-table partial used today for the host rules form, with the new row included"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-078",
+      "feature": "network-alerts",
+      "type": "persistence",
+      "priority": "MUST",
+      "title": "AlertConfig schema extension and forward-only migration",
+      "description": "Extend the alert_configs SQLite table with new nullable columns: target TEXT, sustained_duration INTEGER NOT NULL DEFAULT 0. Provide a forward-only migration that adds the columns and backfills sustained_duration=0 / target=NULL for existing rows. metric is widened in code (not in schema) to accept the new string values. No destructive changes.",
+      "acceptance_criteria": [
+        "After migration runs against a v1 DB: ALL existing alert_configs rows have sustained_duration=0 and target=NULL; row count unchanged; existing rules still load and evaluate identically",
+        "Migration is idempotent — running it twice produces the same schema and the same row contents; the second run logs 'schema already at target version' and exits 0",
+        "Rollback safety — a downgraded ultron-ap binary that does not know about target/sustained_duration still reads rows successfully (extra columns are ignored at the database/sql layer) — verified via test that loads rows with the old AlertConfig struct",
+        "Failure path — migration fails to apply (disk full, schema lock): ultron-ap refuses to start with a clear error and the engine does not enter a partially-migrated state"
+      ],
+      "implementation_level": "production_ready"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-033",
+      "category": "Performance",
+      "requirement": "Network rule evaluation must add <=50ms per engine tick at the steady-state rule count (currently 11 host rules + up to 10 network rules in the home-lab profile). Measured as p95 of evaluate() wall-time across 60 ticks under load.",
+      "acceptance_criteria": [
+        "p95 evaluate() wall-time with 10 network rules + 11 host rules is <=50ms on Raspberry Pi 4B (ARM Cortex-A72) — measured by an unit benchmark in internal/alerts that replays a recorded sample stream",
+        "Memory overhead of sustained-window ring buffers is <=1MB total for 21 rules at 5s tick × 3600s max sustained_duration"
+      ]
+    },
+    {
+      "id": "NFR-034",
+      "category": "Reliability",
+      "requirement": "Sustained-window state is process-local and intentionally NOT persisted — on ultron-ap restart, all sustained windows reset to empty. This is correct behavior (the engine cannot vouch for samples it did not observe) and must be tested explicitly so a future change does not silently introduce false-positive fires from stale buffers.",
+      "acceptance_criteria": [
+        "On engine.Start() the firingFirst/sustained-window maps are empty regardless of prior state",
+        "A rule with sustained_duration=300 does not fire within the first 300s post-restart even if the metric is in continuous breach during that window — observability log line records the warmup state"
+      ]
+    },
+    {
+      "id": "NFR-035",
+      "category": "Security",
+      "requirement": "POST /api/alerts/rules validates target strings against the FR-016 configured target list at rule-create time, rejecting unknown values with HTTP 400. The endpoint must NOT execute or echo unsanitised user input (no shell-out to ping for validation, no template rendering of the raw target without HTML escaping).",
+      "acceptance_criteria": [
+        "POST with metric=latency and target='8.8.8.8; rm -rf /' returns 400 'invalid target' — verified by test",
+        "POST with metric=latency and target=$(any value NOT in the FR-016 configured list) returns 400 — the validator is whitelist-only, never blacklist",
+        "Rendered alert body containing an attacker-controlled target survives Telegram MarkdownV2 escape (reuses BG-036 escape helper)"
+      ]
+    },
+    {
+      "id": "NFR-036",
+      "category": "Observability",
+      "requirement": "Every network-rule evaluation emits the same 9-field structured log line shape used by FR-004 host rules (NFR-007), so journalctl filters that exist today keep working for the new rule types.",
+      "acceptance_criteria": [
+        "A network rule evaluation produces a single-line log: ts=<rfc3339> rule_id=<n> metric=<m> target=<t|-> value=<v> threshold=<th> sustained=<s> in_window=<bool> fired=<bool>",
+        "Resolve events (wan_outage_end) produce a matching ts=<rfc3339> rule_id=<n> metric=wan_outage event=resolve duration=<s> line"
+      ]
+    },
+    {
+      "id": "NFR-037",
+      "category": "Reliability",
+      "requirement": "Existing host alert rule behavior is preserved byte-for-byte for rows migrated with sustained_duration=0 — no regression in fire timing, alert body, persistence, or notification dispatch.",
+      "acceptance_criteria": [
+        "A replay test loads a known CPU sample stream and asserts the engine produces the identical alert rows pre- and post-migration when sustained_duration=0",
+        "A goldenfile test of the rendered Telegram body for a host CPU alert is unchanged after the schema migration"
+      ]
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-071",
+      "requirement_id": "FR-071",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "to be alerted when latency to my gateway or to a known public resolver is bad for at least two minutes",
+      "so_that": "I can distinguish a momentary blip from a real upstream problem worth investigating",
+      "acceptance_criteria": [
+        {
+          "id": "AC-071-001",
+          "given": "I create a rule metric=latency target=gateway operator='>' threshold=100 sustained_duration=120",
+          "when": "RTT to the gateway exceeds 100ms for every sample in the trailing 120 seconds",
+          "then": "exactly one Telegram alert is delivered containing target='gateway' current_value=<observed> threshold=100 sustained=120"
+        },
+        {
+          "id": "AC-071-002",
+          "given": "the same rule is firing and within the 15-minute cooldown",
+          "when": "RTT remains above 100ms",
+          "then": "no further alert is fired until the cooldown expires"
+        }
+      ]
+    },
+    {
+      "id": "US-072",
+      "requirement_id": "FR-072",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "to be alerted when packet loss to my gateway stays above a threshold for at least a minute",
+      "so_that": "I learn about lossy links before applications start failing",
+      "acceptance_criteria": [
+        {
+          "id": "AC-072-001",
+          "given": "I create a rule metric=loss target=gateway operator='>' threshold=5 sustained_duration=60",
+          "when": "every probe sample in the trailing 60s shows loss>5%",
+          "then": "exactly one Telegram alert is delivered with current loss% and threshold"
+        }
+      ]
+    },
+    {
+      "id": "US-073",
+      "requirement_id": "FR-073",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "to be alerted when DNS resolution is failing more than 20% of the time over the last two minutes",
+      "so_that": "I notice ISP DNS outages or upstream resolver instability before half my services time out",
+      "acceptance_criteria": [
+        {
+          "id": "AC-073-001",
+          "given": "the DNS probe has at least two configured resolvers and the rule has threshold=20 sustained_duration=120",
+          "when": "the aggregate failure rate across resolvers is >20% for the entire 120s window",
+          "then": "exactly one Telegram alert is delivered naming the contributing resolvers and their failure rates"
+        }
+      ]
+    },
+    {
+      "id": "US-074",
+      "requirement_id": "FR-074",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "an immediate Telegram alert when my WAN goes down and a follow-up when it comes back",
+      "so_that": "I know whether to act and whether the action worked, without staring at the dashboard",
+      "acceptance_criteria": [
+        {
+          "id": "AC-074-001",
+          "given": "FR-018 emits outage_start while a wan_outage rule is enabled",
+          "when": "the next engine tick runs",
+          "then": "a critical Telegram alert is delivered with body 'WAN DOWN' and the last successful probe timestamp"
+        },
+        {
+          "id": "AC-074-002",
+          "given": "the prior outage is still within cooldown and FR-018 emits outage_end",
+          "when": "the engine processes the event",
+          "then": "an info-severity resolve alert is delivered with the outage duration in the body"
+        }
+      ]
+    },
+    {
+      "id": "US-075",
+      "requirement_id": "FR-075",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "a single info alert when my public IP changes",
+      "so_that": "I can update DNS records or VPN configurations without polling /network",
+      "acceptance_criteria": [
+        {
+          "id": "AC-075-001",
+          "given": "FR-026 has previously observed public IP A and a public_ip_change rule is enabled",
+          "when": "FR-026 emits public_ip_changed{old=A,new=B}",
+          "then": "exactly one info Telegram alert is delivered with body containing old=A new=B"
+        },
+        {
+          "id": "AC-075-002",
+          "given": "ultron-ap restarts and FR-026 emits its first post-restart observation with old=''",
+          "when": "the engine processes the event",
+          "then": "no alert is fired (empty old IP is treated as 'no prior observation')"
+        }
+      ]
+    },
+    {
+      "id": "US-076",
+      "requirement_id": "FR-076",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "every alert rule (host and network) to optionally require the breach to persist before firing",
+      "so_that": "I stop getting paged by the rule_id=11 flapping pattern (BG-037) while not losing the immediate fire for rules where I want it",
+      "acceptance_criteria": [
+        {
+          "id": "AC-076-001",
+          "given": "an existing host CPU rule was migrated with sustained_duration=0",
+          "when": "the metric crosses threshold for one tick",
+          "then": "the rule fires immediately — identical to legacy behavior"
+        },
+        {
+          "id": "AC-076-002",
+          "given": "the operator edits rule_id=11 to sustained_duration=300",
+          "when": "an alternating-breach trace is replayed",
+          "then": "the rule fires at most once per cooldown window (closes BG-037)"
+        }
+      ]
+    },
+    {
+      "id": "US-077",
+      "requirement_id": "FR-077",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "to create network alert rules from the same /settings form I already use for host rules",
+      "so_that": "I do not have to learn a new UI or context-switch to /network to manage alerting",
+      "acceptance_criteria": [
+        {
+          "id": "AC-077-001",
+          "given": "I am on /settings → Alert rules",
+          "when": "I select metric=latency",
+          "then": "a target picker appears populated with the FR-016 configured targets, and a sustained-duration stepper appears with min=0 max=3600 default=0"
+        },
+        {
+          "id": "AC-077-002",
+          "given": "I select metric=wan_outage",
+          "when": "the form re-renders",
+          "then": "threshold, operator, target and sustained-duration fields are hidden; severity is locked to critical; cooldown remains editable"
+        },
+        {
+          "id": "AC-077-003",
+          "given": "I submit a fully-filled latency rule",
+          "when": "the server responds",
+          "then": "the same rules-table partial swap used for host rules updates in place with the new row visible"
+        }
+      ]
+    },
+    {
+      "id": "US-078",
+      "requirement_id": "FR-078",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "the schema migration to be safe and reversible enough that I can downgrade ultron-ap without manual SQL",
+      "so_that": "a bad release does not strand my alert rules",
+      "acceptance_criteria": [
+        {
+          "id": "AC-078-001",
+          "given": "a v1 DB with 11 existing host rules",
+          "when": "the new binary starts and runs the migration",
+          "then": "all 11 rows are present, each with sustained_duration=0 and target=NULL, and a second start logs 'schema already at target version'"
+        },
+        {
+          "id": "AC-078-002",
+          "given": "the post-migration DB is opened by an older ultron-ap binary that lacks target/sustained_duration in AlertConfig",
+          "when": "the older binary loads alert_configs",
+          "then": "loading succeeds — the extra columns are ignored — and the older engine evaluates the rules with legacy semantics"
+        }
+      ]
+    }
+  ],
+  "no_go_zone": [
+    "No new notification channels — Telegram (FR-005) and email (FR-006) remain the only dispatch channels. No webhooks, no SMS, no push, no Discord, no Slack. Adding a channel is a separate FR.",
+    "No multi-target rules — one target per latency/loss rule. The operator who needs both gateway and 8.8.8.8 creates two rules. A future FR may introduce target-groups but it is not in this delivery.",
+    "No speedtest-driven alerts — speedtest cadence and bandwidth-degradation rules are explicitly excluded. They depend on a separate probe that is not in scope.",
+    "No auto-suggested or template rules — the form is manual entry only. No 'recommended threshold' nudges, no rule presets, no 'one-click healthy-home setup'.",
+    "No /network sub-page for alert rule management — the existing /settings → Alert rules form is the only surface. The /network page may LINK to /settings but does not duplicate the form.",
+    "No re-architecture of the existing FR-004 host alert path — host CPU/RAM/Disk/Temp evaluation code is reused as-is; sustained_duration is layered on top, not refactored under it.",
+    "No per-target threshold ladders — a single rule has one threshold. Hysteresis is expressed via sustained_duration, not via separate fire/resolve thresholds.",
+    "No persistence of sustained-window state across restarts — windows reset on engine startup. This is correct behavior, not a TODO."
+  ],
+  "constraints": [
+    "Single-binary Go server — no new runtime dependencies (no Python/Node, no separate worker, no Redis).",
+    "linux/arm64 (Raspberry Pi 4B) is the canonical deploy target; performance budgets in NFR-033 apply to that hardware.",
+    "Forward-only SQLite migrations — no destructive ALTERs, no DROP COLUMN, no row rewrites of existing rules.",
+    "Reuses existing /api/alerts/rules POST endpoint and existing rules-table partial — no new HTML endpoints.",
+    "Reuses FR-058 settings widgets (segmented, chip-preset, stepper) and the BG-038 always-loaded widget JS — no new widget scripts."
+  ],
+  "technology_preferences": [
+    "Sustained-window evaluator implemented in internal/alerts as a per-rule ring buffer keyed by rule_id, sharing the pattern already used by internal/insights/lang sustainedSpec — copy the pattern, do not import the package (alerts engine must not depend on insights).",
+    "Target list source: read once from the FR-016 configuration at template-render time; do not fetch via SSE or htmx. A reload is acceptable when targets change because target changes are rare and operator-initiated.",
+    "Migration framework: continue using the existing in-tree migration runner (no goose/golang-migrate). Migrations live alongside the existing ones in internal/database."
+  ],
+  "original_brief": "## Feature\nNetwork-class alert rules in the existing alert engine — landing the FR-022\ngap left by network-monitoring (engine + UI + sustained-duration hysteresis).\n\n## Problem / Why\nFR-022 already specifies sustained latency, sustained loss, WAN outage,\nDNS-resolver failure rate, and public-IP-change alerts routed through the\nexisting Telegram/email channels. The implementation never landed:\n- `isValidMetric` in [handlers_settings.go:82](internal/server/handlers_settings.go#L82-L88) only accepts `cpu/ram/disk/temp`.\n- [alerts/engine.go](internal/alerts/engine.go) has zero references to latency / loss / DNS / WAN / public_ip.\n- Alert-rule form in [settings.html](web/templates/settings.html) only offers the four host metrics.\n- BG-037 (rule_id=11 flapping every 15–20 min) is the user-visible symptom of the missing sustained-duration parameter — same root cause, fixed here.\n\nThis is the last unresolved gap from the network-monitoring rollout, and the\nonly thing keeping a network operator from getting paged on a real WAN\nincident from Ultron-AP itself.\n\n## Target Users\nRaspberry Pi Operator — same persona as FR-022. Wants WAN/DNS/latency\nincidents to page Telegram/email like CPU/RAM/temp already do, without\nflapping.\n\n## New Behavior\nThe system must:\n- Evaluate `latency_<target>` rules: fire when RTT to a configured target\n  exceeds `threshold` for >= `sustained_duration` seconds (default 300s),\n  respect the existing 15-minute cooldown.\n- Evaluate `loss_<target>` rules: same shape, on packet-loss percentage.\n- Evaluate `dns_failure_rate` rules: fire when resolver failure-rate\n  exceeds threshold for sustained-duration.\n- Fire a `critical` alert on FR-018 WAN `outage_start`; fire an `info`\n  resolve when WAN comes back.\n- Fire an `info` alert on FR-026 public-IP change carrying old + new IP.\n- Accept `sustained_duration` (seconds, integer >= 0) on every alert rule\n  via a stepper widget in the settings form. Existing host rules treat\n  the field as optional — `0` means \"fire on first breach\", preserving\n  current behavior. This single field also closes BG-037 for host rules.\n- Extend the metric `<select>` in the alert-rule form with the new\n  network metric types; show a target picker when a target-scoped metric\n  is selected.\n- Persist the new fields via the existing `/api/alerts/rules` endpoint\n  (extend `database.AlertConfig`, add a migration that defaults\n  `sustained_duration=0` for existing rows).\n- Render the new rules in the existing alerts panel with the same\n  severity colour tokens, with no new dispatch channel.\n\n## Success Criteria\n- Given a latency rule with `target=8.8.8.8`, `threshold=100ms`,\n  `sustained_duration=120s`, when RTT exceeds 100ms continuously for\n  >= 120s, then a single alert is created (no flapping at 15–20 min\n  cadence — closes BG-037).\n- Given an existing CPU rule with `sustained_duration=0`, when CPU\n  crosses threshold for one tick, then it fires immediately — backward\n  compatibility preserved.\n- Given the WAN goes down, when `outage_start` fires, then a `critical`\n  alert is emitted within one tick; when it recovers, an `info` resolve\n  is emitted.\n- Given the public IP changes, when FR-026 detects it, then an `info`\n  alert is emitted with both old and new IPs in the body.\n- The settings alert-rule form lets the operator create any of the new\n  rule types end-to-end and persists them in `alert_configs`.\n\n## Out of Scope\n- New notification channels — keep Telegram/email only.\n- Multi-target rules (one target per rule).\n- Speedtest-driven alerts (separate FR).\n- Auto-suggested rule presets / templates.\n- Migrating BG-037 host-rule into a per-rule `for_duration` framework\n  distinct from `sustained_duration` — they collapse into the same field.\n"
+}

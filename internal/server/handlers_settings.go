@@ -10,12 +10,13 @@ import (
 )
 
 type settingsData struct {
-	Rules    []database.AlertConfig
-	Telegram *notifDisplay
-	Email    *notifDisplay
-	Perf     database.PerformanceConfig
-	Backup   database.BackupConfig
-	Flash    string
+	Rules          []database.AlertConfig
+	NetworkTargets []string
+	Telegram       *notifDisplay
+	Email          *notifDisplay
+	Perf           database.PerformanceConfig
+	Backup         database.BackupConfig
+	Flash          string
 }
 
 type notifDisplay struct {
@@ -29,7 +30,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		log.Printf("settings: failed to list rules: %v", err)
 	}
 
-	data := settingsData{Rules: rules}
+	data := settingsData{Rules: rules, NetworkTargets: s.alertRuleTargets()}
 
 	if tg, err := s.db.GetNotificationConfig("telegram"); err == nil && tg != nil {
 		data.Telegram = maskNotifConfig(tg, "telegram")
@@ -81,8 +82,51 @@ func maskNotifConfig(nc *database.NotificationConfig, channel string) *notifDisp
 
 func isValidMetric(m string) bool {
 	switch m {
-	case "cpu", "ram", "disk", "temp":
+	case "cpu", "ram", "disk", "temp", "latency", "loss", "dns_failure_rate", "wan_outage", "public_ip_change":
 		return true
+	}
+	return false
+}
+
+func isThresholdMetric(m string) bool {
+	switch m {
+	case "cpu", "ram", "disk", "temp", "latency", "loss", "dns_failure_rate":
+		return true
+	}
+	return false
+}
+
+func isTargetMetric(m string) bool {
+	return m == "latency" || m == "loss"
+}
+
+func (s *Server) alertRuleTargets() []string {
+	seen := map[string]bool{}
+	var out []string
+	add := func(v string) {
+		if v == "" || seen[v] {
+			return
+		}
+		seen[v] = true
+		out = append(out, v)
+	}
+	add("gateway")
+	add("8.8.8.8")
+	add("1.1.1.1")
+	if s.gateway != nil {
+		for _, snap := range s.gateway.Snapshots() {
+			add(snap.Label)
+			add(snap.Target)
+		}
+	}
+	return out
+}
+
+func (s *Server) isValidAlertTarget(target string) bool {
+	for _, allowed := range s.alertRuleTargets() {
+		if target == allowed {
+			return true
+		}
 	}
 	return false
 }

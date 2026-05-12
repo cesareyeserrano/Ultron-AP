@@ -23,8 +23,8 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/network/landevices"
 	landevicesstore "github.com/cesareyeserrano/ultron-ap/internal/network/landevices/store"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
-	"github.com/cesareyeserrano/ultron-ap/internal/notify/cause"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
+	"github.com/cesareyeserrano/ultron-ap/internal/notify/cause"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 )
@@ -176,30 +176,6 @@ func main() {
 		}); err != nil {
 			log.Printf("net event insert failed: %v", err)
 		}
-		// Surface the transition through the existing alert pipeline so it
-		// reaches Telegram/Email notifiers (FR-022 MVP slice).
-		var severity, message string
-		switch e.Kind {
-		case "wan_down":
-			severity = "critical"
-			message = "WAN down — " + e.Detail
-		case "wan_up":
-			severity = "info"
-			message = "WAN recovered — " + e.Detail
-		default:
-			return
-		}
-		alert := &database.Alert{
-			Severity:  severity,
-			Message:   message,
-			Source:    "wan",
-			CreatedAt: e.TS,
-		}
-		if err := db.CreateAlert(alert); err != nil {
-			log.Printf("wan alert create failed: %v", err)
-			return
-		}
-		dispatcher.Dispatch(alert)
 	})
 
 	lastLoggedProbeErr := map[string]string{}
@@ -215,7 +191,7 @@ func main() {
 		}
 		if err := db.InsertNetSample(database.NetSample{
 			TS:     snap.LastProbe,
-			Target: snap.Target,
+			Target: snap.Label,
 			Kind:   kind,
 			RTTMs:  rtt,
 			Status: string(snap.Status),
@@ -365,7 +341,8 @@ func defaultNetTargets() []gatewayprobe.Target {
 	if raw == "" {
 		return []gatewayprobe.Target{
 			{Label: "gateway", Kind: gatewayprobe.KindICMP},
-			{Label: "cloudflare", Host: "1.1.1.1", Kind: gatewayprobe.KindICMP},
+			{Label: "1.1.1.1", Host: "1.1.1.1", Kind: gatewayprobe.KindICMP},
+			{Label: "8.8.8.8", Host: "8.8.8.8", Kind: gatewayprobe.KindICMP},
 			{Label: "dns", Host: "1.1.1.1", Kind: gatewayprobe.KindDNS, QueryName: "cloudflare.com"},
 		}
 	}

@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS AlertConfig (
 	metric TEXT NOT NULL,
 	operator TEXT NOT NULL CHECK(operator IN ('>', '<', '>=', '<=', '==')),
 	threshold REAL NOT NULL,
+	target TEXT,
+	sustained_duration INTEGER NOT NULL DEFAULT 0,
 	severity TEXT NOT NULL CHECK(severity IN ('critical', 'warning', 'info')),
 	enabled INTEGER DEFAULT 1,
 	cooldown_minutes INTEGER DEFAULT 15,
@@ -254,6 +256,8 @@ func New(dbPath string) (*DB, error) {
 		`ALTER TABLE BackupConfig ADD COLUMN schedule_mode TEXT NOT NULL DEFAULT 'interval'`,
 		`ALTER TABLE BackupConfig ADD COLUMN schedule_hour INTEGER NOT NULL DEFAULT 3`,
 		`ALTER TABLE BackupConfig ADD COLUMN schedule_minute INTEGER NOT NULL DEFAULT 0`,
+		`ALTER TABLE AlertConfig ADD COLUMN target TEXT`,
+		`ALTER TABLE AlertConfig ADD COLUMN sustained_duration INTEGER NOT NULL DEFAULT 0`,
 	}
 	for _, stmt := range idempotentAlters {
 		if _, err := db.Exec(stmt); err != nil && !isDuplicateColumnErr(err) {

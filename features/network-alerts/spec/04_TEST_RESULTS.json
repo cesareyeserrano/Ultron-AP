@@ -1,0 +1,203 @@
+{
+  "executed_at": "2026-05-12T02:08:09.686Z",
+  "test_runner": "go test -C ../.. ./... -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-NA-071h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_071h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-071e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_071e (0.01s)"
+    },
+    {
+      "tc_id": "TC-NA-071f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_071f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-072h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_072h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-072e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_072e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-072f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_072f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-073h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_073h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-073e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_073e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-073f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_073f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-074h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_074h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-074e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_074e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-074f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_074f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-075h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_075h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-075e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_075e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-075f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_075f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-076h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_076h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-076e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_076e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-076f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_076f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-077h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_077h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-077e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_077e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-077f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_077f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-078h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_078h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-078e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_078e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NA-078f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NA_078f (0.00s)"
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-071",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-072",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-073",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-074",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-075",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-076",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-077",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-078",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}
