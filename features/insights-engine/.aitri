@@ -17,19 +17,9 @@
   "projectName": "insights-engine",
   "createdAt": "2026-05-05T22:07:04.650Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-05T23:03:54.059Z",
+  "updatedAt": "2026-05-21T21:35:02.161Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-05T22:25:56.102Z",
-      "event": "started",
-      "phase": 3
-    },
-    {
-      "at": "2026-05-05T22:30:41.150Z",
-      "event": "completed",
-      "phase": 3
-    },
     {
       "at": "2026-05-05T22:31:23.543Z",
       "event": "approved",
@@ -144,6 +134,22 @@
       "at": "2026-05-05T23:03:54.045Z",
       "event": "approved",
       "phase": 5
+    },
+    {
+      "at": "2026-05-21T21:34:53.983Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-21T21:35:02.133Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -154,18 +160,18 @@
     "5": "0deabf395b516aeb12ac3746ee39fb1106cad6e54f50e5f78c5379e5d4ea4ab7"
   },
   "lastSession": {
-    "at": "2026-05-05T23:03:54.058Z",
+    "at": "2026-05-21T21:35:02.160Z",
     "agent": "unknown",
-    "event": "approve deploy",
+    "event": "verify-complete",
     "files_touched": [
       ".aitri/config.json",
+      "features/help-page/.aitri",
+      "features/help-page/spec/04_TEST_RESULTS.json",
       "features/insights-engine/.aitri",
-      "features/insights-engine/spec/04_TEST_RESULTS.json",
-      "spec/04_TEST_RESULTS.json",
-      "web/static/css/app.css"
+      "features/insights-engine/spec/04_TEST_RESULTS.json"
     ]
   },
-  "verifyRanAt": "2026-05-05T23:03:49.429Z",
+  "verifyRanAt": "2026-05-21T21:34:53.983Z",
   "verifyPassed": true,
   "normalizeState": {
     "baseRef": "f31786f72455e8475e6ed2e5ec64eae8aef1911f",

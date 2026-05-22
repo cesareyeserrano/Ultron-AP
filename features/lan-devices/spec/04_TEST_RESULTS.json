@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-05-05T21:33:47.322Z",
+  "executed_at": "2026-05-21T21:35:21.920Z",
   "test_runner": "go test -C ../.. ./internal/network/landevices/... ./internal/server/ -run TC_LD -v",
   "exit_code": 0,
   "results": [
@@ -36,7 +36,7 @@
     {
       "tc_id": "TC-LD-003h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_003h_Pair_HappyPath_FiveResolvedEntries (0.00s)"
+      "notes": "--- PASS: TestTC_LD_003h_Pair_HappyPath_FiveResolvedEntries (0.01s)"
     },
     {
       "tc_id": "TC-LD-003f",
@@ -66,7 +66,7 @@
     {
       "tc_id": "TC-LD-005h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_005h_ApplySweep_FirstObservation_InsertsWithFirstEqualsLast (0.00s)"
+      "notes": "--- PASS: TestTC_LD_005h_ApplySweep_FirstObservation_InsertsWithFirstEqualsLast (0.01s)"
     },
     {
       "tc_id": "TC-LD-005f",
@@ -76,7 +76,7 @@
     {
       "tc_id": "TC-LD-005e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_005e_ApplySweep_FirstSeenSurvivesRestart (0.00s)"
+      "notes": "--- PASS: TestTC_LD_005e_ApplySweep_FirstSeenSurvivesRestart (0.01s)"
     },
     {
       "tc_id": "TC-LD-006h",
@@ -101,22 +101,22 @@
     {
       "tc_id": "TC-LD-007f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_007f_LANDevicesAPI_UnauthenticatedReturns401 (0.00s)"
+      "notes": "--- PASS: TestTC_LD_007f_LANDevicesAPI_UnauthenticatedReturns401 (0.01s)"
     },
     {
       "tc_id": "TC-LD-007e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_007e_LANDevicesAPI_LatencyP99Under100ms (0.01s)"
+      "notes": "--- PASS: TestTC_LD_007e_LANDevicesAPI_LatencyP99Under100ms (0.02s)"
     },
     {
       "tc_id": "TC-LD-008h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_008h_LANDevicesFragment_HappyPathRendersTable (0.00s)"
+      "notes": "--- PASS: TestTC_LD_008h_LANDevicesFragment_HappyPathRendersTable (0.01s)"
     },
     {
       "tc_id": "TC-LD-008f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_008f_LANDevicesFragment_EmptyStateOmitsTable (0.00s)"
+      "notes": "--- PASS: TestTC_LD_008f_LANDevicesFragment_EmptyStateOmitsTable (0.01s)"
     },
     {
       "tc_id": "TC-LD-008e",
@@ -181,7 +181,7 @@
     {
       "tc_id": "TC-LD-012e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_012e_ApplySweep_RowsBoundedByDistinctMACs (0.01s)"
+      "notes": "--- PASS: TestTC_LD_012e_ApplySweep_RowsBoundedByDistinctMACs (0.02s)"
     },
     {
       "tc_id": "TC-LD-013h",

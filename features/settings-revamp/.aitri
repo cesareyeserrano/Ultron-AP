@@ -19,19 +19,9 @@
   "projectName": "settings-revamp",
   "createdAt": "2026-05-06T21:34:58.844Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-06T21:41:40.120Z",
+  "updatedAt": "2026-05-21T21:47:18.850Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-06T21:36:30.391Z",
-      "event": "completed",
-      "phase": 2
-    },
-    {
-      "at": "2026-05-06T21:36:30.440Z",
-      "event": "approved",
-      "phase": 2
-    },
     {
       "at": "2026-05-06T21:36:30.489Z",
       "event": "started",
@@ -136,6 +126,22 @@
       "at": "2026-05-06T21:41:40.106Z",
       "event": "approved",
       "phase": 5
+    },
+    {
+      "at": "2026-05-21T21:47:13.684Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 30,
+      "failed": 0,
+      "skipped": 16,
+      "manual": 10
+    },
+    {
+      "at": "2026-05-21T21:47:18.819Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 30,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -147,17 +153,24 @@
     "ux": "6194a3b6dbb004ce7ae197b977a10b37bacf64f54b3cbd4208c849bcf8728a08"
   },
   "lastSession": {
-    "at": "2026-05-06T21:41:40.120Z",
+    "at": "2026-05-21T21:47:18.849Z",
     "agent": "unknown",
-    "event": "approve deploy",
+    "event": "verify-complete",
     "files_touched": [
       ".aitri/config.json",
-      "features/settings-revamp/spec/03_TEST_CASES.json",
-      "internal/server/handlers_settings_markup_test.go",
-      "web/static/css/app.css"
+      "features/help-page/.aitri",
+      "features/help-page/spec/04_TEST_RESULTS.json",
+      "features/insights-engine/.aitri",
+      "features/insights-engine/spec/04_TEST_RESULTS.json",
+      "features/lan-devices/.aitri",
+      "features/lan-devices/spec/04_TEST_RESULTS.json",
+      "features/network-monitoring/.aitri",
+      "features/network-monitoring/spec/04_TEST_RESULTS.json",
+      "features/settings-revamp/.aitri",
+      "features/settings-revamp/spec/04_TEST_RESULTS.json"
     ]
   },
-  "verifyRanAt": "2026-05-06T21:40:13.260Z",
+  "verifyRanAt": "2026-05-21T21:47:13.684Z",
   "rejections": {
     "3": {
       "at": "2026-05-06T21:38:36.816Z",

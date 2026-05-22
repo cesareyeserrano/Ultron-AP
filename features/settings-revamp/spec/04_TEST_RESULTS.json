@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-05-06T21:40:13.260Z",
+  "executed_at": "2026-05-21T21:47:13.683Z",
   "test_runner": "go test -C ../.. ./internal/server -run TestTC_SR -v",
   "exit_code": 0,
   "results": [
@@ -11,22 +11,22 @@
     {
       "tc_id": "TC-SR-057e",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-057e\" (e.g. test_TC_SR_057e_description) and add # @aitri-tc TC-SR-057e above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-057e\" (e.g. test_TC_SR_057e_description) and add # @aitri-tc TC-SR-057e above it."
     },
     {
       "tc_id": "TC-SR-057f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_057f_PerfOutOfRange400Hint (0.00s)"
+      "notes": "--- PASS: TestTC_SR_057f_PerfOutOfRange400Hint (0.01s)"
     },
     {
       "tc_id": "TC-SR-057f2",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_057f2_PerfBelowMin400Hint (0.00s)"
+      "notes": "--- PASS: TestTC_SR_057f2_PerfBelowMin400Hint (0.01s)"
     },
     {
       "tc_id": "TC-SR-057E2E",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-058h",
@@ -36,32 +36,32 @@
     {
       "tc_id": "TC-SR-058e",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-058e\" (e.g. test_TC_SR_058e_description) and add # @aitri-tc TC-SR-058e above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-058e\" (e.g. test_TC_SR_058e_description) and add # @aitri-tc TC-SR-058e above it."
     },
     {
       "tc_id": "TC-SR-058f",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-058f\" (e.g. test_TC_SR_058f_description) and add # @aitri-tc TC-SR-058f above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-058f\" (e.g. test_TC_SR_058f_description) and add # @aitri-tc TC-SR-058f above it."
     },
     {
       "tc_id": "TC-SR-058E2E",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-059h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_059h_ChipPresetCooldownHighlights (0.00s)"
+      "notes": "--- PASS: TestTC_SR_059h_ChipPresetCooldownHighlights (0.01s)"
     },
     {
       "tc_id": "TC-SR-059e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_059e_ChipPresetHasCustomEscapeHatch (0.00s)"
+      "notes": "--- PASS: TestTC_SR_059e_ChipPresetHasCustomEscapeHatch (0.01s)"
     },
     {
       "tc_id": "TC-SR-059f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_059f_ChipPresetNoPresetWireField (0.00s)"
+      "notes": "--- PASS: TestTC_SR_059f_ChipPresetNoPresetWireField (0.01s)"
     },
     {
       "tc_id": "TC-SR-060h",
@@ -81,112 +81,112 @@
     {
       "tc_id": "TC-SR-061h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_061h_NotificationTogglesMarkup (0.00s)"
+      "notes": "--- PASS: TestTC_SR_061h_NotificationTogglesMarkup (0.01s)"
     },
     {
       "tc_id": "TC-SR-061e",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-061e\" (e.g. test_TC_SR_061e_description) and add # @aitri-tc TC-SR-061e above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-061e\" (e.g. test_TC_SR_061e_description) and add # @aitri-tc TC-SR-061e above it."
     },
     {
       "tc_id": "TC-SR-061f",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-061f\" (e.g. test_TC_SR_061f_description) and add # @aitri-tc TC-SR-061f above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-061f\" (e.g. test_TC_SR_061f_description) and add # @aitri-tc TC-SR-061f above it."
     },
     {
       "tc_id": "TC-SR-062h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_062h_BackupSubdivisions (0.00s)"
+      "notes": "--- PASS: TestTC_SR_062h_BackupSubdivisions (0.01s)"
     },
     {
       "tc_id": "TC-SR-062e",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-062e\" (e.g. test_TC_SR_062e_description) and add # @aitri-tc TC-SR-062e above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-062e\" (e.g. test_TC_SR_062e_description) and add # @aitri-tc TC-SR-062e above it."
     },
     {
       "tc_id": "TC-SR-062f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_062f_SubheadingsEyebrowStyle (0.00s)"
+      "notes": "--- PASS: TestTC_SR_062f_SubheadingsEyebrowStyle (0.01s)"
     },
     {
       "tc_id": "TC-SR-063h",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-063e",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-063f",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-064h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_064h_BackupNewTimeFormAccepted (0.00s)"
+      "notes": "--- PASS: TestTC_SR_064h_BackupNewTimeFormAccepted (0.01s)"
     },
     {
       "tc_id": "TC-SR-064e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_064e_BackupBothFormsNewWins (0.00s)"
+      "notes": "--- PASS: TestTC_SR_064e_BackupBothFormsNewWins (0.01s)"
     },
     {
       "tc_id": "TC-SR-064f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_064f_BackupOutOfRangeTime400 (0.00s)"
+      "notes": "--- PASS: TestTC_SR_064f_BackupOutOfRangeTime400 (0.01s)"
     },
     {
       "tc_id": "TC-SR-065h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_065h_FormStatePillIdleAbsent (0.00s)"
+      "notes": "--- PASS: TestTC_SR_065h_FormStatePillIdleAbsent (0.01s)"
     },
     {
       "tc_id": "TC-SR-065e",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-065f",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-066h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_066h_NoNumberBadges (0.00s)"
+      "notes": "--- PASS: TestTC_SR_066h_NoNumberBadges (0.01s)"
     },
     {
       "tc_id": "TC-SR-066e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_066e_SectionsInOrder (0.00s)"
+      "notes": "--- PASS: TestTC_SR_066e_SectionsInOrder (0.01s)"
     },
     {
       "tc_id": "TC-SR-066f",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-066f\" (e.g. test_TC_SR_066f_description) and add # @aitri-tc TC-SR-066f above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-066f\" (e.g. test_TC_SR_066f_description) and add # @aitri-tc TC-SR-066f above it."
     },
     {
       "tc_id": "TC-SR-067h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_067h_NoLogoutInSystemControls (0.00s)"
+      "notes": "--- PASS: TestTC_SR_067h_NoLogoutInSystemControls (0.01s)"
     },
     {
       "tc_id": "TC-SR-067e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_067e_HeaderLogoutOnEveryPage (0.03s)"
+      "notes": "--- PASS: TestTC_SR_067e_HeaderLogoutOnEveryPage (0.06s)"
     },
     {
       "tc_id": "TC-SR-067f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_067f_ShutdownDestructive (0.00s)"
+      "notes": "--- PASS: TestTC_SR_067f_ShutdownDestructive (0.01s)"
     },
     {
       "tc_id": "TC-SR-067E2E",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-068h",
@@ -196,7 +196,7 @@
     {
       "tc_id": "TC-SR-068e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_068e_EnvVarUnsetReturnsLocked (0.00s)"
+      "notes": "--- PASS: TestTC_SR_068e_EnvVarUnsetReturnsLocked (0.01s)"
     },
     {
       "tc_id": "TC-SR-068f",
@@ -206,7 +206,7 @@
     {
       "tc_id": "TC-SR-068sec1",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_068sec1_ResponseShapeLockedEnum (0.00s)"
+      "notes": "--- PASS: TestTC_SR_068sec1_ResponseShapeLockedEnum (0.01s)"
     },
     {
       "tc_id": "TC-SR-068sec2",
@@ -216,72 +216,72 @@
     {
       "tc_id": "TC-SR-068sec3",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_068sec3_NullByteRejected (0.00s)"
+      "notes": "--- PASS: TestTC_SR_068sec3_NullByteRejected (0.01s)"
     },
     {
       "tc_id": "TC-SR-068E2E",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-069h",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-069h\" (e.g. test_TC_SR_069h_description) and add # @aitri-tc TC-SR-069h above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-069h\" (e.g. test_TC_SR_069h_description) and add # @aitri-tc TC-SR-069h above it."
     },
     {
       "tc_id": "TC-SR-069e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_069e_NoSpanishStrings (0.00s)"
+      "notes": "--- PASS: TestTC_SR_069e_NoSpanishStrings (0.01s)"
     },
     {
       "tc_id": "TC-SR-069f",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-069f\" (e.g. test_TC_SR_069f_description) and add # @aitri-tc TC-SR-069f above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-069f\" (e.g. test_TC_SR_069f_description) and add # @aitri-tc TC-SR-069f above it."
     },
     {
       "tc_id": "TC-SR-070h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_070h_NoMaxW4xlOnForms (0.00s)"
+      "notes": "--- PASS: TestTC_SR_070h_NoMaxW4xlOnForms (0.01s)"
     },
     {
       "tc_id": "TC-SR-070e",
-      "status": "pass",
-      "notes": "Manual verification \u2014 automation: manual. No headless-browser stack in this project (same precedent as help-page tech debt). Behaviour verified at the rendered-HTML and JS-source layers."
+      "status": "manual",
+      "notes": "Manual execution required — excluded from automated runner."
     },
     {
       "tc_id": "TC-SR-070f",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-070f\" (e.g. test_TC_SR_070f_description) and add # @aitri-tc TC-SR-070f above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-070f\" (e.g. test_TC_SR_070f_description) and add # @aitri-tc TC-SR-070f above it."
     },
     {
       "tc_id": "TC-SR-NFR029h",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-NFR029h\" (e.g. test_TC_SR_NFR029h_description) and add # @aitri-tc TC-SR-NFR029h above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR029h\" (e.g. test_TC_SR_NFR029h_description) and add # @aitri-tc TC-SR-NFR029h above it."
     },
     {
       "tc_id": "TC-SR-NFR029e",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-NFR029e\" (e.g. test_TC_SR_NFR029e_description) and add # @aitri-tc TC-SR-NFR029e above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR029e\" (e.g. test_TC_SR_NFR029e_description) and add # @aitri-tc TC-SR-NFR029e above it."
     },
     {
       "tc_id": "TC-SR-NFR029f",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-NFR029f\" (e.g. test_TC_SR_NFR029f_description) and add # @aitri-tc TC-SR-NFR029f above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR029f\" (e.g. test_TC_SR_NFR029f_description) and add # @aitri-tc TC-SR-NFR029f above it."
     },
     {
       "tc_id": "TC-SR-NFR031h",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-NFR031h\" (e.g. test_TC_SR_NFR031h_description) and add # @aitri-tc TC-SR-NFR031h above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR031h\" (e.g. test_TC_SR_NFR031h_description) and add # @aitri-tc TC-SR-NFR031h above it."
     },
     {
       "tc_id": "TC-SR-NFR031e",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-NFR031e\" (e.g. test_TC_SR_NFR031e_description) and add # @aitri-tc TC-SR-NFR031e above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR031e\" (e.g. test_TC_SR_NFR031e_description) and add # @aitri-tc TC-SR-NFR031e above it."
     },
     {
       "tc_id": "TC-SR-NFR031f",
       "status": "skip",
-      "notes": "Not detected in test runner output \u2014 rename the test function to include \"TC-SR-NFR031f\" (e.g. test_TC_SR_NFR031f_description) and add # @aitri-tc TC-SR-NFR031f above it."
+      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR031f\" (e.g. test_TC_SR_NFR031f_description) and add # @aitri-tc TC-SR-NFR031f above it."
     }
   ],
   "fr_coverage": [

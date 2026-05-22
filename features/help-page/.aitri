@@ -17,7 +17,7 @@
   "projectName": "help-page",
   "createdAt": "2026-05-05T23:20:30.189Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-06T00:41:36.625Z",
+  "updatedAt": "2026-05-21T21:34:35.041Z",
   "driftPhases": [],
   "events": [
     {
@@ -120,6 +120,22 @@
       "at": "2026-05-06T00:41:36.594Z",
       "event": "approved",
       "phase": 5
+    },
+    {
+      "at": "2026-05-21T21:34:29.442Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 18,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-21T21:34:35.011Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -130,20 +146,13 @@
     "5": "d7bbf804b8a7f8c199b5e1fe05a0a3d46a0b1219f7fa86c96e73131d6ba79553"
   },
   "lastSession": {
-    "at": "2026-05-06T00:41:36.624Z",
+    "at": "2026-05-21T21:34:35.040Z",
     "agent": "unknown",
-    "event": "approve deploy",
+    "event": "verify-complete",
     "files_touched": [
       ".aitri/config.json",
-      "cmd/ultron-ap/main.go",
-      "internal/insights/insights.go",
-      "internal/network/landevices/sweep/sweep.go",
-      "internal/server/handlers_insights.go",
-      "internal/server/server.go",
-      "internal/server/templates.go",
-      "web/static/css/app.css",
-      "web/templates/partials/sidebar.html",
-      "web/templates/partials/sse-verdicts.html"
+      "features/help-page/.aitri",
+      "features/help-page/spec/04_TEST_RESULTS.json"
     ]
   },
   "normalizeState": {
@@ -152,7 +161,7 @@
     "status": "resolved",
     "lastRun": "2026-05-06T00:09:00.451Z"
   },
-  "verifyRanAt": "2026-05-06T00:09:52.369Z",
+  "verifyRanAt": "2026-05-21T21:34:29.442Z",
   "verifyPassed": true,
   "verifySummary": {
     "total": 55,

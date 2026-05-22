@@ -19,19 +19,9 @@
   "projectName": "network-monitoring",
   "createdAt": "2026-04-27T22:06:23.438Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-01T14:34:20.792Z",
+  "updatedAt": "2026-05-21T21:35:46.048Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-04-29T21:33:55.849Z",
-      "event": "completed",
-      "phase": 4
-    },
-    {
-      "at": "2026-04-29T21:51:46.668Z",
-      "event": "approved",
-      "phase": 4
-    },
     {
       "at": "2026-04-29T21:51:50.518Z",
       "event": "verify-run",
@@ -154,6 +144,22 @@
       "at": "2026-05-01T14:34:20.766Z",
       "event": "approved",
       "phase": 5
+    },
+    {
+      "at": "2026-05-21T21:35:41.194Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 36,
+      "manual": 25
+    },
+    {
+      "at": "2026-05-21T21:35:46.020Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -165,24 +171,22 @@
     "ux": "78a9cdefe6a137a3a80a33a98595cf38e5857b1f1b5ab227777c6036bbeafdbd"
   },
   "lastSession": {
-    "at": "2026-05-01T14:34:20.792Z",
+    "at": "2026-05-21T21:35:46.047Z",
     "agent": "unknown",
-    "event": "approve deploy",
+    "event": "verify-complete",
     "files_touched": [
       ".aitri/config.json",
+      "features/help-page/.aitri",
+      "features/help-page/spec/04_TEST_RESULTS.json",
+      "features/insights-engine/.aitri",
+      "features/insights-engine/spec/04_TEST_RESULTS.json",
+      "features/lan-devices/.aitri",
+      "features/lan-devices/spec/04_TEST_RESULTS.json",
       "features/network-monitoring/.aitri",
-      "features/network-monitoring/internal/network/alerts/alerts.go",
-      "features/network-monitoring/internal/network/breaker/breaker.go",
-      "features/network-monitoring/internal/network/probe/path/path.go",
-      "features/network-monitoring/internal/network/probe/speedtest/speedtest.go",
-      "features/network-monitoring/internal/network/probe/speedtest/speedtest_test.go",
-      "features/network-monitoring/internal/network/probe/wifi/wifi.go",
-      "features/network-monitoring/internal/network/store/store.go",
-      "features/network-monitoring/spec/03_TEST_CASES.json",
       "features/network-monitoring/spec/04_TEST_RESULTS.json"
     ]
   },
-  "verifyRanAt": "2026-05-01T14:34:14.554Z",
+  "verifyRanAt": "2026-05-21T21:35:41.194Z",
   "rejections": {
     "4": {
       "at": "2026-04-29T17:45:15.425Z",
