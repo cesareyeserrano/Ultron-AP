@@ -19,21 +19,9 @@
   "projectName": "telegram-message-ux",
   "createdAt": "2026-05-06T22:42:40.566Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-12T18:15:55.320Z",
+  "updatedAt": "2026-05-29T21:47:45.013Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-07T17:21:39.793Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 49,
-      "failed": 0
-    },
-    {
-      "at": "2026-05-07T17:21:39.893Z",
-      "event": "completed",
-      "phase": 5
-    },
     {
       "at": "2026-05-07T17:21:58.944Z",
       "event": "verify-run",
@@ -136,6 +124,22 @@
       "at": "2026-05-12T18:15:55.290Z",
       "event": "approved",
       "phase": 5
+    },
+    {
+      "at": "2026-05-29T21:47:41.211Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 49,
+      "failed": 0,
+      "skipped": 18,
+      "manual": 2
+    },
+    {
+      "at": "2026-05-29T21:47:44.985Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 49,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -147,19 +151,19 @@
     "ux": "11a61209beb0f5fa20a4b33d78d6109b5dbba7b52a956c7e2306f91fb5232903"
   },
   "lastSession": {
-    "at": "2026-05-12T18:15:55.320Z",
+    "at": "2026-05-29T21:47:45.013Z",
     "agent": "unknown",
-    "event": "approve deploy",
+    "event": "verify-complete",
     "files_touched": [
       ".aitri/config.json",
+      "features/network-alerts/.aitri",
+      "features/network-alerts/spec/04_TEST_RESULTS.json",
       "features/telegram-message-ux/.aitri",
-      "features/telegram-message-ux/DEPLOYMENT.md",
-      "features/telegram-message-ux/spec/01_UX_SPEC.md",
       "features/telegram-message-ux/spec/04_TEST_RESULTS.json",
-      "features/telegram-message-ux/spec/05_PROOF_OF_COMPLIANCE.json"
+      "spec/04_TEST_RESULTS.json"
     ]
   },
-  "verifyRanAt": "2026-05-12T18:11:44.739Z",
+  "verifyRanAt": "2026-05-29T21:47:41.211Z",
   "verifyPassed": true,
   "normalizeState": {
     "baseRef": "b05c30debad779249b70bca74da62e8d81570bfc",

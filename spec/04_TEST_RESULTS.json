@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-05-12T18:18:13.401Z",
+  "executed_at": "2026-05-29T21:47:07.498Z",
   "test_runner": "bash scripts/aitri-test.sh",
   "exit_code": 0,
   "results": [
@@ -360,5 +360,6 @@
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
-  }
+  },
+  "low_confidence_tcs": []
 }

@@ -1,22 +1,22 @@
 {
-  "executed_at": "2026-05-12T02:08:09.686Z",
+  "executed_at": "2026-05-29T21:47:32.096Z",
   "test_runner": "go test -C ../.. ./... -v",
   "exit_code": 0,
   "results": [
     {
       "tc_id": "TC-NA-071h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_071h (0.00s)"
+      "notes": "--- PASS: TestTC_NA_071h (0.01s)"
     },
     {
       "tc_id": "TC-NA-071e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_071e (0.01s)"
+      "notes": "--- PASS: TestTC_NA_071e (0.02s)"
     },
     {
       "tc_id": "TC-NA-071f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_071f (0.00s)"
+      "notes": "--- PASS: TestTC_NA_071f (0.01s)"
     },
     {
       "tc_id": "TC-NA-072h",
@@ -31,17 +31,17 @@
     {
       "tc_id": "TC-NA-072f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_072f (0.00s)"
+      "notes": "--- PASS: TestTC_NA_072f (0.01s)"
     },
     {
       "tc_id": "TC-NA-073h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_073h (0.00s)"
+      "notes": "--- PASS: TestTC_NA_073h (0.01s)"
     },
     {
       "tc_id": "TC-NA-073e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_073e (0.00s)"
+      "notes": "--- PASS: TestTC_NA_073e (0.01s)"
     },
     {
       "tc_id": "TC-NA-073f",
@@ -96,17 +96,17 @@
     {
       "tc_id": "TC-NA-077h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_077h (0.00s)"
+      "notes": "--- PASS: TestTC_NA_077h (0.01s)"
     },
     {
       "tc_id": "TC-NA-077e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_077e (0.00s)"
+      "notes": "--- PASS: TestTC_NA_077e (0.01s)"
     },
     {
       "tc_id": "TC-NA-077f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_077f (0.00s)"
+      "notes": "--- PASS: TestTC_NA_077f (0.01s)"
     },
     {
       "tc_id": "TC-NA-078h",
@@ -116,7 +116,7 @@
     {
       "tc_id": "TC-NA-078e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NA_078e (0.00s)"
+      "notes": "--- PASS: TestTC_NA_078e (0.01s)"
     },
     {
       "tc_id": "TC-NA-078f",
@@ -199,5 +199,127 @@
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
-  }
+  },
+  "low_confidence_tcs": [
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/alerts/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/server/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/server/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/server/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/server/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/server/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/database/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/database/network_alerts_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-NA",
+      "file": "../../internal/database/network_alerts_aitri_test.go",
+      "assertCount": 0
+    }
+  ]
 }

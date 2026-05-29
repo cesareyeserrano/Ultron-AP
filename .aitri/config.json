@@ -20,9 +20,9 @@
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "2.0.0-rc.7",
+  "aitriVersion": "2.0.0-rc.15",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-23T23:44:39.135Z",
+  "updatedAt": "2026-05-29T21:47:10.131Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,31 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-07T20:36:37.876Z",
-      "event": "normalize-resolved",
-      "phase": null,
-      "files": 3,
-      "method": "git",
-      "baseRefFrom": "8cd50110abc1fb7568bab2e14903e632c40dd6c4",
-      "baseRefTo": "a717fde603869ef7c68fb5c1bb1b721aed651719"
-    },
-    {
-      "at": "2026-05-07T20:42:46.816Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-07T20:42:46.918Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0
-    },
     {
       "at": "2026-05-07T20:42:59.695Z",
       "event": "normalize-resolved",
@@ -211,6 +186,22 @@
       "baseRefFrom": "c343c58a43cc123a8e510e8dc7058ba3c628566b",
       "baseRefTo": "7042db9ed99dba92b71395de03032ac1124e06e0",
       "reason": "Aitri feature verification state refreshed and committed; root normalize did not advance feature metadata baseline automatically"
+    },
+    {
+      "at": "2026-05-29T21:47:07.499Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-05-29T21:47:10.102Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
@@ -222,11 +213,11 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-05-12T18:18:13.403Z",
+  "verifyRanAt": "2026-05-29T21:47:07.499Z",
   "lastSession": {
-    "at": "2026-05-12T18:18:40.797Z",
+    "at": "2026-05-29T21:47:10.130Z",
     "agent": "unknown",
-    "event": "normalize --resolve",
+    "event": "verify-complete",
     "files_touched": [
       ".aitri/config.json",
       "spec/04_TEST_RESULTS.json"

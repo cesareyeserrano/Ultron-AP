@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-05-12T18:11:44.737Z",
+  "executed_at": "2026-05-29T21:47:41.209Z",
   "test_runner": "go test -C ../.. ./internal/notify/... ./internal/server/... -run TestTC_TMU -v",
   "exit_code": 0,
   "results": [
@@ -466,5 +466,6 @@
     "skipped_no_marker": 18,
     "manual": 2,
     "manual_verified": 2
-  }
+  },
+  "low_confidence_tcs": []
 }
