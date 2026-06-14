@@ -50,3 +50,5 @@ bin/
 # Aitri — per-machine state (the shared .aitri IS committed)
 .aitri.local
 .aitri.lock
+.aitri/local.json
+.aitri/*.lock
