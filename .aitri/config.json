@@ -20,9 +20,9 @@
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "2.0.0-rc.15",
+  "aitriVersion": "2.0.0-rc.84",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-29T21:47:10.131Z",
+  "updatedAt": "2026-06-14T20:47:45.061Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,33 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-07T20:42:59.695Z",
-      "event": "normalize-resolved",
-      "phase": null,
-      "files": 1,
-      "method": "git",
-      "baseRefFrom": "a717fde603869ef7c68fb5c1bb1b721aed651719",
-      "baseRefTo": "cd7a7472144e05ef8af99241cbacfb9f85720e4a"
-    },
-    {
-      "at": "2026-05-07T20:48:20.087Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-08T22:39:52.337Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
     {
       "at": "2026-05-08T22:39:54.667Z",
       "event": "verify-complete",
@@ -202,6 +175,36 @@
       "phase": "verify",
       "passed": 45,
       "failed": 0
+    },
+    {
+      "at": "2026-06-14T20:47:45.059Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.84",
+      "category": "fieldRename",
+      "target": ".aitri#reconcileState",
+      "transform": "rename .aitri field normalizeState → reconcileState (preserve baseline)"
+    },
+    {
+      "at": "2026-06-14T20:47:45.060Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.84",
+      "category": "artifactRename",
+      "target": "04_BUILD_REPORT.json",
+      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-06-14T20:47:45.060Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.84",
+      "category": "artifactRename",
+      "target": "05_TRACEABILITY.json",
+      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
     }
   ],
   "verifyPassed": true,
@@ -214,23 +217,8 @@
     }
   },
   "verifyRanAt": "2026-05-29T21:47:07.499Z",
-  "lastSession": {
-    "at": "2026-05-29T21:47:10.130Z",
-    "agent": "unknown",
-    "event": "verify-complete",
-    "files_touched": [
-      ".aitri/config.json",
-      "spec/04_TEST_RESULTS.json"
-    ]
-  },
   "auditLastAt": "2026-05-03T22:42:15.435Z",
   "upgradeFindings": [],
-  "normalizeState": {
-    "baseRef": "7042db9ed99dba92b71395de03032ac1124e06e0",
-    "method": "git",
-    "status": "resolved",
-    "lastRun": "2026-05-22T17:37:11.710Z"
-  },
   "verifySummary": {
     "total": 45,
     "passed": 45,
