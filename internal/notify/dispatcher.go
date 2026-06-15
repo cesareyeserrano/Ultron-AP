@@ -78,6 +78,7 @@ type Dispatcher struct {
 	db        *database.DB
 	queue     chan *Event
 	cancel    chan struct{}
+	stopOnce  sync.Once
 	wg        sync.WaitGroup
 	hostname  string
 	publicURL string
@@ -146,11 +147,18 @@ func (d *Dispatcher) Start() {
 	log.Println("Notification dispatcher started")
 }
 
-// Stop drains the queue and stops processing.
+// Stop drains the queue and stops processing. It is idempotent and safe to
+// call before Start() (no-op) or more than once — guarded by stopOnce + a nil
+// check so it never panics on a double close or a nil cancel channel.
 func (d *Dispatcher) Stop() {
-	close(d.cancel)
-	d.wg.Wait()
-	log.Println("Notification dispatcher stopped")
+	if d.cancel == nil {
+		return // never started
+	}
+	d.stopOnce.Do(func() {
+		close(d.cancel)
+		d.wg.Wait()
+		log.Println("Notification dispatcher stopped")
+	})
 }
 
 // Dispatch is the legacy enqueue path. Builds a minimal Event from the bare

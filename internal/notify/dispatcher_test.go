@@ -328,3 +328,22 @@ func TestTC_TMU_021i_RunningContainerHasNoExitCode(t *testing.T) {
 		t.Errorf("HasExitCode = true; want false for running state")
 	}
 }
+
+// TestDispatcher_StopIdempotent is a regression test for BG-050: Stop() used to
+// call close(d.cancel) unguarded, panicking on a second Stop() or on Stop()
+// before Start() (nil cancel). It must now be a safe no-op / once-only close.
+func TestDispatcher_StopIdempotent(t *testing.T) {
+	db := setupTestDB(t)
+
+	// Stop before Start must not panic (cancel is nil).
+	d := NewDispatcher(db)
+	require.NotPanics(t, func() { d.Stop() })
+
+	// Double Stop after Start must not panic.
+	d2 := NewDispatcher(db)
+	d2.Start()
+	require.NotPanics(t, func() {
+		d2.Stop()
+		d2.Stop()
+	})
+}
