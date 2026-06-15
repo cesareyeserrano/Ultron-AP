@@ -243,10 +243,14 @@ func (s *Service) Eval(snap *metrics.Snapshot) []Verdict {
 		return s.Active()
 	}
 
+	// Hold s.mu across the whole evaluation: per-rule cr.state (hysteresis
+	// counters, firstEmittedAt, lastValue) is shared mutable state and must not
+	// be mutated with the lock released (BL-025). Nothing in the loop re-acquires
+	// s.mu — applyHysteresis and the missing-var logger use s.cfg / s.missingVarSeen,
+	// not s.mu — so this can't deadlock. The final Active() (RLock) runs after Unlock.
 	s.mu.Lock()
 	s.lastSnapshotMissing = false
 	rules := s.compiledRules
-	s.mu.Unlock()
 
 	ctx := buildEvalCtx(snap, s.makeMissingLogger())
 	ctx.NowMS = now.UnixMilli()
@@ -282,7 +286,6 @@ func (s *Service) Eval(snap *metrics.Snapshot) []Verdict {
 		}
 	}
 
-	s.mu.Lock()
 	s.active = newActive
 	s.lastEvalAt = now
 	s.mu.Unlock()
@@ -437,10 +440,11 @@ func MergeVars(base map[string]lang.Value, extra map[string]lang.Value) map[stri
 // SSE broker, where callers project their own subsystem state into the
 // variable surface.
 func (s *Service) EvalWithVars(now time.Time, vars map[string]lang.Value) []Verdict {
+	// Hold s.mu across the whole evaluation so per-rule cr.state isn't mutated
+	// with the lock released (BL-025). See Eval for why this can't deadlock.
 	s.mu.Lock()
 	rules := s.compiledRules
 	s.lastSnapshotMissing = false
-	s.mu.Unlock()
 
 	ctx := &lang.EvalCtx{
 		Lookup: func(name string) lang.Value {
@@ -482,7 +486,6 @@ func (s *Service) EvalWithVars(now time.Time, vars map[string]lang.Value) []Verd
 		}
 	}
 
-	s.mu.Lock()
 	s.active = newActive
 	s.lastEvalAt = now
 	s.mu.Unlock()
