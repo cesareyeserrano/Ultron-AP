@@ -124,6 +124,13 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	// FR-012 / BG-040: logout is a state-changing POST and must carry a valid
+	// CSRF token, like every other mutating endpoint. The logout form already
+	// embeds {{.CSRFToken}}.
+	if !s.validateCSRF(w, r) {
+		return
+	}
+
 	cookie, err := r.Cookie("session")
 	if err == nil {
 		s.db.DeleteSession(cookie.Value)

@@ -254,7 +254,9 @@ func TestLogout_ClearsSessionAndRedirects(t *testing.T) {
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}))
 
-	req := httptest.NewRequest(http.MethodPost, "/logout", nil)
+	// FR-012 / BG-040: logout now requires a valid CSRF token.
+	req := httptest.NewRequest(http.MethodPost, "/logout", strings.NewReader("csrf_token=csrf"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: "session", Value: "logout-test-token"})
 	rec := httptest.NewRecorder()
 
@@ -276,6 +278,33 @@ func TestLogout_ClearsSessionAndRedirects(t *testing.T) {
 	// Session should be deleted from DB
 	session, _ := db.GetSession("logout-test-token")
 	assert.Nil(t, session)
+}
+
+// BG-040 regression: a POST /logout without a valid CSRF token must be rejected
+// and must NOT destroy the session (FR-012).
+func TestLogout_RejectsMissingCSRFToken(t *testing.T) {
+	srv, db := setupAuthHandlerTest(t)
+
+	user, _ := db.GetUserByUsername("admin")
+	require.NoError(t, db.CreateSession(&database.Session{
+		ID:        "logout-csrf-token",
+		UserID:    user.ID,
+		CSRFToken: "csrf",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}))
+
+	// No csrf_token in the body — a forged cross-site request.
+	req := httptest.NewRequest(http.MethodPost, "/logout", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: "logout-csrf-token"})
+	rec := httptest.NewRecorder()
+
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusForbidden, rec.Code, "missing CSRF token must be rejected with 403")
+
+	// Session must still exist — the forged request did not log the user out.
+	session, _ := db.GetSession("logout-csrf-token")
+	assert.NotNil(t, session, "session must survive a CSRF-less logout attempt")
 }
 
 func TestLogin_SetsSecureCookie_WhenForwardedProtoHTTPS(t *testing.T) {
