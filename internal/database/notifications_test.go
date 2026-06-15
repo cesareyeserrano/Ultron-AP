@@ -8,6 +8,7 @@ import (
 )
 
 func TestUpsertNotificationConfig_Create(t *testing.T) {
+	t.Setenv("ULTRON_SECRET_KEY", "test-secret-key") // BG-044: secrets require a key
 	db := setupAlertTestDB(t)
 
 	nc := &NotificationConfig{
@@ -26,6 +27,7 @@ func TestUpsertNotificationConfig_Create(t *testing.T) {
 }
 
 func TestUpsertNotificationConfig_Update(t *testing.T) {
+	t.Setenv("ULTRON_SECRET_KEY", "test-secret-key") // BG-044: secrets require a key
 	db := setupAlertTestDB(t)
 
 	db.UpsertNotificationConfig(&NotificationConfig{Channel: "telegram", Enabled: false, Config: `{"bot_token":"old"}`})
@@ -46,6 +48,7 @@ func TestGetNotificationConfig_NotFound(t *testing.T) {
 }
 
 func TestListNotificationConfigs(t *testing.T) {
+	t.Setenv("ULTRON_SECRET_KEY", "test-secret-key") // BG-044: secrets require a key
 	db := setupAlertTestDB(t)
 
 	db.UpsertNotificationConfig(&NotificationConfig{Channel: "telegram", Config: "{}"})

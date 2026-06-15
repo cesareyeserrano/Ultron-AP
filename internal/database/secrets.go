@@ -19,7 +19,12 @@ const encPrefix = "enc:v1:"
 // is not configured. Previously emitted lazily on the first notification write;
 // surfacing it at boot ensures operators see it in the journal immediately,
 // before any sensitive configuration has had a chance to land in plaintext.
-const missingSecretKeyWarning = "SECURITY WARNING: ULTRON_SECRET_KEY is not set — notification secrets (Telegram bot token, SMTP password) will be stored in the database in plaintext. Set ULTRON_SECRET_KEY before persisting sensitive configuration."
+const missingSecretKeyWarning = "SECURITY WARNING: ULTRON_SECRET_KEY is not set — saving notification secrets (Telegram bot token, SMTP password) will be REFUSED to avoid storing them in plaintext. Set ULTRON_SECRET_KEY before configuring notifications."
+
+// errSecretKeyRequired is returned when a non-empty notification secret would
+// be persisted without ULTRON_SECRET_KEY configured (BG-044). Previously such a
+// write silently landed in plaintext; it is now refused.
+var errSecretKeyRequired = fmt.Errorf("ULTRON_SECRET_KEY is not set: refusing to store notification secret in plaintext — set ULTRON_SECRET_KEY and retry")
 
 // WarnIfMissingSecretKey emits the plaintext-secrets warning to the standard
 // logger if ULTRON_SECRET_KEY is not configured. Call this once at startup.
@@ -41,10 +46,14 @@ func secretKeyFromEnv() ([]byte, bool) {
 func encryptSecret(plain string) (string, error) {
 	key, ok := secretKeyFromEnv()
 	if !ok {
-		// Backward-compatible fallback: still write plaintext so notification
-		// config continues to work for operators who haven't migrated. The loud
-		// warning is surfaced at startup via WarnIfMissingSecretKey (BL-007).
-		return plain, nil
+		// BG-044: refuse to persist a non-empty secret in plaintext. An empty
+		// value (clearing the config) is still allowed so a channel can be
+		// disabled/cleared without the key. Operators must set ULTRON_SECRET_KEY
+		// before saving real secrets; the startup warning (BL-007) flags this.
+		if strings.TrimSpace(plain) == "" {
+			return plain, nil
+		}
+		return "", errSecretKeyRequired
 	}
 	block, err := aes.NewCipher(key)
 	if err != nil {

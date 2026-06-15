@@ -149,6 +149,7 @@ func TestAlertRuleDelete(t *testing.T) {
 }
 
 func TestNotificationSave_Telegram(t *testing.T) {
+	t.Setenv("ULTRON_SECRET_KEY", "test-secret-key") // BG-044: secrets require a key
 	srv, session := setupSSETestServer(t)
 
 	form := url.Values{

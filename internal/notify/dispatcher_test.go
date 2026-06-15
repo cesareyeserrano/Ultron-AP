@@ -68,6 +68,7 @@ func TestDispatcher_BuildNotifiers_NoConfig(t *testing.T) {
 }
 
 func TestDispatcher_BuildNotifiers_TelegramEnabled(t *testing.T) {
+	t.Setenv("ULTRON_SECRET_KEY", "test-secret-key") // BG-044: secrets require a key
 	db := setupTestDB(t)
 	db.UpsertNotificationConfig(&database.NotificationConfig{
 		Channel: "telegram",

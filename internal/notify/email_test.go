@@ -153,6 +153,7 @@ func TestEmailSender_Send_SMTPError(t *testing.T) {
 }
 
 func TestDispatcher_BuildNotifiers_EmailEnabled(t *testing.T) {
+	t.Setenv("ULTRON_SECRET_KEY", "test-secret-key") // BG-044: secrets require a key
 	db := setupTestDB(t)
 	db.UpsertNotificationConfig(&database.NotificationConfig{
 		Channel: "email",
@@ -167,6 +168,7 @@ func TestDispatcher_BuildNotifiers_EmailEnabled(t *testing.T) {
 }
 
 func TestDispatcher_BuildNotifiers_BothEnabled(t *testing.T) {
+	t.Setenv("ULTRON_SECRET_KEY", "test-secret-key") // BG-044: secrets require a key
 	db := setupTestDB(t)
 	db.UpsertNotificationConfig(&database.NotificationConfig{
 		Channel: "telegram",
