@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-rc.84",
   "artifactsDir": "spec",
-  "updatedAt": "2026-06-15T22:09:31.179Z",
+  "updatedAt": "2026-06-15T22:32:10.125Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,22 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-11T21:20:17.916Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0
-    },
-    {
-      "at": "2026-05-11T21:20:23.366Z",
-      "event": "normalize-resolved",
-      "phase": null,
-      "files": 2,
-      "method": "git",
-      "baseRefFrom": "54b970900e340c6b4dc7a64d50d719b62d279748",
-      "baseRefTo": "401678e8f5855b571ed9ff6209faee1609c4bbe5"
-    },
     {
       "at": "2026-05-12T02:34:15.509Z",
       "event": "verify-run",
@@ -209,6 +193,24 @@
       "method": "git",
       "baseRefFrom": "4f362a1a70089ec90aebf3ee27d565bb251545f7",
       "baseRefTo": "d00666db1c7b66370f6344cdb7b07c020b819cee"
+    },
+    {
+      "at": "2026-06-15T22:28:27.007Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-06-15T22:32:10.101Z",
+      "event": "reconcile-resolved",
+      "phase": null,
+      "files": 2,
+      "method": "git",
+      "baseRefFrom": "d00666db1c7b66370f6344cdb7b07c020b819cee",
+      "baseRefTo": "19db57008954fe6ecc99818f2e8d86758ef16d7f"
     }
   ],
   "verifyPassed": true,
@@ -220,7 +222,7 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-06-15T21:05:39.156Z",
+  "verifyRanAt": "2026-06-15T22:28:27.007Z",
   "auditLastAt": "2026-06-15T22:09:31.177Z",
   "upgradeFindings": [],
   "verifySummary": {
@@ -238,7 +240,7 @@
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-06-15T21:05:39.156Z"
+    "at": "2026-06-15T22:28:27.007Z"
   },
   "coverageAuditLastAt": "2026-06-15T22:00:30.312Z"
 }
