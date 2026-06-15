@@ -19,6 +19,12 @@ type loginPageData struct {
 	CSRFToken string
 }
 
+// dummyBcryptHash is a well-formed cost-10 bcrypt hash used for the
+// unknown-username login path so CompareHashAndPassword runs the full key
+// derivation (constant-time vs. a real user). The plaintext is discarded and
+// never matches — the login handler always fails when user == nil.
+const dummyBcryptHash = "$2a$10$7rysS8WV1aV4e7WjkCiZuO7gff6Jn0yjqll/N31UgENM4pQcin4DC"
+
 func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	s.cleanupExpiredBruteForceAttempts()
 	s.cleanupExpiredLoginTokens()
@@ -69,8 +75,13 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if user != nil {
 		storedHash = user.PasswordHash
 	} else {
-		// Dummy hash so bcrypt still runs (prevents timing attack)
-		storedHash = "$2a$10$0000000000000000000000000000000000000000000000000000"
+		// Dummy hash so bcrypt still runs the full key derivation on the
+		// unknown-user path (prevents a username-enumeration timing oracle).
+		// Must be a *well-formed* cost-10 hash — a malformed/short value makes
+		// CompareHashAndPassword fail with ErrHashTooShort before any KDF runs,
+		// reopening the timing gap. Cost matches bcrypt.DefaultCost used for real
+		// passwords; the plaintext is irrelevant since user == nil always fails.
+		storedHash = dummyBcryptHash
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(password)); err != nil || user == nil {

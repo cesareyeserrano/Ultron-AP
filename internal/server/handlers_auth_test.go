@@ -399,3 +399,18 @@ func TestLogin_SetsSecureCookie_WhenTLS(t *testing.T) {
 	require.NotNil(t, sessionCookie)
 	assert.True(t, sessionCookie.Secure)
 }
+
+// TestDummyBcryptHashIsWellFormed is a regression test for BG-051: a malformed
+// dummy hash makes bcrypt fail with ErrHashTooShort before running the key
+// derivation, reopening the username-enumeration timing oracle. The dummy must
+// be a valid bcrypt hash at the same cost used for real passwords.
+func TestDummyBcryptHashIsWellFormed(t *testing.T) {
+	cost, err := bcrypt.Cost([]byte(dummyBcryptHash))
+	require.NoError(t, err, "dummy hash must be a well-formed bcrypt hash")
+	assert.Equal(t, bcrypt.DefaultCost, cost, "dummy hash cost must match real-password cost for timing parity")
+
+	// CompareHashAndPassword must run to completion (mismatch), not bail early
+	// with a structural error like ErrHashTooShort.
+	err = bcrypt.CompareHashAndPassword([]byte(dummyBcryptHash), []byte("anything"))
+	assert.ErrorIs(t, err, bcrypt.ErrMismatchedHashAndPassword)
+}
