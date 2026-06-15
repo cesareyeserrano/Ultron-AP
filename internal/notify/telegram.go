@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -253,8 +254,10 @@ func (t *TelegramSender) sendMessageReturningID(ctx context.Context, text string
 		} `json:"result"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		// Non-fatal: success status but unparseable body. Return 0 so the
-		// storm cache simply skips the entry.
+		// Non-fatal: success status but unparseable body. Log it so a
+		// silently-degraded storm cache (no message_id ⇒ no edit-in-place
+		// coalescing) is visible, then return 0 so the cache skips the entry.
+		log.Printf("telegram: sent OK but failed to decode response body: %v", err)
 		return 0, nil
 	}
 	return parsed.Result.MessageID, nil
