@@ -980,6 +980,56 @@
       "resolution": null,
       "fix_commit_sha": "8c49e10495c04d917682c73f693458a2b82906f7",
       "fix_at": "2026-06-15T21:26:33.333Z"
+    },
+    {
+      "id": "BG-043",
+      "title": "Privileged helper fails open when UID allowlist is empty",
+      "description": "",
+      "steps_to_reproduce": [
+        "peercred-capable platform; ULTRON_HELPER_ALLOWED_UID/UIDS unset and 'ultron' user not resolvable -> allowedUIDs empty",
+        "Any UID with socket access connects"
+      ],
+      "expected_result": "Connection refused (fail-closed) when no allowlist is configured",
+      "actual_result": "handleConn skips enforcement when len(allowedUIDs)==0, serving every UID that can reach the socket",
+      "environment": "local / security audit",
+      "severity": "low",
+      "status": "verified",
+      "fr": "FR-011",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "audit",
+      "created_at": "2026-06-15T21:48:20.618Z",
+      "updated_at": "2026-06-15T21:54:34.907Z",
+      "resolution": null,
+      "fix_commit_sha": "660ce2796a786f1a9882c03854d6b742bb197f22",
+      "fix_at": "2026-06-15T21:54:34.815Z"
+    },
+    {
+      "id": "BG-044",
+      "title": "Notification secrets stored in plaintext when ULTRON_SECRET_KEY unset",
+      "description": "",
+      "steps_to_reproduce": [
+        "ULTRON_SECRET_KEY not configured",
+        "Save Telegram bot token or SMTP password"
+      ],
+      "expected_result": "New secret writes are refused (or clearly blocked) rather than silently persisted in plaintext",
+      "actual_result": "Secrets are written to SQLite in plaintext (back-compat fallback) with only a startup warning",
+      "environment": "local / security audit",
+      "severity": "low",
+      "status": "verified",
+      "fr": "FR-005",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "audit",
+      "created_at": "2026-06-15T21:48:20.687Z",
+      "updated_at": "2026-06-15T21:54:42.515Z",
+      "resolution": null,
+      "fix_commit_sha": "f0f4c20f3b2a596f48fb2e8111dff64fe6d265e6",
+      "fix_at": "2026-06-15T21:54:42.426Z"
     }
   ]
 }
