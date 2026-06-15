@@ -955,6 +955,31 @@
       "resolution": null,
       "fix_commit_sha": "0741158385016eccda5ef0275e9efe7cec5c1258",
       "fix_at": "2026-06-15T21:15:39.388Z"
+    },
+    {
+      "id": "BG-042",
+      "title": "X-Forwarded-Proto trusted without trusted-proxy gate",
+      "description": "",
+      "steps_to_reproduce": [
+        "Reach the binary directly over HTTP",
+        "Send header X-Forwarded-Proto: https"
+      ],
+      "expected_result": "Header ignored unless the TCP peer is in ULTRON_TRUSTED_PROXIES (like X-Forwarded-For)",
+      "actual_result": "isHTTPSRequest trusts X-Forwarded-Proto from any client, influencing the Secure cookie flag and HSTS",
+      "environment": "local / security audit",
+      "severity": "low",
+      "status": "verified",
+      "fr": "FR-007",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "audit",
+      "created_at": "2026-06-15T21:22:21.422Z",
+      "updated_at": "2026-06-15T21:26:33.423Z",
+      "resolution": null,
+      "fix_commit_sha": "8c49e10495c04d917682c73f693458a2b82906f7",
+      "fix_at": "2026-06-15T21:26:33.333Z"
     }
   ]
 }
