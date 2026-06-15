@@ -18,6 +18,12 @@ import (
 
 const defaultDockerInterval = 10 * time.Second
 
+// dockerCallTimeout bounds each individual Docker API call so a hung daemon
+// socket can't block the refresh loop (and therefore Stop()) indefinitely
+// (BL-028). Kept below the default refresh interval so a slow call can't
+// overlap the next tick.
+const dockerCallTimeout = 8 * time.Second
+
 // Monitor periodically refreshes Docker container data.
 type Monitor struct {
 	client     DockerClient
@@ -253,7 +259,9 @@ func (m *Monitor) refresh(ctx context.Context) {
 		log.Println("docker: connected to daemon")
 	}
 
-	containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
+	listCtx, cancelList := context.WithTimeout(ctx, dockerCallTimeout)
+	containers, err := cli.ContainerList(listCtx, container.ListOptions{All: true})
+	cancelList()
 	if err != nil {
 		log.Printf("docker: list error: %v", err)
 		m.mu.Lock()
@@ -334,7 +342,9 @@ func (m *Monitor) fetchStats(ctx context.Context, cli DockerClient, id string, i
 		shortID = shortID[:12]
 	}
 
-	statsResp, err := cli.ContainerStats(ctx, id, false)
+	statsCtx, cancel := context.WithTimeout(ctx, dockerCallTimeout)
+	defer cancel()
+	statsResp, err := cli.ContainerStats(statsCtx, id, false)
 	if err != nil {
 		log.Printf("docker: stats error for %s: %v", shortID, err)
 		return
