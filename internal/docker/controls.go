@@ -23,7 +23,8 @@ type ContainerAction struct {
 func (m *Monitor) StartContainer(ctx context.Context, containerID string) ContainerAction {
 	result := ContainerAction{ContainerID: containerID, Action: "start"}
 
-	if m.client == nil {
+	cli := m.getClient()
+	if cli == nil {
 		result.Message = "Docker daemon unreachable"
 		return result
 	}
@@ -31,7 +32,7 @@ func (m *Monitor) StartContainer(ctx context.Context, containerID string) Contai
 	name := m.containerName(containerID)
 	result.ContainerName = name
 
-	if err := m.client.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
+	if err := cli.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
 		result.Message = fmt.Sprintf("Failed to start %s: %s", name, err.Error())
 		return result
 	}
@@ -46,7 +47,8 @@ func (m *Monitor) StartContainer(ctx context.Context, containerID string) Contai
 func (m *Monitor) StopContainer(ctx context.Context, containerID string) ContainerAction {
 	result := ContainerAction{ContainerID: containerID, Action: "stop"}
 
-	if m.client == nil {
+	cli := m.getClient()
+	if cli == nil {
 		result.Message = "Docker daemon unreachable"
 		return result
 	}
@@ -55,7 +57,7 @@ func (m *Monitor) StopContainer(ctx context.Context, containerID string) Contain
 	result.ContainerName = name
 
 	timeout := int(stopTimeout.Seconds())
-	if err := m.client.ContainerStop(ctx, containerID, container.StopOptions{Timeout: &timeout}); err != nil {
+	if err := cli.ContainerStop(ctx, containerID, container.StopOptions{Timeout: &timeout}); err != nil {
 		result.Message = fmt.Sprintf("Failed to stop %s: %s", name, err.Error())
 		return result
 	}
@@ -70,7 +72,8 @@ func (m *Monitor) StopContainer(ctx context.Context, containerID string) Contain
 func (m *Monitor) RestartContainer(ctx context.Context, containerID string) ContainerAction {
 	result := ContainerAction{ContainerID: containerID, Action: "restart"}
 
-	if m.client == nil {
+	cli := m.getClient()
+	if cli == nil {
 		result.Message = "Docker daemon unreachable"
 		return result
 	}
@@ -79,7 +82,7 @@ func (m *Monitor) RestartContainer(ctx context.Context, containerID string) Cont
 	result.ContainerName = name
 
 	timeout := int(stopTimeout.Seconds())
-	if err := m.client.ContainerRestart(ctx, containerID, container.StopOptions{Timeout: &timeout}); err != nil {
+	if err := cli.ContainerRestart(ctx, containerID, container.StopOptions{Timeout: &timeout}); err != nil {
 		result.Message = fmt.Sprintf("Failed to restart %s: %s", name, err.Error())
 		return result
 	}

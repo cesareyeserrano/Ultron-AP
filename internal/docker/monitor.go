@@ -49,6 +49,16 @@ func (m *Monitor) getInterval() time.Duration {
 	return m.interval
 }
 
+// getClient returns the current Docker client under the read lock. All
+// accessors must snapshot through this rather than reading m.client directly:
+// refresh() mutates m.client under m.mu, so an unsynchronized read is a data
+// race and can observe a client that was just closed/niled (BG-047).
+func (m *Monitor) getClient() DockerClient {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.client
+}
+
 func NewMonitor() *Monitor {
 	m := &Monitor{interval: defaultDockerInterval}
 
@@ -101,8 +111,8 @@ func (m *Monitor) Stop() {
 		m.cancel()
 	}
 	m.wg.Wait()
-	if m.client != nil {
-		_ = m.client.Close()
+	if cli := m.getClient(); cli != nil {
+		_ = cli.Close()
 	}
 	log.Println("Docker monitor stopped")
 }
@@ -125,11 +135,12 @@ func (m *Monitor) Containers() []ContainerInfo {
 
 // ContainerDetail fetches extended info for a single container on demand.
 func (m *Monitor) ContainerDetail(ctx context.Context, id string) (*ContainerDetail, error) {
-	if m.client == nil {
+	cli := m.getClient()
+	if cli == nil {
 		return nil, fmt.Errorf("docker not available")
 	}
 
-	inspect, err := m.client.ContainerInspect(ctx, id)
+	inspect, err := cli.ContainerInspect(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("inspect container %s: %w", id, err)
 	}
@@ -171,7 +182,8 @@ func (m *Monitor) ContainerDetail(ctx context.Context, id string) (*ContainerDet
 
 // ContainerLogs fetches the last n lines of logs from a container.
 func (m *Monitor) FetchLogs(ctx context.Context, id string, lines int) (string, error) {
-	if m.client == nil {
+	cli := m.getClient()
+	if cli == nil {
 		return "", fmt.Errorf("docker not available")
 	}
 
@@ -181,7 +193,7 @@ func (m *Monitor) FetchLogs(ctx context.Context, id string, lines int) (string, 
 		Tail:       fmt.Sprintf("%d", lines),
 	}
 
-	reader, err := m.client.ContainerLogs(ctx, id, options)
+	reader, err := cli.ContainerLogs(ctx, id, options)
 	if err != nil {
 		return "", fmt.Errorf("fetch logs: %w", err)
 	}
@@ -219,27 +231,29 @@ func (m *Monitor) run(ctx context.Context) {
 }
 
 func (m *Monitor) refresh(ctx context.Context) {
-	if m.client == nil {
+	cli := m.getClient()
+	if cli == nil {
 		// Try to reconnect
-		cli, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
+		newCli, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
 		if err != nil {
 			return
 		}
 		pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
-		_, err = cli.Ping(pingCtx)
+		_, err = newCli.Ping(pingCtx)
 		cancel()
 		if err != nil {
-			_ = cli.Close()
+			_ = newCli.Close()
 			return
 		}
 		m.mu.Lock()
-		m.client = cli
+		m.client = newCli
 		m.available = true
 		m.mu.Unlock()
+		cli = newCli
 		log.Println("docker: connected to daemon")
 	}
 
-	containers, err := m.client.ContainerList(ctx, container.ListOptions{All: true})
+	containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		log.Printf("docker: list error: %v", err)
 		m.mu.Lock()
@@ -265,7 +279,7 @@ func (m *Monitor) refresh(ctx context.Context) {
 		wg.Add(1)
 		go func(idx int, id string) {
 			defer wg.Done()
-			m.fetchStats(ctx, id, &infos[idx])
+			m.fetchStats(ctx, cli, id, &infos[idx])
 		}(i, c.ID)
 	}
 	wg.Wait()
@@ -314,13 +328,13 @@ func parseExitCode(status string) int {
 	return code
 }
 
-func (m *Monitor) fetchStats(ctx context.Context, id string, info *ContainerInfo) {
+func (m *Monitor) fetchStats(ctx context.Context, cli DockerClient, id string, info *ContainerInfo) {
 	shortID := id
 	if len(shortID) > 12 {
 		shortID = shortID[:12]
 	}
 
-	statsResp, err := m.client.ContainerStats(ctx, id, false)
+	statsResp, err := cli.ContainerStats(ctx, id, false)
 	if err != nil {
 		log.Printf("docker: stats error for %s: %v", shortID, err)
 		return
