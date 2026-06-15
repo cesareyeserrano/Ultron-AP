@@ -1064,7 +1064,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -1072,8 +1072,12 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-06-15T22:20:32.195Z",
-      "updated_at": "2026-06-15T22:20:32.195Z",
-      "resolution": null
+      "updated_at": "2026-06-15T23:12:12.603Z",
+      "resolution": null,
+      "fix_commit_sha": "aeb4a9adb030c6484115cf00fdf375eb16f01463",
+      "fix_at": "2026-06-15T23:12:12.443Z",
+      "close_commit_sha": "aeb4a9adb030c6484115cf00fdf375eb16f01463",
+      "close_at": "2026-06-15T23:12:12.603Z"
     },
     {
       "id": "BG-047",
@@ -1108,7 +1112,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": null,
       "tc_reference": null,
       "phase_detected": null,
@@ -1116,8 +1120,12 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-06-15T22:20:32.327Z",
-      "updated_at": "2026-06-15T22:20:32.327Z",
-      "resolution": null
+      "updated_at": "2026-06-15T23:14:22.593Z",
+      "resolution": null,
+      "fix_commit_sha": "27d9d1ac5617f3b7d039a1aa0556ec00c5e04973",
+      "fix_at": "2026-06-15T23:14:22.434Z",
+      "close_commit_sha": "27d9d1ac5617f3b7d039a1aa0556ec00c5e04973",
+      "close_at": "2026-06-15T23:14:22.593Z"
     },
     {
       "id": "BG-049",
