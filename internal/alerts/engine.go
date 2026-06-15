@@ -7,6 +7,8 @@ import (
 	"log"
 	"math"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -513,6 +515,46 @@ func (e *Engine) evaluateNetEvents(cfg database.AlertConfig) {
 			}
 		}
 	}
+	e.pruneProcessedNet(events)
+}
+
+// pruneProcessedNet drops dedup markers for events that have aged out of the
+// recent window. RecentNetEvents only ever returns the newest events, so an
+// event ID no longer in the current batch can never reappear and its marker is
+// dead weight — without this the map grows unbounded for the process lifetime
+// (BL-026). Like the other alert-engine maps, processedNet is owned by the
+// single eval/run goroutine; callers must not touch it concurrently.
+func (e *Engine) pruneProcessedNet(events []database.NetEvent) {
+	if len(e.processedNet) == 0 {
+		return
+	}
+	current := make(map[int64]struct{}, len(events))
+	for _, ev := range events {
+		current[ev.ID] = struct{}{}
+	}
+	for key := range e.processedNet {
+		id, ok := eventIDFromNetKey(key)
+		if !ok {
+			continue
+		}
+		if _, live := current[id]; !live {
+			delete(e.processedNet, key)
+		}
+	}
+}
+
+// eventIDFromNetKey extracts the event ID from a "ruleID:eventID:kind"
+// processedNet key. Kinds never contain ':', so a SplitN of 3 is safe.
+func eventIDFromNetKey(key string) (int64, bool) {
+	parts := strings.SplitN(key, ":", 3)
+	if len(parts) < 2 {
+		return 0, false
+	}
+	id, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	return id, true
 }
 
 func (e *Engine) handleWANEvent(cfg database.AlertConfig, ev database.NetEvent) {
