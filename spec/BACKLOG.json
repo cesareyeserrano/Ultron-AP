@@ -222,64 +222,72 @@
       "title": "Guard insights per-rule state mutation under the service lock",
       "priority": "P2",
       "problem": "internal/insights/insights.go:246-291: cr.state is mutated with s.mu released; safe only single-goroutine. Hold the lock across the eval loop or move per-rule state behind its own mutex.",
-      "status": "open",
-      "createdAt": "2026-06-15T22:20:48.179Z"
+      "status": "closed",
+      "createdAt": "2026-06-15T22:20:48.179Z",
+      "closedAt": "2026-06-15T23:31:46.836Z"
     },
     {
       "id": "BL-026",
       "title": "Prune processedNet and gate alert-engine shared maps",
       "priority": "P2",
       "problem": "internal/alerts/engine.go:501-502: processedNet grows unbounded (never pruned like cooldowns); prevDocker/prevSystemd/processedNet accessed without consistent locking. Add TTL/prune and gate behind the engine lock.",
-      "status": "open",
-      "createdAt": "2026-06-15T22:20:48.247Z"
+      "status": "closed",
+      "createdAt": "2026-06-15T22:20:48.247Z",
+      "closedAt": "2026-06-15T23:31:46.963Z"
     },
     {
       "id": "BL-027",
       "title": "Bound SMTP send goroutine lifetime on timeout",
       "priority": "P2",
       "problem": "internal/notify/email.go:87-100: on timeout/ctx-cancel the goroutine keeps running non-ctx-aware smtp.SendMail until the socket times out, leaking goroutine+conn. Use a Dialer with deadline + explicit Close.",
-      "status": "open",
-      "createdAt": "2026-06-15T22:20:48.314Z"
+      "status": "closed",
+      "createdAt": "2026-06-15T22:20:48.314Z",
+      "closedAt": "2026-06-15T23:31:47.086Z"
     },
     {
       "id": "BL-028",
       "title": "Add per-call timeout to docker refresh requests",
       "priority": "P2",
       "problem": "internal/docker/monitor.go:242,323: refresh passes the process-lifetime ctx to ContainerList/ContainerStats with no per-iteration timeout; a hung docker socket blocks refresh and Stop(). Wrap each call in context.WithTimeout.",
-      "status": "open",
-      "createdAt": "2026-06-15T22:20:48.382Z"
+      "status": "closed",
+      "createdAt": "2026-06-15T22:20:48.382Z",
+      "closedAt": "2026-06-15T23:31:47.206Z"
     },
     {
       "id": "BL-029",
       "title": "Scope backup retention to backup files, sort by mtime",
       "priority": "P2",
       "problem": "internal/server/server.go:382-397: retention removes files[0:len-retention] assuming lexical==chronological and that every dir entry is a backup; mixed .db/.db.enc or stray files in a custom dir get deleted. Filter to ultron-*.db(.enc) and sort by modtime.",
-      "status": "open",
-      "createdAt": "2026-06-15T22:20:48.451Z"
+      "status": "closed",
+      "createdAt": "2026-06-15T22:20:48.451Z",
+      "closedAt": "2026-06-15T23:20:14.470Z"
     },
     {
       "id": "BL-030",
       "title": "Reuse long-lived notifier/storm cache in dispatcher",
       "priority": "P3",
       "problem": "internal/notify/dispatcher.go:241,601-621 + storm/storm.go:154: each send rebuilds senders with a fresh storm.Cache and never starts RunJanitor, so storm coalescing never persists across fires and the janitor is dead code. Cache senders across sends; start janitor once.",
-      "status": "open",
-      "createdAt": "2026-06-15T22:20:48.518Z"
+      "status": "closed",
+      "createdAt": "2026-06-15T22:20:48.518Z",
+      "closedAt": "2026-06-15T23:31:47.331Z"
     },
     {
       "id": "BL-031",
       "title": "Use median/expected cadence for sustained-window coverage",
       "priority": "P3",
       "problem": "internal/insights/lang/lang.go:311-341: cadenceMS uses smallest-ever tick gap (not median); a single fast tick skews when window_ms is satisfied. Track configured/expected cadence or a median.",
-      "status": "open",
-      "createdAt": "2026-06-15T22:20:48.585Z"
+      "status": "closed",
+      "createdAt": "2026-06-15T22:20:48.585Z",
+      "closedAt": "2026-06-15T23:31:47.451Z"
     },
     {
       "id": "BL-032",
       "title": "Surface brute-force tracker DB failures",
       "priority": "P3",
       "problem": "internal/auth/bruteforce.go:103-105,82-84: IsLocked returns false on lookup error and RecordFailure only logs on write failure; sustained SQLite errors silently disable lockout. Emit a warning/health signal when the tracker is degraded.",
-      "status": "open",
-      "createdAt": "2026-06-15T22:20:48.652Z"
+      "status": "closed",
+      "createdAt": "2026-06-15T22:20:48.652Z",
+      "closedAt": "2026-06-15T23:31:47.571Z"
     }
   ]
 }

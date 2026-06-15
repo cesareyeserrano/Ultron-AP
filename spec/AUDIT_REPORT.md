@@ -97,7 +97,9 @@
 
 ### Observations
 
-**[OBS-A]** — Scheduled backup does not re-validate the stored path for symlinks (TOCTOU)
+> **Backup-related findings DISCARDED 2026-06-15 (won't-fix).** Per operator decision, the backup subsystem is accepted as-is for the single-admin model: **BL-029** (retention by filename) was closed without action, and **OBS-A** and **OBS-D** below are accepted/won't-fix. The backup feature is deliberate and live in production (see RC-2). All other audit findings were actioned: BG-045..052 fixed+closed, BL-025..028/030/031/032 implemented+closed.
+
+**[OBS-A]** `[DISCARDED — won't-fix, backup]` — Scheduled backup does not re-validate the stored path for symlinks (TOCTOU)
 - Context: `internal/database/sqlite.go:303-327` (`Backup`) consuming the stored `LocalPath`; scheduled call site `internal/server/server.go:343`
 - Concern: `Backup` only rejects NUL/control/relative paths; the full `rejectSymlinkChain` check in `ValidateBackupPath` runs only at config-save time. A component symlinked into the backup dir *after* save can redirect `VACUUM INTO` outside `BackupRoot` on the next scheduled run. Requires write access to the backup dir (same trust domain), so impact is bounded.
 - Why deferred: Defense-in-depth, not an exploit on the single-admin model; fix is to re-run `ValidateBackupPath` at backup time.
@@ -112,7 +114,7 @@
 - Concern: On non-Linux builds `peerCredSupported=false`, so the allowlist/fail-closed block is skipped and the helper trusts socket file perms alone. Correct for the linux/arm64 production target; latent risk only if the helper is ever run on macOS/BSD in dev.
 - Why deferred: Out of the deployment target; documenting the latent gap.
 
-**[OBS-D]** — DB backup download serves plaintext DB even when encryption is enabled
+**[OBS-D]** `[DISCARDED — won't-fix, backup]` — DB backup download serves plaintext DB even when encryption is enabled
 - Context: `internal/server/handlers_performance.go:184-197`
 - Concern: `GET /api/settings/backup` streams an unencrypted copy of the whole DB (session tokens, bcrypt hashes, notification secrets) to any authenticated user even when `backupEncrypt` is on. Acceptable for single-admin, but a secrets-at-rest exposure if the file is shared.
 - Why deferred: Matches the single-operator threat model; flagging the expectation mismatch with the encrypt setting.
