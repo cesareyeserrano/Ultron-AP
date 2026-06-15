@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/smtp"
@@ -11,6 +12,9 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/notify/render"
 )
+
+// smtpTimeout bounds the whole SMTP conversation (dial + handshake + send).
+const smtpTimeout = 10 * time.Second
 
 // EmailSender sends notifications via SMTP. Body content is produced by the
 // shared render package so Telegram and Email surfaces stay in lock-step.
@@ -78,25 +82,91 @@ func (e *EmailSender) Notify(ctx context.Context, evt *Event) error {
 	return e.sendMail(ctx, addr, auth, e.from, []string{e.to}, msg)
 }
 
-// sendMailFunc is the indirection point used by tests.
-var sendMailFunc = smtp.SendMail
+// sendMailFunc is the indirection point used by tests. The real implementation
+// is context-aware so an abandoned send doesn't leak its goroutine/connection.
+var sendMailFunc = sendMailContext
 
-// sendMail wraps smtp.SendMail with a 10-second timeout. The ctx parameter
-// is honored for cancellation; on ctx done we drop the in-flight goroutine
-// (the smtp call itself isn't context-aware).
+// sendMail runs the SMTP send under an overall timeout. Unlike the old
+// time.After race against a non-cancelable smtp.SendMail, the send now honors
+// ctx: sendMailContext closes the connection when ctx is done, so the worker
+// goroutine unblocks promptly instead of lingering on a dead socket (BL-027).
 func (e *EmailSender) sendMail(ctx context.Context, addr string, auth smtp.Auth, from string, to []string, msg []byte) error {
+	ctx, cancel := context.WithTimeout(ctx, smtpTimeout)
+	defer cancel()
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- sendMailFunc(addr, auth, from, to, msg)
+		errCh <- sendMailFunc(ctx, addr, auth, from, to, msg)
 	}()
 	select {
 	case err := <-errCh:
 		return err
-	case <-time.After(10 * time.Second):
-		return fmt.Errorf("email: send timeout after 10s")
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+// sendMailContext is a context-aware replacement for smtp.SendMail. It mirrors
+// the stdlib flow (dial → STARTTLS if offered → AUTH → MAIL/RCPT/DATA) but
+// dials with the context and closes the connection when the context is done so
+// a blocked read/write returns instead of hanging until the OS socket times out.
+func sendMailContext(ctx context.Context, addr string, auth smtp.Auth, from string, to []string, msg []byte) error {
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "tcp", addr)
+	if err != nil {
+		return fmt.Errorf("email: dial: %w", err)
+	}
+	// Watcher closes the conn on ctx done so an in-flight SMTP call unblocks.
+	stop := make(chan struct{})
+	defer close(stop)
+	go func() {
+		select {
+		case <-ctx.Done():
+			_ = conn.Close()
+		case <-stop:
+		}
+	}()
+	if dl, ok := ctx.Deadline(); ok {
+		_ = conn.SetDeadline(dl)
+	}
+
+	host, _, _ := net.SplitHostPort(addr)
+	c, err := smtp.NewClient(conn, host)
+	if err != nil {
+		return fmt.Errorf("email: smtp client: %w", err)
+	}
+	defer c.Close()
+
+	if ok, _ := c.Extension("STARTTLS"); ok {
+		if err := c.StartTLS(&tls.Config{ServerName: host}); err != nil {
+			return fmt.Errorf("email: starttls: %w", err)
+		}
+	}
+	if auth != nil {
+		if ok, _ := c.Extension("AUTH"); ok {
+			if err := c.Auth(auth); err != nil {
+				return fmt.Errorf("email: auth: %w", err)
+			}
+		}
+	}
+	if err := c.Mail(from); err != nil {
+		return fmt.Errorf("email: MAIL: %w", err)
+	}
+	for _, rcpt := range to {
+		if err := c.Rcpt(rcpt); err != nil {
+			return fmt.Errorf("email: RCPT %s: %w", rcpt, err)
+		}
+	}
+	w, err := c.Data()
+	if err != nil {
+		return fmt.Errorf("email: DATA: %w", err)
+	}
+	if _, err := w.Write(msg); err != nil {
+		return fmt.Errorf("email: write body: %w", err)
+	}
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("email: close body: %w", err)
+	}
+	return c.Quit()
 }
 
 // formatEmailSubject is preserved for callers that need just the header.

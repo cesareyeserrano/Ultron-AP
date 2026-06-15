@@ -1,6 +1,7 @@
 package notify
 
 import (
+	"context"
 	"net/smtp"
 	"testing"
 	"time"
@@ -110,7 +111,7 @@ func TestEmailSender_Send_MockSMTP(t *testing.T) {
 	var capturedMsg []byte
 
 	original := sendMailFunc
-	sendMailFunc = func(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
+	sendMailFunc = func(_ context.Context, addr string, a smtp.Auth, from string, to []string, msg []byte) error {
 		capturedFrom = from
 		capturedTo = to
 		capturedMsg = msg
@@ -140,7 +141,7 @@ func TestEmailSender_Send_MockSMTP(t *testing.T) {
 
 func TestEmailSender_Send_SMTPError(t *testing.T) {
 	original := sendMailFunc
-	sendMailFunc = func(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
+	sendMailFunc = func(_ context.Context, addr string, a smtp.Auth, from string, to []string, msg []byte) error {
 		return assert.AnError
 	}
 	defer func() { sendMailFunc = original }()
