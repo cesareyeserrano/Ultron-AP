@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -107,4 +108,36 @@ func TestBruteForce_CleanupExpired(t *testing.T) {
 	_, freshExists := tracker.attempts["fresh"]
 	assert.False(t, staleExists)
 	assert.True(t, freshExists)
+}
+
+// failingStore is a Store whose every method returns an error, used to verify
+// the tracker's degraded-state signalling (BL-032).
+type failingStore struct{}
+
+func (failingStore) BruteForceLookup(string) (int, time.Time, bool, error) {
+	return 0, time.Time{}, false, errBruteForceDB
+}
+func (failingStore) BruteForceRecordFailure(string, time.Duration, time.Time) (int, time.Time, error) {
+	return 0, time.Time{}, errBruteForceDB
+}
+func (failingStore) BruteForceReset(string) error               { return errBruteForceDB }
+func (failingStore) BruteForcePruneBefore(time.Time) (int64, error) { return 0, errBruteForceDB }
+
+var errBruteForceDB = fmt.Errorf("simulated db failure")
+
+// TestBruteForce_DBErrorsSurfaced is a regression test for BL-032: store
+// failures must fail open (never lock out a legitimate operator) AND be
+// observable via DBErrorCount so a silently-degraded lockout is visible.
+func TestBruteForce_DBErrorsSurfaced(t *testing.T) {
+	tr := NewPersistentBruteForceTracker(failingStore{})
+
+	assert.Equal(t, int64(0), tr.DBErrorCount())
+
+	// IsLocked must fail open on a lookup error and bump the counter.
+	assert.False(t, tr.IsLocked("1.2.3.4"))
+	tr.RecordFailure("1.2.3.4")
+	tr.Reset("1.2.3.4")
+
+	assert.GreaterOrEqual(t, tr.DBErrorCount(), int64(3),
+		"each store failure must increment the surfaced error counter")
 }

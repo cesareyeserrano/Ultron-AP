@@ -16,6 +16,7 @@ package auth
 import (
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -58,7 +59,29 @@ type BruteForceTracker struct {
 	mu       sync.Mutex
 	attempts map[string]*attempt // populated only in the in-memory variant
 	store    Store               // nil means in-memory mode
+
+	// dbErrors counts store failures so the fail-open posture is observable
+	// rather than silent — a non-zero value means lockout protection may be
+	// degraded. Surfaced via DBErrorCount() for health reporting (BL-032).
+	dbErrors atomic.Int64
 }
+
+// recordDBError increments the error counter and logs a clear, greppable
+// warning. lockoutDisabled marks the security-critical case (a lookup failure
+// in IsLocked) where brute-force protection is actually bypassed for this call.
+func (t *BruteForceTracker) recordDBError(op, ip string, err error, lockoutDisabled bool) {
+	n := t.dbErrors.Add(1)
+	if lockoutDisabled {
+		log.Printf("bruteforce: WARN op=%s ip=%s db=%v — LOCKOUT PROTECTION DEGRADED (failing open) total_db_errors=%d", op, ip, err, n)
+		return
+	}
+	log.Printf("bruteforce: WARN op=%s ip=%s db=%v total_db_errors=%d", op, ip, err, n)
+}
+
+// DBErrorCount returns the cumulative number of store failures. A non-zero
+// value indicates the brute-force tracker has been operating degraded (fail
+// open) and lockout may not be enforced; intended for /healthz surfacing.
+func (t *BruteForceTracker) DBErrorCount() int64 { return t.dbErrors.Load() }
 
 // NewBruteForceTracker constructs the legacy in-memory tracker. Existing
 // tests and dev callers keep working; production should call
@@ -80,7 +103,7 @@ func NewPersistentBruteForceTracker(store Store) *BruteForceTracker {
 func (t *BruteForceTracker) RecordFailure(ip string) {
 	if t.store != nil {
 		if _, _, err := t.store.BruteForceRecordFailure(ip, LockoutWindow, time.Now()); err != nil {
-			log.Printf("bruteforce: record failure ip=%s db=%v", ip, err)
+			t.recordDBError("record_failure", ip, err, false)
 		}
 		return
 	}
@@ -101,7 +124,7 @@ func (t *BruteForceTracker) IsLocked(ip string) bool {
 	if t.store != nil {
 		count, firstAt, found, err := t.store.BruteForceLookup(ip)
 		if err != nil {
-			log.Printf("bruteforce: lookup ip=%s db=%v (treating as not locked)", ip, err)
+			t.recordDBError("lookup", ip, err, true)
 			return false
 		}
 		if !found {
@@ -134,7 +157,7 @@ func (t *BruteForceTracker) IsLocked(ip string) bool {
 func (t *BruteForceTracker) Reset(ip string) {
 	if t.store != nil {
 		if err := t.store.BruteForceReset(ip); err != nil {
-			log.Printf("bruteforce: reset ip=%s db=%v", ip, err)
+			t.recordDBError("reset", ip, err, false)
 		}
 		return
 	}
@@ -150,7 +173,7 @@ func (t *BruteForceTracker) CleanupExpired() {
 	if t.store != nil {
 		cutoff := time.Now().Add(-LockoutWindow)
 		if _, err := t.store.BruteForcePruneBefore(cutoff); err != nil {
-			log.Printf("bruteforce: prune db=%v", err)
+			t.recordDBError("prune", "", err, false)
 		}
 		return
 	}
