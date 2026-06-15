@@ -100,3 +100,23 @@ func TestPeerCredSupported_BuildAware(t *testing.T) {
 	// real assertion; this body documents the contract.
 	_ = peerCredSupported
 }
+
+// BG-043 — the helper must fail closed: with peercred enforcement compiled in
+// and an empty allowlist, a connection is refused rather than served.
+func TestFailClosedNoAllowlist(t *testing.T) {
+	empty := map[uint32]struct{}{}
+	withUID := map[uint32]struct{}{997: {}}
+
+	if !failClosedNoAllowlist(true, empty) {
+		t.Error("supported + empty allowlist must fail closed (refuse), not serve everyone")
+	}
+	if failClosedNoAllowlist(true, withUID) {
+		t.Error("supported + non-empty allowlist must NOT fail closed")
+	}
+	if failClosedNoAllowlist(true, nil) != true {
+		t.Error("supported + nil allowlist must fail closed")
+	}
+	if failClosedNoAllowlist(false, empty) {
+		t.Error("when peercred is unsupported, socket-mode perms are the auth — must not fail closed here")
+	}
+}

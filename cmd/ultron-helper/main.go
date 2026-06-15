@@ -36,6 +36,14 @@ var serviceNameRe = regexp.MustCompile(`^[a-zA-Z0-9_.@\-]+$`)
 // @aitri-trace BG-021 BL-013
 var allowedUIDs map[uint32]struct{}
 
+// failClosedNoAllowlist reports whether the helper must refuse a connection
+// outright because SO_PEERCRED enforcement is compiled in but no caller-UID
+// allowlist could be resolved. Serving every UID in that state is the BG-043
+// fail-open hole; refusing is the fail-closed posture.
+func failClosedNoAllowlist(supported bool, allow map[uint32]struct{}) bool {
+	return supported && len(allow) == 0
+}
+
 func main() {
 	socket := strings.TrimSpace(os.Getenv("ULTRON_HELPER_SOCKET"))
 	if socket == "" {
@@ -46,7 +54,7 @@ func main() {
 	if !peerCredSupported {
 		log.Printf("warning: SO_PEERCRED not supported on this platform — socket-mode permissions are the only auth")
 	} else if len(allowedUIDs) == 0 {
-		log.Printf("warning: no caller UID enforcement configured (no ULTRON_HELPER_ALLOWED_UID/UIDS set, 'ultron' user not resolvable) — every UID with socket access will be served")
+		log.Printf("warning: no caller UID allowlist configured (no ULTRON_HELPER_ALLOWED_UID/UIDS set, 'ultron' user not resolvable) — failing closed: all connections will be refused until an allowlist is configured (BG-043)")
 	} else {
 		uids := make([]uint32, 0, len(allowedUIDs))
 		for u := range allowedUIDs {
@@ -113,7 +121,15 @@ func handleConn(conn net.Conn) {
 	defer conn.Close()
 	_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
 
-	if peerCredSupported && len(allowedUIDs) > 0 {
+	if peerCredSupported {
+		// BG-043: fail closed. If peercred enforcement is compiled in but no
+		// allowlist could be resolved, refuse the connection rather than
+		// serving every UID that can reach the socket.
+		if failClosedNoAllowlist(peerCredSupported, allowedUIDs) {
+			log.Printf("rejecting helper connection: no caller UID allowlist configured (fail-closed)")
+			writeResp(conn, privileged.Response{OK: false, Message: "forbidden"})
+			return
+		}
 		uid, err := getPeerUID(conn)
 		if err != nil {
 			log.Printf("peercred lookup failed, rejecting connection: %v", err)
