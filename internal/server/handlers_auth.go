@@ -114,7 +114,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   isHTTPSRequest(r),
+		Secure:   s.isHTTPSRequest(r),
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(s.cfg.SessionTTL.Seconds()),
 		Expires:  session.ExpiresAt,
@@ -142,7 +142,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   isHTTPSRequest(r),
+		Secure:   s.isHTTPSRequest(r),
 		SameSite: http.SameSiteLaxMode,
 		Expires:  time.Unix(0, 0),
 	})
@@ -222,9 +222,19 @@ func clientIP(r *http.Request) string {
 	return host
 }
 
-func isHTTPSRequest(r *http.Request) bool {
+// isHTTPSRequest reports whether the request reached us over HTTPS. A direct
+// TLS connection always counts. X-Forwarded-Proto is honoured ONLY when the TCP
+// peer is a configured trusted proxy (ULTRON_TRUSTED_PROXIES) — mirroring
+// clientIPFromRequest's handling of X-Forwarded-For — so a client reaching the
+// binary directly cannot spoof the scheme to influence the Secure cookie flag
+// or HSTS. With an empty allowlist (the default), the header is ignored. (BG-042)
+func (s *Server) isHTTPSRequest(r *http.Request) bool {
 	if r.TLS != nil {
 		return true
 	}
-	return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
+	peer := tcpPeerIP(r.RemoteAddr)
+	if peer != "" && s.cfg != nil && len(s.cfg.TrustedProxies) > 0 && isTrustedPeer(peer, s.cfg.TrustedProxies) {
+		return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
+	}
+	return false
 }

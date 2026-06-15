@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/tls"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -307,9 +308,9 @@ func TestLogout_RejectsMissingCSRFToken(t *testing.T) {
 	assert.NotNil(t, session, "session must survive a CSRF-less logout attempt")
 }
 
-func TestLogin_SetsSecureCookie_WhenForwardedProtoHTTPS(t *testing.T) {
-	srv, _ := setupAuthHandlerTest(t)
-
+// loginAndGetSessionCookie performs the login flow and returns the session cookie.
+func loginAndGetSessionCookie(t *testing.T, srv *Server, mutate func(*http.Request)) *http.Cookie {
+	t.Helper()
 	getReq := httptest.NewRequest(http.MethodGet, "/login", nil)
 	getRec := httptest.NewRecorder()
 	srv.httpServer.Handler.ServeHTTP(getRec, getReq)
@@ -323,21 +324,47 @@ func TestLogin_SetsSecureCookie_WhenForwardedProtoHTTPS(t *testing.T) {
 
 	postReq := httptest.NewRequest(http.MethodPost, "/login", strings.NewReader(form.Encode()))
 	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	postReq.Header.Set("X-Forwarded-Proto", "https")
+	if mutate != nil {
+		mutate(postReq)
+	}
 	postRec := httptest.NewRecorder()
-
 	srv.httpServer.Handler.ServeHTTP(postRec, postReq)
 	assert.Equal(t, http.StatusSeeOther, postRec.Code)
 
-	var sessionCookie *http.Cookie
 	for _, c := range postRec.Result().Cookies() {
 		if c.Name == "session" {
-			sessionCookie = c
-			break
+			return c
 		}
 	}
-	require.NotNil(t, sessionCookie)
-	assert.True(t, sessionCookie.Secure)
+	return nil
+}
+
+// BG-042: X-Forwarded-Proto sets the Secure flag only when the TCP peer is a
+// configured trusted proxy.
+func TestLogin_SetsSecureCookie_WhenForwardedProtoHTTPS_FromTrustedProxy(t *testing.T) {
+	srv, _ := setupAuthHandlerTest(t)
+	// httptest's default RemoteAddr is 192.0.2.1:1234 — trust that peer.
+	_, ipnet, err := net.ParseCIDR("192.0.2.1/32")
+	require.NoError(t, err)
+	srv.cfg.TrustedProxies = []*net.IPNet{ipnet}
+
+	cookie := loginAndGetSessionCookie(t, srv, func(r *http.Request) {
+		r.Header.Set("X-Forwarded-Proto", "https")
+	})
+	require.NotNil(t, cookie)
+	assert.True(t, cookie.Secure, "Secure flag set when X-Forwarded-Proto:https comes from a trusted proxy")
+}
+
+// BG-042 regression: X-Forwarded-Proto from an untrusted peer (no trusted proxy
+// configured) must NOT influence the Secure flag — it is spoofable.
+func TestLogin_IgnoresForwardedProtoHTTPS_WhenNotTrustedProxy(t *testing.T) {
+	srv, _ := setupAuthHandlerTest(t)
+	// No TrustedProxies configured (default).
+	cookie := loginAndGetSessionCookie(t, srv, func(r *http.Request) {
+		r.Header.Set("X-Forwarded-Proto", "https")
+	})
+	require.NotNil(t, cookie)
+	assert.False(t, cookie.Secure, "spoofable X-Forwarded-Proto must be ignored without a trusted proxy")
 }
 
 func TestLogin_SetsSecureCookie_WhenTLS(t *testing.T) {

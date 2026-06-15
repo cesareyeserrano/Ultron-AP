@@ -44,6 +44,12 @@ func (s *Server) validateCSRF(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
+// isSameOriginRequest enforces same-origin on Origin/Referer when present. The
+// scheme is derived from the raw request (TLS or X-Forwarded-Proto) rather than
+// the trusted-proxy-gated isHTTPSRequest: a spoofed X-Forwarded-Proto cannot
+// help a cross-origin attacker here (they would still have to match the host),
+// and gating it would reject legitimate POSTs from a TLS-terminating reverse
+// proxy that has not been added to ULTRON_TRUSTED_PROXIES.
 func isSameOriginRequest(r *http.Request) bool {
 	origin := strings.TrimSpace(r.Header.Get("Origin"))
 	referer := strings.TrimSpace(r.Header.Get("Referer"))
@@ -52,7 +58,7 @@ func isSameOriginRequest(r *http.Request) bool {
 	}
 
 	expectedScheme := "http"
-	if isHTTPSRequest(r) {
+	if r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") {
 		expectedScheme = "https"
 	}
 	expectedHost := r.Host

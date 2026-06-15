@@ -69,7 +69,7 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 			cspHeader = "Content-Security-Policy"
 		}
 		h.Set(cspHeader, cspPolicy)
-		if isHTTPSRequest(r) {
+		if s.isHTTPSRequest(r) {
 			h.Set("Strict-Transport-Security", "max-age=15552000; includeSubDomains")
 		}
 		next.ServeHTTP(w, r)
