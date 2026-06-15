@@ -17,7 +17,7 @@
   "projectName": "sustained-alert-window-fix",
   "createdAt": "2026-06-15T20:08:01.759Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-06-15T20:52:29.199Z",
+  "updatedAt": "2026-06-15T21:03:58.179Z",
   "driftPhases": [],
   "events": [
     {
@@ -111,11 +111,19 @@
       "at": "2026-06-15T20:52:29.173Z",
       "event": "approved",
       "phase": 5
+    },
+    {
+      "at": "2026-06-15T21:03:58.154Z",
+      "event": "rehash",
+      "phase": "1",
+      "artifact": "01_REQUIREMENTS.json",
+      "before_hash": "9f2d914b9bb156c1ce8bc706be4c5a21ec99ad052e528cffbb6540d49c60a98e",
+      "after_hash": "06679e67b6182899340db70eb90ff72abfc3495cacff225f3aa558438dea03df"
     }
   ],
   "cascadedPhases": [],
   "artifactHashes": {
-    "1": "9f2d914b9bb156c1ce8bc706be4c5a21ec99ad052e528cffbb6540d49c60a98e",
+    "1": "06679e67b6182899340db70eb90ff72abfc3495cacff225f3aa558438dea03df",
     "2": "008cad975d0c05dd8997fc52c3441754ca0c44d7e715ba82d80bdbb239f4fae5",
     "3": "f7e59cb909acbe7dc2d6f63324bd6a9ed018ad6860994f7ed375250a2e3811b6",
     "4": "8549593dfcf901cd3c30ae0f0f952971f8dd57be218aaae3e5d29890c6333624",

@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-rc.84",
   "artifactsDir": "spec",
-  "updatedAt": "2026-06-14T20:47:45.061Z",
+  "updatedAt": "2026-06-15T21:05:39.186Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,13 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-08T22:39:54.667Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0
-    },
     {
       "at": "2026-05-08T22:52:23.178Z",
       "event": "normalize-resolved",
@@ -205,6 +198,15 @@
       "category": "artifactRename",
       "target": "05_TRACEABILITY.json",
       "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-06-15T21:05:39.156Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
     }
   ],
   "verifyPassed": true,
@@ -216,7 +218,7 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-05-29T21:47:07.499Z",
+  "verifyRanAt": "2026-06-15T21:05:39.156Z",
   "auditLastAt": "2026-05-03T22:42:15.435Z",
   "upgradeFindings": [],
   "verifySummary": {
@@ -228,5 +230,12 @@
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
+  },
+  "lastVerifyRun": {
+    "passed": 45,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-06-15T21:05:39.156Z"
   }
 }

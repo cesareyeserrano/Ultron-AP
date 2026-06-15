@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-05-29T21:47:07.498Z",
+  "executed_at": "2026-06-15T21:05:39.153Z",
   "test_runner": "bash scripts/aitri-test.sh",
   "exit_code": 0,
   "results": [
@@ -349,6 +349,656 @@
       "tests_skipped": 0,
       "tests_manual": 0,
       "status": "covered"
+    }
+  ],
+  "ac_coverage": [
+    {
+      "ac_id": "AC-001-001",
+      "fr_id": "FR-001",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-001-002",
+      "fr_id": "FR-001",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-001-003",
+      "fr_id": "FR-001",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-001-004",
+      "fr_id": "FR-001",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-001-005",
+      "fr_id": "FR-001",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-001-006",
+      "fr_id": "FR-001",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-001-007",
+      "fr_id": "FR-001",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-002-001",
+      "fr_id": "FR-002",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-002-002",
+      "fr_id": "FR-002",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-002-003",
+      "fr_id": "FR-002",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-002-004",
+      "fr_id": "FR-002",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-002-005",
+      "fr_id": "FR-002",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-003-001",
+      "fr_id": "FR-003",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-003-002",
+      "fr_id": "FR-003",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-003-003",
+      "fr_id": "FR-003",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-003-004",
+      "fr_id": "FR-003",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-003-005",
+      "fr_id": "FR-003",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-004-001",
+      "fr_id": "FR-004",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-004-002",
+      "fr_id": "FR-004",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-004-003",
+      "fr_id": "FR-004",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-004-004",
+      "fr_id": "FR-004",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-004-005",
+      "fr_id": "FR-004",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-004-006",
+      "fr_id": "FR-004",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-004-007",
+      "fr_id": "FR-004",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-005-001",
+      "fr_id": "FR-005",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-005-002",
+      "fr_id": "FR-005",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-005-003",
+      "fr_id": "FR-005",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-005-004",
+      "fr_id": "FR-005",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-005-005",
+      "fr_id": "FR-005",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-006-001",
+      "fr_id": "FR-006",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-006-002",
+      "fr_id": "FR-006",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-006-003",
+      "fr_id": "FR-006",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-006-004",
+      "fr_id": "FR-006",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-006-005",
+      "fr_id": "FR-006",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-007-001",
+      "fr_id": "FR-007",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-007-002",
+      "fr_id": "FR-007",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-007-003",
+      "fr_id": "FR-007",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-007-004",
+      "fr_id": "FR-007",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-007-005",
+      "fr_id": "FR-007",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-007-006",
+      "fr_id": "FR-007",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-007-007",
+      "fr_id": "FR-007",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-008-001",
+      "fr_id": "FR-008",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-008-002",
+      "fr_id": "FR-008",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-008-003",
+      "fr_id": "FR-008",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-008-004",
+      "fr_id": "FR-008",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-008-005",
+      "fr_id": "FR-008",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-008-006",
+      "fr_id": "FR-008",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-009-001",
+      "fr_id": "FR-009",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-009-002",
+      "fr_id": "FR-009",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-009-003",
+      "fr_id": "FR-009",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-009-004",
+      "fr_id": "FR-009",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-009-005",
+      "fr_id": "FR-009",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-010-001",
+      "fr_id": "FR-010",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-010-002",
+      "fr_id": "FR-010",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-010-003",
+      "fr_id": "FR-010",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-011-001",
+      "fr_id": "FR-011",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-011-002",
+      "fr_id": "FR-011",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-011-003",
+      "fr_id": "FR-011",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-011-004",
+      "fr_id": "FR-011",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-012-001",
+      "fr_id": "FR-012",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-012-002",
+      "fr_id": "FR-012",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-012-003",
+      "fr_id": "FR-012",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-013-001",
+      "fr_id": "FR-013",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-013-002",
+      "fr_id": "FR-013",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-013-003",
+      "fr_id": "FR-013",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-014-001",
+      "fr_id": "FR-014",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-014-002",
+      "fr_id": "FR-014",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-014-003",
+      "fr_id": "FR-014",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-015-001",
+      "fr_id": "FR-015",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-015-002",
+      "fr_id": "FR-015",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-015-003",
+      "fr_id": "FR-015",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-015-004",
+      "fr_id": "FR-015",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
     }
   ],
   "summary": {
