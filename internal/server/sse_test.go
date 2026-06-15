@@ -259,7 +259,7 @@ func TestSettings_DoesNotEnableSSE(t *testing.T) {
 
 func TestGatherDashboardData_NilCollectors(t *testing.T) {
 	srv, _ := setupSSETestServer(t)
-	dd := srv.gatherDashboardData()
+	dd := srv.gatherDashboardData("5m", 60)
 
 	assert.Nil(t, dd.Metrics)
 	assert.False(t, dd.DockerAvail)
@@ -273,4 +273,29 @@ func TestWriteSSEEvent(t *testing.T) {
 	b := &bytes.Buffer{}
 	writeSSEEvent(b, "metrics", "<div>test</div>")
 	assert.Equal(t, "event: metrics\ndata: <div>test</div>\n\n", b.String())
+}
+
+// TestChartWindowIsPerClient is a regression test for BG-046: the chart window
+// used to be server-global, so one client's selection leaked into every other
+// client's charts. The window now lives on each sseClient, and buildChartsEvent
+// renders for a given window — so two different windows must produce different
+// charts events, and a client's stored window must round-trip via chart().
+func TestChartWindowIsPerClient(t *testing.T) {
+	srv, _ := setupSSETestServer(t)
+
+	short := srv.buildChartsEvent("5m", 60)
+	long := srv.buildChartsEvent("24h", 1440)
+	assert.NotEqual(t, string(short), string(long),
+		"different windows must render different charts events (no shared global)")
+
+	// Per-client window round-trips with defaults applied.
+	c := &sseClient{chartWindow: "24h", chartPoints: 1440}
+	w, p := c.chart()
+	assert.Equal(t, "24h", w)
+	assert.Equal(t, 1440, p)
+
+	empty := &sseClient{}
+	w, p = empty.chart()
+	assert.Equal(t, "5m", w)
+	assert.Equal(t, 60, p)
 }

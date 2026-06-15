@@ -94,6 +94,24 @@ type sseClient struct {
 	ch     chan []byte
 	closed bool
 	ip     string
+	// chartWindow/chartPoints are this client's own dashboard chart selection
+	// (BG-046). The broadcast renders the window-dependent charts event per
+	// client so one viewer's choice never overwrites another's.
+	chartWindow string
+	chartPoints int
+}
+
+// chart returns the client's chart window/points, falling back to defaults.
+func (c *sseClient) chart() (string, int) {
+	w := c.chartWindow
+	if w == "" {
+		w = "5m"
+	}
+	p := c.chartPoints
+	if p < 12 {
+		p = 60
+	}
+	return w, p
 }
 
 type sseBroker struct {
@@ -166,10 +184,26 @@ func (b *sseBroker) broadcast(data []byte) {
 	}
 }
 
+// broadcastBuild sends per-client bytes computed by build(c). Used when part of
+// the payload depends on per-client state (the chart window, BG-046). build is
+// called under the read lock so the send coordinates with removeClient the same
+// way broadcast does; build must not acquire the broker lock.
+func (b *sseBroker) broadcastBuild(build func(c *sseClient) []byte) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	for c := range b.clients {
+		select {
+		case c.ch <- build(c):
+		default:
+			// Client too slow, skip
+		}
+	}
+}
+
 // --- SSE Handler ---
 
 func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
-	s.setDashboardChartWindow(r.URL.Query().Get("window"))
+	window, points := chartWindowPoints(r.URL.Query().Get("window"), s.cfg.MetricsInterval)
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -191,11 +225,15 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
 		return
 	}
+	client.chartWindow = window
+	client.chartPoints = points
 	defer s.sseBroker.removeClient(client)
 
-	// Send initial data immediately
-	initial := s.buildSSEPayload()
-	w.Write(initial)
+	// Send initial data immediately, with charts rendered for this client's window.
+	var initial bytes.Buffer
+	initial.Write(s.buildSharedSSEEvents(true))
+	initial.Write(s.buildChartsEvent(window, points))
+	w.Write(initial.Bytes())
 	flusher.Flush()
 
 	ctx := r.Context()
@@ -232,11 +270,24 @@ func (s *Server) startSSEBroadcast() {
 			// Metrics remain fast; charts and heavy sections use slower cadences.
 			chartsEvery := cadenceEvery(current, 15*time.Second)
 			heavyEvery := cadenceEvery(current, 10*time.Second) // summary + docker/systemd/alerts
-			data := s.buildSSEPayloadWithOptions(
-				tick%chartsEvery == 0,
-				tick%heavyEvery == 0,
-			)
-			s.sseBroker.broadcast(data)
+			includeCharts := tick%chartsEvery == 0
+			includeHeavy := tick%heavyEvery == 0
+
+			// Window-independent events render once and are shared by all clients.
+			shared := s.buildSharedSSEEvents(includeHeavy)
+			if !includeCharts {
+				s.sseBroker.broadcast(shared)
+			} else {
+				// Charts depend on each client's selected window (BG-046), so
+				// append a per-client charts event to the shared payload.
+				s.sseBroker.broadcastBuild(func(c *sseClient) []byte {
+					w, p := c.chart()
+					var buf bytes.Buffer
+					buf.Write(shared)
+					buf.Write(s.buildChartsEvent(w, p))
+					return buf.Bytes()
+				})
+			}
 			// Dynamically adjust ticker if interval was changed.
 			if next := s.sseInterval(); next != current {
 				current = next
@@ -245,10 +296,6 @@ func (s *Server) startSSEBroadcast() {
 			}
 		}
 	}()
-}
-
-func (s *Server) buildSSEPayload() []byte {
-	return s.buildSSEPayloadWithOptions(true, true)
 }
 
 func cadenceEvery(current, target time.Duration) int {
@@ -265,9 +312,15 @@ func cadenceEvery(current, target time.Duration) int {
 	return steps
 }
 
-func (s *Server) buildSSEPayloadWithOptions(includeCharts bool, includeHeavy bool) []byte {
+// buildSharedSSEEvents renders the window-independent events shared by every
+// client: metrics, and (on the heavy cadence) summary + alert-count, plus the
+// verdicts fragment. It runs the single insights engine evaluation per tick.
+// The charts event is window-dependent and rendered per client by
+// buildChartsEvent (BG-046), so it is NOT included here.
+func (s *Server) buildSharedSSEEvents(includeHeavy bool) []byte {
 	var buf bytes.Buffer
-	dd := s.gatherDashboardData()
+	// Chart fields are unused by these partials, so default window/points.
+	dd := s.gatherDashboardData("5m", 60)
 	if includeHeavy {
 		// Heavy summary refreshes must include VPN peer state; otherwise
 		// SSE swaps overwrite the initial page-load data with an empty list.
@@ -277,12 +330,6 @@ func (s *Server) buildSSEPayloadWithOptions(includeCharts bool, includeHeavy boo
 	// Metrics event
 	metricsHTML := s.renderPartial("partials/sse-metrics.html", dd)
 	writeSSEEvent(&buf, "metrics", metricsHTML)
-
-	if includeCharts {
-		// Charts event
-		chartsHTML := s.renderPartial("partials/sse-charts.html", dd)
-		writeSSEEvent(&buf, "charts", chartsHTML)
-	}
 
 	if includeHeavy {
 		// Summary event includes VPN online users and service/container snapshots.
@@ -301,7 +348,8 @@ func (s *Server) buildSSEPayloadWithOptions(includeCharts bool, includeHeavy boo
 	}
 
 	// Verdicts event (FR-043) — drive one engine evaluation against the
-	// current snapshot, then render the active-set fragment.
+	// current snapshot, then render the active-set fragment. Must run exactly
+	// once per tick (engine state), so it lives in the shared payload.
 	if s.insights != nil {
 		s.evalInsightsTick(dd)
 		verdictsHTML := s.renderVerdictsFragment(time.Now())
@@ -309,6 +357,48 @@ func (s *Server) buildSSEPayloadWithOptions(includeCharts bool, includeHeavy boo
 	}
 
 	return buf.Bytes()
+}
+
+// buildChartsEvent renders the window-dependent charts event for a single
+// client's selected window/points (BG-046).
+func (s *Server) buildChartsEvent(window string, points int) []byte {
+	var buf bytes.Buffer
+	dd := s.gatherChartData(window, points)
+	chartsHTML := s.renderPartial("partials/sse-charts.html", dd)
+	writeSSEEvent(&buf, "charts", chartsHTML)
+	return buf.Bytes()
+}
+
+// gatherChartData builds only the fields the charts partial needs
+// (CPUValues/RAMValues/TempValues sparklines, ChartWindow, NetworkTargets) for
+// the given window/points, without the heavier summary/docker/systemd gather.
+func (s *Server) gatherChartData(window string, points int) DashboardData {
+	if points < 12 {
+		points = 60
+	}
+	if window == "" {
+		window = "5m"
+	}
+	dd := DashboardData{ChartWindow: window, ChartPoints: points}
+	if s.collector != nil {
+		history := s.collector.History(points)
+		dd.CPUValues = make([]float64, len(history))
+		dd.RAMValues = make([]float64, len(history))
+		dd.TempValues = make([]float64, len(history))
+		lastTemp := 0.0
+		for i, snap := range history {
+			dd.CPUValues[i] = snap.CPU.TotalPercent
+			dd.RAMValues[i] = snap.RAM.Percent
+			if snap.Temperature != nil {
+				lastTemp = *snap.Temperature
+			}
+			dd.TempValues[i] = lastTemp
+		}
+	}
+	if s.gateway != nil {
+		dd.NetworkTargets = s.gatherNetworkTargetViews(points)
+	}
+	return dd
 }
 
 // evalInsightsTick is the single integration point between the SSE broker
@@ -418,15 +508,7 @@ func chartWindowPoints(window string, sampleInterval time.Duration) (string, int
 	}
 }
 
-func (s *Server) setDashboardChartWindow(window string) {
-	normalized, points := chartWindowPoints(window, s.cfg.MetricsInterval)
-	s.dashboardChartWindow.Store(normalized)
-	s.dashboardHistoryPoints.Store(int64(points))
-}
-
-func (s *Server) gatherDashboardData() DashboardData {
-	chartWindow, _ := s.dashboardChartWindow.Load().(string)
-	chartPoints := int(s.dashboardHistoryPoints.Load())
+func (s *Server) gatherDashboardData(chartWindow string, chartPoints int) DashboardData {
 	if chartPoints < 12 {
 		chartPoints = 60
 	}
