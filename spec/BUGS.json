@@ -905,6 +905,31 @@
       "fix_at": "2026-05-12T02:45:53.294Z",
       "close_commit_sha": "001fd885a945741d463a52f000ba212dfb423e14",
       "close_at": "2026-05-12T02:46:00.267Z"
+    },
+    {
+      "id": "BG-040",
+      "title": "Logout endpoint missing CSRF validation (violates FR-012)",
+      "description": "",
+      "steps_to_reproduce": [
+        "Authenticate and obtain a session",
+        "Issue a cross-site POST /logout without a valid csrf_token"
+      ],
+      "expected_result": "Request rejected with 403 Forbidden (FR-012: token validated on all POST/PUT/DELETE)",
+      "actual_result": "Session is destroyed and user is logged out — handleLogout does not call validateCSRF",
+      "environment": "local / security audit",
+      "severity": "medium",
+      "status": "verified",
+      "fr": "FR-012",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "audit",
+      "created_at": "2026-06-15T21:10:32.975Z",
+      "updated_at": "2026-06-15T21:12:18.471Z",
+      "resolution": null,
+      "fix_commit_sha": "a0ef1a244d2c216b398a8bab15cc8faeb209b72d",
+      "fix_at": "2026-06-15T21:12:15.565Z"
     }
   ]
 }
