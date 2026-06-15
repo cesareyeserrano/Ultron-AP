@@ -307,11 +307,18 @@ func (s *compileState) compileSustained(spec *sustainedSpec) (nodeFn, error) {
 		v := c.Get(varName)
 		state.mu.Lock()
 		defer state.mu.Unlock()
-		// Update cadence estimate from the gap to the previous tick.
+		// Update the cadence estimate from the gap to the previous tick. Use an
+		// exponential moving average (weighting history 3:1) rather than the
+		// smallest-ever gap: a single fast/jittery tick must not permanently
+		// shrink the estimate and skew when window_ms is considered covered.
+		// The EWMA tracks the expected cadence and self-corrects within a few
+		// ticks (BL-031).
 		if state.prevMS != 0 && nowMS > state.prevMS {
 			gap := nowMS - state.prevMS
-			if state.cadenceMS == 0 || gap < state.cadenceMS {
+			if state.cadenceMS == 0 {
 				state.cadenceMS = gap
+			} else {
+				state.cadenceMS = (state.cadenceMS*3 + gap) / 4
 			}
 		}
 		state.prevMS = nowMS
