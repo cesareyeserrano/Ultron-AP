@@ -1,11 +1,24 @@
 package tailscale
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"time"
 )
+
+// statusCommandTimeout bounds how long GetStatus waits for the `tailscale`
+// CLI. Without it, a hung CLI blocks the caller indefinitely — on the SSE
+// broadcast goroutine that stalls every connected dashboard. A var (not const)
+// so tests can shrink it.
+var statusCommandTimeout = 3 * time.Second
+
+// runStatusCommand executes `tailscale status --json` under ctx. Overridable in
+// tests to simulate a hung or misbehaving CLI without a real binary.
+var runStatusCommand = func(ctx context.Context) ([]byte, error) {
+	return exec.CommandContext(ctx, "tailscale", "status", "--json").Output()
+}
 
 // Peer represents a Tailscale node (self or remote peer).
 type Peer struct {
@@ -46,9 +59,13 @@ type rawUser struct {
 	DisplayName string `json:"DisplayName"`
 }
 
-// GetStatus runs `tailscale status --json` and returns parsed data.
+// GetStatus runs `tailscale status --json` and returns parsed data. The CLI
+// call is bounded by statusCommandTimeout so a hung `tailscale` can never block
+// the caller (e.g. the SSE broadcast goroutine) indefinitely.
 func GetStatus() (*Status, error) {
-	out, err := exec.Command("tailscale", "status", "--json").Output()
+	ctx, cancel := context.WithTimeout(context.Background(), statusCommandTimeout)
+	defer cancel()
+	out, err := runStatusCommand(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("tailscale status: %w", err)
 	}
