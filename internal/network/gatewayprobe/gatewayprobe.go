@@ -355,6 +355,11 @@ func asNetErr(err error, target *net.Error) bool {
 	return false
 }
 
+// icmpEchoPayload is the echo body sent by pingICMP. The responder echoes it
+// back verbatim, so matching it on read confirms a reply belongs to our request
+// (BG-048) rather than a stray/foreign packet delivered to the socket.
+const icmpEchoPayload = "ultron-ap"
+
 // pingICMP sends one ICMP echo request and returns the round-trip time.
 func pingICMP(ctx context.Context, target string, timeout time.Duration) (time.Duration, error) {
 	conn, err := icmp.ListenPacket("udp4", "0.0.0.0")
@@ -370,12 +375,13 @@ func pingICMP(ctx context.Context, target string, timeout time.Duration) (time.D
 
 	// On Linux unprivileged ICMP the kernel substitutes Echo.ID with the
 	// socket's source port; we leave it zero and don't rely on it on read.
+	// We DO match the echoed payload + source on read (BG-048).
 	msg := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
 		Code: 0,
 		Body: &icmp.Echo{
 			Seq:  1,
-			Data: []byte("ultron-ap"),
+			Data: []byte(icmpEchoPayload),
 		},
 	}
 	msgBytes, err := msg.Marshal(nil)
@@ -399,22 +405,28 @@ func pingICMP(ctx context.Context, target string, timeout time.Duration) (time.D
 		if ctx.Err() != nil {
 			return 0, ctx.Err()
 		}
-		n, _, err := conn.ReadFrom(reply)
+		n, peer, err := conn.ReadFrom(reply)
 		if err != nil {
 			return 0, err
 		}
+		// Only accept a reply from the host we probed. The kernel demuxes
+		// ping-socket replies by ID, but verifying the source guards against
+		// stray/foreign packets delivered to the socket (BG-048).
+		if pa, ok := peer.(*net.UDPAddr); ok && !pa.IP.Equal(addr.IP) {
+			continue
+		}
 		parsed, err := icmp.ParseMessage(1, reply[:n])
 		if err != nil {
-			return 0, fmt.Errorf("parse icmp reply: %w", err)
+			// A malformed/foreign packet must not fail the probe; keep waiting
+			// for a valid reply until the read deadline fires.
+			continue
 		}
 		if parsed.Type != ipv4.ICMPTypeEchoReply {
 			continue
 		}
-		// Don't filter by Echo.ID: on Linux unprivileged ICMP (SOCK_DGRAM,
-		// IPPROTO_ICMP) the kernel rewrites the request's ID to the socket's
-		// source port and only delivers matching replies to this socket — so
-		// any echo reply we receive here is by definition ours.
-		if _, ok := parsed.Body.(*icmp.Echo); !ok {
+		// Match the echoed payload to confirm this is the reply to our request.
+		echo, ok := parsed.Body.(*icmp.Echo)
+		if !ok || string(echo.Data) != icmpEchoPayload {
 			continue
 		}
 		return time.Since(start), nil

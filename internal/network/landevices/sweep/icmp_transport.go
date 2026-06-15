@@ -23,6 +23,11 @@ func DefaultTransport() Transport { return icmpTransport{} }
 
 type icmpTransport struct{}
 
+// sweepEchoPayload is the echo body sent per probe. The responder echoes it
+// back verbatim, so matching it (plus the source address) on read confirms a
+// reply belongs to our request rather than a stray/foreign packet (BG-048).
+const sweepEchoPayload = "ultron-ap-sweep"
+
 // Probe sends one unprivileged ICMP echo to ip and waits up to timeout for a
 // reply. The returned error distinguishes ErrUnprivilegedICMPUnavailable
 // (kernel rejected the SOCK_DGRAM open — usually a ping_group_range
@@ -50,7 +55,7 @@ func (icmpTransport) Probe(ctx context.Context, ip string, timeout time.Duration
 		Code: 0,
 		Body: &icmp.Echo{
 			Seq:  1,
-			Data: []byte("ultron-ap-sweep"),
+			Data: []byte(sweepEchoPayload),
 		},
 	}
 	msgBytes, err := msg.Marshal(nil)
@@ -77,20 +82,28 @@ func (icmpTransport) Probe(ctx context.Context, ip string, timeout time.Duration
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		n, _, err := conn.ReadFrom(reply)
+		n, peer, err := conn.ReadFrom(reply)
 		if err != nil {
 			return err
 		}
+		// Only accept a reply from the host we probed. The kernel demuxes
+		// ping-socket replies by ID, but verifying the source guards against
+		// stray/foreign packets delivered to the socket (BG-048).
+		if pa, ok := peer.(*net.UDPAddr); ok && !pa.IP.Equal(addr.IP) {
+			continue
+		}
 		parsed, err := icmp.ParseMessage(1, reply[:n])
 		if err != nil {
-			return fmt.Errorf("parse icmp reply: %w", err)
+			// A malformed/foreign packet must not fail the probe; keep waiting
+			// for a valid reply until the read deadline fires.
+			continue
 		}
 		if parsed.Type != ipv4.ICMPTypeEchoReply {
 			continue
 		}
-		// Linux SOCK_DGRAM ICMP delivers only replies matching this socket's
-		// rewritten ID — any echo reply we read is by definition ours.
-		if _, ok := parsed.Body.(*icmp.Echo); !ok {
+		// Match the echoed payload to confirm this is the reply to our request.
+		echo, ok := parsed.Body.(*icmp.Echo)
+		if !ok || string(echo.Data) != sweepEchoPayload {
 			continue
 		}
 		return nil
