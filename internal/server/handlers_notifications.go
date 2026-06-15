@@ -69,7 +69,13 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 	existing, err := s.db.GetNotificationConfig(channel)
 	config := make(map[string]string)
 	if err == nil && existing != nil {
-		json.Unmarshal([]byte(existing.Config), &config)
+		if uerr := json.Unmarshal([]byte(existing.Config), &config); uerr != nil {
+			// Stored config is corrupt — fail loudly instead of starting from an
+			// empty map and silently overwriting previously-saved secrets.
+			log.Printf("notification config for %q is corrupt, refusing to overwrite: %v", channel, uerr)
+			http.Error(w, "Stored notification config is corrupt; not overwriting", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	switch channel {
