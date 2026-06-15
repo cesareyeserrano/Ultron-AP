@@ -1,0 +1,428 @@
+{
+  "test_plan": {
+    "feature": "sustained-alert-window-fix",
+    "scope": "Validate FR-016 (jitter-tolerant span-based sustained confirmation) and FR-017 (bounded O(1) retention) in internal/alerts/engine.go sustainedWindow.add, plus regression NFR-005..009 (non-breach reset, gap reset, duration<=0 short-circuit, interval-aligned TC-NA-076e equivalence, no change to cooldown/dispatch) and NFR-010 (CI runs the suite).",
+    "approach": "White-box unit tests on sustainedWindow.add driven by an explicit fake clock (base 2026-05-11T10:00:00Z) — each TC constructs sustainedWindow{duration, interval} directly and calls add(ruleID, baseTime+offset, breaching), asserting the boolean return per call. add() is pure in-process logic so unit level fully covers FR-016/017 and the regression NFRs; one integration TC drives Engine cooldown to pin NFR-009. E2E is not applicable: the change has no UI/HTTP surface (declared in no_go_zone), so the e2e column is '-' for every requirement.",
+    "fixtures": [
+      "base = 2026-05-11T10:00:00Z (time.Date, UTC) — all sample timestamps are base + offsetSeconds",
+      "newWindow(d, i) returns &sustainedWindow{duration: d, interval: i} with duration=60s, interval=10s unless a TC states otherwise",
+      "add(w, offsetSec, breaching) calls w.add(int64(1), base.Add(offsetSec*time.Second), breaching) and returns the bool",
+      "fakeDispatcher (integration TC only) records fire-event count, reused from the existing alerts engine test harness"
+    ],
+    "exit_criteria": "FR-016 has happy+edge+negative coverage with one h and one f TC; every MUST NFR (NFR-005..010) has >=1 falsifiable TC; no TC asserts any no_go_zone behavior (no UI, no new endpoint, no schema); all timestamps are explicit; no absolute paths."
+  },
+  "type_coverage_matrix": {
+    "FR-016": {
+      "unit": "MUST",
+      "integration": "SHOULD",
+      "e2e": "-"
+    },
+    "FR-017": {
+      "unit": "MUST",
+      "integration": "-",
+      "e2e": "-"
+    },
+    "NFR-005": {
+      "unit": "MUST",
+      "integration": "-",
+      "e2e": "-"
+    },
+    "NFR-006": {
+      "unit": "MUST",
+      "integration": "-",
+      "e2e": "-"
+    },
+    "NFR-007": {
+      "unit": "MUST",
+      "integration": "-",
+      "e2e": "-"
+    },
+    "NFR-008": {
+      "unit": "MUST",
+      "integration": "-",
+      "e2e": "-"
+    },
+    "NFR-009": {
+      "unit": "SHOULD",
+      "integration": "MUST",
+      "e2e": "-"
+    },
+    "NFR-010": {
+      "unit": "-",
+      "integration": "MUST",
+      "e2e": "-"
+    }
+  },
+  "test_cases": [
+    {
+      "id": "TC-SAW-016h",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Sustained breach confirms once elapsed span reaches D under jitter",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "w = sustainedWindow{duration: 60s, interval: 10s}",
+        "all samples breaching=true",
+        "sample offsets (seconds) with jitter, each gap <= 2*interval=20s: 0, 9, 21, 29, 38, 47, 58, 63"
+      ],
+      "given": "a window with D=60s, interval=10s, and breaching samples arriving with jitter at offsets 0,9,21,29,38,47,58,63s (every gap <=20s so no reset)",
+      "when": "w.add is called in sequence for each sample",
+      "then": "add returns false for offsets 0..58 (span < 60s) and returns true for the first time at offset 63 (span 63s >= 60s)",
+      "expected_result": "false on every call through offset 58; true on the call at offset 63"
+    },
+    {
+      "id": "TC-SAW-016e",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-003",
+      "title": "Knife-edge: confirming sample lands after t0+D with the t0+D sample missing",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "w = sustainedWindow{duration: 60s, interval: 10s}",
+        "all samples breaching=true",
+        "sample offsets: 0,10,20,30,40,50,57,63 (the offset-60 sample is missing due to jitter; gap 57->63 = 6s <=20s)"
+      ],
+      "given": "breaching samples at offsets 0,10,20,30,40,50,57,63s — the exact pattern that the OLD cutoff-equality code never confirmed (cutoff=3s trims the offset-0 run-start, leaving samples[0] at offset 10 > cutoff)",
+      "when": "w.add is called in sequence",
+      "then": "add returns false through offset 57 (span 57s) and returns true at offset 63 (span 63s >= 60s) — the historical knife-edge failure now confirms",
+      "expected_result": "true at offset 63; would have been false under the previous implementation"
+    },
+    {
+      "id": "TC-SAW-016b",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-004",
+      "title": "Boundary: exactly D confirms; single sample (span 0) does not",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "w = sustainedWindow{duration: 60s, interval: 10s}",
+        "all samples breaching=true",
+        "interval-aligned offsets: 0,10,20,30,40,50,60"
+      ],
+      "given": "a fresh window receives a single breaching sample at offset 0 (span 0), then interval-aligned breaching samples through offset 60",
+      "when": "w.add is called for offset 0, then 10,20,30,40,50,60",
+      "then": "add returns false at offset 0 (span 0 < 60, single sample) and at offsets 10..50; add returns true at offset 60 (span exactly 60s satisfies >= 60s inclusive boundary)",
+      "expected_result": "false at offset 0 and 10..50; true at offset 60 (>= is inclusive)"
+    },
+    {
+      "id": "TC-SAW-016f",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-002",
+      "title": "Negative: span below D never confirms (no early firing)",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "w = sustainedWindow{duration: 60s, interval: 10s}",
+        "all samples breaching=true",
+        "offsets: 0,10,20,30,40,50 (max span 50s < 60s)"
+      ],
+      "given": "a window with D=60s receiving breaching samples whose first-to-latest span never exceeds 50s",
+      "when": "w.add is called for each of offsets 0,10,20,30,40,50",
+      "then": "add returns false on every call (span 0..50s is always < 60s) — confirmation never fires early",
+      "expected_result": "false on all six calls; no true is ever returned"
+    },
+    {
+      "id": "TC-SAW-017h",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-001",
+      "title": "Bounded retention: a long continuous breach allocates zero per add",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "given": "an active sustained breach window (D=60s, interval=10s)",
+      "when": "testing.AllocsPerRun(1000, ...) measures 1000 consecutive breaching w.add calls advancing the timestamp by 10s each",
+      "then": "allocations-per-run is 0 (O(1) scalar state; no per-sample slice growth)",
+      "expected_result": "AllocsPerRun == 0; a slice-appending implementation reports > 0 and fails"
+    },
+    {
+      "id": "TC-SAW-017e",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-001",
+      "title": "Bounded retention: state stays O(1) across 100x the duration",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "given": "a continuous breach lasting 100*D (6000s) at 10s intervals (600 samples)",
+      "when": "all 600 breaching samples are added in order",
+      "then": "the window's retained state does not grow with sample count (allocs remain 0 after the first call; no unbounded slice)",
+      "expected_result": "retained-state size is constant regardless of elapsed breach length"
+    },
+    {
+      "id": "TC-SAW-017f",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-002",
+      "title": "Retention never drops the run-start: confirmation still fires after a very long breach",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "medium",
+      "given": "10000 consecutive breaching samples at 10s intervals (offsets 0..99990s)",
+      "when": "w.add is called for every sample in order",
+      "then": "add returns true from offset 60 onward (run-start preserved; trimming never causes a missed/reset confirmation)",
+      "expected_result": "true continuously from offset 60 to 99990; a buggy trim discarding firstAt returns false and fails"
+    },
+    {
+      "id": "TC-SAW-005h",
+      "requirement_id": "NFR-005",
+      "user_story_id": "US-018",
+      "ac_id": "AC-NFR-005-001",
+      "title": "After a non-breach reset, a fresh full-duration breach confirms correctly",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "given": "a window where breaching samples ran to offset 50, then a breaching=false sample at offset 55 reset the run",
+      "when": "breaching samples resume at offsets 60,70,...,120",
+      "then": "add returns false until offset 120 where the fresh run's span reaches 60s, then true (reset produced a clean, correct restart)",
+      "expected_result": "first true at offset 120"
+    },
+    {
+      "id": "TC-SAW-005e",
+      "requirement_id": "NFR-005",
+      "user_story_id": "US-018",
+      "ac_id": "AC-NFR-005-001",
+      "title": "Non-breach on an empty window is a safe no-op",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "given": "a fresh window with no samples yet (no active run)",
+      "when": "w.add is called with breaching=false",
+      "then": "add returns false and does not panic or create a run",
+      "expected_result": "false; no panic; window remains inactive"
+    },
+    {
+      "id": "TC-SAW-005f",
+      "requirement_id": "NFR-005",
+      "user_story_id": "US-018",
+      "ac_id": "AC-NFR-005-001",
+      "title": "Non-breach sample clears an active run",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "given": "an active breach run with breaching samples through offset 50 (span 50s)",
+      "when": "w.add(1, base+55s, false) is called, then breaching resumes at 60..115",
+      "then": "the false call returns false and clears the run; the resumed run is measured from offset 60, never confirming from stale pre-reset samples",
+      "expected_result": "false at 55; first true at 120 (fresh run)"
+    },
+    {
+      "id": "TC-SAW-006h",
+      "requirement_id": "NFR-006",
+      "user_story_id": "US-019",
+      "ac_id": "AC-NFR-006-001",
+      "title": "Gap of exactly 2*interval does NOT reset the run (boundary)",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "given": "an active run with samples at 0,10,20,30,40 and the next breaching sample at offset 60 (gap 20s == 2*interval, not greater)",
+      "when": "w.add is called for the offset-60 sample and breaching continues",
+      "then": "the run is NOT reset (gap is not > 2*interval); span is measured from offset 0, so add returns true at offset 60 (span 60s)",
+      "expected_result": "true at offset 60; run preserved across the boundary gap"
+    },
+    {
+      "id": "TC-SAW-006e",
+      "requirement_id": "NFR-006",
+      "user_story_id": "US-019",
+      "ac_id": "AC-NFR-006-001",
+      "title": "Gap just over 2*interval resets the run",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "given": "an active run with samples at 0,10,20,30,40,50 and the next breaching sample at offset 71 (gap 21s > 2*interval=20s)",
+      "when": "w.add is called for the offset-71 sample",
+      "then": "the run resets (reason=sample_gap) and restarts at offset 71",
+      "expected_result": "add returns false at 71; run restarted"
+    },
+    {
+      "id": "TC-SAW-006f",
+      "requirement_id": "NFR-006",
+      "user_story_id": "US-019",
+      "ac_id": "AC-NFR-006-001",
+      "title": "After a gap reset, stale samples never confirm early",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "given": "an active run through offset 50, then a breaching sample at offset 75 (gap 25s > 20s)",
+      "when": "the offset-75 sample resets the run; breaching continues at 85,95,...,135",
+      "then": "add returns false at 75 and first returns true at offset 135 (span from 75 reaches 60s) — not from stale pre-gap samples",
+      "expected_result": "false at 75; first true at 135"
+    },
+    {
+      "id": "TC-SAW-007h",
+      "requirement_id": "NFR-007",
+      "user_story_id": "US-020",
+      "ac_id": "AC-NFR-007-001",
+      "title": "duration == 0 returns breaching=true verbatim",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "given": "a window with duration=0, interval=10s",
+      "when": "w.add(1, anyTime, true) is called",
+      "then": "add returns true immediately, with no sustained gating and no state mutation",
+      "expected_result": "true; identical to an instantaneous threshold"
+    },
+    {
+      "id": "TC-SAW-007e",
+      "requirement_id": "NFR-007",
+      "user_story_id": "US-020",
+      "ac_id": "AC-NFR-007-001",
+      "title": "negative duration also short-circuits to the breaching flag",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "given": "a window with duration=-5s, interval=10s",
+      "when": "w.add is called with breaching=true then breaching=false",
+      "then": "add returns true then false, mirroring the breaching argument regardless of the negative duration",
+      "expected_result": "true then false; negative duration handled like zero"
+    },
+    {
+      "id": "TC-SAW-007f",
+      "requirement_id": "NFR-007",
+      "user_story_id": "US-020",
+      "ac_id": "AC-NFR-007-001",
+      "title": "duration == 0 returns breaching=false verbatim",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "given": "a window with duration=0, interval=10s",
+      "when": "w.add(1, anyTime, false) is called",
+      "then": "add returns false immediately without creating a sustained run",
+      "expected_result": "false; no gating applied"
+    },
+    {
+      "id": "TC-SAW-008h",
+      "requirement_id": "NFR-008",
+      "user_story_id": "US-021",
+      "ac_id": "AC-NFR-008-001",
+      "title": "Interval-aligned confirmation (TC-NA-076e equivalent) still passes",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "given": "perfectly interval-aligned breaching samples at offsets 0,10,20,30,40,50,60 (D=60s)",
+      "when": "w.add is called for offsets 0..60",
+      "then": "add returns false at 0..50 and true at offset 60 — identical to the pre-existing TC-NA-076e expectation",
+      "expected_result": "true at offset 60; aligned case preserved"
+    },
+    {
+      "id": "TC-SAW-008e",
+      "requirement_id": "NFR-008",
+      "user_story_id": "US-021",
+      "ac_id": "AC-NFR-008-001",
+      "title": "Aligned breach keeps confirming on the sample after D",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "given": "aligned breaching samples through offset 60 (already confirmed) plus one more at offset 70",
+      "when": "w.add is called for the offset-70 sample",
+      "then": "add continues to return true at offset 70 (span 70s >= 60s); confirmation is stable past D",
+      "expected_result": "true at offset 70"
+    },
+    {
+      "id": "TC-SAW-008f",
+      "requirement_id": "NFR-008",
+      "user_story_id": "US-021",
+      "ac_id": "AC-NFR-008-001",
+      "title": "Aligned breach below D does not confirm",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "given": "aligned breaching samples at offsets 0,10,20,30,40,50 only (span 50s < 60s)",
+      "when": "w.add is called for offsets 0..50",
+      "then": "add returns false on every call (aligned but insufficient span)",
+      "expected_result": "false on all calls; no early confirmation"
+    },
+    {
+      "id": "TC-SAW-009h",
+      "requirement_id": "NFR-009",
+      "user_story_id": "US-022",
+      "ac_id": "AC-NFR-009-001",
+      "title": "Confirmed sustained breach fires exactly once on confirmation",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "given": "Engine + fakeDispatcher + fakeClock (10s ticks); one rule sustained_duration=60s cooldown=15m, breached every tick",
+      "when": "the engine evaluates from 10:00:00Z until just after the 60s span confirms",
+      "then": "exactly 1 fire event is dispatched at/after the confirming tick",
+      "expected_result": "fakeDispatcher fire count == 1 at confirmation"
+    },
+    {
+      "id": "TC-SAW-009e",
+      "requirement_id": "NFR-009",
+      "user_story_id": "US-022",
+      "ac_id": "AC-NFR-009-001",
+      "title": "Continuing breach fires again only after the cooldown elapses",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "given": "the same rule breached continuously for 20 minutes after confirmation (cooldown 15m)",
+      "when": "the engine evaluates every 10s through 10:20:00Z",
+      "then": "exactly 2 fire events occur: first at confirmation, second at/after cooldown expiry — unchanged cooldown behavior",
+      "expected_result": "fire count == 2; second fire >= 15m after first"
+    },
+    {
+      "id": "TC-SAW-009f",
+      "requirement_id": "NFR-009",
+      "user_story_id": "US-022",
+      "ac_id": "AC-NFR-009-001",
+      "title": "No duplicate fire inside the cooldown window",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "given": "a confirmed breach with cooldown=15m, continuously breaching",
+      "when": "the engine evaluates repeatedly within the 15-minute window after the first fire",
+      "then": "no additional fire event is dispatched before the cooldown expires (dedup/cooldown unchanged)",
+      "expected_result": "fire count stays 1 throughout the cooldown window"
+    },
+    {
+      "id": "TC-SAW-010h",
+      "requirement_id": "NFR-010",
+      "user_story_id": "US-023",
+      "ac_id": "AC-NFR-010-001",
+      "title": "Push to main runs the full Go test suite",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "given": "the CI workflow configured for the repository",
+      "when": "a push to the main branch triggers the pipeline",
+      "then": "the CI job executes go test ./... and completes the alerts package tests",
+      "expected_result": "go test ./... runs on push to main"
+    },
+    {
+      "id": "TC-SAW-010e",
+      "requirement_id": "NFR-010",
+      "user_story_id": "US-023",
+      "ac_id": "AC-NFR-010-001",
+      "title": "The alerts package (TC-SAW-*) is included in the CI run",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "given": "the CI test command go test ./...",
+      "when": "the suite is enumerated",
+      "then": "internal/alerts/... is included so every TC-SAW-* unit/integration test executes in CI",
+      "expected_result": "alerts package tests are part of the CI run"
+    },
+    {
+      "id": "TC-SAW-010f",
+      "requirement_id": "NFR-010",
+      "user_story_id": "US-023",
+      "ac_id": "AC-NFR-010-001",
+      "title": "A failing alerts test fails the CI job",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "given": "a deliberately failing TC-SAW-* test (simulated)",
+      "when": "the CI pipeline runs go test ./...",
+      "then": "the job exits non-zero and is marked failed (the bug cannot be merged silently)",
+      "expected_result": "non-zero exit; CI job fails"
+    }
+  ]
+}

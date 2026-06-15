@@ -1,0 +1,269 @@
+{
+  "project_name": "Ultron-AP — sustained-alert-window-fix",
+  "project_summary": "Corrects a knife-edge bug in the sustained-alert confirmation window (internal/alerts/engine.go, sustainedWindow.add) so that 'metric breaching for >= duration' rules fire reliably under real-world clock jitter and non-aligned sampling. Today the window confirms only when the oldest retained sample's timestamp equals the cutoff (at - duration) exactly; under any jitter the first breaching sample is trimmed and the window never confirms, silently disabling sustained alerting in production. North Star KPI: a sustained breach rule with duration D confirms within one sampling interval of the breach span reaching D, for any sampling jitter up to +/- one interval (target: 100% confirmation vs current ~0% under jitter). JTBD: 'tell me when a metric has actually been bad for long enough, not just for an instant, even though my samples don't land on perfect time boundaries'. Guardrail metric: no change to alert cooldown, dedup, or dispatch behavior, and the window must not confirm before the breach span actually reaches D (no false-early alerts).",
+  "functional_requirements": [
+    {
+      "id": "FR-016",
+      "feature": "FT-004",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Jitter-tolerant sustained-breach confirmation by elapsed span",
+      "description": "The sustained-alert window must confirm a breach when the breach has been continuous for at least the configured duration D, measured as the elapsed span between the earliest retained breaching sample and the current sample (current.at - samples[0].at >= D). Confirmation must not depend on a sample timestamp landing exactly on the cutoff (at - D), so it tolerates clock jitter and non-interval-aligned sampling. The window must not confirm while the breach span is still below D.",
+      "acceptance_criteria": [
+        "logic: given duration D and breaching samples arriving with jitter up to +/- one interval, when the elapsed span (current.at - samples[0].at) reaches >= D, add() returns true on that call",
+        "logic: given breaching samples whose total span is strictly less than D, add() returns false (no early confirmation)",
+        "logic: given the confirming sample arrives at t0 + D + epsilon (epsilon < interval) where t0 is the first breaching sample, add() still returns true (the historical knife-edge failure case)",
+        "logic: given a single breaching sample (span 0) and D > 0, add() returns false"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-017",
+      "feature": "FT-004",
+      "type": "logic",
+      "priority": "SHOULD",
+      "title": "Bounded sample retention for the sustained window",
+      "description": "The sustained window must keep memory bounded during a long continuous breach (not grow the samples slice without limit), while always preserving the earliest sample needed to evaluate the duration span correctly per FR-016.",
+      "acceptance_criteria": [
+        "logic: given a continuous breach lasting 100x the duration D at a fixed interval, the retained sample count stays bounded (does not grow unboundedly with elapsed time)",
+        "logic: given retention trimming has occurred, add() still confirms correctly when the elapsed breach span reaches >= D (earliest needed sample preserved)"
+      ],
+      "implementation_level": "production_ready"
+    }
+  ],
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator",
+      "tech_level": "mid",
+      "goal": "Receive a sustained-condition alert (e.g. 'latency > X for 60s') reliably when the condition truly persists, so transient spikes are filtered but real sustained problems are caught",
+      "pain_point": "Sustained alert rules silently never fire in production because real sampling has clock jitter and does not land on perfect interval boundaries, so persistent problems go unnoticed"
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-016",
+      "requirement_id": "FR-016",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a sustained-breach rule to fire once the condition has truly persisted for its configured duration, even when my samples arrive with timing jitter",
+      "so_that": "I am alerted to real sustained problems instead of the rule silently never firing",
+      "acceptance_criteria": [
+        {
+          "id": "AC-016-001",
+          "given": "a rule with duration D=60s sampled every 10s with +/- up to 9s of jitter on each sample, and the metric breaching on every sample",
+          "when": "the elapsed span from the first breaching sample to the current sample reaches 60s or more",
+          "then": "add() returns true on that call"
+        },
+        {
+          "id": "AC-016-002",
+          "given": "a rule with duration D=60s and breaching samples whose first-to-latest span is 50s",
+          "when": "add() is called with the latest sample",
+          "then": "add() returns false"
+        },
+        {
+          "id": "AC-016-003",
+          "given": "the first breaching sample at t0 and a confirming breaching sample at t0 + D + 3s (3s < interval) — the exact case that previously never confirmed",
+          "when": "add() is called with the confirming sample",
+          "then": "add() returns true"
+        },
+        {
+          "id": "AC-016-004",
+          "given": "duration D=60s and only one breaching sample collected so far (span 0)",
+          "when": "add() is called",
+          "then": "add() returns false"
+        }
+      ]
+    },
+    {
+      "id": "US-017",
+      "requirement_id": "FR-017",
+      "as_a": "Raspberry Pi operator running the dashboard on a memory-constrained Pi",
+      "i_want": "the sustained window to not accumulate unbounded samples during a long breach",
+      "so_that": "a long-running sustained condition does not slowly grow memory",
+      "acceptance_criteria": [
+        {
+          "id": "AC-017-001",
+          "given": "a continuous breach lasting 100x duration D at a fixed sampling interval",
+          "when": "samples are added across the whole period",
+          "then": "the retained sample count stays bounded rather than growing linearly with elapsed time"
+        },
+        {
+          "id": "AC-017-002",
+          "given": "retention trimming has already discarded older samples",
+          "when": "the elapsed breach span reaches >= D",
+          "then": "add() still returns true (the earliest sample required to evaluate the span was preserved)"
+        }
+      ]
+    },
+    {
+      "id": "US-018",
+      "requirement_id": "NFR-005",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a non-breaching sample to reset the sustained window",
+      "so_that": "a brief recovery does not let a stale earlier breach count toward the duration",
+      "acceptance_criteria": [
+        {
+          "id": "AC-NFR-005-001",
+          "given": "a window with an active breach run (one or more breaching samples retained)",
+          "when": "add() is called with breaching=false",
+          "then": "it returns false and the run is cleared so a later breach is measured from a fresh start"
+        }
+      ]
+    },
+    {
+      "id": "US-019",
+      "requirement_id": "NFR-006",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a sampling gap larger than 2*interval to reset the sustained window",
+      "so_that": "a confirmation is never assembled from samples separated by a data outage",
+      "acceptance_criteria": [
+        {
+          "id": "AC-NFR-006-001",
+          "given": "an active breach run and a new breaching sample arriving more than 2*interval after the previous one",
+          "when": "add() is called",
+          "then": "the prior run is discarded and the window does not confirm from the stale samples (returns false; the run restarts at the new sample)"
+        }
+      ]
+    },
+    {
+      "id": "US-020",
+      "requirement_id": "NFR-007",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "rules with no sustained duration to behave exactly as an instantaneous threshold",
+      "so_that": "existing non-sustained rules are unaffected by this fix",
+      "acceptance_criteria": [
+        {
+          "id": "AC-NFR-007-001",
+          "given": "a window with duration <= 0",
+          "when": "add(.., breaching) is called",
+          "then": "it returns the breaching argument verbatim, independent of timestamp, without mutating window state"
+        }
+      ]
+    },
+    {
+      "id": "US-021",
+      "requirement_id": "NFR-008",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "the previously-working interval-aligned sustained case to keep firing",
+      "so_that": "the fix does not regress the one scenario that already worked",
+      "acceptance_criteria": [
+        {
+          "id": "AC-NFR-008-001",
+          "given": "perfectly interval-aligned breaching samples with the confirming sample exactly D after the first",
+          "when": "add() is called through the confirming sample",
+          "then": "it returns true at the confirming sample, preserving the historically-passing aligned behavior (TC-NA-076e)"
+        }
+      ]
+    },
+    {
+      "id": "US-022",
+      "requirement_id": "NFR-009",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "alert cooldown and dispatch to behave exactly as before once a breach is confirmed",
+      "so_that": "I do not get duplicate or missing notifications because of this change",
+      "acceptance_criteria": [
+        {
+          "id": "AC-NFR-009-001",
+          "given": "a confirmed sustained breach that continues through a cooldown window",
+          "when": "the engine evaluates across the window",
+          "then": "cooldown, dedup, and dispatch produce identical fire counts to the pre-fix behavior (one fire, then one more after cooldown)"
+        }
+      ]
+    },
+    {
+      "id": "US-023",
+      "requirement_id": "NFR-010",
+      "as_a": "Maintainer",
+      "i_want": "CI to run the alerts test suite on every push to main",
+      "so_that": "a future change cannot silently reintroduce the sustained-window bug",
+      "acceptance_criteria": [
+        {
+          "id": "AC-NFR-010-001",
+          "given": "the project CI configuration",
+          "when": "a push to main triggers the pipeline",
+          "then": "go test ./... runs the alerts package tests (all TC-SAW-* cases) and the job fails if any fail"
+        }
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-005",
+      "category": "Regression",
+      "priority": "MUST",
+      "requirement": "A non-breaching sample still resets the sustained window and returns false (existing behavior, engine.go:111-114)",
+      "acceptance_criteria": "logic: a breaching=false sample returns false and clears the active run so a later breach is measured from a fresh start (see US-018/AC-NFR-005-001)"
+    },
+    {
+      "id": "NFR-006",
+      "category": "Regression",
+      "priority": "MUST",
+      "requirement": "A sampling gap greater than 2*interval still resets the sustained window before the new sample is evaluated (existing behavior, engine.go:104-110)",
+      "acceptance_criteria": "logic: a breaching sample arriving more than 2*interval after the previous one discards the prior run and restarts it at the new sample (see US-019/AC-NFR-006-001)"
+    },
+    {
+      "id": "NFR-007",
+      "category": "Regression",
+      "priority": "MUST",
+      "requirement": "A zero or negative configured duration short-circuits to returning the raw breaching flag (existing behavior, engine.go:101-103)",
+      "acceptance_criteria": "logic: with duration <= 0, add returns the breaching argument verbatim, independent of timestamp, without mutating state (see US-020/AC-NFR-007-001)"
+    },
+    {
+      "id": "NFR-008",
+      "category": "Regression",
+      "priority": "MUST",
+      "requirement": "The existing interval-aligned sustained confirmation test (TC-NA-076e) continues to pass unchanged",
+      "acceptance_criteria": "logic: perfectly interval-aligned samples with the confirming sample exactly D after the first still return true, preserving TC-NA-076e (see US-021/AC-NFR-008-001)"
+    },
+    {
+      "id": "NFR-009",
+      "category": "Regression",
+      "priority": "MUST",
+      "requirement": "No change to alert cooldown, dedup, or dispatch behavior outside the sustained window evaluation",
+      "acceptance_criteria": "logic: a confirmed sustained breach continuing through a cooldown window produces identical fire counts to pre-fix behavior — one fire, then one more after cooldown (see US-022/AC-NFR-009-001)"
+    },
+    {
+      "id": "NFR-010",
+      "category": "CI/CD",
+      "priority": "MUST",
+      "requirement": "The full Go test suite (go test ./...) including the alerts package runs on every push to the main branch",
+      "acceptance_criteria": "ci: a push to main runs go test ./... including the alerts package (all TC-SAW-* cases) and fails the job if any fail (see US-023/AC-NFR-010-001)"
+    },
+    {
+      "id": "NFR-011",
+      "category": "Security",
+      "priority": "SHOULD",
+      "requirement": "Security not applicable to this change beyond no-regression: sustainedWindow.add is pure internal in-process logic with no user input, no network, no secrets, and no filesystem access. No new attack surface is introduced.",
+      "acceptance_criteria": "security: the implemented diff touches only internal/alerts/engine.go window logic and its tests; no new HTTP handler, input parser, exec call, query, or secret-handling path is added"
+    }
+  ],
+  "no_go_zone": [
+    "No change to the sampling cadence, interval configuration, or how often the engine evaluates rules — only the sustained-duration confirmation gate is fixed.",
+    "No change to breach detection (threshold evaluation) — whether a single sample is 'breaching' is out of scope; only the gate that decides a breach has lasted long enough.",
+    "No new alert rule types, severities, or notification channels.",
+    "No change to alert cooldown, dedup, persistence schema, or dispatch behavior.",
+    "No new UI, settings, or API surface — this is an internal correctness fix with no operator-facing configuration change."
+  ],
+  "constraints": [
+    "Must be implemented within internal/alerts/engine.go (sustainedWindow) and its existing test files; no cross-package API change.",
+    "Must keep the existing sustainedWindow public/internal behavior contract used by the Engine (same add(ruleID, at, breaching) signature unless an additive, internal-only retention field is needed)."
+  ],
+  "technology_preferences": [
+    "Go standard library only (time, testing); no new dependencies."
+  ],
+  "idea_provenance": {
+    "problem": "confirmed",
+    "users": "confirmed",
+    "baseline": "confirmed",
+    "success_metric": "confirmed",
+    "no_go_zone": "confirmed"
+  },
+  "idea_provenance_sources": {
+    "problem": "Verified directly in source: internal/alerts/engine.go:116-128 read line-by-line during the audit; the knife-edge condition was reproduced by analysis. User approved proceeding on this finding.",
+    "users": "Existing approved persona 'Raspberry Pi Operator' in parent 01_REQUIREMENTS.json; sustained alerting is part of approved FR-004.",
+    "baseline": "Verified in source: current code confirms only when samples[0].at == cutoff exactly, which under jitter is effectively never. Existing TC-NA-076e passes only due to perfect interval alignment.",
+    "success_metric": "Derived directly from the verified bug behavior (span-based confirmation tolerant of +/- one interval of jitter); user approved proceeding on the audit fix.",
+    "no_go_zone": "Stated explicitly in FEATURE_IDEA.md Out of Scope and Touch Points sections, authored from the audit and approved by the user."
+  },
+  "idea_gaps": [],
+  "original_brief": "## Feature\nFix the sustained-alert confirmation window so that \"metric breaching for >= duration\" rules fire reliably under real-world clock jitter and non-aligned sampling.\n\n## Problem / Why\nThe sustained-window logic in `internal/alerts/engine.go` (`sustainedWindow.add`) confirms a sustained breach only when the oldest retained sample's timestamp equals the cutoff (`at - duration`) exactly. After the trim loop removes samples strictly `Before(cutoff)`, every retained sample satisfies `at >= cutoff`, so the final check `!w.samples[0].at.After(cutoff)` is true only in the knife-edge case `samples[0].at == cutoff`. With any sampling jitter the confirming call lands slightly after `t0 + duration`, the first breaching sample is trimmed, and the window never confirms. The result: sustained rules (e.g. \"latency > X for 60s\") silently never fire in production. The existing test (TC-NA-076e) passes only because its samples are perfectly interval-aligned.\n\n## Target Users\nExisting operators/admins who configure sustained (\"for N seconds/minutes\") alert rules and rely on them firing. No new user type.\n\n## New Behavior\n- The system must confirm a sustained breach when the breach has been continuous for at least the configured duration, measured as the span between the earliest retained breaching sample and the current sample (`at - samples[0].at >= duration`), tolerant of clock jitter and non-aligned sampling.\n- The system must continue to reset the window when a non-breaching sample arrives or when a sampling gap exceeds the existing threshold (`> 2*interval`).\n- The system must keep memory bounded (not retain unbounded samples) while preserving the earliest sample needed to evaluate the duration span.\n\n## Success Criteria\n- Given a rule with duration D and breaching samples arriving with small jitter, When the elapsed breach span reaches >= D, Then the window confirms (returns true).\n- Given breaching samples whose total span is < D, When add() is called, Then the window does not confirm.\n- Given a non-breaching sample or a gap > 2*interval, When add() is called, Then the window resets and does not confirm until a fresh breach spans D again.\n- Existing TC-NA-076e and all current alert tests continue to pass.\n\n## Touch Points\nMODIFIES:\n- `internal/alerts/engine.go` — `sustainedWindow.add` (and `sustainedWindow` struct if needed for retention).\n- Alert engine test cases covering sustained windows (e.g. TC-NA-076e and siblings) — add jitter/non-aligned coverage.\nRelates to the network-alerts feature's sustained-alert FRs.\n\n## Must Not Break (Regression Boundary)\n- Non-breaching sample still resets the window and returns false (current behavior).\n- Sampling gap > 2*interval still resets the window (current behavior).\n- A zero/negative duration still short-circuits to returning the raw breaching flag (current `w.duration <= 0` path).\n- TC-NA-076e (interval-aligned sustained confirmation) keeps passing.\n- No change to alert cooldown, dedup, or dispatch behavior outside the sustained window.\n\n## Out of Scope\n- Reworking the sampling cadence or interval configuration.\n- Changing how breaches are detected (threshold evaluation) — only the sustained-duration confirmation gate.\n- Adding new alert rule types or new notification channels.\n"
+}

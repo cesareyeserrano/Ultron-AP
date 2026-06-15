@@ -1,0 +1,161 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "sustained-alert-window-fix",
+  "createdAt": "2026-06-15T20:08:01.759Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-06-15T20:52:29.199Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-06-15T20:09:35.173Z",
+      "event": "started",
+      "phase": 1
+    },
+    {
+      "at": "2026-06-15T20:11:08.202Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-06-15T20:11:13.882Z",
+      "event": "approved",
+      "phase": 1,
+      "ideaArchived": true
+    },
+    {
+      "at": "2026-06-15T20:11:25.606Z",
+      "event": "started",
+      "phase": 2
+    },
+    {
+      "at": "2026-06-15T20:12:51.474Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-06-15T20:12:54.640Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-06-15T20:13:00.285Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-06-15T20:41:56.004Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-06-15T20:42:03.823Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-06-15T20:42:18.852Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-06-15T20:50:35.632Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-06-15T20:50:38.723Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-06-15T20:50:47.946Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-06-15T20:50:51.663Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 25,
+      "failed": 0
+    },
+    {
+      "at": "2026-06-15T20:50:55.152Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-06-15T20:52:25.962Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-06-15T20:52:29.173Z",
+      "event": "approved",
+      "phase": 5
+    }
+  ],
+  "cascadedPhases": [],
+  "artifactHashes": {
+    "1": "9f2d914b9bb156c1ce8bc706be4c5a21ec99ad052e528cffbb6540d49c60a98e",
+    "2": "008cad975d0c05dd8997fc52c3441754ca0c44d7e715ba82d80bdbb239f4fae5",
+    "3": "f7e59cb909acbe7dc2d6f63324bd6a9ed018ad6860994f7ed375250a2e3811b6",
+    "4": "8549593dfcf901cd3c30ae0f0f952971f8dd57be218aaae3e5d29890c6333624",
+    "5": "7448788f222b40f58362d21e289bd0530ba1cc631da56a6832cefd9ece342133"
+  },
+  "frSnapshots": {
+    "2": [
+      "FR-016",
+      "FR-017"
+    ],
+    "3": [
+      "FR-016",
+      "FR-017"
+    ],
+    "4": [
+      "FR-016",
+      "FR-017"
+    ],
+    "5": [
+      "FR-016",
+      "FR-017"
+    ]
+  },
+  "verifyRanAt": "2026-06-15T20:50:47.946Z",
+  "lastVerifyRun": {
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-06-15T20:50:47.946Z"
+  },
+  "verifyPassed": true,
+  "verifySummary": {
+    "total": 25,
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}

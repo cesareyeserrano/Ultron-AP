@@ -1,0 +1,25 @@
+{
+  "feature": "sustained-alert-window-fix",
+  "phase": 4,
+  "stack": "Go (standard library time/testing only) — no new runtime dependencies. Change confined to the in-process alert engine's sustainedWindow logic and a new white-box unit/integration test file. Existing CI (.github/workflows/security-gate.yml) already runs `go test ./...` on push to main, satisfying NFR-010 without a new workflow.",
+  "files_created": [
+    "../../internal/alerts/sustained_window_aitri_test.go"
+  ],
+  "files_modified": [
+    "../../internal/alerts/engine.go"
+  ],
+  "setup_commands": [],
+  "environment_variables": [],
+  "technical_debt": [
+    {
+      "fr_id": "FR-017",
+      "substitution": "Implementation keeps a 2-entry bounded `samples` slice (run-start + latest) instead of the scalar firstAt/lastAt fields proposed in 02_SYSTEM_DESIGN.md ADR-002.",
+      "reason": "The existing regression test TC-NA-076f inspects `w.samples` directly (require.Len(w.samples, 1)); removing the field would break its compilation, violating the regression boundary. The 2-entry cap still delivers O(1) memory (FR-017) and span-based confirmation (FR-016) — verified by TC-SAW-017e (len(samples) <= 2 after a 100x-duration breach) and TC-SAW-017h (0 allocations per add).",
+      "effort_to_fix": "low — could migrate to scalar fields and update TC-NA-076f if the slice field is ever removed; no functional benefit, so deliberately not done."
+    }
+  ],
+  "test_runner": "go test -C ../.. ./internal/alerts/... -v",
+  "test_files": [
+    "../../internal/alerts/sustained_window_aitri_test.go"
+  ]
+}

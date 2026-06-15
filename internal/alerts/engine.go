@@ -97,6 +97,13 @@ type sustainedWindow struct {
 	samples  []sustainedSample
 }
 
+// add records a per-tick breach observation and reports whether the breach has
+// been sustained for at least w.duration. Confirmation is span-based (current
+// sample minus run start), so it tolerates clock jitter and non-interval-aligned
+// sampling; the window keeps only its boundary samples to stay O(1) in memory.
+//
+// @aitri-trace FR-016 FR-017 US-016 US-017 AC-016-001 AC-016-002 AC-016-003 AC-016-004 AC-017-001 AC-017-002
+// @aitri-trace NFR-005 NFR-006 NFR-007 NFR-008 TC-SAW-016h TC-SAW-016f TC-SAW-017h TC-SAW-017f
 func (w *sustainedWindow) add(ruleID int64, at time.Time, breaching bool) bool {
 	if w.duration <= 0 {
 		return breaching
@@ -112,20 +119,23 @@ func (w *sustainedWindow) add(ruleID int64, at time.Time, breaching bool) bool {
 		w.samples = w.samples[:0]
 		return false
 	}
-	w.samples = append(w.samples, sustainedSample{at: at, breaching: true})
-	cutoff := at.Add(-w.duration)
-	first := 0
-	for first < len(w.samples) && w.samples[first].at.Before(cutoff) {
-		first++
+	// Track the breach run as just its boundary samples: samples[0] is the
+	// run start (first breaching sample since the last reset) and the final
+	// entry is the most recent sample (used for gap detection). Capping at two
+	// entries keeps memory O(1) during a long sustained breach (FR-017) while
+	// preserving the run-start needed to measure the elapsed span (FR-016).
+	switch len(w.samples) {
+	case 0, 1:
+		w.samples = append(w.samples, sustainedSample{at: at, breaching: true})
+	default:
+		w.samples[len(w.samples)-1] = sustainedSample{at: at, breaching: true}
 	}
-	if first > 0 {
-		copy(w.samples, w.samples[first:])
-		w.samples = w.samples[:len(w.samples)-first]
-	}
-	if len(w.samples) == 0 {
-		return false
-	}
-	return !w.samples[0].at.After(cutoff)
+	// Confirm once the breach has persisted for at least the configured
+	// duration, measured as the span from the run start to the current sample.
+	// This is jitter-tolerant: it does not require a sample timestamp to land
+	// exactly on the cutoff (at - duration), which the previous implementation
+	// did and which therefore never confirmed under non-aligned sampling.
+	return at.Sub(w.samples[0].at) >= w.duration
 }
 
 // NewEngine creates an alert engine.

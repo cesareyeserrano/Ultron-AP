@@ -1,0 +1,70 @@
+{
+  "project": "Ultron-AP — sustained-alert-window-fix",
+  "version": "0.1.0",
+  "phases_completed": [1, 2, 3, 4, 5],
+  "overall_status": "compliant",
+  "requirement_compliance": [
+    {
+      "id": "FR-016",
+      "title": "Jitter-tolerant sustained-breach confirmation by elapsed span",
+      "level": "production_ready",
+      "evidence": "Covered by TC-SAW-016h (jitter), TC-SAW-016e (knife-edge missing-sample), TC-SAW-016b (boundary: span exactly D + single-sample), TC-SAW-016f (negative: span < D). Aitri verify-run: 4 passing, 0 failing, 0 skipped for FR-016."
+    },
+    {
+      "id": "FR-017",
+      "title": "Bounded sample retention for the sustained window",
+      "level": "production_ready",
+      "evidence": "Covered by TC-SAW-017h (0 allocations per add over 1000 calls), TC-SAW-017e (len(samples) <= 2 after a 100x-duration breach), TC-SAW-017f (run-start preserved across 10000 samples). Aitri verify-run: 3 passing, 0 failing for FR-017."
+    },
+    {
+      "id": "NFR-005",
+      "title": "Non-breaching sample resets the window (regression)",
+      "level": "production_ready",
+      "evidence": "Covered by TC-SAW-005h (clean restart after reset), TC-SAW-005e (non-breach on empty window is a safe no-op), TC-SAW-005f (active run cleared; no confirmation from stale samples). 3 passing."
+    },
+    {
+      "id": "NFR-006",
+      "title": "Gap > 2*interval resets the window (regression)",
+      "level": "production_ready",
+      "evidence": "Covered by TC-SAW-006h (gap == 2*interval keeps run), TC-SAW-006e (gap just over 2*interval resets), TC-SAW-006f (post-gap fresh run; no stale confirmation). 3 passing."
+    },
+    {
+      "id": "NFR-007",
+      "title": "duration <= 0 short-circuits to the breaching flag (regression)",
+      "level": "production_ready",
+      "evidence": "Covered by TC-SAW-007h (duration 0, true), TC-SAW-007e (negative duration mirrors flag), TC-SAW-007f (duration 0, false). 3 passing."
+    },
+    {
+      "id": "NFR-008",
+      "title": "Interval-aligned confirmation preserved (regression, TC-NA-076e)",
+      "level": "production_ready",
+      "evidence": "Covered by TC-SAW-008h (aligned confirms at exactly D), TC-SAW-008e (stable past D), TC-SAW-008f (aligned but span < D does not confirm). The pre-existing TC-NA-076e and TC-NA-076f also still pass after the change. 3 passing."
+    },
+    {
+      "id": "NFR-009",
+      "title": "No change to cooldown / dedup / dispatch (regression)",
+      "level": "production_ready",
+      "evidence": "Covered by TC-SAW-009h (one fire on confirmation), TC-SAW-009e (re-fire after cooldown elapses), TC-SAW-009f (no duplicate inside cooldown), via evaluateMetricRule + db.ListAlerts. Existing engine cooldown/fire-resolve tests also pass unchanged. 3 passing."
+    },
+    {
+      "id": "NFR-010",
+      "title": "CI runs the suite on push to main (CI/CD)",
+      "level": "production_ready",
+      "evidence": "Existing .github/workflows/security-gate.yml triggers on push to main and pull_request, runs `go test ./...` (including the new alerts tests) and govulncheck. Asserted by TC-SAW-010h (trigger + test command), TC-SAW-010e (whole-module ./...), TC-SAW-010f (failures not masked). 3 passing. No new workflow added."
+    },
+    {
+      "id": "NFR-011",
+      "title": "Security not applicable beyond no-regression (SHOULD)",
+      "level": "functionally_present",
+      "evidence": "Verified by diff review: the change touches only internal/alerts/engine.go window logic and its test file — no new HTTP handler, input parser, exec call, query, or secret-handling path. No automated security test (no new attack surface to test); covered by static review per the FR-011 privilege-separation posture."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-017",
+      "substitution": "Implementation keeps a 2-entry bounded `samples` slice (run-start + latest) instead of the scalar firstAt/lastAt fields proposed in 02_SYSTEM_DESIGN.md ADR-002.",
+      "reason": "The existing regression test TC-NA-076f inspects `w.samples` directly (require.Len(w.samples, 1)); removing the field would break its compilation, violating the regression boundary. The 2-entry cap still delivers O(1) memory (FR-017) and span-based confirmation (FR-016) — verified by TC-SAW-017e and TC-SAW-017h.",
+      "effort_to_fix": "low — could migrate to scalar fields and update TC-NA-076f if the slice field is ever removed; no functional benefit, so deliberately not done."
+    }
+  ]
+}

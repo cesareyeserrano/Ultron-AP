@@ -1,0 +1,397 @@
+{
+  "executed_at": "2026-06-15T20:50:47.945Z",
+  "test_runner": "go test -C ../.. ./internal/alerts/... -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-SAW-016h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_016h (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-016e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_016e (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-016b",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_016b (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-016f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_016f (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-017h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_017h (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-017e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_017e (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-017f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_017f (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-005h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_005h (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-005e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_005e (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-005f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_005f (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-006h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_006h (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-006e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_006e (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-006f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_006f (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-007h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_007h (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-007e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_007e (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-007f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_007f (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-008h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_008h (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-008e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_008e (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-008f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_008f (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-009h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_009h (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-009e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_009e (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-009f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_009f (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-010h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_010h (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-010e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_010e (0.00s)"
+    },
+    {
+      "tc_id": "TC-SAW-010f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_SAW_010f (0.00s)"
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-016",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-017",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "ac_coverage": [
+    {
+      "ac_id": "AC-016-001",
+      "fr_id": "FR-016",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-016-002",
+      "fr_id": "FR-016",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-016-003",
+      "fr_id": "FR-016",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-016-004",
+      "fr_id": "FR-016",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-017-001",
+      "fr_id": "FR-017",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-017-002",
+      "fr_id": "FR-017",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-NFR-005-001",
+      "fr_id": "NFR-005",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-NFR-006-001",
+      "fr_id": "NFR-006",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-NFR-007-001",
+      "fr_id": "NFR-007",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-NFR-008-001",
+      "fr_id": "NFR-008",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-NFR-009-001",
+      "fr_id": "NFR-009",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-NFR-010-001",
+      "fr_id": "NFR-010",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 25,
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "low_confidence_tcs": [
+    {
+      "tc_id": "TC-SAW-016h",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-016e",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-016b",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-016f",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-017h",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-017e",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-017f",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-005h",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-005e",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-005f",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-006h",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-006e",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-006f",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-007h",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-007e",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-007f",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-008h",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-008e",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-008f",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-009h",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-009e",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-009f",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-010h",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-010e",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-SAW-010f",
+      "file": "../../internal/alerts/sustained_window_aitri_test.go",
+      "assertCount": 0
+    }
+  ]
+}
