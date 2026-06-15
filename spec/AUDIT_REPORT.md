@@ -1,11 +1,140 @@
 # Project Audit — Ultron-AP
 
-**Executed:** 2026-05-03
-**Auditor:** Claude (Opus 4.7) — on-demand `aitri audit`
-**Scope:** `/Users/cesareyeserrano/Documents/PROJECTS/Ultron` — `cmd/`, `internal/`, `web/`
-**Dimensions covered:** Code Quality · Architecture · Logic · Security · Stack
+**Latest refresh:** 2026-06-15 · **Auditor:** Claude (Opus 4.8) — on-demand `aitri audit`
+**Scope:** `/Users/cesareyeserrano/Documents/PROJECTS/Ultron` — `cmd/`, `internal/`
+**Dimensions:** Code Quality · Architecture · Logic · Security · Stack
+**Method:** 4 parallel deep-reads (security core · HTTP server · network/alerts · notify/insights/metrics/docker); top-severity findings re-verified by hand.
+
+> **Prior audit (2026-05-03) — all findings resolved.** BUG-1..4 and BL-1..6 from the May review are fixed and re-verified this pass: SO_PEERCRED peer check (`peercred_linux.go`), empty-allowlist fail-closed (BG-043), plaintext-secret refusal (BG-044), login CSRF ordering, XFF trusted-proxy gating, backup path validation (`backup_path.go`), persistent brute-force lockout (`database/bruteforce.go`), atomic audit-log tx (`actions_atomic_test.go`), helper log filtering (`logfilter/`). The original May section is archived at the bottom of this file.
 
 ---
+
+## Audit 2026-06-15 — Findings
+
+### Findings → Bugs
+
+**[BUG-A]** `[severity: high]` — `RingBuffer.All()` re-acquires its own read lock (recursive RLock → deadlock)
+- File: `internal/metrics/ringbuffer.go:68-72` → calls `History()` at `:48-50`
+- Problem: `All()` takes `mu.RLock()` then calls `History()`, which takes `mu.RLock()` again. Go's `sync.RWMutex` is write-preferring and explicitly forbids recursive read-locking: if a `collector` `Add()` (the writer) queues between the two acquisitions, the second `RLock` blocks forever and the goroutine deadlocks holding the buffer — metrics collection and every reader of that buffer stall permanently. Trigger is timing-dependent (writer must arrive mid-call) but `Add()` fires every collection interval, so the window is live.
+- Suggested: `aitri bug add --title "RingBuffer.All recursive RLock deadlocks under concurrent Add" --severity high --description "All() calls History() while already holding RLock. Inline the body or add an unlocked historyLocked(n) helper so the lock is taken once."`
+
+**[BUG-B]** `[severity: medium]` — Dashboard chart window is server-global state shared across all clients
+- File: `internal/server/sse.go:421-424` (write), `:427-429` (read)
+- Problem: `setDashboardChartWindow` stores the selected window into `s.dashboardChartWindow` / `s.dashboardHistoryPoints`, which are **server-wide** atomics read by `gatherDashboardData` for every session. Two operators (or two browser tabs) selecting different windows clobber each other — there is no per-client/per-connection window state.
+- Suggested: `aitri bug add --title "Dashboard chart window is server-global, leaks across clients" --severity medium --description "Move chart-window/points to per-connection (SSE client) or per-request state instead of a Server-level atomic."`
+
+**[BUG-C]** `[severity: medium]` — Docker `Monitor.client` read without lock (data race / use-after-close)
+- File: `internal/docker/monitor.go:128` (`ContainerDetail`), `:222`/`:242` (refresh), `:104` (`Stop` close)
+- Problem: `refresh()` writes/closes `m.client` under `m.mu`, but `ContainerDetail()` and `fetchStats()` read/deref `m.client` without the lock. Concurrent on-demand detail requests during a refresh (or during `Stop()`, which closes the client after `wg.Wait()`) are a data race that `-race` will flag and can call methods on a closed client.
+- Suggested: `aitri bug add --title "Docker Monitor.client accessed without lock in ContainerDetail/fetchStats" --severity medium --description "Read m.client under m.mu (or snapshot it once under lock) in all accessors; guard against use-after-Close."`
+
+**[BUG-D]** `[severity: medium]` — ICMP probes accept replies without matching source/ID/Seq (cross-talk)
+- File: `internal/network/gatewayprobe/gatewayprobe.go:417`, `internal/network/landevices/sweep/icmp_transport.go:88`
+- Problem: Both probers open per-target SOCK_DGRAM sockets and return success on the first echo reply seen, discarding the `ReadFrom` source address and never matching Echo ID/Seq. With concurrent probes (sweep runs 32 workers), a reply for host A can satisfy host B's probe — false "responders" in LAN discovery and cross-talked gateway RTTs. Correctness, not security (single-admin LAN tool).
+- Suggested: `aitri bug add --title "ICMP probes don't match reply source/ID/Seq under concurrency" --severity medium --description "Verify ReadFrom source == target and Echo ID/Seq match the sent packet; continue on mismatch instead of accepting."`
+
+**[BUG-E]** `[severity: medium]` — Telegram `message_id` parse failure swallowed → storm coalescing degrades silently
+- File: `internal/notify/telegram.go:255-259`
+- Problem: A successful send whose JSON body fails to decode returns `(0, nil)`. The caller records `(ruleID, 0)`, so the next in-window fire cannot edit the prior message and posts a fresh one — storm protection silently degrades with no log line.
+- Suggested: `aitri bug add --title "Telegram message_id decode failure swallowed, breaks storm coalescing" --severity medium --description "Log/propagate the decode error so a sent-but-unparseable response doesn't silently disable edit-in-place coalescing."`
+
+**[BUG-F]** `[severity: medium]` — Notify dispatcher `Stop()` does unguarded `close(cancel)` → panic
+- File: `internal/notify/dispatcher.go:150-154`
+- Problem: `Stop()` calls `close(d.cancel)` with no guard. A second `Stop()`, or `Stop()` before `Start()` (when `cancel` is nil), panics with "close of nil/closed channel".
+- Suggested: `aitri bug add --title "Dispatcher Stop() panics on double-stop or stop-before-start" --severity medium --description "Guard cancel with sync.Once or a nil check so Stop is idempotent and safe before Start."`
+
+**[BUG-G]** `[severity: low]` — Login dummy bcrypt hash is malformed → username-enumeration timing oracle
+- File: `internal/server/handlers_auth.go:73`
+- Problem: The constant-time dummy hash used for unknown usernames is too short to be a valid bcrypt hash, so `bcrypt.CompareHashAndPassword` returns `ErrHashTooShort` immediately instead of running the key-derivation. The unknown-username path is measurably faster than the known-username path, reintroducing the timing oracle the code intends to close.
+- Suggested: `aitri bug add --title "Login dummy bcrypt hash malformed, reopens username-enumeration timing oracle" --severity low --description "Replace with a valid precomputed bcrypt hash (correct length/cost) so the compare runs full key derivation on the unknown-user path."`
+
+**[BUG-H]** `[severity: low]` — Notification save ignores unmarshal error of existing config → drops saved fields
+- File: `internal/server/handlers_notifications.go:72`
+- Problem: `json.Unmarshal([]byte(existing.Config), &config)` discards its error. If the stored config is corrupt, the handler starts from an empty map and overwrites previously-saved fields (e.g. an unedited bot token) instead of surfacing the corruption. Distinct from the already-fixed swallow on the test path (`:130`).
+- Suggested: `aitri bug add --title "Notification save ignores unmarshal error of existing config" --severity low --description "Capture the err; on corrupt stored config return an error to the operator rather than silently overwriting with an empty config."`
+
+### Findings → Backlog
+
+**[BL-A]** `[priority: P2]` — Insights per-rule `compiledRule.state` mutated with `s.mu` released (latent data race)
+- File: `internal/insights/insights.go:246-291` (and `:439-491`)
+- Problem: `Eval` snapshots `compiledRules` under `s.mu`, releases the lock, then mutates each `cr.state` (firstEmittedAt, lastValue, lastEvaluatedAt, hysteresis fields). Safe only while `Eval` runs on a single goroutine; any concurrent `Eval` or a concurrent reader of `cr.state` is an immediate `-race` violation. Latent today, a footgun for any future concurrent caller.
+- Suggested: `aitri backlog add --title "Guard insights per-rule state mutation under the service lock" --priority P2 --problem "cr.state is mutated with s.mu released. Either hold the lock across the eval loop or move per-rule state behind its own mutex."`
+
+**[BL-B]** `[priority: P2]` — Alert engine shared maps read unlocked; `processedNet` grows unbounded
+- File: `internal/alerts/engine.go:501-502`
+- Problem: `processedNet`, `prevDocker`, `prevSystemd` are accessed without/with inconsistent locking (safe only because one `run` goroutine touches them today). Separately, `processedNet` keys (`ruleID:eventID:kind`) are never pruned, unlike `cooldowns`/`firingFirst`, so the map leaks one entry per net event for the process lifetime.
+- Suggested: `aitri backlog add --title "Prune processedNet and document single-goroutine invariant in alert engine" --priority P2 --problem "processedNet grows unbounded; add TTL/prune like cooldowns. Also gate prevDocker/prevSystemd/processedNet behind the engine lock to survive a future concurrent reader."`
+
+**[BL-C]** `[priority: P2]` — Email SMTP send leaks a goroutine on timeout / ctx-cancel
+- File: `internal/notify/email.go:87-100`
+- Problem: On the 10s timeout or `ctx.Done()` branch, the spawned goroutine keeps running the non-context-aware `smtp.SendMail` until the OS socket times out. Under repeated slow-SMTP fan-out these goroutines + connections accumulate.
+- Suggested: `aitri backlog add --title "Bound SMTP send goroutine lifetime on timeout" --priority P2 --problem "smtp.SendMail isn't ctx-aware; on timeout the goroutine lingers. Use a Dialer with deadline + explicit Close so the worker exits when the send is abandoned."`
+
+**[BL-D]** `[priority: P2]` — Docker refresh passes long-lived ctx with no per-call timeout → hung socket stalls `Stop()`
+- File: `internal/docker/monitor.go:242, 323`
+- Problem: The refresh loop hands the process-lifetime ctx straight to `ContainerList`/`ContainerStats` with no per-iteration timeout. A hung Docker socket blocks a refresh (and `wg.Wait()` in `Stop`) indefinitely.
+- Suggested: `aitri backlog add --title "Add per-call timeout to docker refresh requests" --priority P2 --problem "Wrap each ContainerList/ContainerStats in context.WithTimeout so a stuck docker socket can't block the refresh loop or Stop()."`
+
+**[BL-E]** `[priority: P2]` — Backup retention deletes oldest-by-filename across all directory entries
+- File: `internal/server/server.go:382-397`
+- Problem: The retention sweep `os.ReadDir(backupDir)` then removes `files[0:len-retention]`, assuming lexical order == chronological and that every entry is a backup. With a mixed `.db`/`.db.enc` set, stray files, or a custom `local_path`/BackupRoot containing unrelated files, it can delete the wrong files and counts non-backups toward the limit.
+- Suggested: `aitri backlog add --title "Scope backup retention to backup files, sort by mtime" --priority P2 --problem "Filter ReadDir to the ultron-*.db(.enc) prefix and sort by modtime before pruning, so retention never deletes unrelated files in a custom backup dir."`
+
+**[BL-F]** `[priority: P3]` — Dispatcher rebuilds notifiers + `storm.Cache` per send → coalescing/janitor dead in prod path
+- File: `internal/notify/dispatcher.go:241, 601-621`; `internal/notify/storm/storm.go:154`
+- Problem: Each `send` re-queries SQLite and constructs fresh `TelegramSender` instances, each with a brand-new `storm.Cache`; `RunJanitor` is never started from the dispatcher. So edit-in-place storm coalescing never persists across consecutive fires through the dispatcher path, and the janitor is effectively dead code.
+- Suggested: `aitri backlog add --title "Reuse long-lived notifier/storm cache in dispatcher" --priority P3 --problem "Cache constructed senders across sends (rebuild only on config change) and start RunJanitor once, so storm coalescing actually works in the dispatcher path."`
+
+**[BL-G]** `[priority: P3]` — Sustained-window cadence estimated from min observed gap → window fires off by a cadence
+- File: `internal/insights/lang/lang.go:311-341`
+- Problem: `cadenceMS` uses the smallest-ever tick gap (not a median, despite the comment) and `covered = (now-start)+cadence`; a single fast tick permanently shrinks the cadence estimate and skews when `window_ms` is considered satisfied.
+- Suggested: `aitri backlog add --title "Use median/expected cadence for sustained-window coverage" --priority P3 --problem "Min-gap cadence biases sustained rules. Track the configured/expected cadence or a median so window satisfaction matches window_ms intent."`
+
+**[BL-H]** `[priority: P3]` — Brute-force tracker fails open on DB error with no alerting
+- File: `internal/auth/bruteforce.go:103-105, 82-84`
+- Problem: `IsLocked` returns `false` on any lookup error and `RecordFailure` only logs on write failure. Sustained SQLite errors (lock contention / disk-full on the Pi) disable lockout entirely. The fail-open posture is intentional for availability but is an auth-control gap with no signal.
+- Suggested: `aitri backlog add --title "Surface brute-force tracker DB failures" --priority P3 --problem "On repeated lookup/write errors, emit a warning/health signal so a silently-disabled lockout is visible rather than fully fail-open."`
+
+### Observations
+
+**[OBS-A]** — Scheduled backup does not re-validate the stored path for symlinks (TOCTOU)
+- Context: `internal/database/sqlite.go:303-327` (`Backup`) consuming the stored `LocalPath`; scheduled call site `internal/server/server.go:343`
+- Concern: `Backup` only rejects NUL/control/relative paths; the full `rejectSymlinkChain` check in `ValidateBackupPath` runs only at config-save time. A component symlinked into the backup dir *after* save can redirect `VACUUM INTO` outside `BackupRoot` on the next scheduled run. Requires write access to the backup dir (same trust domain), so impact is bounded.
+- Why deferred: Defense-in-depth, not an exploit on the single-admin model; fix is to re-run `ValidateBackupPath` at backup time.
+
+**[OBS-B]** — Helper `handleShutdown` lacks the timeout / process-group hardening of `run()`
+- Context: `cmd/ultron-helper/main.go:282-286`
+- Concern: Shutdown uses a bare `exec.Command(...).Start()` with no context timeout and no `Setpgid`, unlike the hardened `run()` path; a hung `shutdown` binary leaks an unsupervised privileged child. Low impact (single-shot, allowlisted mode).
+- Why deferred: Inconsistency, not a defect; aligning it with `run()` is a small cleanup.
+
+**[OBS-C]** — Non-Linux helper stub disables peer-cred enforcement
+- Context: `cmd/ultron-helper/peercred_other.go:13-17` with `main.go:124`
+- Concern: On non-Linux builds `peerCredSupported=false`, so the allowlist/fail-closed block is skipped and the helper trusts socket file perms alone. Correct for the linux/arm64 production target; latent risk only if the helper is ever run on macOS/BSD in dev.
+- Why deferred: Out of the deployment target; documenting the latent gap.
+
+**[OBS-D]** — DB backup download serves plaintext DB even when encryption is enabled
+- Context: `internal/server/handlers_performance.go:184-197`
+- Concern: `GET /api/settings/backup` streams an unencrypted copy of the whole DB (session tokens, bcrypt hashes, notification secrets) to any authenticated user even when `backupEncrypt` is on. Acceptable for single-admin, but a secrets-at-rest exposure if the file is shared.
+- Why deferred: Matches the single-operator threat model; flagging the expectation mismatch with the encrypt setting.
+
+**[OBS-E]** — WAN monitor may never declare `WAN_DOWN` if a gateway sample hasn't been observed
+- Context: `internal/network/wanmonitor/wanmonitor.go:119`
+- Concern: Down requires `lastGatewayOK==true` when the public-failure threshold is crossed; if the gateway snapshot hasn't arrived yet (`lastGatewayOK` defaults false), repeated public failures never transition to down and nothing re-evaluates once the gateway is later confirmed.
+- Why deferred: Edge timing at startup; needs a small state-machine review rather than a one-line fix.
+
+**[OBS-F]** — Telegram 4096 truncation counts bytes on a rune/escape-encoded body
+- Context: `internal/notify/telegram.go:196, 222, 265`
+- Concern: `len(text) > 4096` and `text[:4093]` slice on bytes can split a multi-byte UTF-8 rune or a `\`-escape pair, producing a MarkdownV2 body Telegram rejects with 400. Only bites very long messages.
+- Why deferred: Rare path; correct fix is rune-aware truncation that won't split an escape.
+
+**[OBS-G]** — Alert engine `==` operator uses exact float equality (effectively dead)
+- Context: `internal/alerts/engine.go:885`
+- Concern: Exact `==` on floats (CPU%, RTT) will almost never match a real sampled metric, so any rule using the `==` operator is effectively inert.
+- Why deferred: No incorrect behavior for the common `>`/`<` rules; revisit if `==` rules are ever offered in the UI.
+
+---
+
+## Archived Findings — 2026-05-03 (all resolved, retained for history)
 
 ## Findings → Bugs
 

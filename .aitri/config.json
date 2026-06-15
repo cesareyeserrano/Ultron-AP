@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-rc.84",
   "artifactsDir": "spec",
-  "updatedAt": "2026-06-15T22:00:30.314Z",
+  "updatedAt": "2026-06-15T22:09:31.179Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -221,7 +221,7 @@
     }
   },
   "verifyRanAt": "2026-06-15T21:05:39.156Z",
-  "auditLastAt": "2026-05-03T22:42:15.435Z",
+  "auditLastAt": "2026-06-15T22:09:31.177Z",
   "upgradeFindings": [],
   "verifySummary": {
     "total": 45,
