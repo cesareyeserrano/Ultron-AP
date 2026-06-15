@@ -137,6 +137,50 @@ func TestRingBuffer_ConcurrentAccess(t *testing.T) {
 	assert.Equal(t, 100, rb.Len())
 }
 
+// TestRingBuffer_AllConcurrentWithAdd is a regression test for BG-045: All()
+// used to call History() while already holding the read lock. On a
+// write-preferring sync.RWMutex, a concurrent Add() queued between the two
+// RLock acquisitions deadlocks permanently. This hammers All() against a steady
+// stream of writers and fails fast (instead of hanging the suite) if it stalls.
+func TestRingBuffer_AllConcurrentWithAdd(t *testing.T) {
+	rb := NewRingBuffer(64)
+	for i := 0; i < 64; i++ {
+		rb.Add(makeSnapshot(i))
+	}
+
+	done := make(chan struct{})
+	go func() {
+		var wg sync.WaitGroup
+		for w := 0; w < 8; w++ {
+			wg.Add(1)
+			go func(id int) {
+				defer wg.Done()
+				for j := 0; j < 2000; j++ {
+					rb.Add(makeSnapshot(id*2000 + j))
+				}
+			}(w)
+		}
+		for r := 0; r < 8; r++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for j := 0; j < 2000; j++ {
+					_ = rb.All()
+				}
+			}()
+		}
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// completed without deadlock
+	case <-time.After(10 * time.Second):
+		t.Fatal("RingBuffer.All() deadlocked under concurrent Add (BG-045 regression)")
+	}
+}
+
 func TestRingBuffer_SingleEntry(t *testing.T) {
 	rb := NewRingBuffer(5)
 	rb.Add(makeSnapshot(42))

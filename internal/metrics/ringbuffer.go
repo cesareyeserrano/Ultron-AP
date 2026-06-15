@@ -49,6 +49,14 @@ func (rb *RingBuffer) History(n int) []Snapshot {
 	rb.mu.RLock()
 	defer rb.mu.RUnlock()
 
+	return rb.historyLocked(n)
+}
+
+// historyLocked returns the last n entries in chronological order. The caller
+// must already hold rb.mu (read or write). It is the lock-free core shared by
+// History and All so that neither re-acquires the read lock — recursive
+// RLock on a write-preferring sync.RWMutex deadlocks if an Add() is queued.
+func (rb *RingBuffer) historyLocked(n int) []Snapshot {
 	if n > rb.count {
 		n = rb.count
 	}
@@ -69,7 +77,7 @@ func (rb *RingBuffer) All() []Snapshot {
 	rb.mu.RLock()
 	defer rb.mu.RUnlock()
 
-	return rb.History(rb.count)
+	return rb.historyLocked(rb.count)
 }
 
 // Len returns the number of stored entries.
