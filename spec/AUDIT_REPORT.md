@@ -90,3 +90,55 @@
 - Read top-to-bottom: `cmd/ultron-helper/main.go`, `cmd/ultron-ap/main.go`, `internal/auth/`, `internal/database/sqlite.go` + `secrets.go` + `actions.go`, key handlers in `internal/server/`, `internal/docker/controls.go`, `internal/systemd/controls.go`, `internal/privileged/client.go`.
 - Verified-and-corrected during writeup: an initially-flagged "VACUUM INTO SQL injection" was downgraded to BL-2 (path traversal) — single-quote doubling is correct SQLite escaping and modernc/sqlite Exec is single-statement. An initially-flagged "XFF brute-force bypass" was reframed (BUG-3) — login lockout uses RemoteAddr, only SSE trusts XFF.
 - Did **not** check: `web/` template XSS surfaces, individual test files, the Tailwind JS bundle, or the SQLite schema migration files.
+
+---
+
+### Requirements Coverage
+
+**Executed:** 2026-06-15 · `aitri audit coverage`
+**Direction:** backward — intent (`00_DISCOVERY.md` + `original_brief`) → functional requirements.
+**Sources traced:** approved discovery (problem, users/JTBD, success criteria, out-of-scope) and the Phase-1 `original_brief`. No standalone `IDEA.md` on disk; the brief is its absorbed form.
+
+**Verdict: 24 needs traced · 24 covered · 0 partial · 0 uncovered.**
+
+Complete — every traced need maps to an FR/NFR or an explicit out-of-scope line. Two FRs add scope the intent never expressed (reverse-check questions below), but neither is a coverage gap.
+
+**Needs traced → covering requirement:**
+
+| # | Client-expressed need (source) | Covered by |
+|---|---|---|
+| 1 | Centralized real-time system visibility *without SSH* (discovery problem; brief) | FR-001 + FR-010 |
+| 2 | CPU monitoring (brief; discovery) | FR-001 |
+| 3 | RAM monitoring | FR-001 |
+| 4 | Disk monitoring | FR-001 |
+| 5 | Network traffic monitoring | FR-001 |
+| 6 | CPU temperature monitoring | FR-001 |
+| 7 | Live updates via SSE | FR-001 (+ all SSE-fed views) |
+| 8 | Docker container visibility | FR-002 |
+| 9 | Systemd service visibility | FR-003 |
+| 10 | Service controls — restart/start/stop *without SSH* (brief: "restarting containers") | FR-008 |
+| 11 | View logs without SSH (brief: "viewing logs") | FR-010 |
+| 12 | Configure alerts (brief: "configuring alerts") | FR-004 |
+| 13 | Threshold-based alert engine (brief) | FR-004 |
+| 14 | Telegram notifications (brief; out-of-scope allows Telegram) | FR-005 |
+| 15 | Email/SMTP notifications (brief; out-of-scope allows SMTP) | FR-006 |
+| 16 | Pironman 5 hardware integration (brief) | FR-013 |
+| 17 | CSRF protection (brief) | FR-012 |
+| 18 | bcrypt sessions (brief) | FR-007 |
+| 19 | Brute-force protection (brief) | FR-007 |
+| 20 | Full action audit trail (brief) | FR-008 (AC: audit-trail in SQLite) |
+| 21 | Privilege separation — unprivileged web + root helper over Unix socket (brief; discovery constraint) | FR-011 |
+| 22 | Single-admin auth; panel not open to anyone on LAN (discovery JTBD; US-007) | FR-007 |
+| 23 | Dark, responsive, WCAG 2.1 AA UI (discovery success criterion; brief "professional dashboard") | FR-009 |
+| 24 | Act on issues in ≤ 2 interactions / critical state above the fold (discovery success criteria) | FR-001 (above-the-fold AC) + FR-008/FR-009 |
+
+**Quantified success criteria → NFRs:** latency ≤ 5 s → NFR-004 · ≤ 15 MB RAM on ARM → NFR-001 · single Go binary / zero runtime deps → NFR-002 / NFR-003 · WCAG AA contrast → FR-009 ACs.
+
+**Out-of-scope boundaries respected (not reported as gaps):** multi-node/cluster · external cloud beyond Telegram/SMTP · SPA frameworks · runtime deps beyond the Go binary · public-internet exposure. None of these surfaced as a missing need.
+
+**Reverse-check — FRs with no traceable client need (questions, not gaps):**
+
+- **[RC-1]** FR-014 *VPN status (Tailscale)* `[COULD]` — neither the discovery nor the brief mentions Tailscale or VPN status; it is additive scope. **RESOLVED 2026-06-15 — accepted *with caveat*.** Kept as an optional `[COULD]` value-add (already implemented and verified). Caveat recorded against the discovery out-of-scope line *"Runtime dependencies beyond the Go binary itself"*: FR-014 functions only when `tailscale`/`tailscaled` is present on the host (its ACs are conditional — *"given Tailscale is installed and running"*). It is therefore an **optional, gracefully-degrading** capability, explicitly **NOT a runtime dependency of the binary** — on a host without Tailscale it simply renders nothing and the binary still runs standalone. It is also a *VPN/mesh* feature, not a cloud integration, so it does not contradict *"External cloud integrations beyond Telegram/SMTP."* No Phase-1 change; no action.
+- **[RC-2]** FR-015 *Database backup* `[SHOULD]` — ~~the brief lists SQLite only for persistence ("config, users, alerts, history"); neither discovery nor brief asks for backup/restore.~~ **RESOLVED 2026-06-15 — accepted as intentional scope.** Encrypted backup/restore is a deliberate disk-failure-resilience feature for the Pi and is live in production (the `ULTRON_BACKUP_KEY` is provisioned on the device and recoverable from the operator's Keychain). Not a coverage concern; no action.
+
+No action needed to close gaps — there are none. The two reverse-check items are optional housekeeping (record why the extra FRs exist).
