@@ -80,6 +80,14 @@ type Dispatcher struct {
 	cancel    chan struct{}
 	stopOnce  sync.Once
 	wg        sync.WaitGroup
+
+	// Notifier cache (BL-030): the send path reuses constructed notifiers — and
+	// crucially the TelegramSender's storm.Cache — across fires so coalescing
+	// persists. Rebuilt only when the channel config changes.
+	notifierMu      sync.Mutex
+	cachedNotifiers []Notifier
+	notifierKey     string
+	janitorStop     chan struct{} // stops the cached telegram sender's storm janitor
 	hostname  string
 	publicURL string
 	metrics   MetricsReader // optional; nil ⇒ trend block omitted
@@ -157,6 +165,14 @@ func (d *Dispatcher) Stop() {
 	d.stopOnce.Do(func() {
 		close(d.cancel)
 		d.wg.Wait()
+		// Run loop has exited, so no send is building notifiers — stop the
+		// cached telegram sender's storm janitor (BL-030).
+		d.notifierMu.Lock()
+		if d.janitorStop != nil {
+			close(d.janitorStop)
+			d.janitorStop = nil
+		}
+		d.notifierMu.Unlock()
 		log.Println("Notification dispatcher stopped")
 	})
 }
@@ -246,7 +262,7 @@ func (d *Dispatcher) send(evt *Event) {
 	out := render.Render(buildRenderInputFromEvent(evt))
 	renderMs := time.Since(t0).Milliseconds()
 
-	notifiers := d.buildNotifiers()
+	notifiers := d.getNotifiers()
 	channelsFailed := 0
 	for _, n := range notifiers {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -602,6 +618,53 @@ func (d *Dispatcher) syntheticTestEvent() *Event {
 		Hostname:     "TEST — " + d.hostname,
 		PublicURL:    d.publicURL,
 	}
+}
+
+// getNotifiers returns the send-path notifier list, reusing the previously
+// constructed notifiers (and their long-lived storm cache) when the channel
+// config is unchanged. Rebuilding on every send was why storm coalescing never
+// worked in production — each send got a fresh, empty cache (BL-030).
+func (d *Dispatcher) getNotifiers() []Notifier {
+	tgRow, _ := d.db.GetNotificationConfig("telegram")
+	emRow, _ := d.db.GetNotificationConfig("email")
+	key := notifierFingerprint(tgRow, emRow)
+
+	d.notifierMu.Lock()
+	defer d.notifierMu.Unlock()
+	if key == d.notifierKey && d.cachedNotifiers != nil {
+		return d.cachedNotifiers
+	}
+
+	// Config changed (or first build) — stop the previous janitor and rebuild.
+	if d.janitorStop != nil {
+		close(d.janitorStop)
+		d.janitorStop = nil
+	}
+	notifiers := d.buildNotifiers()
+	for _, n := range notifiers {
+		if ts, ok := n.(*TelegramSender); ok {
+			stop := make(chan struct{})
+			d.janitorStop = stop
+			ts.StartJanitor(stop)
+			break
+		}
+	}
+	d.cachedNotifiers = notifiers
+	d.notifierKey = key
+	return notifiers
+}
+
+// notifierFingerprint summarises the channel config so getNotifiers can detect
+// changes and rebuild. A nil/disabled row contributes an empty marker.
+func notifierFingerprint(tg, em *database.NotificationConfig) string {
+	var b strings.Builder
+	for _, row := range []*database.NotificationConfig{tg, em} {
+		if row != nil && row.Enabled {
+			b.WriteString(row.Config)
+		}
+		b.WriteByte('|')
+	}
+	return b.String()
 }
 
 // buildNotifiers reads the configured notification channels from SQLite and

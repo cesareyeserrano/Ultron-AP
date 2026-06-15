@@ -347,3 +347,43 @@ func TestDispatcher_StopIdempotent(t *testing.T) {
 		d2.Stop()
 	})
 }
+
+// TestDispatcher_GetNotifiers_CachesAcrossSends is a regression test for
+// BL-030: the send path must reuse the same notifier instances (and thus the
+// TelegramSender's storm cache) across calls when the config is unchanged, and
+// rebuild when it changes. Rebuilding every send made storm coalescing dead.
+func TestDispatcher_GetNotifiers_CachesAcrossSends(t *testing.T) {
+	t.Setenv("ULTRON_SECRET_KEY", "test-secret-key")
+	db := setupTestDB(t)
+	db.UpsertNotificationConfig(&database.NotificationConfig{
+		Channel: "telegram",
+		Enabled: true,
+		Config:  `{"bot_token":"123:ABC","chat_id":"456"}`,
+	})
+
+	d := NewDispatcher(db)
+	t.Cleanup(func() {
+		d.notifierMu.Lock()
+		if d.janitorStop != nil {
+			close(d.janitorStop)
+			d.janitorStop = nil
+		}
+		d.notifierMu.Unlock()
+	})
+
+	first := d.getNotifiers()
+	second := d.getNotifiers()
+	require.Len(t, first, 1)
+	require.Len(t, second, 1)
+	assert.Same(t, first[0], second[0], "unchanged config must reuse the same sender instance")
+
+	// Changing the config must rebuild (new instance).
+	db.UpsertNotificationConfig(&database.NotificationConfig{
+		Channel: "telegram",
+		Enabled: true,
+		Config:  `{"bot_token":"999:ZZZ","chat_id":"789"}`,
+	})
+	third := d.getNotifiers()
+	require.Len(t, third, 1)
+	assert.NotSame(t, first[0], third[0], "changed config must rebuild the sender")
+}

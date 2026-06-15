@@ -60,6 +60,17 @@ func NewTelegramSenderWithTimeout(botToken, chatID string, timeout time.Duration
 // Name returns the channel identifier used by the dispatcher.
 func (t *TelegramSender) Name() string { return "telegram" }
 
+// StartJanitor runs the storm cache's periodic sweep in a goroutine until stop
+// is closed. No-op when this sender has no storm cache. The dispatcher starts
+// exactly one janitor per long-lived sender so storm coalescing state is
+// actually reaped over time (BL-030).
+func (t *TelegramSender) StartJanitor(stop <-chan struct{}) {
+	if t.storm == nil {
+		return
+	}
+	go t.storm.RunJanitor(stop)
+}
+
 // Send is the legacy entry point. It synthesises a minimal Event from the
 // bare alert and delegates to Notify so legacy callers (and tests) still
 // reach the new render path.
