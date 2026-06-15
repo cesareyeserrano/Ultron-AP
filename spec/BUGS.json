@@ -930,6 +930,31 @@
       "resolution": null,
       "fix_commit_sha": "a0ef1a244d2c216b398a8bab15cc8faeb209b72d",
       "fix_at": "2026-06-15T21:12:15.565Z"
+    },
+    {
+      "id": "BG-041",
+      "title": "tailscale status exec has no timeout — can stall the SSE broadcaster",
+      "description": "",
+      "steps_to_reproduce": [
+        "tailscale CLI hangs (e.g. daemon wedged)",
+        "SSE broadcast goroutine calls gatherTailscaleData -> GetStatus"
+      ],
+      "expected_result": "GetStatus returns within a bounded time; dashboard keeps updating",
+      "actual_result": "exec.Command blocks indefinitely; the shared SSE broadcaster stalls and all dashboards stop updating",
+      "environment": "local / security audit",
+      "severity": "medium",
+      "status": "verified",
+      "fr": "FR-014",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "audit",
+      "created_at": "2026-06-15T21:15:29.958Z",
+      "updated_at": "2026-06-15T21:15:39.479Z",
+      "resolution": null,
+      "fix_commit_sha": "0741158385016eccda5ef0275e9efe7cec5c1258",
+      "fix_at": "2026-06-15T21:15:39.388Z"
     }
   ]
 }
