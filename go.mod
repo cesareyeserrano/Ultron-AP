@@ -1,6 +1,6 @@
 module github.com/cesareyeserrano/ultron-ap
 
-go 1.25.7
+go 1.25.11
 
 require (
 	github.com/docker/docker v27.5.1+incompatible
