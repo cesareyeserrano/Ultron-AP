@@ -1,3 +1,0 @@
-./tc-1_validate-us-1-primary-behavior_test.go
-./tc-2_handle-edge-behavior-when-live-data-_test.go
-./tc-3_enforce-security-control-ui-changes-_test.go

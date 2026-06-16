@@ -218,3 +218,44 @@ sudo systemctl start ultron-ap
 `.github/workflows/security-gate.yml` runs on every push and pull request to `main`:
 - `go test ./...` — full unit + integration suite
 - `govulncheck ./...` — dependency vulnerability scan
+
+---
+
+## 13. HTTPS / Remote Access (optional)
+
+Recommended if you access the panel over the internet. WebAuthn/passkeys also require HTTPS and a stable hostname.
+
+### Option 1: Tailscale (recommended for private access)
+
+Easiest path to HTTPS without managing certificates or opening firewall ports.
+
+1. **Install Tailscale** on the Pi: `curl -fsSL https://tailscale.com/install.sh | sh`
+2. **Enable HTTPS** in the Tailscale admin console (Settings → DNS).
+3. **Use the MagicDNS name**: access the Pi at `https://your-pi-name.tailnet-name.ts.net`.
+4. Ultron-AP's built-in Tailscale integration shows peer status in the dashboard automatically.
+
+### Option 2: Caddy reverse proxy (public access)
+
+For access via a public domain name.
+
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install caddy
+```
+
+Edit `/etc/caddy/Caddyfile`:
+
+```caddy
+your-domain.com {
+    reverse_proxy localhost:8080
+}
+```
+
+```bash
+sudo systemctl restart caddy
+```
+
+When using a reverse proxy, firewall port `8080` so it is only reachable from `localhost`. For maximum security, expose Ultron-AP only over a VPN (Tailscale/WireGuard) and never open router ports.
