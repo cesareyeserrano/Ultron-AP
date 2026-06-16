@@ -25,7 +25,6 @@ go.work.sum
 Thumbs.db
 
 # Environment / secrets
-.env
 *.env
 credentials.json
 
@@ -44,7 +43,6 @@ tailwindcss
 # sdlc-studio/
 deploy/raspberry-stable/ultron-ap
 deploy/raspberry-stable/ultron-ap-linux-arm64
-bin/
 .claude/
 
 # Aitri — per-machine state (the shared .aitri IS committed)
