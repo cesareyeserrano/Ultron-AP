@@ -31,9 +31,6 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    # Non-blocking for now: reports findings without failing the merge while the
-    # codebase is brought up to golangci-lint defaults. Flip to blocking once clean.
-    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,3 +45,6 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: latest
+          # Soak mode: report findings (visible in the job log) without failing
+          # the check. Drop this once the ~40 errcheck findings are cleaned up.
+          args: --issues-exit-code=0
