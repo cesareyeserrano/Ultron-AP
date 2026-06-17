@@ -11,6 +11,7 @@
                 <a href="#settings-alerts" data-anchor="alerts" class="timeline-chip timeline-chip-idle">Alerts</a>
                 <a href="#settings-telegram" data-anchor="telegram" class="timeline-chip timeline-chip-idle">Telegram</a>
                 <a href="#settings-email" data-anchor="email" class="timeline-chip timeline-chip-idle">Email</a>
+                <a href="#settings-ai" data-anchor="ai" class="timeline-chip timeline-chip-idle">AI Assistant</a>
                 <a href="#settings-performance" data-anchor="performance" class="timeline-chip timeline-chip-idle">Performance</a>
                 <a href="#settings-backup" data-anchor="backup" class="timeline-chip timeline-chip-idle">Backup</a>
                 <a href="#settings-maintenance" data-anchor="maintenance" class="timeline-chip timeline-chip-idle">Maintenance</a>
@@ -259,6 +260,56 @@
                         <button type="button" hx-post="/api/notifications/email/test" hx-target="#email-status" hx-include="[name='csrf_token']" data-settings-ignore-state="true" class="px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
                     </div>
                     <div id="email-status" class="min-h-[2rem]" aria-live="polite"></div>
+                </form>
+            </section>
+
+            <section id="settings-ai" data-settings-section data-section="ai" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm md:text-[1rem] font-semibold text-text">AI Assistant</h3>
+                    </div>
+                    <span data-form-state-host="ai"></span>
+                </div>
+                <p class="text-[11px] text-text-muted">Explains probable cause and remediation from your existing telemetry. Read-only — never takes an action. Any OpenAI-compatible endpoint works.</p>
+                <form hx-post="/api/settings/ai" hx-target="#ai-status" hx-swap="innerHTML" data-status-target="#ai-status" data-saving-label="Saving AI settings..." data-settings-form="ai" class="space-y-3">
+                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    <div class="grid grid-cols-1 gap-2">
+                        <div>
+                            <label class="text-[11px] text-text-muted">Endpoint URL</label>
+                            <input type="text" name="endpoint_url" value="{{.Content.AI.EndpointURL}}" placeholder="https://api.example/v1" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-text-muted">Model</label>
+                            <input type="text" name="model" value="{{.Content.AI.Model}}" placeholder="e.g. qwen2.5:14b" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-text-muted">API key</label>
+                            <input type="password" name="api_key" placeholder="{{if .Content.AI.APIKeySet}}••••••••{{else}}Provider API key{{end}}" autocomplete="off" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-text-muted">Timeout (ms)</label>
+                            <input type="number" name="timeout_ms" min="1000" max="60000" value="{{if .Content.AI.TimeoutMS}}{{.Content.AI.TimeoutMS}}{{else}}10000{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <label data-widget="toggle" data-field="ai_enabled" data-state="{{if .Content.AI.Enabled}}on{{else}}off{{end}}" class="flex items-center gap-2 text-xs text-text cursor-pointer min-h-[44px]">
+                            <span data-toggle-track class="relative inline-block w-10 h-6 rounded-full bg-card border border-border transition-colors data-[state=on]:bg-accent/40 data-[state=on]:border-accent" data-state="{{if .Content.AI.Enabled}}on{{else}}off{{end}}">
+                                <span data-toggle-thumb class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-text-muted transition-all data-[state=on]:bg-accent data-[state=on]:left-[18px]" data-state="{{if .Content.AI.Enabled}}on{{else}}off{{end}}"></span>
+                            </span>
+                            <input type="checkbox" name="enabled" data-toggle-input {{if .Content.AI.Enabled}}checked{{end}} class="sr-only" aria-label="AI enabled">
+                            <span data-toggle-label>{{if .Content.AI.Enabled}}Enabled{{else}}Disabled{{end}}</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-xs text-text cursor-pointer min-h-[44px]">
+                            <input type="checkbox" name="telegram_push" {{if .Content.AI.TelegramPush}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
+                            <span>Send explanation to Telegram on alert</span>
+                        </label>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                        <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
+                        <button type="button" hx-post="/api/ai/test" hx-target="#ai-status" hx-include="[name='csrf_token'],[name='endpoint_url'],[name='model'],[name='api_key']" data-settings-ignore-state="true" class="px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Test connection</button>
+                    </div>
+                    <div id="ai-status" class="min-h-[2rem]" aria-live="polite"></div>
                 </form>
             </section>
 

@@ -1,0 +1,476 @@
+{
+  "executed_at": "2026-06-17T00:53:40.238Z",
+  "test_runner": "go test ../../... -run TestTC_AI -v -count=1",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-AI-016h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_016h_ExplainInsight (0.01s)"
+    },
+    {
+      "tc_id": "TC-AI-016e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_016e_PromptCaps (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-016f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_016f_InsufficientTelemetry (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-017h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_017h_KeyCiphertextAtRest (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-017e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_017e_SecretsRoundTrip (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-017f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_017f_KeyNeverReturnedOrLogged (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-018h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_018h_ConfigPersists (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-018e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_018e_SettingsSectionRenders (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-018f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_018f_EnableWithEmptyEndpointBlocked (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-019h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_019h_UnconfiguredPanelClean (0.01s)"
+    },
+    {
+      "tc_id": "TC-AI-019e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_019e_DisabledServiceNotConfigured (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-019f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_019f_ExplainUnconfiguredReturns409 (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-020h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_020h_ModelSwapNoRestart (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-020e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_020e_BuildRequestForAnyBaseURL (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-020f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_020f_UnreachableEndpointTypedError (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-021h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_021h_FastProviderResponsive (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-021e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_021e_TimeoutBoundary (1.00s)"
+    },
+    {
+      "tc_id": "TC-AI-021f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_021f_Provider401NoCrash (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-022h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_022h_SuccessStateContract (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-022e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_022e_EmptyStateContract (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-022f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_022f_ErrorStateContract (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-023h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_023h_RedactKnownSecret (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-023e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_023e_RedactSecretShapedToken (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-023f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_023f_NoSecretsInPromptOrLogs (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-026h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_026h_AlertThenAIFollowup (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-026e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_026e_PushOffSendsOnlyAlert (0.00s)"
+    },
+    {
+      "tc_id": "TC-AI-026f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_AI_026f_AIFailureKeepsAlert (0.00s)"
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-016",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-017",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-018",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-019",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-020",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-021",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-022",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-023",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-024",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-025",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "partial"
+    },
+    {
+      "fr_id": "FR-026",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "ac_coverage": [
+    {
+      "ac_id": "AC-016-1h",
+      "fr_id": "FR-016",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-016-1f",
+      "fr_id": "FR-016",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-017-1h",
+      "fr_id": "FR-017",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-017-1f",
+      "fr_id": "FR-017",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-018-1h",
+      "fr_id": "FR-018",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-018-1f",
+      "fr_id": "FR-018",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-019-1h",
+      "fr_id": "FR-019",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-019-1f",
+      "fr_id": "FR-019",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-020-1h",
+      "fr_id": "FR-020",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-020-1f",
+      "fr_id": "FR-020",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-021-1h",
+      "fr_id": "FR-021",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-021-1f",
+      "fr_id": "FR-021",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-022-1h",
+      "fr_id": "FR-022",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-022-1f",
+      "fr_id": "FR-022",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-023-1h",
+      "fr_id": "FR-023",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-023-1f",
+      "fr_id": "FR-023",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-026-1h",
+      "fr_id": "FR-026",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-026-1f",
+      "fr_id": "FR-026",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "low_confidence_tcs": [
+    {
+      "tc_id": "TC-AI-016e",
+      "file": "../../internal/ai/ai_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-AI-019e",
+      "file": "../../internal/ai/ai_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-AI-020e",
+      "file": "../../internal/ai/ai_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-AI-021e",
+      "file": "../../internal/ai/ai_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-AI-023h",
+      "file": "../../internal/ai/ai_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-AI-023e",
+      "file": "../../internal/ai/ai_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-AI-026h",
+      "file": "../../internal/notify/ai_followup_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-AI-026e",
+      "file": "../../internal/notify/ai_followup_test.go",
+      "assertCount": 0
+    },
+    {
+      "tc_id": "TC-AI-026f",
+      "file": "../../internal/notify/ai_followup_test.go",
+      "assertCount": 0
+    }
+  ],
+  "quality_gates": [
+    {
+      "name": "vet",
+      "command": "go vet ../../...",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "name": "build-arm64",
+      "command": "env GOOS=linux GOARCH=arm64 go build ../../...",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "name": "govulncheck",
+      "command": "govulncheck ../../...",
+      "required": false,
+      "status": "error",
+      "exit_code": null
+    }
+  ]
+}

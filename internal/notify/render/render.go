@@ -162,6 +162,44 @@ func titleCase(snake string) string {
 	return strings.Join(parts, " ")
 }
 
+// categoryEmoji maps an engine metric/surface to a category glyph so an operator
+// can tell at a glance what subsystem an alert relates to (ai-insights UX spec).
+var categoryEmoji = map[string]string{
+	"cpu": "🧮", "cpu_usage": "🧮",
+	"ram": "🧠", "mem": "🧠", "memory": "🧠", "mem_usage": "🧠",
+	"disk": "💾", "disk_usage": "💾",
+	"temp": "🌡️", "cpu_temp": "🌡️", "temperature": "🌡️",
+	"latency": "🌐", "loss": "🌐", "wan_outage": "🌐", "public_ip_change": "🌐",
+	"dns_failure_rate": "🛰️",
+	"docker":           "🐳",
+	"systemd":          "⚙️",
+}
+
+// CategoryGlyph returns the category emoji for a metric or "docker:name"/
+// "systemd:name" surface identifier, falling back to a neutral bell.
+//
+// @aitri-trace FR-ID: FR-026, US-ID: US-026, AC-ID: AC-026-1h, TC-ID: TC-AI-026h
+func CategoryGlyph(metric string) string {
+	m := metric
+	if i := strings.Index(m, ":"); i >= 0 {
+		m = m[:i]
+	}
+	if e, ok := categoryEmoji[strings.ToLower(strings.TrimSpace(m))]; ok {
+		return e
+	}
+	return "🔔"
+}
+
+func categoryGlyphForInput(in Input) string {
+	if in.Rule != nil && in.Rule.Metric != "" {
+		return CategoryGlyph(in.Rule.Metric)
+	}
+	if in.Alert != nil && in.Alert.Source != "" {
+		return CategoryGlyph(in.Alert.Source)
+	}
+	return "🔔"
+}
+
 // severityGlyph maps severity to the emoji used in fire subjects.
 func severityGlyph(sev string) string {
 	switch sev {
@@ -386,7 +424,8 @@ func buildSubject(in Input) (string, bool) {
 	if severity == "" {
 		severityWord = "alert"
 	}
-	subject := fmt.Sprintf("%s%s %s %s on %s", prefix, glyph, labelEsc, severityWord, hostEsc)
+	catGlyph := categoryGlyphForInput(in)
+	subject := fmt.Sprintf("%s%s%s %s %s on %s", prefix, catGlyph, glyph, labelEsc, severityWord, hostEsc)
 	return enforceSubjectLength(subject), true
 }
 
@@ -788,7 +827,17 @@ func safeMetricID(in Input) string {
 
 // stripLeadingEmoji returns s without a leading severity glyph (and the
 // space after it). Used to produce the email subject (FR-027 AC-027-...).
+// categoryGlyphList is the set of category prefixes stripped from email subjects
+// (ai-insights adds a category glyph before the severity glyph on fire subjects).
+var categoryGlyphList = []string{"🧮", "🧠", "💾", "🌡️", "🌐", "📶", "🛰️", "🐳", "⚙️", "🔔"}
+
 func stripLeadingEmoji(s string) string {
+	for _, g := range categoryGlyphList {
+		if strings.HasPrefix(s, g) {
+			s = strings.TrimPrefix(s, g)
+			break
+		}
+	}
 	for _, glyph := range []string{"🔴 ", "🟡 ", "🔵 ", "✓ "} {
 		if strings.HasPrefix(s, glyph) {
 			return strings.TrimPrefix(s, glyph)

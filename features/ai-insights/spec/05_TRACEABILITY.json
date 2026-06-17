@@ -1,0 +1,32 @@
+{
+  "project": "Ultron-AP",
+  "feature": "ai-insights",
+  "version": "1.0.0",
+  "phases_completed": [1, 2, 3, 4, 5],
+  "overall_status": "partial",
+  "deployment_model": "single native Go binary under systemd on Raspberry Pi (ARM64) — no container, no new service; AI provider is an external HTTPS endpoint",
+  "requirement_compliance": [
+    { "id": "FR-016", "title": "Generate AI explanation of system state / insight", "level": "production_ready", "evidence": "TC-AI-016h/016e/016f pass (3/3): grounded cause+remediation, prompt caps, insufficient→422 with no audit-log action" },
+    { "id": "FR-017", "title": "AI provider API key stored encrypted at rest", "level": "production_ready", "evidence": "TC-AI-017h/017e/017f pass: ciphertext at rest + decrypt round-trip + key never returned by GET nor present in logs" },
+    { "id": "FR-018", "title": "AI provider configuration in Settings panel", "level": "partial", "evidence": "TC-AI-018h/018e/018f pass (persist, section renders with 44px targets, empty-endpoint blocked); 375px pixel/viewport fidelity is manual (no browser e2e runner) — declared debt" },
+    { "id": "FR-019", "title": "Graceful degradation when AI is not configured", "level": "production_ready", "evidence": "TC-AI-019h/019e/019f pass: settings render clean, Enabled()=false, explain→409 not 500, /health 200" },
+    { "id": "FR-020", "title": "Provider-agnostic, swappable AI configuration", "level": "production_ready", "evidence": "TC-AI-020h/020e/020f pass: model swap takes effect with no restart, request built for any base URL, unreachable endpoint→typed 502, no panic" },
+    { "id": "FR-021", "title": "Bounded, fail-closed AI request handling", "level": "production_ready", "evidence": "TC-AI-021h/021e/021f pass: timeout aborts ~1s, 401/malformed→502 no crash, /health stays 200" },
+    { "id": "FR-022", "title": "AI explanation surface with loading/success/error/empty states", "level": "partial", "evidence": "TC-AI-022h/022e/022f pass at the server-contract layer (200/422/502 drive the panel states); browser-level loading <=200ms and 375px verified manually — declared debt" },
+    { "id": "FR-023", "title": "No secrets in the prompt or AI logs (redaction)", "level": "production_ready", "evidence": "TC-AI-023h/023e/023f pass: known-secret + secret-shaped redaction; 3 DB secrets absent from outbound prompt and logs" },
+    { "id": "FR-024", "title": "Explanation cites the evidence it used", "level": "functionally_present", "evidence": "Implemented (cited_signals + 'unverified' label in parseExplanation and ai-explain.js) and exercised within TC-AI-016h/022h, but has no dedicated passing TC (SHOULD, no user story)" },
+    { "id": "FR-025", "title": "Test-connection action in AI settings", "level": "functionally_present", "evidence": "POST /api/ai/test implemented and wired to the Settings button; no dedicated passing TC (NICE); returns JSON, status-chip polish is declared debt" },
+    { "id": "FR-026", "title": "Push AI explanation to Telegram on alert fire (additive, best-effort)", "level": "production_ready", "evidence": "TC-AI-026h/026e/026f pass: alert+AI follow-up, push-off sends only alert, AI failure keeps exactly one rule-based alert (no drop/duplicate)" },
+    { "id": "NFR-005", "title": "AI credentials handled to the existing secret standard", "level": "production_ready", "evidence": "Reuses AES-GCM secrets.go; https-by-default with explicit insecure override; covered by FR-017/FR-023 tests" },
+    { "id": "NFR-006", "title": "Bounded explanation latency, non-blocking", "level": "production_ready", "evidence": "context.WithTimeout(timeout_ms, default 10s); TC-AI-021h/021e verify bound and responsiveness" },
+    { "id": "NFR-007", "title": "AI subsystem fails closed and isolated", "level": "production_ready", "evidence": "TC-AI-019f/021f: provider faults never crash the process; /health stays 200; alert path isolated (TC-AI-026f)" },
+    { "id": "NFR-008", "title": "Observability: AI request outcome logging", "level": "functionally_present", "evidence": "log.Printf outcome/skip lines in dispatcher follow-up and handlers; no dedicated metric TC; no secret in logs verified by TC-AI-017f/023f" },
+    { "id": "NFR-009", "title": "CI/CD exercises internal/ai", "level": "production_ready", "evidence": "Tests live in root internal/... packages; ci.yml (vet, go test -race, arm64 build) and security-gate.yml (go test, govulncheck) run them on every push/PR; vet + arm64 quality gates pass in verify-run" }
+  ],
+  "technical_debt_inherited": [
+    { "fr_id": "FR-018", "substitution": "UX e2e TCs assert server contract + rendered HTML structure rather than true browser pixel/viewport behavior", "reason": "no browser e2e runner (Go + htmx); 375px scrollWidth and <=200ms loading verified manually", "effort_to_fix": "medium" },
+    { "fr_id": "FR-024", "substitution": "no standalone TC for the SHOULD cite-evidence FR; exercised inside 016h/022h", "reason": "SHOULD with no user story; gate warns, not blocks", "effort_to_fix": "low" },
+    { "fr_id": "FR-025", "substitution": "Test-connection returns JSON; htmx status div shows raw JSON not a styled chip", "reason": "NICE; functional but unpolished", "effort_to_fix": "low" },
+    { "fr_id": "NFR-009", "substitution": "govulncheck quality gate declared non-blocking", "reason": "2 pre-existing docker/docker@v27 advisories unrelated to this feature; feature adds no new dependency", "effort_to_fix": "medium" }
+  ]
+}

@@ -230,6 +230,37 @@ func (t *TelegramSender) sendMessageTo(endpoint string, text string) error {
 
 // sendMessageReturningID is the production sendMessage path — it returns the
 // message_id so the storm cache can record it.
+// SendText posts a plain-text message (no MarkdownV2 parse mode, so arbitrary AI
+// output needs no escaping). Used by the additive AI follow-up (FR-026).
+func (t *TelegramSender) SendText(ctx context.Context, text string) error {
+	if t.botToken == "" || t.chatID == "" {
+		return fmt.Errorf("telegram not configured")
+	}
+	if len(text) > 4096 {
+		text = text[:4093] + "..."
+	}
+	payload := map[string]string{"chat_id": t.chatID, "text": text}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("telegram: marshal error: %w", err)
+	}
+	endpoint := telegramAPIBase + t.botToken + "/sendMessage"
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("telegram: request build error: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := t.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("telegram: send error: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("telegram: status %d", resp.StatusCode)
+	}
+	return nil
+}
+
 func (t *TelegramSender) sendMessageReturningID(ctx context.Context, text string) (int64, error) {
 	if len(text) > 4096 {
 		text = text[:4093] + "..."

@@ -1,0 +1,228 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "ai-insights",
+  "createdAt": "2026-06-16T16:03:13.752Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-06-17T01:00:32.173Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-06-16T18:18:31.249Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-06-16T18:21:07.418Z",
+      "event": "approved",
+      "phase": 1,
+      "ideaArchived": true
+    },
+    {
+      "at": "2026-06-16T18:21:14.099Z",
+      "event": "started",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-06-16T18:25:48.898Z",
+      "event": "completed",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-06-16T19:58:08.180Z",
+      "event": "completed",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-06-16T19:58:37.009Z",
+      "event": "approved",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-06-16T19:59:17.473Z",
+      "event": "started",
+      "phase": 2
+    },
+    {
+      "at": "2026-06-16T20:01:43.078Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-06-16T20:03:18.241Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-06-16T20:03:26.355Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-06-16T20:07:08.508Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-06-16T20:38:52.991Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-06-16T20:53:02.725Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-06-17T00:43:17.461Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-06-17T00:53:25.418Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-06-17T00:53:40.239Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-06-17T00:53:54.323Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 27,
+      "failed": 0
+    },
+    {
+      "at": "2026-06-17T00:54:19.509Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-06-17T00:59:28.294Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-06-17T01:00:32.155Z",
+      "event": "approved",
+      "phase": 5
+    }
+  ],
+  "cascadedPhases": [],
+  "artifactHashes": {
+    "1": "48150320446394be5a8fec6581406d74286752fed688b473c867a74a4bd519f8",
+    "2": "cc79d8492bebbc90053d58a172b8953310eac2bfebe85346b54c0a8a23c607e0",
+    "3": "0cf65957d054ee9e4aacf0a9d9bed5971c9fa45828a5a3ff534753a251499c17",
+    "4": "2a4d0a4f5a49f04c6ae01f6861519b304cb771982d0f4cb8b7222b31de062594",
+    "5": "2a225227a5b0b8f7de7211d54a870cad80e39740450b58413cb13812dc64ae5b",
+    "ux": "301402725b5fcf35903705333967183da1d9da95547366771550654849d75d77"
+  },
+  "frSnapshots": {
+    "2": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024",
+      "FR-025",
+      "FR-026"
+    ],
+    "3": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024",
+      "FR-025",
+      "FR-026"
+    ],
+    "4": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024",
+      "FR-025",
+      "FR-026"
+    ],
+    "5": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024",
+      "FR-025",
+      "FR-026"
+    ],
+    "ux": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024",
+      "FR-025",
+      "FR-026"
+    ]
+  },
+  "verifyRanAt": "2026-06-17T00:53:40.239Z",
+  "lastVerifyRun": {
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-06-17T00:53:40.239Z"
+  },
+  "verifyPassed": true,
+  "verifySummary": {
+    "total": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}

@@ -16,7 +16,20 @@ type settingsData struct {
 	Email          *notifDisplay
 	Perf           database.PerformanceConfig
 	Backup         database.BackupConfig
+	AI             aiDisplay
 	Flash          string
+}
+
+// aiDisplay is the server-rendered view of the AI config — the key is never
+// included, only whether one is set (FR-017).
+type aiDisplay struct {
+	Enabled       bool
+	EndpointURL   string
+	Model         string
+	TelegramPush  bool
+	TimeoutMS     int
+	AllowInsecure bool
+	APIKeySet     bool
 }
 
 type notifDisplay struct {
@@ -48,6 +61,19 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		data.Backup = backupCfg
 	} else {
 		data.Backup = database.DefaultBackupConfig()
+	}
+
+	if aiCfg, err := s.db.GetAISettings(); err == nil {
+		keySet, _ := s.db.AIKeyIsSet()
+		data.AI = aiDisplay{
+			Enabled:       aiCfg.Enabled,
+			EndpointURL:   aiCfg.EndpointURL,
+			Model:         aiCfg.Model,
+			TelegramPush:  aiCfg.TelegramPush,
+			TimeoutMS:     aiCfg.TimeoutMS,
+			AllowInsecure: aiCfg.AllowInsecure,
+			APIKeySet:     keySet,
+		}
 	}
 
 	s.render(w, r, "settings.html", "Settings", "settings", data)

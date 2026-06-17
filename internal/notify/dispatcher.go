@@ -94,6 +94,8 @@ type Dispatcher struct {
 	systemd   SystemdReader // optional; nil ⇒ systemd surface block omitted
 	docker    DockerReader  // optional; nil ⇒ docker surface block omitted
 	causeDrv  CauseDeriver  // optional; nil ⇒ cause line omitted
+
+	aiFollowup func(*Event) // optional; nil ⇒ no additive AI follow-up (FR-026)
 }
 
 // SetMetricsReader wires the metrics ring buffer for FR-022 trend hints.
@@ -273,8 +275,23 @@ func (d *Dispatcher) send(evt *Event) {
 		cancel()
 	}
 
+	// Additive, best-effort AI follow-up (FR-026). Runs only for fires, in its own
+	// goroutine with its own timeout, so it can never delay, drop, or duplicate the
+	// rule-based alert already sent above. Failures are logged and ignored.
+	if d.aiFollowup != nil && evt.Kind == EventFire {
+		d.wg.Add(1)
+		go func(e *Event) {
+			defer d.wg.Done()
+			d.aiFollowup(e)
+		}(evt)
+	}
+
 	d.logSend(evt, out, renderMs, len(notifiers), channelsFailed)
 }
+
+// SetAIFollowup installs the optional AI follow-up hook (FR-026). A nil hook (the
+// default) means no follow-up is sent.
+func (d *Dispatcher) SetAIFollowup(fn func(*Event)) { d.aiFollowup = fn }
 
 // logSend emits a single structured info line summarising the dispatch
 // (NFR-007). Format is space-separated key=value pairs so it's
