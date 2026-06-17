@@ -83,7 +83,7 @@ func TestTC_TMU_016f_MissingThresholdRendersNA(t *testing.T) {
 func TestTC_TMU_017h_SubjectLine(t *testing.T) {
 	out := Render(resourceFire())
 	first := firstLine(out.TelegramMD)
-	want := "🔴 CPU usage critical on ultron"
+	want := "🧮🔴 CPU usage critical on ultron"
 	if first != want {
 		t.Fatalf("subject = %q; want %q", first, want)
 	}
@@ -657,7 +657,7 @@ func TestTC_TMU_027h_BlockSequenceMatch(t *testing.T) {
 // @aitri-trace FR-027 AC-027-001 TC-TMU-027f
 func TestTC_TMU_027f_EmailSubjectStripsEmoji(t *testing.T) {
 	out := Render(resourceFire())
-	wantTG := "🔴 CPU usage critical on ultron"
+	wantTG := "🧮🔴 CPU usage critical on ultron"
 	wantEmail := "CPU usage critical on ultron"
 	if firstLine(out.TelegramMD) != wantTG {
 		t.Fatalf("telegram subject = %q; want %q", firstLine(out.TelegramMD), wantTG)

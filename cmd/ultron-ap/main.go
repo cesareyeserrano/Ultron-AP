@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/cesareyeserrano/ultron-ap/internal/ai"
 	"github.com/cesareyeserrano/ultron-ap/internal/alerts"
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
@@ -255,6 +257,17 @@ func main() {
 
 	srv := server.New(cfg, db, reader, collector, dockerMon, systemdMon, alertEng)
 	srv.SetInsights(insightsSvc)
+
+	// AI insights (feature: ai-insights). Read-only telemetry sources injected;
+	// the provider key/endpoint/model live in ai_settings and are panel-managed.
+	aiSvc := ai.NewFromDB(db, ai.Sources{
+		Metrics:  collector,
+		Insights: insightsSvc,
+		Docker:   dockerMon,
+		Systemd:  systemdMon,
+	}, &http.Client{Timeout: 60 * time.Second})
+	srv.SetAI(aiSvc)
+	dispatcher.SetAIFollowup(notify.NewAIFollowupFromDB(db, aiSvc).Run)
 	if helpSvc != nil {
 		srv.SetHelp(helpSvc)
 	}

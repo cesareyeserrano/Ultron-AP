@@ -1,0 +1,317 @@
+{
+  "test_plan": {
+    "strategy": "Test the AI layer in isolation with a stub OpenAI-compatible provider (no real network). Unit tests cover the redaction, timeout, and config logic in internal/ai; integration tests drive the HTTP handlers and the notify alert path against an in-memory SQLite DB and a fake provider/telegram sender; e2e tests drive the Settings AI section and the explanation panel in the browser at 375px/1440px. Read-only is enforced structurally (no import of privileged/docker/systemd) and asserted behaviorally (audit log unchanged after an explanation). Every existing alert/notification path is protected by regression assertions.",
+    "coverage_goal": "80%",
+    "test_types": ["unit", "integration", "e2e"]
+  },
+  "type_coverage_matrix": [
+    { "fr": "FR-016", "type": "logic",    "unit": "MUST", "integration": "MUST",   "e2e": "-" },
+    { "fr": "FR-017", "type": "security", "unit": "MUST", "integration": "MUST",   "e2e": "-" },
+    { "fr": "FR-018", "type": "ux",       "unit": "-",    "integration": "SHOULD", "e2e": "MUST" },
+    { "fr": "FR-019", "type": "logic",    "unit": "MUST", "integration": "MUST",   "e2e": "-" },
+    { "fr": "FR-020", "type": "logic",    "unit": "MUST", "integration": "MUST",   "e2e": "-" },
+    { "fr": "FR-021", "type": "logic",    "unit": "MUST", "integration": "MUST",   "e2e": "-" },
+    { "fr": "FR-022", "type": "ux",       "unit": "-",    "integration": "SHOULD", "e2e": "MUST" },
+    { "fr": "FR-023", "type": "security", "unit": "MUST", "integration": "MUST",   "e2e": "-" },
+    { "fr": "FR-026", "type": "logic",    "unit": "SHOULD", "integration": "MUST", "e2e": "-" }
+  ],
+  "test_cases": [
+    {
+      "id": "TC-AI-016h", "requirement_id": "FR-016", "user_story_id": "US-016", "ac_id": "AC-016-1h",
+      "title": "Explain a fired insight returns grounded cause + remediation", "type": "integration", "scenario": "happy_path", "priority": "high",
+      "preconditions": ["ai_settings: enabled=1, endpoint=stub, model=test-model, key set", "stub provider returns a fixed completion citing cpu_temp", "insight rule_id=8 (cpu_temp) is active"],
+      "given": "ai_settings enabled with stub provider; active insight rule_id=8 with cpu_temp=78",
+      "when": "POST /api/ai/explain { scope: 'insight', insight_id: 8 } with a valid session+CSRF",
+      "then": "HTTP 200; body.cause non-empty; body.remediation non-empty; body.cited_signals includes 'cpu_temp' or 'rule_id=8'; body.latency_ms <= 10000",
+      "steps": ["seed ai_settings + active insight", "POST /api/ai/explain scope=insight id=8", "assert 200 + fields"],
+      "expected_result": "200 with cause+remediation text and cited_signals containing the supplied signal; latency_ms <= 10000",
+      "test_data": { "insight_id": 8, "metric": "cpu_temp", "value": 78 }
+    },
+    {
+      "id": "TC-AI-016e", "requirement_id": "FR-016", "user_story_id": "US-016", "ac_id": "AC-016-1h",
+      "title": "Prompt stays within size caps at production-scale telemetry", "type": "unit", "scenario": "edge_case", "priority": "medium",
+      "preconditions": ["snapshot source holds 10000 metric points and 5000 log lines"],
+      "given": "a TelemetrySnapshot source with 10000 metric points across series and 5000 recent log lines",
+      "when": "ai.buildPrompt(snapshot) is called with the configured caps (N points/series, M=200 log lines)",
+      "then": "the composed prompt includes <= M log lines and <= N points per series; total prompt bytes <= 32768",
+      "steps": ["generate oversized snapshot", "call buildPrompt", "assert caps applied and byte bound"],
+      "expected_result": "prompt truncated to caps: <=200 log lines, <=N points/series, total <= 32768 bytes",
+      "test_data": { "metric_points": 10000, "log_lines": 5000, "log_cap": 200, "byte_cap": 32768 }
+    },
+    {
+      "id": "TC-AI-016f", "requirement_id": "FR-016", "user_story_id": "US-016", "ac_id": "AC-016-1f",
+      "title": "Insufficient telemetry returns explicit message, takes no action", "type": "integration", "scenario": "negative", "priority": "high",
+      "preconditions": ["ai_settings enabled", "no anomalous telemetry / empty insight set", "audit_log row count recorded before call"],
+      "given": "ai_settings enabled but telemetry snapshot has no anomalous signal and no active insight",
+      "when": "POST /api/ai/explain { scope: 'system' }",
+      "then": "HTTP 422, body { error: 'insufficient telemetry to explain' }; no fabricated cause; audit_log row count unchanged (no control action)",
+      "steps": ["record audit_log count", "POST /api/ai/explain scope=system", "assert 422 + error", "assert audit_log count unchanged"],
+      "expected_result": "422 with error 'insufficient telemetry to explain'; audit_log count identical before/after",
+      "test_data": {}
+    },
+    {
+      "id": "TC-AI-017h", "requirement_id": "FR-017", "user_story_id": "US-017", "ac_id": "AC-017-1h",
+      "title": "Saved API key is ciphertext at rest and decrypts back", "type": "integration", "scenario": "happy_path", "priority": "high",
+      "preconditions": ["ULTRON_SECRET_KEY set", "empty ai_settings"],
+      "given": "ULTRON_SECRET_KEY set and ai_settings empty",
+      "when": "POST /api/settings/ai { enabled:1, endpoint_url:'https://x', model:'m', api_key:'sk-secret123' } then read ai_settings.api_key_enc directly from SQLite",
+      "then": "api_key_enc bytes do NOT equal 'sk-secret123'; decrypting api_key_enc via secrets returns exactly 'sk-secret123'",
+      "steps": ["POST /api/settings/ai with key", "SELECT api_key_enc FROM ai_settings", "assert ciphertext != plaintext", "decrypt and assert equals plaintext"],
+      "expected_result": "stored blob != 'sk-secret123' and decrypt(api_key_enc) == 'sk-secret123'",
+      "test_data": { "api_key": "sk-secret123" }
+    },
+    {
+      "id": "TC-AI-017e", "requirement_id": "FR-017", "user_story_id": "US-017", "ac_id": "AC-017-1h",
+      "title": "Secrets round-trip: encrypt produces non-plaintext, decrypt restores", "type": "unit", "scenario": "edge_case", "priority": "medium",
+      "preconditions": ["32-byte test key"],
+      "given": "a 32-byte AES key and plaintext 'sk-secret123'",
+      "when": "secrets.Encrypt('sk-secret123') then secrets.Decrypt(result)",
+      "then": "Encrypt output != 'sk-secret123' and length > plaintext (nonce+tag); Decrypt(output) == 'sk-secret123'",
+      "steps": ["Encrypt plaintext", "assert != plaintext and longer", "Decrypt", "assert == plaintext"],
+      "expected_result": "ciphertext differs from and is longer than plaintext; decrypt restores 'sk-secret123' exactly",
+      "test_data": { "plaintext": "sk-secret123" }
+    },
+    {
+      "id": "TC-AI-017f", "requirement_id": "FR-017", "user_story_id": "US-017", "ac_id": "AC-017-1f",
+      "title": "Raw key never returned by GET and never appears in logs", "type": "integration", "scenario": "negative", "priority": "high",
+      "preconditions": ["api_key 'sk-secret123' saved", "server log buffer captured"],
+      "given": "ai_settings with api_key 'sk-secret123' saved and a captured server log buffer",
+      "when": "GET /api/settings/ai, then POST /api/ai/explain, then scan the log buffer and the GET response",
+      "then": "GET body has api_key:'' and api_key_set:true; substring 'sk-secret123' appears in NEITHER the GET response NOR any captured log line",
+      "steps": ["GET /api/settings/ai", "assert api_key empty + api_key_set true", "POST /api/ai/explain", "grep log buffer + responses for 'sk-secret123'", "assert zero matches"],
+      "expected_result": "GET returns api_key='' api_key_set=true; zero occurrences of 'sk-secret123' in logs or responses",
+      "test_data": { "api_key": "sk-secret123" }
+    },
+    {
+      "id": "TC-AI-018h", "requirement_id": "FR-018", "user_story_id": "US-018", "ac_id": "AC-018-1h",
+      "title": "AI config persists across reload", "type": "e2e", "scenario": "happy_path", "priority": "high",
+      "preconditions": ["authenticated session", "Settings page open at 1440px"],
+      "given": "Settings page open, AI section empty",
+      "when": "toggle Enable AI on, enter endpoint 'https://api.example/v1', model 'qwen2.5:14b', key 'sk-x', click Save, reload the page",
+      "then": "after reload the endpoint field shows 'https://api.example/v1', model shows 'qwen2.5:14b', key shows the masked placeholder, Enable AI is on",
+      "steps": ["open Settings", "fill AI fields", "Save", "reload", "assert persisted values + masked key"],
+      "expected_result": "endpoint and model re-render with saved values; key field shows masked placeholder; toggle stays on",
+      "test_data": { "endpoint": "https://api.example/v1", "model": "qwen2.5:14b" }
+    },
+    {
+      "id": "TC-AI-018e", "requirement_id": "FR-018", "user_story_id": "US-018", "ac_id": "AC-018-1h",
+      "title": "AI settings section renders without horizontal scroll at 375px", "type": "e2e", "scenario": "edge_case", "priority": "high",
+      "preconditions": ["viewport 375x812", "AI enabled with fields populated"],
+      "given": "Settings page at a 375px viewport with the AI section expanded",
+      "when": "the AI section renders",
+      "then": "document.scrollingElement.scrollWidth <= 375; fields are single-column stacked; every interactive control has min-height >= 44px",
+      "steps": ["set viewport 375px", "open Settings AI section", "assert no horizontal overflow", "assert tap targets >= 44px"],
+      "expected_result": "no horizontal scroll at 375px; single-column layout; tap targets >= 44px",
+      "test_data": { "viewport": "375x812" }
+    },
+    {
+      "id": "TC-AI-018f", "requirement_id": "FR-018", "user_story_id": "US-018", "ac_id": "AC-018-1f",
+      "title": "Enable on with empty endpoint blocks save with inline error", "type": "e2e", "scenario": "negative", "priority": "high",
+      "preconditions": ["authenticated session", "AI section empty"],
+      "given": "Settings AI section with Enable AI on and the Endpoint URL field empty",
+      "when": "click Save",
+      "then": "an inline error 'Endpoint URL is required when AI is enabled' appears next to the field; no network save occurs; GET /api/settings/ai still returns enabled:false",
+      "steps": ["enable AI", "leave endpoint empty", "click Save", "assert inline error", "GET /api/settings/ai assert enabled false"],
+      "expected_result": "inline validation error shown; config not persisted (enabled remains false)",
+      "test_data": {}
+    },
+    {
+      "id": "TC-AI-019h", "requirement_id": "FR-019", "user_story_id": "US-019", "ac_id": "AC-019-1h",
+      "title": "Panel works with zero AI errors when unconfigured", "type": "integration", "scenario": "happy_path", "priority": "high",
+      "preconditions": ["ai_settings: enabled=0, no key", "log buffer captured"],
+      "given": "ai_settings disabled with no key",
+      "when": "GET /dashboard and GET /settings are loaded",
+      "then": "both return HTTP 200; the captured logs contain zero lines matching /ai:.*error/i; the 'Explain with AI' control is rendered disabled or absent",
+      "steps": ["load dashboard + settings", "assert 200", "grep logs for ai error", "assert none", "assert Explain control disabled/absent"],
+      "expected_result": "200 on both pages; zero AI-error log lines; Explain control not active",
+      "test_data": {}
+    },
+    {
+      "id": "TC-AI-019e", "requirement_id": "FR-019", "user_story_id": "US-019", "ac_id": "AC-019-1h",
+      "title": "Service.Enabled() false when disabled; Explain returns ErrNotConfigured", "type": "unit", "scenario": "edge_case", "priority": "medium",
+      "preconditions": ["Config{enabled:false}"],
+      "given": "an ai.Service built from Config{ enabled:false }",
+      "when": "svc.Enabled() and svc.Explain(ctx, ScopeSystem) are called",
+      "then": "Enabled() returns false; Explain returns ai.ErrNotConfigured and a nil *Explanation",
+      "steps": ["build service disabled", "call Enabled()", "call Explain", "assert false + ErrNotConfigured"],
+      "expected_result": "Enabled()==false; Explain returns (nil, ai.ErrNotConfigured)",
+      "test_data": {}
+    },
+    {
+      "id": "TC-AI-019f", "requirement_id": "FR-019", "user_story_id": "US-019", "ac_id": "AC-019-1f",
+      "title": "Explain endpoint returns 409, never 500, when unconfigured", "type": "integration", "scenario": "negative", "priority": "high",
+      "preconditions": ["ai_settings disabled"],
+      "given": "ai_settings disabled (no key)",
+      "when": "POST /api/ai/explain { scope:'system' } with a valid session+CSRF",
+      "then": "HTTP 409 with body { error: 'AI not configured' }; status is not 500; server process keeps serving (subsequent GET /health == 200)",
+      "steps": ["POST /api/ai/explain", "assert 409 + error", "GET /health assert 200"],
+      "expected_result": "409 'AI not configured'; no 500/panic; /health still 200",
+      "test_data": {}
+    },
+    {
+      "id": "TC-AI-020h", "requirement_id": "FR-020", "user_story_id": "US-020", "ac_id": "AC-020-1h",
+      "title": "Changing model in Settings changes model used on next request", "type": "integration", "scenario": "happy_path", "priority": "high",
+      "preconditions": ["stub provider records the 'model' field of each request", "ai_settings enabled model='model-a'"],
+      "given": "ai_settings enabled with model 'model-a' and a stub provider that records request.model",
+      "when": "POST /api/settings/ai sets model='model-b', then POST /api/ai/explain",
+      "then": "the stub provider's last recorded request.model == 'model-b'; no process restart occurred between the two calls",
+      "steps": ["POST settings model-b", "POST explain", "assert stub saw model-b"],
+      "expected_result": "provider request used model 'model-b' with no restart",
+      "test_data": { "from": "model-a", "to": "model-b" }
+    },
+    {
+      "id": "TC-AI-020e", "requirement_id": "FR-020", "user_story_id": "US-020", "ac_id": "AC-020-1h",
+      "title": "Client builds a valid chat-completions request for any base URL", "type": "unit", "scenario": "edge_case", "priority": "medium",
+      "preconditions": [],
+      "given": "two configs with endpoint 'https://a.test/v1' and 'https://b.test/v1', model 'm'",
+      "when": "client.buildRequest(cfg, prompt) is called for each",
+      "then": "each produces a POST to '<base>/chat/completions' with JSON body containing model:'m' and a messages array; Authorization header 'Bearer <key>' is set",
+      "steps": ["build request for base a", "build request for base b", "assert path, model, messages, auth header"],
+      "expected_result": "both requests target <base>/chat/completions with correct model, messages, and Bearer auth",
+      "test_data": { "bases": ["https://a.test/v1", "https://b.test/v1"] }
+    },
+    {
+      "id": "TC-AI-020f", "requirement_id": "FR-020", "user_story_id": "US-020", "ac_id": "AC-020-1f",
+      "title": "Unreachable endpoint returns typed error, no panic", "type": "integration", "scenario": "negative", "priority": "high",
+      "preconditions": ["ai_settings enabled endpoint='https://127.0.0.1:1/v1' (closed port)"],
+      "given": "ai_settings enabled with an unreachable endpoint URL",
+      "when": "POST /api/ai/explain { scope:'system' }",
+      "then": "HTTP 502 with body { error: 'provider error: ...' } (human-readable); process does not panic; GET /health == 200 afterwards",
+      "steps": ["POST /api/ai/explain", "assert 502 + typed error", "GET /health assert 200"],
+      "expected_result": "502 with a readable provider error; no panic; /health 200",
+      "test_data": { "endpoint": "https://127.0.0.1:1/v1" }
+    },
+    {
+      "id": "TC-AI-021h", "requirement_id": "FR-021", "user_story_id": "US-021", "ac_id": "AC-021-1h",
+      "title": "Fast provider returns within bound; server stays responsive", "type": "integration", "scenario": "happy_path", "priority": "high",
+      "preconditions": ["stub provider replies in ~100ms", "timeout_ms=10000"],
+      "given": "ai_settings enabled, stub provider replies in 100ms, timeout_ms=10000",
+      "when": "POST /api/ai/explain and concurrently GET /health",
+      "then": "explain returns 200 in < 1000ms; the concurrent GET /health returns 200 in < 200ms",
+      "steps": ["fire explain", "concurrently GET /health", "assert explain 200 fast", "assert health 200 < 200ms"],
+      "expected_result": "explain 200 < 1s; concurrent /health 200 < 200ms",
+      "test_data": { "provider_latency_ms": 100, "timeout_ms": 10000 }
+    },
+    {
+      "id": "TC-AI-021e", "requirement_id": "FR-021", "user_story_id": "US-021", "ac_id": "AC-021-1h",
+      "title": "Request aborts at the configured timeout boundary", "type": "unit", "scenario": "edge_case", "priority": "high",
+      "preconditions": ["stub provider sleeps 3000ms", "timeout_ms=1000"],
+      "given": "ai.Service with timeout_ms=1000 and a stub provider that sleeps 3000ms",
+      "when": "svc.Explain(ctx, ScopeSystem) is called and timed",
+      "then": "Explain returns a deadline-exceeded error in between 1000ms and 1300ms (not 3000ms)",
+      "steps": ["call Explain with slow provider", "measure elapsed", "assert error is context.DeadlineExceeded", "assert elapsed in [1000,1300]ms"],
+      "expected_result": "context.DeadlineExceeded returned within ~1s (<=1300ms), not after 3s",
+      "test_data": { "provider_sleep_ms": 3000, "timeout_ms": 1000 }
+    },
+    {
+      "id": "TC-AI-021f", "requirement_id": "FR-021", "user_story_id": "US-021", "ac_id": "AC-021-1f",
+      "title": "Provider 401/malformed body yields clear error, no crash", "type": "integration", "scenario": "negative", "priority": "high",
+      "preconditions": ["stub provider returns HTTP 401 then a malformed JSON body"],
+      "given": "ai_settings enabled, stub provider returns HTTP 401 with body 'unauthorized'",
+      "when": "POST /api/ai/explain { scope:'system' }",
+      "then": "HTTP 502 with body { error: 'provider error: 401 ...' }; process still alive (GET /health == 200); no goroutine panic logged",
+      "steps": ["POST explain against 401 stub", "assert 502 + error mentions 401", "GET /health 200", "assert no panic in logs"],
+      "expected_result": "502 with provider 401 error; /health 200; no panic",
+      "test_data": { "provider_status": 401 }
+    },
+    {
+      "id": "TC-AI-022h", "requirement_id": "FR-022", "user_story_id": "US-022", "ac_id": "AC-022-1h",
+      "title": "Explanation panel shows loading then success state", "type": "e2e", "scenario": "happy_path", "priority": "high",
+      "preconditions": ["AI configured with stub provider returning a fixed explanation", "dashboard open at 375px"],
+      "given": "dashboard open at 375px with AI configured and a fired insight",
+      "when": "click 'Explain with AI' on the insight",
+      "then": "a loading indicator appears within 200ms; it is replaced by a panel showing 'PROBABLE CAUSE' and 'SUGGESTED REMEDIATION' text; document scrollWidth <= 375 (no horizontal scroll)",
+      "steps": ["click Explain", "assert loading within 200ms", "wait for success", "assert cause+remediation visible", "assert no h-scroll at 375px"],
+      "expected_result": "loading <=200ms then success panel with cause+remediation; no horizontal scroll at 375px",
+      "test_data": { "viewport": "375x812" }
+    },
+    {
+      "id": "TC-AI-022e", "requirement_id": "FR-022", "user_story_id": "US-022", "ac_id": "AC-022-1f",
+      "title": "Empty state when telemetry insufficient is not blank", "type": "e2e", "scenario": "edge_case", "priority": "medium",
+      "preconditions": ["AI configured; backend returns 422 insufficient"],
+      "given": "AI configured and the explain endpoint returns 422 insufficient",
+      "when": "click 'Explain with AI'",
+      "then": "the panel shows the empty state with text containing 'Not enough recent data' and a visible Retry button; the panel body is not empty",
+      "steps": ["stub explain 422", "click Explain", "assert empty-state message + Retry visible"],
+      "expected_result": "empty state shows 'Not enough recent data...' plus a Retry button; no blank panel",
+      "test_data": {}
+    },
+    {
+      "id": "TC-AI-022f", "requirement_id": "FR-022", "user_story_id": "US-022", "ac_id": "AC-022-1f",
+      "title": "Error state shows reason + retry on provider failure", "type": "e2e", "scenario": "negative", "priority": "high",
+      "preconditions": ["AI configured; backend returns 502 provider error"],
+      "given": "AI configured and the explain endpoint returns 502 { error:'provider error: 401' }",
+      "when": "click 'Explain with AI'",
+      "then": "the panel shows an error state with a one-line reason containing '401' and a Retry button; the panel is not blank",
+      "steps": ["stub explain 502", "click Explain", "assert error reason '401' + Retry visible"],
+      "expected_result": "error state shows the one-line '401' reason and a Retry affordance; not blank",
+      "test_data": { "status": 502 }
+    },
+    {
+      "id": "TC-AI-023h", "requirement_id": "FR-023", "user_story_id": "US-023", "ac_id": "AC-023-1h",
+      "title": "Redactor removes a known secret value from telemetry", "type": "unit", "scenario": "happy_path", "priority": "high",
+      "preconditions": ["DB secrets table contains telegram token 'bot12345:AAblahblah'"],
+      "given": "a snapshot whose log line is 'sent via token bot12345:AAblahblah' and a secrets set containing 'bot12345:AAblahblah'",
+      "when": "redact.Scrub(snapshot, secrets) is called",
+      "then": "the returned text contains '[REDACTED]' and contains zero occurrences of 'bot12345:AAblahblah'",
+      "steps": ["build snapshot with secret in a log line", "call Scrub", "assert secret absent + [REDACTED] present"],
+      "expected_result": "output has no 'bot12345:AAblahblah' substring and shows [REDACTED] in its place",
+      "test_data": { "secret": "bot12345:AAblahblah" }
+    },
+    {
+      "id": "TC-AI-023e", "requirement_id": "FR-023", "user_story_id": "US-023", "ac_id": "AC-023-1h",
+      "title": "Redactor strips secret-shaped token not in the DB", "type": "unit", "scenario": "edge_case", "priority": "medium",
+      "preconditions": [],
+      "given": "a log line 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abc.def' with an empty DB secrets set",
+      "when": "redact.Scrub(snapshot, emptySecrets) is called",
+      "then": "the bearer/JWT token is pattern-redacted: output contains '[REDACTED]' and no 'eyJhbGciOi' substring",
+      "steps": ["build snapshot with JWT-shaped token", "Scrub with empty secrets", "assert token pattern-redacted"],
+      "expected_result": "JWT-shaped token replaced with [REDACTED]; no 'eyJhbGciOi' in output",
+      "test_data": { "token_prefix": "eyJhbGciOi" }
+    },
+    {
+      "id": "TC-AI-023f", "requirement_id": "FR-023", "user_story_id": "US-023", "ac_id": "AC-023-1f",
+      "title": "Outbound prompt and logs carry no DB secret (3 vectors)", "type": "integration", "scenario": "negative", "priority": "high",
+      "preconditions": ["DB has telegram token 'bot999:AAtok', SMTP pass 'smtpP@ss1', AI key 'sk-aikey9'", "outbound provider request body captured", "log buffer captured"],
+      "given": "DB secrets {telegram 'bot999:AAtok', smtp 'smtpP@ss1', ai key 'sk-aikey9'} and telemetry that embeds all three",
+      "when": "POST /api/ai/explain runs and the outbound provider request body + server logs are captured",
+      "then": "the captured provider request body contains NONE of 'bot999:AAtok','smtpP@ss1','sk-aikey9'; the log buffer also contains none of the three",
+      "steps": ["seed 3 secrets into telemetry", "POST explain", "capture outbound body + logs", "assert zero matches for each of the 3 secrets"],
+      "expected_result": "zero occurrences of any of the 3 secret values in the outbound prompt or the logs",
+      "test_data": { "secrets": ["bot999:AAtok", "smtpP@ss1", "sk-aikey9"] }
+    },
+    {
+      "id": "TC-AI-026h", "requirement_id": "FR-026", "user_story_id": "US-026", "ac_id": "AC-026-1h",
+      "title": "Alert fire sends rule-based message then AI follow-up", "type": "integration", "scenario": "happy_path", "priority": "high",
+      "preconditions": ["AI configured + telegram_push=1", "fake telegram sender records messages in order", "stub AI provider returns an explanation"],
+      "given": "AI configured, telegram_push on, a fake telegram sender, and a cpu_temp threshold alert that fires",
+      "when": "the alert dispatch runs to completion (including async AI follow-up)",
+      "then": "the fake sender received exactly 2 messages in order: [0] the rule-based alert text, [1] a message starting with '🤖 AI analysis'",
+      "steps": ["enable push", "fire alert", "wait for async follow-up", "assert 2 messages ordered: alert then AI note"],
+      "expected_result": "2 telegram messages: rule-based alert first, then '🤖 AI analysis' follow-up",
+      "test_data": { "metric": "cpu_temp" }
+    },
+    {
+      "id": "TC-AI-026e", "requirement_id": "FR-026", "user_story_id": "US-026", "ac_id": "AC-026-1h",
+      "title": "Push toggle off sends only the rule-based alert", "type": "integration", "scenario": "edge_case", "priority": "high",
+      "preconditions": ["AI configured but telegram_push=0", "fake telegram sender"],
+      "given": "AI configured but telegram_push off, and an alert that fires",
+      "when": "the alert dispatch runs",
+      "then": "the fake sender received exactly 1 message (the rule-based alert); no message starting with '🤖 AI analysis' was sent",
+      "steps": ["push off", "fire alert", "assert exactly 1 message", "assert no AI note"],
+      "expected_result": "exactly 1 telegram message (rule-based only); no AI follow-up",
+      "test_data": {}
+    },
+    {
+      "id": "TC-AI-026f", "requirement_id": "FR-026", "user_story_id": "US-026", "ac_id": "AC-026-1f",
+      "title": "AI failure does not drop or duplicate the rule-based alert", "type": "integration", "scenario": "negative", "priority": "high",
+      "preconditions": ["AI configured + telegram_push=1", "stub AI provider returns 500/timeout", "fake telegram sender", "log buffer captured"],
+      "given": "AI configured, telegram_push on, but the AI provider errors/times out, and an alert fires",
+      "when": "the alert dispatch runs to completion",
+      "then": "the fake sender received exactly 1 message (the rule-based alert) — not zero, not two; an AI-failure line is present in the logs",
+      "steps": ["push on, AI provider failing", "fire alert", "assert exactly 1 message (rule-based)", "assert AI failure logged"],
+      "expected_result": "exactly 1 rule-based message delivered; no duplicate, none dropped; AI failure logged",
+      "test_data": {}
+    }
+  ]
+}

@@ -33,6 +33,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	window, points := chartWindowPoints(r.URL.Query().Get("window"), s.cfg.MetricsInterval)
 	dd := s.gatherDashboardData(window, points)
 	dd.Tailscale = gatherTailscaleData() // only on page load, not in SSE loop
+	dd.AIEnabled = s.aiSvc != nil && s.aiSvc.Enabled()
 	s.render(w, r, "dashboard.html", "Dashboard", "dashboard", dd)
 }
 

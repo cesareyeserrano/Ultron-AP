@@ -21,6 +21,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/help"
+	"github.com/cesareyeserrano/ultron-ap/internal/ai"
 	"github.com/cesareyeserrano/ultron-ap/internal/insights"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
@@ -89,6 +90,7 @@ type Server struct {
 	landevices          *landevices.Orchestrator
 	landevicesStore     *landevicesstore.Store
 	insights            *insights.Service
+	aiSvc               *ai.Service
 	help                *help.Service
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
@@ -507,6 +509,10 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/settings/encryption-key/probe", s.requireAuth(http.HandlerFunc(s.handleEncryptionKeyProbe)))
 	mux.Handle("POST /api/notifications/{channel}", s.requireAuth(http.HandlerFunc(s.handleNotificationSave)))
 	mux.Handle("POST /api/notifications/{channel}/test", s.requireAuth(http.HandlerFunc(s.handleNotificationTest)))
+	mux.Handle("GET /api/settings/ai", s.requireAuth(http.HandlerFunc(s.handleAISettingsGet)))
+	mux.Handle("POST /api/settings/ai", s.requireAuth(http.HandlerFunc(s.handleAISettingsSave)))
+	mux.Handle("POST /api/ai/explain", s.requireAuth(http.HandlerFunc(s.handleAIExplain)))
+	mux.Handle("POST /api/ai/test", s.requireAuth(http.HandlerFunc(s.handleAITest)))
 	mux.Handle("POST /api/performance", s.requireAuth(http.HandlerFunc(s.handlePerformanceSave)))
 	mux.Handle("POST /api/backup/config", s.requireAuth(http.HandlerFunc(s.handleBackupConfigSave)))
 	mux.Handle("POST /api/services/{name}/start", s.requireAuth(http.HandlerFunc(s.handleServiceStart)))

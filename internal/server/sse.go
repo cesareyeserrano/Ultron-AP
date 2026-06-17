@@ -49,6 +49,7 @@ type DashboardData struct {
 	NetworkTargets []NetworkTargetView
 	WAN            *wanmonitor.Snapshot
 	Version        string
+	AIEnabled      bool // ai-insights: render the "Explain with AI" affordance (FR-019)
 }
 
 // TailscaleData is the data passed to the tailscale-peers partial.

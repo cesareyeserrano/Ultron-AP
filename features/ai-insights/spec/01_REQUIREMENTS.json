@@ -1,0 +1,436 @@
+{
+  "project_name": "Ultron-AP",
+  "feature": "ai-insights",
+  "project_summary": "Adds an AI explanation layer on top of Ultron-AP's existing rule-based insights engine. The single operator can ask the panel to explain the current system state (or a specific fired insight); the system sends already-collected telemetry (metrics, logs, service/docker/systemd state, active insights) to a configurable external LLM and returns a plain-language probable cause + suggested remediation, grounded in the actual signals it used. Read-only and advisory: the AI never takes an action. The provider (endpoint URL, model name, API key) is configured from the Settings panel and the key is stored encrypted at rest. The operator receives AI notes two ways: on-demand in the web panel, and — when opted in — as an additive follow-up Telegram message after a rule-based alert fires (reusing the existing notify/telegram path). The whole subsystem degrades gracefully — with no key configured the panel behaves exactly as today and alerts send their normal rule-based text only. Product analysis — North Star KPI: operator obtains an actionable, signal-grounded probable-cause + remediation for a flagged insight from the panel (no SSH) in <= 10 s. JTBD: 'when an insight fires or the system feels off, help me understand the probable cause and what to do, without SSHing in to read raw logs.' Top guardrail metric: every existing feature stays fully functional and within NFR-001 (<= 15 MB RAM on ARM) whether or not AI is configured, and no secret value leaves the device unredacted.",
+  "product_analysis": {
+    "north_star_kpi": "Operator receives an actionable, signal-grounded probable-cause + remediation for a flagged insight from the panel (no SSH) in <= 10 s.",
+    "jtbd": "When an insight fires or the system feels off, help me understand the probable cause and what to do, without SSHing in to read raw logs.",
+    "guardrail_metric": "All existing features remain fully functional and within NFR-001 (<= 15 MB RAM on ARM) whether or not AI is configured; the existing rule-based alert delivery (FR-004/FR-005) is never delayed, dropped, or replaced by the AI path; no secret value is sent to the external provider or written to logs unredacted."
+  },
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator (single admin)",
+      "tech_level": "mid",
+      "goal": "Understand why the system or network is misbehaving and what to do about it, from the panel, without SSHing in to read raw logs",
+      "pain_point": "Rule-based insights flag THAT something is wrong but not WHY or what to do; diagnosing means manually correlating raw metrics and logs over SSH"
+    }
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-016",
+      "feature": "ai-insights",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Generate AI explanation of system state / insight",
+      "description": "The operator can request an AI explanation for the current system state or a specific fired insight. The system composes a prompt from already-collected telemetry (metrics, service/docker/systemd state, recent logs, active insights), sends it to the configured LLM, and returns a plain-language probable cause plus suggested remediation. The explanation must be grounded only in supplied data and must not trigger any action.",
+      "acceptance_criteria": [
+        "Given a configured provider and a fired insight, a request returns a probable-cause + remediation text referencing >= 1 of the actual supplied signals within <= 10 s",
+        "When the supplied telemetry is empty or insufficient to explain, the response is an explicit 'insufficient data' message and never a fabricated cause",
+        "The request performs no control action (no systemd/docker/helper call) — verified by audit log having zero new action entries after an explanation"
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-017",
+      "feature": "ai-insights",
+      "type": "security",
+      "priority": "MUST",
+      "title": "AI provider API key stored encrypted at rest",
+      "description": "The AI provider API key entered in Settings is stored encrypted using the existing AES-GCM secrets mechanism (same as Telegram/SMTP secrets), is never returned to the client in plaintext after save, and is never written to logs.",
+      "acceptance_criteria": [
+        "Given a key saved in Settings, the persisted DB value is ciphertext (not the plaintext key) and decrypts to the original for outbound use",
+        "GET of the settings/config endpoint never returns the raw key value (returns empty or a masked placeholder)",
+        "No log line at any level contains the key substring after a save or an AI request"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-018",
+      "feature": "ai-insights",
+      "type": "ux",
+      "priority": "MUST",
+      "title": "AI provider configuration in Settings panel",
+      "description": "The Settings panel gains a single AI section where the operator sets an enable toggle, model name, endpoint URL, API key, and a 'send explanation to Telegram on alert' toggle (default off). Values persist and are editable.",
+      "acceptance_criteria": [
+        "Saved model name and endpoint URL persist and re-render correctly after a page reload",
+        "The AI section renders without horizontal scroll at a 375px mobile viewport",
+        "When enable is on but endpoint URL or key is empty, the form shows an inline validation error and does not save the partial config",
+        "The 'send explanation to Telegram on alert' toggle defaults off and persists its state across reloads"
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-019",
+      "feature": "ai-insights",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Graceful degradation when AI is not configured",
+      "description": "With no API key/endpoint configured (or AI disabled), every existing panel behavior is unchanged and the AI explanation action is hidden or disabled with a clear configuration hint. No AI-related errors surface.",
+      "acceptance_criteria": [
+        "Given no key configured, the dashboard and settings pages render with zero AI-related errors in server logs or browser console",
+        "When AI is unconfigured, the explanation action is absent or disabled and links to the AI settings section",
+        "Triggering an AI explanation while unconfigured returns a clear 'AI not configured' response (HTTP 4xx) and never a 500 or panic"
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-020",
+      "feature": "ai-insights",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Provider-agnostic, swappable AI configuration",
+      "description": "The LLM is reached through a single internal interface so that the endpoint URL and model name are config-driven and swappable from the Settings panel without code changes or redeploy.",
+      "acceptance_criteria": [
+        "Given a working provider, changing the model name in Settings changes the model used on the next request with no rebuild or restart",
+        "Given an unknown or unreachable endpoint URL, the next request surfaces a typed, human-readable error and does not panic",
+        "Switching endpoint URL between two OpenAI-compatible providers requires only Settings edits (no binary change)"
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-021",
+      "feature": "ai-insights",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Bounded, fail-closed AI request handling",
+      "description": "Each AI call is an outbound network request with a hard timeout and isolated failure handling: on timeout or provider error the operator sees a clear error and all non-AI features keep working; the request never blocks metrics collection or other handlers.",
+      "acceptance_criteria": [
+        "An AI request aborts at a configured timeout (<= 10 s default) and the panel remains responsive to other requests during and after",
+        "Given a provider that returns HTTP 401 or a malformed body, the operator sees a clear error and the process does not crash",
+        "While an AI request is in flight, metrics collection and the dashboard SSE stream continue updating (no shared lock stall)"
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-022",
+      "feature": "ai-insights",
+      "type": "ux",
+      "priority": "MUST",
+      "title": "AI explanation surface with loading / success / error / empty states",
+      "description": "Requesting an explanation opens a panel/modal that renders distinct loading, success, error, and empty-data states so the operator always knows the request status.",
+      "acceptance_criteria": [
+        "On request, a loading indicator appears within <= 200 ms and is replaced by the result or an error",
+        "The success state renders the cause + remediation text and is readable without horizontal scroll at 375px",
+        "On provider failure the error state shows a retry affordance and a one-line reason; on insufficient telemetry the empty state explains why, neither showing a blank panel"
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-023",
+      "feature": "ai-insights",
+      "type": "security",
+      "priority": "MUST",
+      "title": "No secrets in the prompt or AI logs (redaction)",
+      "description": "Secret values (notification tokens, SMTP passwords, the AI key, session tokens) must not be included in the telemetry/prompt sent to the external provider, nor in any AI-request log line.",
+      "acceptance_criteria": [
+        "The prompt payload sent to the provider contains metrics/logs/state but no secret value present in the DB secrets table",
+        "Given a raw log line that contains a secret-shaped string, it is redacted before being placed in the prompt",
+        "An AI-request debug log contains the request metadata and latency but no secret substring"
+      ],
+      "implementation_level": "production_ready"
+    },
+    {
+      "id": "FR-024",
+      "feature": "ai-insights",
+      "type": "ux",
+      "priority": "SHOULD",
+      "title": "Explanation cites the evidence it used",
+      "description": "The rendered explanation lists which signals (specific metrics, log lines, or services) it relied on, so the operator can sanity-check the reasoning.",
+      "acceptance_criteria": [
+        "A successful explanation displays >= 1 named cited signal (e.g. 'cpu_temp', 'rule_id=17', 'ultron-helper')",
+        "When the model returns no usable citation, the UI labels the explanation 'unverified' rather than presenting it as grounded"
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-025",
+      "feature": "ai-insights",
+      "type": "ux",
+      "priority": "NICE",
+      "title": "Test-connection action in AI settings",
+      "description": "A 'Test connection' button in the AI settings section issues a minimal request to the configured endpoint/model/key and reports reachability without saving an explanation.",
+      "acceptance_criteria": [
+        "With a valid endpoint/model/key, the test reports success and the resolved model name",
+        "With a wrong key or unreachable endpoint, the test reports a clear failure reason and does not persist any state"
+      ],
+      "implementation_level": "functional"
+    },
+    {
+      "id": "FR-026",
+      "feature": "ai-insights",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Push AI explanation to Telegram on alert fire (additive, best-effort)",
+      "description": "When AI is configured AND the 'send explanation to Telegram on alert' toggle is on, a fired rule-based alert/insight triggers an AI explanation that is sent to Telegram as an additive follow-up message via the existing notify/telegram path. The push is best-effort and must never delay, drop, or replace the existing rule-based alert: the normal alert is delivered regardless of AI outcome, and AI generation runs without blocking the alert dispatch.",
+      "acceptance_criteria": [
+        "Given AI configured and the Telegram-push toggle on, when an alert fires, the operator receives the existing rule-based alert AND a follow-up AI explanation message in Telegram",
+        "Given AI unconfigured or the toggle off, when an alert fires, only the existing rule-based alert is sent and its content/timing is unchanged",
+        "Given AI generation errors or times out, when an alert fires, the rule-based alert is still delivered and the AI failure is logged (no alert dropped, no duplicate)",
+        "The follow-up AI message contains no secret value (redacted per FR-023)"
+      ],
+      "implementation_level": "functional"
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-016",
+      "requirement_id": "FR-016",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "to ask the panel why a flagged insight is happening and what to do",
+      "so_that": "I can diagnose and act without SSHing in to read raw logs",
+      "acceptance_criteria": [
+        {
+          "id": "AC-016-1h",
+          "given": "a configured provider and a fired latency insight (rule_id=17)",
+          "when": "I request an AI explanation",
+          "then": "within <= 10 s I see a probable-cause + remediation that references rule_id=17 or its metric"
+        },
+        {
+          "id": "AC-016-1f",
+          "given": "a configured provider but telemetry with no anomalous signal",
+          "when": "I request an explanation",
+          "then": "the response says diagnosis data is insufficient and proposes nothing fabricated"
+        }
+      ]
+    },
+    {
+      "id": "US-017",
+      "requirement_id": "FR-017",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "my AI provider key stored as safely as my Telegram/SMTP secrets",
+      "so_that": "a leaked DB dump or log file does not expose it",
+      "acceptance_criteria": [
+        {
+          "id": "AC-017-1h",
+          "given": "I save an AI key in Settings",
+          "when": "I read the secrets row directly in SQLite",
+          "then": "the stored value is AES-GCM ciphertext, not the plaintext key"
+        },
+        {
+          "id": "AC-017-1f",
+          "given": "an AI key is saved",
+          "when": "I GET the settings config endpoint or grep the logs",
+          "then": "the raw key never appears (masked or absent)"
+        }
+      ]
+    },
+    {
+      "id": "US-018",
+      "requirement_id": "FR-018",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "one place in Settings to configure the AI provider",
+      "so_that": "key, model, and endpoint live together and are easy to change",
+      "acceptance_criteria": [
+        {
+          "id": "AC-018-1h",
+          "given": "I enter a model and endpoint and save",
+          "when": "I reload the Settings page",
+          "then": "the model and endpoint are still shown"
+        },
+        {
+          "id": "AC-018-1f",
+          "given": "I toggle AI on but leave the endpoint empty",
+          "when": "I click save",
+          "then": "an inline validation error appears and the partial config is not saved"
+        }
+      ]
+    },
+    {
+      "id": "US-019",
+      "requirement_id": "FR-019",
+      "as_a": "Raspberry Pi operator who has not set up AI",
+      "i_want": "the panel to work exactly as before",
+      "so_that": "the AI feature is opt-in and never breaks my existing workflow",
+      "acceptance_criteria": [
+        {
+          "id": "AC-019-1h",
+          "given": "no AI key is configured",
+          "when": "I use the dashboard and settings",
+          "then": "everything works with zero AI-related errors in logs or console"
+        },
+        {
+          "id": "AC-019-1f",
+          "given": "AI is unconfigured",
+          "when": "I trigger an AI explanation directly via the endpoint",
+          "then": "I get a clear 'AI not configured' 4xx, never a 500 or panic"
+        }
+      ]
+    },
+    {
+      "id": "US-020",
+      "requirement_id": "FR-020",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "to swap the model/provider from Settings",
+      "so_that": "I can start on a small cheap model and change it without a rebuild",
+      "acceptance_criteria": [
+        {
+          "id": "AC-020-1h",
+          "given": "a working provider",
+          "when": "I change the model name in Settings and request an explanation",
+          "then": "the new model is used with no rebuild or restart"
+        },
+        {
+          "id": "AC-020-1f",
+          "given": "I set an unreachable endpoint URL",
+          "when": "I request an explanation",
+          "then": "I get a typed human-readable error and the process does not panic"
+        }
+      ]
+    },
+    {
+      "id": "US-021",
+      "requirement_id": "FR-021",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "AI failures to stay contained",
+      "so_that": "a slow or broken provider never takes down my monitoring panel",
+      "acceptance_criteria": [
+        {
+          "id": "AC-021-1h",
+          "given": "a slow provider",
+          "when": "an AI request exceeds the timeout",
+          "then": "the request aborts at <= 10 s and other pages stay responsive"
+        },
+        {
+          "id": "AC-021-1f",
+          "given": "the provider returns 401 or malformed output",
+          "when": "I request an explanation",
+          "then": "I see a clear error and the process keeps running"
+        }
+      ]
+    },
+    {
+      "id": "US-022",
+      "requirement_id": "FR-022",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "clear status while an explanation is generated",
+      "so_that": "I always know whether it is loading, done, failed, or had no data",
+      "acceptance_criteria": [
+        {
+          "id": "AC-022-1h",
+          "given": "I request an explanation",
+          "when": "the request is in flight",
+          "then": "a loading indicator appears within <= 200 ms and is replaced by the result"
+        },
+        {
+          "id": "AC-022-1f",
+          "given": "the provider fails",
+          "when": "the request returns an error",
+          "then": "an error state with a one-line reason and a retry affordance is shown, not a blank panel"
+        }
+      ]
+    },
+    {
+      "id": "US-023",
+      "requirement_id": "FR-023",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "secrets kept out of anything sent to the external model",
+      "so_that": "using a cloud LLM never leaks my tokens or passwords",
+      "acceptance_criteria": [
+        {
+          "id": "AC-023-1h",
+          "given": "telemetry that includes a log line with a token",
+          "when": "the prompt is built",
+          "then": "the token is redacted and absent from the payload sent to the provider"
+        },
+        {
+          "id": "AC-023-1f",
+          "given": "an AI request runs",
+          "when": "I inspect the AI request logs",
+          "then": "no secret substring appears in any log line"
+        }
+      ]
+    },
+    {
+      "id": "US-026",
+      "requirement_id": "FR-026",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "the AI explanation pushed to Telegram when an alert fires",
+      "so_that": "I get the probable cause and remediation on my phone without opening the panel",
+      "acceptance_criteria": [
+        {
+          "id": "AC-026-1h",
+          "given": "AI configured and the Telegram-push toggle on",
+          "when": "a threshold alert fires",
+          "then": "I receive the normal alert AND a follow-up AI explanation message in Telegram"
+        },
+        {
+          "id": "AC-026-1f",
+          "given": "AI generation fails or times out",
+          "when": "an alert fires",
+          "then": "the normal rule-based alert is still delivered and the AI failure is only logged, with no alert dropped or duplicated"
+        }
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-005",
+      "category": "Security",
+      "requirement": "AI provider credentials are handled to the same standard as existing secrets: API key encrypted at rest (AES-GCM), never returned to the client in plaintext, never logged, and the outbound provider call uses TLS. No secret is included in the prompt.",
+      "acceptance_criteria": "Stored key is ciphertext; GET config returns no raw key; logs contain no key/secret substrings; provider URL is rejected at save if not https (or an explicit override is required)."
+    },
+    {
+      "id": "NFR-006",
+      "category": "Performance",
+      "requirement": "An AI explanation request completes or times out within a configurable bound (default <= 10 s) and does not block metrics collection or other HTTP handlers.",
+      "acceptance_criteria": "p95 explanation latency <= 10 s on the reference provider; concurrent dashboard requests during an in-flight AI call show no added latency > 200 ms."
+    },
+    {
+      "id": "NFR-007",
+      "category": "Reliability",
+      "requirement": "The AI subsystem fails closed and isolated: a misconfigured, slow, or erroring provider never crashes the process, never blocks non-AI features, never delays or drops a rule-based alert, and GET /health continues to return 200.",
+      "acceptance_criteria": "With the provider unreachable, GET /health returns 200, the dashboard renders, every fired alert still delivers its rule-based Telegram message, and no goroutine leak accrues across 50 failed AI requests."
+    },
+    {
+      "id": "NFR-008",
+      "category": "Usability",
+      "requirement": "Observability: every AI request logs an outcome line (timestamp, success|timeout|error, latency_ms) to stderr without secrets.",
+      "acceptance_criteria": "Each AI request produces exactly one outcome log line containing latency_ms and an outcome enum, and no secret substring."
+    },
+    {
+      "id": "NFR-009",
+      "category": "Reliability",
+      "requirement": "CI/CD: the new internal/ai package and AI handlers are exercised by the existing test suite (go test ./...) run on every push and pull request by security-gate.yml and ci.yml (vet, race, arm64 build).",
+      "acceptance_criteria": "CI runs include tests under internal/ai; a failing AI unit test fails the pipeline; arm64 cross-build still succeeds."
+    }
+  ],
+  "no_go_zone": [
+    "ChatOps / executing actions from AI (option B) — the AI is read-only advisory; it must not invoke systemd, docker, or the privileged helper",
+    "Replacing the rule-based alert text with AI output — the Telegram AI note is an ADDITIVE follow-up message; the existing rule-based alert is never rewritten or suppressed",
+    "AI notes over Email/SMTP (FR-006 path) — the AI push is Telegram-only this increment; email stays rule-based",
+    "Running or embedding an LLM locally on the Pi — AI is always an outbound call to an external endpoint, to keep NFR-001 (<= 15 MB RAM) and the single-binary posture",
+    "Auto-remediation — the system never takes corrective action on the operator's behalf; it only suggests",
+    "Multi-provider simultaneous use, model fine-tuning, or training",
+    "Multi-user / exposing AI output to anyone but the single authenticated admin (US-007 single-admin model is unchanged)",
+    "Streaming token-by-token responses — a single bounded request/response is sufficient for this increment"
+  ],
+  "constraints": [
+    "Must reuse the existing AES-GCM secrets mechanism (internal/database/secrets.go) for the AI key — no new secret store",
+    "Must reuse the existing authenticated Settings surface (FR-007 single-admin auth, FR-012 CSRF) — AI config and requests require an authenticated session",
+    "Must not regress the existing alert engine (FR-004) or Telegram notifications (FR-005): the AI Telegram push is additive and best-effort — the rule-based alert delivers on its own path regardless of AI outcome",
+    "Must not regress NFR-001 (<= 15 MB RAM on ARM), NFR-002/003 (single Go binary, zero runtime deps): the AI provider is external, not embedded",
+    "Healthcheck applicability: existing GET /health remains the liveness probe; the AI subsystem must not affect it (covered by NFR-007)"
+  ],
+  "technology_preferences": [
+    "Provider-agnostic interface in a new internal/ai package; OpenAI-compatible HTTP as the first transport",
+    "Candidate provider: operator's existing Ollama Cloud; start with a small/cheap 8-14B-class model, validated on 5-10 real cases, with GLM-4.6 as a fallback tier; model is a Settings value, not hard-coded"
+  ],
+  "idea_provenance": {
+    "problem": "confirmed",
+    "users": "confirmed",
+    "baseline": "assumed",
+    "success_metric": "confirmed",
+    "no_go_zone": "confirmed"
+  },
+  "idea_provenance_sources": {
+    "problem": "user confirmed in chat 2026-06-16 + audit ultron-ap-AUDIT-20260522 section 7 (IA)",
+    "users": "user confirmed in chat (single admin, 'solo vos'); matches existing US-007 single-admin model",
+    "baseline": "inferred from product context — no measured current time-to-diagnose was provided",
+    "success_metric": "user approved the assumption block in chat 2026-06-16 (<= 10 s latency, encrypted key, graceful degradation, small swappable model)",
+    "no_go_zone": "user explicitly chose scope 'solo (A)' in chat 2026-06-16; B (ChatOps) and C (AI alerts) excluded"
+  },
+  "idea_gaps": [
+    "baseline: no measured current time-to-diagnose (how long the operator spends correlating logs over SSH today) was provided — confirm a target/baseline with the owner so the North Star <= 10 s can be validated against real before/after"
+  ],
+  "original_brief": "## Feature\nAdd AI-generated insights on top of the existing rule-based insights engine: an LLM reads already-collected telemetry (metrics, logs, service/docker/systemd state, active insights) and explains the **probable cause + suggested remediation** in plain language — read-only, no actions taken.\n\n## Problem / Why\nThe insights engine surfaces rule-based signals, but the operator still has to interpret raw metrics and logs to answer \"why is it slow / what's wrong / what do I do.\" There is no plain-language explanation of probable cause or next step. The goal is faster diagnosis without SSHing in to read logs manually.\n\n## Target Users\nThe single admin/operator (existing user; US-007 single-admin model). No new user types. No multi-user / no exposing AI output to anyone but the admin.\n\n## New Behavior\n- The system must let the operator request an AI explanation for the current system state (or a specific insight), returning probable cause + suggested remediation in plain language.\n- The system must base that explanation **only on data already collected** (metrics, logs, service/docker/systemd state, insights) and **cite which signals it used** — it must not invent data, and it must not take any action (read-only advisory).\n- The system must call the LLM through a **provider-agnostic interface** (`internal/ai/`) so the model/provider is swappable without code changes.\n- The system must store the AI provider **API key encrypted at rest** (AES-GCM, same mechanism as Telegram/SMTP secrets), configured from the **admin Settings panel** — never from an env var or baked into the binary.\n- The system must let the operator set/change the **model name** and **endpoint URL** from the Settings panel (all AI config lives in one place).\n- The system must **degrade gracefully when AI is not configured** (no key) — the panel behaves exactly as it does today.\n\n## Success Criteria\n- Given a configured provider and a real incident, when the operator requests an explanation, then they receive a plain-language probable-cause + remediation that references the actual metrics/logs used. Latency target ≤ ~10 s for a single explanation.\n- Given no API key configured, when the operator uses the panel, then there are no AI-related errors and every existing behavior is unchanged.\n- Given a key entered in Settings, then it is stored encrypted (never plaintext in the DB) and never written to logs.\n- Start with a small/cheap swappable model (8–14B class), validated on 5–10 real cases before downsizing/upgrading; provider candidate is the operator's existing Ollama Cloud (GLM-4.6 as fallback tier).\n\n## Touch Points\n- **MODIFY** `internal/insights/` — add an AI-explanation path over existing insight/telemetry data.\n- **MODIFY** Settings panel + handlers (`internal/server/` settings handlers, `web/` settings templates) — add AI config fields (key, model, endpoint).\n- **MODIFY/REUSE** `internal/database/secrets.go` encrypted-secret pattern — add the AI provider key alongside Telegram/SMTP secrets.\n- **ADD** new `internal/ai/` provider-agnostic package (the only purely-new module).\n- Existing FRs touched: insights FR, FR-009 (UI), FR-007 (single-admin auth), the AES-GCM secrets-at-rest mechanism.\n\n## Must Not Break (Regression Boundary)\n- Existing rule-based insights output keeps working unchanged when AI is disabled.\n- Existing Telegram/SMTP encrypted secrets and their Settings flow keep working unchanged.\n- The Settings panel renders and saves all existing fields correctly when no AI key is set.\n- NFR-001 (≤ 15 MB RAM on ARM) and NFR-002/003 (single Go binary, zero runtime deps): AI must be an **outbound network call to an external endpoint**, NOT an embedded/local model — so the binary stays standalone (same posture as FR-014 Tailscale: optional, gracefully degrading).\n\n## Out of Scope\n- (B) ChatOps / executing actions via the privileged helper.\n- (C) AI-redacted alert notifications in `notify/`.\n- Running/embedding a model locally on the Pi.\n- Auto-remediation (the system taking actions on the operator's behalf) — advisory only.\n- Multi-provider simultaneous use, fine-tuning, or training.\n"
+}

@@ -161,6 +161,21 @@ CREATE TABLE IF NOT EXISTS brute_force_attempts (
 	first_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_brute_force_first_at ON brute_force_attempts(first_at);
+
+-- Single-row AI provider configuration (feature: ai-insights). The api_key_enc
+-- column holds the provider key encrypted at rest via the shared AES-GCM secrets
+-- mechanism (ULTRON_SECRET_KEY) — never plaintext. Single admin ⇒ id pinned to 1.
+CREATE TABLE IF NOT EXISTS ai_settings (
+	id             INTEGER PRIMARY KEY CHECK (id = 1),
+	enabled        INTEGER NOT NULL DEFAULT 0,
+	endpoint_url   TEXT    NOT NULL DEFAULT '',
+	model          TEXT    NOT NULL DEFAULT '',
+	api_key_enc    TEXT    NOT NULL DEFAULT '',
+	telegram_push  INTEGER NOT NULL DEFAULT 0,
+	timeout_ms     INTEGER NOT NULL DEFAULT 10000,
+	allow_insecure INTEGER NOT NULL DEFAULT 0,
+	updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 `
 
 type DB struct {
