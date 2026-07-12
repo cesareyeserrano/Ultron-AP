@@ -159,8 +159,15 @@ func (r *SystemReader) readNetwork(ctx context.Context, s *Snapshot, now time.Ti
 		if prev, ok := r.prevNet[c.Name]; ok {
 			elapsed := now.Sub(prev.timestamp).Seconds()
 			if elapsed > 0 {
-				iface.BytesSentPS = uint64(float64(c.BytesSent-prev.bytesSent) / elapsed)
-				iface.BytesRecvPS = uint64(float64(c.BytesRecv-prev.bytesRecv) / elapsed)
+				// Guard against counter resets (link flap, driver reload, iface
+				// reuse). The subtraction is unsigned, so cur < prev would wrap
+				// to ~1.8e19 and surface an exabyte-scale "rate" (M5).
+				if c.BytesSent >= prev.bytesSent {
+					iface.BytesSentPS = uint64(float64(c.BytesSent-prev.bytesSent) / elapsed)
+				}
+				if c.BytesRecv >= prev.bytesRecv {
+					iface.BytesRecvPS = uint64(float64(c.BytesRecv-prev.bytesRecv) / elapsed)
+				}
 			}
 		}
 

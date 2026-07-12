@@ -19,9 +19,19 @@ type Collector struct {
 // NewCollector creates a collector with the given reader, interval, and retention period.
 // Buffer capacity is calculated as retention / interval.
 func NewCollector(reader Reader, interval time.Duration, retention time.Duration) *Collector {
+	// Guard against a zero interval (integer divide-by-zero panic) and against
+	// an absurd retention/interval ratio that would allocate a giant buffer and
+	// OOM at startup (B13).
+	if interval <= 0 {
+		interval = 5 * time.Second
+	}
 	capacity := int(retention / interval)
 	if capacity < 1 {
 		capacity = 1
+	}
+	const maxCapacity = 1_000_000 // ~57 days at 5s; well beyond any real window
+	if capacity > maxCapacity {
+		capacity = maxCapacity
 	}
 
 	return &Collector{

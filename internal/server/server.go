@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -386,16 +387,38 @@ func (s *Server) performAutomatedBackup() error {
 
 	// Always enforce local retention after creating a backup, even if remote upload fails.
 	defer func() {
-		files, err := os.ReadDir(backupDir)
+		entries, err := os.ReadDir(backupDir)
 		if err != nil {
 			log.Printf("backup: retention read failed: %v", err)
 			return
 		}
-		if len(files) <= retentionCount {
+		// M11: only ever delete our own backup artefacts. The previous code
+		// deleted the lexicographically-first entries over *all* directory
+		// contents, which could remove unrelated files (or the wrong backup
+		// when .db and .db.enc names interleave) if LocalPath pointed at a
+		// shared directory. Filter to "ultron-*" regular files and delete the
+		// oldest by modtime.
+		type backupFile struct {
+			name    string
+			modTime time.Time
+		}
+		var backups []backupFile
+		for _, e := range entries {
+			if e.IsDir() || !strings.HasPrefix(e.Name(), "ultron-") {
+				continue
+			}
+			info, err := e.Info()
+			if err != nil {
+				continue
+			}
+			backups = append(backups, backupFile{name: e.Name(), modTime: info.ModTime()})
+		}
+		if len(backups) <= retentionCount {
 			return
 		}
-		for i := 0; i < len(files)-retentionCount; i++ {
-			path := filepath.Join(backupDir, files[i].Name())
+		sort.Slice(backups, func(i, j int) bool { return backups[i].modTime.Before(backups[j].modTime) })
+		for i := 0; i < len(backups)-retentionCount; i++ {
+			path := filepath.Join(backupDir, backups[i].name)
 			if err := os.Remove(path); err != nil {
 				log.Printf("backup: retention remove failed for %s: %v", path, err)
 			}

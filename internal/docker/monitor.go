@@ -251,12 +251,22 @@ func (m *Monitor) refresh(ctx context.Context) {
 			_ = newCli.Close()
 			return
 		}
+		// B12: refresh runs from both the periodic loop and forceRefresh, so two
+		// goroutines can reconnect concurrently. Double-check under the lock: if
+		// another already installed a client, close ours instead of overwriting
+		// (which would leak its connection/FD).
 		m.mu.Lock()
-		m.client = newCli
-		m.available = true
-		m.mu.Unlock()
-		cli = newCli
-		log.Println("docker: connected to daemon")
+		if m.client != nil {
+			cli = m.client
+			m.mu.Unlock()
+			_ = newCli.Close()
+		} else {
+			m.client = newCli
+			m.available = true
+			m.mu.Unlock()
+			cli = newCli
+			log.Println("docker: connected to daemon")
+		}
 	}
 
 	listCtx, cancelList := context.WithTimeout(ctx, dockerCallTimeout)
@@ -277,16 +287,22 @@ func (m *Monitor) refresh(ctx context.Context) {
 		infos[i] = containerToInfo(c)
 	}
 
-	// Fetch stats for running containers in parallel.
-	// Each goroutine writes to a distinct index, so no mutex is needed.
+	// Fetch stats for running containers in parallel, bounded by a worker pool.
+	// Each goroutine writes to a distinct index, so no mutex is needed. The
+	// semaphore caps concurrent ContainerStats calls so a host with hundreds of
+	// running containers doesn't stampede the daemon each tick (M9).
+	const maxConcurrentStats = 16
+	sem := make(chan struct{}, maxConcurrentStats)
 	var wg sync.WaitGroup
 	for i, c := range containers {
 		if c.State != "running" {
 			continue
 		}
 		wg.Add(1)
+		sem <- struct{}{}
 		go func(idx int, id string) {
 			defer wg.Done()
+			defer func() { <-sem }()
 			m.fetchStats(ctx, cli, id, &infos[idx])
 		}(i, c.ID)
 	}

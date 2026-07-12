@@ -17,6 +17,12 @@ import (
 // flips to offline. Configurable per-orchestrator via NewWithThreshold.
 const DefaultMissThreshold = 3
 
+// defaultPruneRetention bounds the lan_devices table against a MAC-spoofing
+// flood: a hostile LAN host answering each sweep from a fresh spoofed MAC would
+// otherwise insert rows forever (M3). Devices that have been offline and unseen
+// for longer than this are pruned on each sweep.
+const defaultPruneRetention = 30 * 24 * time.Hour
+
 // Device is the read model returned by List.
 type Device struct {
 	MAC          string
@@ -40,6 +46,7 @@ type Observation struct {
 type Store struct {
 	db             *sql.DB
 	missThreshold  int
+	pruneRetention time.Duration
 }
 
 // New returns a Store using the default miss threshold.
@@ -50,7 +57,7 @@ func NewWithThreshold(db *sql.DB, threshold int) *Store {
 	if threshold < 1 {
 		threshold = 1
 	}
-	return &Store{db: db, missThreshold: threshold}
+	return &Store{db: db, missThreshold: threshold, pruneRetention: defaultPruneRetention}
 }
 
 // MissThreshold returns the configured offline threshold.
@@ -129,6 +136,20 @@ func (s *Store) ApplySweep(now time.Time, observations []Observation) error {
 		)
 		if _, err := tx.Exec(query, args...); err != nil {
 			return fmt.Errorf("apply misses: %w", err)
+		}
+	}
+
+	// M3: prune offline devices not seen within the retention window so a
+	// spoofed-MAC flood cannot grow the table (and every List() load) without
+	// bound. Only offline rows are eligible, so an online device is never
+	// dropped mid-session.
+	if s.pruneRetention > 0 {
+		cutoff := now.Add(-s.pruneRetention).UnixMilli()
+		if _, err := tx.Exec(
+			`DELETE FROM lan_devices WHERE online = 0 AND last_seen < ?`,
+			cutoff,
+		); err != nil {
+			return fmt.Errorf("prune stale devices: %w", err)
 		}
 	}
 

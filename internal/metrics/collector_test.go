@@ -124,3 +124,11 @@ func TestCollector_LatestReturnsNilWhenEmpty(t *testing.T) {
 	// Don't start — buffer is empty
 	assert.Nil(t, c.Latest())
 }
+
+// B13 — a zero interval must not panic (integer divide-by-zero) at construction.
+func TestNewCollector_ZeroIntervalDoesNotPanic(t *testing.T) {
+	c := NewCollector(nil, 0, time.Hour)
+	if c == nil {
+		t.Fatal("expected a collector even with a zero interval")
+	}
+}
