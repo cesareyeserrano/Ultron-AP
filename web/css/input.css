@@ -35,6 +35,22 @@
       radial-gradient(900px 420px at 90% 0%, rgba(156, 163, 175, 0.06), transparent 65%);
   }
 
+  /* A11y: Firefox ignores ::-webkit-scrollbar, so give it the standard
+     thin/coloured scrollbar too. */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-card) var(--color-base);
+  }
+
+  /* A11y: a single visible keyboard-focus ring for every interactive element.
+     Keyboard users otherwise had almost no focus indication (only two
+     focus-visible styles existed across the whole UI). */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   /* Scrollbar styling for dark theme */
   ::-webkit-scrollbar {
     width: 8px;
@@ -168,6 +184,20 @@
   #sidebar.sidebar-collapsed .sidebar-brand {
     padding-top: 1rem;
     padding-bottom: 1rem;
+  }
+}
+
+/* A11y: honour the OS "reduce motion" setting. The UI uses transitions and
+   transforms throughout (tile hover lift, toast slide/fade, chip swaps); this
+   neutralises them for users who are sensitive to motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
