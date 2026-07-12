@@ -73,20 +73,12 @@ type Server struct {
 	// client carries its own selection (see sseClient) so one viewer's window
 	// choice does not leak into other clients' charts (BG-046).
 
-	// backupIntervalHours holds the automated backup interval in hours (atomic).
-	backupIntervalHours atomic.Int64
-	backupEnabled       atomic.Int64
-	backupRetention     atomic.Int64
-	backupDestination   atomic.Value // string
-	backupLocalPath     atomic.Value // string
-	backupScheduleMode  atomic.Value // string
-	backupScheduleHour  atomic.Int64
-	backupScheduleMin   atomic.Int64
-	backupEncrypt       atomic.Int64
-	backupKeyRef        atomic.Value // string
-	backupUploadTimeout atomic.Int64
-	backupMaxUploadMB   atomic.Int64
-	backupRescheduleCh  chan struct{}
+	// backupCfg holds the automated-backup settings as one immutable snapshot
+	// swapped atomically (D1). The previous 12 independent atomics could be read
+	// half-updated — e.g. a backup running with a new destination but the old
+	// key ref — because ApplyBackupConfig wrote them one at a time.
+	backupCfg          atomic.Pointer[backupSettings]
+	backupRescheduleCh chan struct{}
 	privileged          *privileged.Client
 	gateway             *gatewayprobe.Probe
 	wan                 *wanmonitor.Monitor
@@ -128,18 +120,20 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 		backupRescheduleCh: make(chan struct{}, 1),
 	}
 	s.sseIntervalNs.Store(int64(5 * time.Second))
-	s.backupIntervalHours.Store(24) // Default 24h
-	s.backupEnabled.Store(1)
-	s.backupRetention.Store(7)
-	s.backupDestination.Store("local_only")
-	s.backupLocalPath.Store("")
-	s.backupScheduleMode.Store("interval")
-	s.backupScheduleHour.Store(3)
-	s.backupScheduleMin.Store(0)
-	s.backupEncrypt.Store(0)
-	s.backupKeyRef.Store("")
-	s.backupUploadTimeout.Store(30)
-	s.backupMaxUploadMB.Store(50)
+	s.backupCfg.Store(&backupSettings{
+		enabled:       true,
+		intervalHours: 24, // Default 24h
+		retention:     7,
+		destination:   "local_only",
+		localPath:     "",
+		scheduleMode:  "interval",
+		scheduleHour:  3,
+		scheduleMin:   0,
+		encrypt:       false,
+		keyRef:        "",
+		uploadTimeout: 30,
+		maxUploadMB:   50,
+	})
 
 	s.assetVersion = computeAssetVersion(web.Static, "static/css/app.css")
 	s.parseTemplates()
@@ -175,31 +169,59 @@ func (s *Server) ApplyPerformanceConfig(cfg database.PerformanceConfig) {
 	}
 }
 
-func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
-	if cfg.Enabled {
-		s.backupEnabled.Store(1)
-	} else {
-		s.backupEnabled.Store(0)
+// backupSettings is the immutable automated-backup config snapshot held in
+// s.backupCfg. It is only ever replaced wholesale (never mutated in place) so
+// readers always observe a self-consistent set of values (D1).
+type backupSettings struct {
+	enabled       bool
+	intervalHours int
+	retention     int
+	destination   string
+	localPath     string
+	scheduleMode  string
+	scheduleHour  int
+	scheduleMin   int
+	encrypt       bool
+	keyRef        string
+	uploadTimeout int
+	maxUploadMB   int
+}
+
+// currentBackupSettings loads the active snapshot, returning safe defaults if
+// it has not been initialised yet.
+func (s *Server) currentBackupSettings() backupSettings {
+	if bs := s.backupCfg.Load(); bs != nil {
+		return *bs
 	}
+	return backupSettings{
+		enabled: true, intervalHours: 24, retention: 7,
+		destination: "local_only", scheduleMode: "interval",
+		scheduleHour: 3, uploadTimeout: 30, maxUploadMB: 50,
+	}
+}
+
+func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
+	// Start from the current snapshot so the two "keep old value on invalid
+	// input" cases below preserve what was there, then swap the whole struct in
+	// one atomic Store.
+	next := s.currentBackupSettings()
+	next.enabled = cfg.Enabled
 	if cfg.IntervalHours >= 1 {
-		s.backupIntervalHours.Store(int64(cfg.IntervalHours))
+		next.intervalHours = cfg.IntervalHours
 	}
 	if cfg.RetentionCount >= 1 {
-		s.backupRetention.Store(int64(cfg.RetentionCount))
+		next.retention = cfg.RetentionCount
 	}
-	s.backupDestination.Store(cfg.DestinationMode)
-	s.backupLocalPath.Store(cfg.LocalPath)
-	s.backupScheduleMode.Store(cfg.ScheduleMode)
-	s.backupScheduleHour.Store(int64(cfg.ScheduleHour))
-	s.backupScheduleMin.Store(int64(cfg.ScheduleMinute))
-	if cfg.EncryptEnabled {
-		s.backupEncrypt.Store(1)
-	} else {
-		s.backupEncrypt.Store(0)
-	}
-	s.backupKeyRef.Store(cfg.EncryptionKeyRef)
-	s.backupUploadTimeout.Store(int64(cfg.UploadTimeoutSec))
-	s.backupMaxUploadMB.Store(int64(cfg.MaxUploadSizeMB))
+	next.destination = cfg.DestinationMode
+	next.localPath = cfg.LocalPath
+	next.scheduleMode = cfg.ScheduleMode
+	next.scheduleHour = cfg.ScheduleHour
+	next.scheduleMin = cfg.ScheduleMinute
+	next.encrypt = cfg.EncryptEnabled
+	next.keyRef = cfg.EncryptionKeyRef
+	next.uploadTimeout = cfg.UploadTimeoutSec
+	next.maxUploadMB = cfg.MaxUploadSizeMB
+	s.backupCfg.Store(&next)
 	s.requestBackupReschedule()
 }
 
@@ -277,14 +299,14 @@ func nextBackupDelay(now time.Time, enabled bool, mode string, intervalHours int
 }
 
 func (s *Server) currentBackupDelay(now time.Time) time.Duration {
-	mode, _ := s.backupScheduleMode.Load().(string)
+	bs := s.currentBackupSettings()
 	return nextBackupDelay(
 		now,
-		s.backupEnabled.Load() == 1,
-		mode,
-		int(s.backupIntervalHours.Load()),
-		int(s.backupScheduleHour.Load()),
-		int(s.backupScheduleMin.Load()),
+		bs.enabled,
+		bs.scheduleMode,
+		bs.intervalHours,
+		bs.scheduleHour,
+		bs.scheduleMin,
 	)
 }
 
@@ -303,7 +325,7 @@ func (s *Server) startBackupJob() {
 			case <-timer.C:
 			}
 
-			if s.backupEnabled.Load() == 0 {
+			if !s.currentBackupSettings().enabled {
 				log.Printf("backup: disabled, rechecking in 1h")
 				resetTimer(timer, 1*time.Hour)
 				continue
@@ -333,16 +355,20 @@ func (s *Server) recordBackupOutcome(err error) {
 func (s *Server) performAutomatedBackup() error {
 	log.Println("backup: starting automated backup job...")
 
-	retentionCount := int(s.backupRetention.Load())
+	// Load one consistent snapshot for the whole run (D1): destination, key ref
+	// and encrypt flag can no longer be observed half-updated relative to each
+	// other.
+	bs := s.currentBackupSettings()
+	retentionCount := bs.retention
 	if retentionCount < 1 {
 		retentionCount = 7
 	}
-	destinationMode, _ := s.backupDestination.Load().(string)
+	destinationMode := bs.destination
 	if destinationMode == "" {
 		destinationMode = "local_only"
 	}
-	backupPathOverride, _ := s.backupLocalPath.Load().(string)
-	keyRef, _ := s.backupKeyRef.Load().(string)
+	backupPathOverride := bs.localPath
+	keyRef := bs.keyRef
 
 	// 1. Create local backup file
 	backupDir := filepath.Join(filepath.Dir(s.cfg.DBPath), "backups")
@@ -379,7 +405,7 @@ func (s *Server) performAutomatedBackup() error {
 	// streaming AEAD adds only ~22 B header + 21 B per 64 KiB chunk.
 	willUpload := destinationMode != "local_only"
 	if willUpload {
-		maxUploadMB := s.backupMaxUploadMB.Load()
+		maxUploadMB := int64(bs.maxUploadMB)
 		if maxUploadMB < 1 {
 			maxUploadMB = 50
 		}
@@ -390,7 +416,7 @@ func (s *Server) performAutomatedBackup() error {
 		}
 	}
 
-	if s.backupEncrypt.Load() == 1 {
+	if bs.encrypt {
 		key, err := backupKeyFromRef(keyRef)
 		if err != nil {
 			return fmt.Errorf("backup encryption key error: %w", err)
@@ -466,7 +492,7 @@ func (s *Server) performAutomatedBackup() error {
 		return fmt.Errorf("telegram bot token or chat ID is missing")
 	}
 
-	timeoutSec := s.backupUploadTimeout.Load()
+	timeoutSec := bs.uploadTimeout
 	if timeoutSec < 5 {
 		timeoutSec = 30
 	}
