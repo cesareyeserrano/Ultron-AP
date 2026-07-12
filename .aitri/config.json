@@ -20,9 +20,9 @@
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "2.0.0-rc.173",
+  "aitriVersion": "2.0.0-rc.174",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-12T18:35:30.257Z",
+  "updatedAt": "2026-07-12T18:50:35.389Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,15 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-06-15T23:14:33.283Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
     {
       "at": "2026-06-15T23:16:32.651Z",
       "event": "reconcile-resolved",
@@ -225,6 +216,15 @@
       "failed": 0,
       "skipped": 0,
       "manual": 0
+    },
+    {
+      "at": "2026-07-12T18:49:14.915Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 45,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
     }
   ],
   "verifyPassed": false,
@@ -236,16 +236,49 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-07-12T18:35:30.229Z",
+  "verifyRanAt": "2026-07-12T18:49:14.915Z",
   "auditLastAt": "2026-06-15T22:09:31.177Z",
-  "upgradeFindings": [],
+  "upgradeFindings": [
+    {
+      "target": "features/help-page/spec/04_BUILD_REPORT.json",
+      "transform": "legacy venv-relative test_runner (\"go test -C ../.. ./internal/help/... ./internal/server/ -run TC_HP -v\")",
+      "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server/ — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
+      "module": "0.1.65",
+      "category": "validatorGap",
+      "recordedAt": "2026-07-12T18:50:35.387Z"
+    },
+    {
+      "target": "features/insights-engine/spec/04_BUILD_REPORT.json",
+      "transform": "legacy venv-relative test_runner (\"go test -C ../.. ./internal/insights/... ./internal/server/ -run TC_IE -v\")",
+      "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server/ — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
+      "module": "0.1.65",
+      "category": "validatorGap",
+      "recordedAt": "2026-07-12T18:50:35.388Z"
+    },
+    {
+      "target": "features/lan-devices/spec/04_BUILD_REPORT.json",
+      "transform": "legacy venv-relative test_runner (\"go test -C ../.. ./internal/network/landevices/... ./internal/server/ -run TC_LD -v\")",
+      "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server/ — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
+      "module": "0.1.65",
+      "category": "validatorGap",
+      "recordedAt": "2026-07-12T18:50:35.388Z"
+    },
+    {
+      "target": "features/settings-revamp/spec/04_BUILD_REPORT.json",
+      "transform": "legacy venv-relative test_runner (\"go test -C ../.. ./internal/server -run TestTC_SR -v\")",
+      "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
+      "module": "0.1.65",
+      "category": "validatorGap",
+      "recordedAt": "2026-07-12T18:50:35.388Z"
+    }
+  ],
   "lastVerifyRun": {
     "passed": 45,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-07-12T18:35:30.229Z"
+    "at": "2026-07-12T18:49:14.915Z"
   },
   "coverageAuditLastAt": "2026-06-15T22:00:30.312Z",
-  "verifyResultsHash": "240cd74de6de1b8da7a2871f1045b3c0fbfaf9ce2afce4ac98500996e7af197a"
+  "verifyResultsHash": "35e59d57aee1c55d3676391087697b87fb5656380031805d34632cc65c5b463e"
 }
