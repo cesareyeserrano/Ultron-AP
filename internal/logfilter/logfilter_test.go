@@ -176,3 +176,30 @@ func TestFilter_PolicyJournal_LargeInputCappedAndRedacted(t *testing.T) {
 		t.Fatalf("tail secret not redacted after cap: %q", string(got)[len(string(got))-80:])
 	}
 }
+
+// M7 regression — a pre-trimmed large payload must still carry the truncation
+// marker so callers know the log was cut (previously lost).
+func TestFilter_PolicyJournal_LargeInputKeepsTruncationMarker(t *testing.T) {
+	var b strings.Builder
+	for i := 0; i < 100000; i++ {
+		b.WriteString("filler line to grow the payload well beyond the cap\n")
+	}
+	got := Filter([]byte(b.String()), PolicyJournal, 64*1024)
+	if len(got) > 64*1024 {
+		t.Fatalf("output not capped: %d bytes", len(got))
+	}
+	if !strings.Contains(string(got), "truncated") {
+		t.Fatalf("truncation marker missing from pre-trimmed large input:\n%s", string(got)[:120])
+	}
+}
+
+// M6 — password-only connection string (empty user) must also be redacted.
+func TestFilter_PolicyJournal_RedactsCredentialOnlyURL(t *testing.T) {
+	got := string(Filter([]byte("app: url=redis://:s3cr3t@cache.internal:6379/0\n"), PolicyJournal, 0))
+	if strings.Contains(got, "s3cr3t") {
+		t.Fatalf("credential-only URL password leaked: %q", got)
+	}
+	if !strings.Contains(got, "cache.internal") {
+		t.Fatalf("host should be preserved: %q", got)
+	}
+}

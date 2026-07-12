@@ -50,10 +50,14 @@ func Filter(input []byte, policy Policy, maxBytes int) []byte {
 	// spikes memory before the cap ever applies. Pre-trim very large inputs to
 	// the tail on a line boundary first (we keep the tail anyway), so the regex
 	// passes only ever see ~maxBytes. Cutting on '\n' avoids splitting a secret
-	// mid-line at the trim point.
+	// mid-line at the trim point. preDropped remembers the bytes removed here so
+	// the truncation marker below still reflects them.
+	var preDropped int
 	if policy == PolicyJournal && len(out) > 2*maxBytes {
+		preDropped = len(out) - maxBytes
 		out = out[len(out)-maxBytes:]
 		if i := bytes.IndexByte(out, '\n'); i >= 0 && i+1 < len(out) {
+			preDropped += i + 1
 			out = out[i+1:]
 		}
 	}
@@ -61,20 +65,28 @@ func Filter(input []byte, policy Policy, maxBytes int) []byte {
 		out = redactJournal(out)
 	}
 
-	if len(out) <= maxBytes {
+	// Fast path: nothing pre-trimmed and already under the cap.
+	if preDropped == 0 && len(out) <= maxBytes {
 		return out
 	}
 
-	// Keep the tail. Reserve a budget for the marker so the final
-	// length is <= maxBytes.
+	// Keep the tail within maxBytes and prepend a marker reporting the total
+	// bytes dropped from the start — both the pre-trim and any final overflow.
 	const markerTemplate = "... [truncated %d bytes from start]\n"
-	dropped := len(out) - maxBytes
-	marker := fmt.Sprintf(markerTemplate, dropped)
+	dropped := preDropped
+	tail := out
+	// Budget the marker with an upper-bound digit count so keep never has to
+	// grow after we format the real count.
+	marker := fmt.Sprintf(markerTemplate, dropped+len(out))
 	keep := maxBytes - len(marker)
 	if keep < 0 {
 		keep = 0
 	}
-	tail := out[len(out)-keep:]
+	if len(tail) > keep {
+		dropped += len(tail) - keep
+		tail = tail[len(tail)-keep:]
+	}
+	marker = fmt.Sprintf(markerTemplate, dropped)
 	result := make([]byte, 0, len(marker)+len(tail))
 	result = append(result, marker...)
 	result = append(result, tail...)
@@ -102,7 +114,7 @@ var (
 
 	// Password inside a URL/connection string: scheme://user:PASSWORD@host.
 	// Redacts the password segment while keeping scheme, user and host.
-	connStrRe = regexp.MustCompile(`(?i)([a-z][a-z0-9+.\-]*://[^:/@\s]+:)[^@/\s]+(@)`)
+	connStrRe = regexp.MustCompile(`(?i)([a-z][a-z0-9+.\-]*://[^:/@\s]*:)[^@/\s]+(@)`)
 )
 
 func redactJournal(input []byte) []byte {
