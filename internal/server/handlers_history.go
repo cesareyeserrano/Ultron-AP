@@ -66,7 +66,7 @@ func (s *Server) handleHistoryClear(w http.ResponseWriter, r *http.Request) {
 	}
 	s.auditLog(r, "history", "clear", source, fmt.Sprintf("deleted=%d", deleted), true)
 	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast":{"message":"Cleared %d history records","type":"success"}}`, deleted))
+		setToast(w, fmt.Sprintf("Cleared %d history records", deleted), "success")
 		next := "/history"
 		if source != "" {
 			next += "?source=" + source

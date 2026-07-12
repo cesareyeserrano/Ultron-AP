@@ -243,3 +243,17 @@ func TestApplyBackupConfig_AtomicSnapshotAndPreserve(t *testing.T) {
 	assert.Equal(t, 5, bs2.retention, "invalid retention must preserve prior value")
 	assert.Equal(t, "interval", bs2.scheduleMode)
 }
+
+// D4 — setToast must JSON-escape the message so a value crafted to break out of
+// the HX-Trigger JSON is contained (this was the container-name / error-message
+// injection risk noted in the review).
+func TestSetToast_EscapesMaliciousMessage(t *testing.T) {
+	rec := httptest.NewRecorder()
+	evil := `pwned","type":"error"},"evil":{"x":"`
+	setToast(rec, evil, "success")
+
+	var parsed map[string]map[string]string
+	require.NoError(t, json.Unmarshal([]byte(rec.Header().Get("HX-Trigger")), &parsed))
+	assert.Equal(t, evil, parsed["showToast"]["message"], "message must round-trip intact, not break the JSON")
+	assert.Equal(t, "success", parsed["showToast"]["type"], "type must not be hijacked by the message")
+}

@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"html"
 	"log"
 	"net/http"
 	"os"
@@ -74,7 +73,7 @@ func (s *Server) handlePerformanceSave(w http.ResponseWriter, r *http.Request) {
 
 	s.ApplyPerformanceConfig(cfg)
 
-	w.Header().Set("HX-Trigger", `{"showToast": {"message": "Performance settings updated", "type": "success"}}`)
+	setToast(w, "Performance settings updated", "success")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
 		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>` +
@@ -185,7 +184,7 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 	}
 	s.ApplyBackupConfig(cfg)
 
-	w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup settings updated", "type": "success"}}`)
+	setToast(w, "Backup settings updated", "success")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
 		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>` +
@@ -224,11 +223,11 @@ func (s *Server) handleSettingsBackupRun(w http.ResponseWriter, r *http.Request)
 
 	if err := s.performAutomatedBackup(); err != nil {
 		log.Printf("settings: manual backup failed: %v", err)
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Backup failed: %s", "type": "error"}}`, html.EscapeString(err.Error())))
+		setToast(w, "Backup failed: "+err.Error(), "error")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup created and sent to Telegram", "type": "success"}}`)
+	setToast(w, "Backup created and sent to Telegram", "success")
 	w.WriteHeader(http.StatusOK)
 }

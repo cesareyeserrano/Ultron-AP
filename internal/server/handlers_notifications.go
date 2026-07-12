@@ -107,12 +107,12 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 
 	if err := s.db.UpsertNotificationConfig(nc); err != nil {
 		log.Printf("settings: failed to save %s config: %v", channel, err)
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed to save %s config", "type": "error"}}`, channel))
+		setToast(w, "Failed to save "+channel+" config", "error")
 		http.Error(w, "Failed to save config", http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "%s notifications updated", "type": "success"}}`, strings.Title(channel)))
+	setToast(w, strings.Title(channel)+" notifications updated", "success")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
 		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>` +

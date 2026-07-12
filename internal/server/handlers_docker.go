@@ -1,8 +1,7 @@
 package server
 
 import (
-	"fmt"
-	"html"
+	"context"
 	"net/http"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
@@ -22,53 +21,33 @@ func (s *Server) handleDockerPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDockerStart(w http.ResponseWriter, r *http.Request) {
-	if !s.validateCSRF(w, r) {
-		return
-	}
-	id := r.PathValue("id")
-	res := s.docker.StartContainer(r.Context(), id)
-	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
-
-	if !res.Success {
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(res.Message)))
-		http.Error(w, res.Message, http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Started container: %s", "type": "success"}}`, res.ContainerName))
-	s.renderDockerList(w, r)
+	s.dockerAction(w, r, "Started", s.docker.StartContainer)
 }
 
 func (s *Server) handleDockerStop(w http.ResponseWriter, r *http.Request) {
-	if !s.validateCSRF(w, r) {
-		return
-	}
-	id := r.PathValue("id")
-	res := s.docker.StopContainer(r.Context(), id)
-	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
-
-	if !res.Success {
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(res.Message)))
-		http.Error(w, res.Message, http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Stopped container: %s", "type": "success"}}`, res.ContainerName))
-	s.renderDockerList(w, r)
+	s.dockerAction(w, r, "Stopped", s.docker.StopContainer)
 }
 
 func (s *Server) handleDockerRestart(w http.ResponseWriter, r *http.Request) {
+	s.dockerAction(w, r, "Restarted", s.docker.RestartContainer)
+}
+
+// dockerAction is the shared body for the start/stop/restart endpoints (D3),
+// which differed only in the container method invoked and the success verb.
+func (s *Server) dockerAction(w http.ResponseWriter, r *http.Request, verb string, action func(context.Context, string) docker.ContainerAction) {
 	if !s.validateCSRF(w, r) {
 		return
 	}
 	id := r.PathValue("id")
-	res := s.docker.RestartContainer(r.Context(), id)
+	res := action(r.Context(), id)
 	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
 
 	if !res.Success {
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(res.Message)))
+		setToast(w, "Failed: "+res.Message, "error")
 		http.Error(w, res.Message, http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Restarted container: %s", "type": "success"}}`, res.ContainerName))
+	setToast(w, verb+" container: "+res.ContainerName, "success")
 	s.renderDockerList(w, r)
 }
 

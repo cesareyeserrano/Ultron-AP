@@ -82,7 +82,7 @@ func (s *Server) renderAlertsList(w http.ResponseWriter, r *http.Request) {
 	// the client so it can show a retry banner instead of a false all-clear.
 	if listErr != nil {
 		log.Printf("alerts: list query failed (severity=%q): %v", severity, listErr)
-		w.Header().Set("HX-Trigger", `{"showToast":{"message":"Could not load alerts, retry shortly","type":"error"}}`)
+		setToast(w, "Could not load alerts, retry shortly", "error")
 		http.Error(w, "Failed to load alerts", http.StatusInternalServerError)
 		return
 	}
@@ -139,7 +139,7 @@ func (s *Server) handleAlertsClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast":{"message":"Cleared %d alerts","type":"success"}}`, deleted))
+		setToast(w, fmt.Sprintf("Cleared %d alerts", deleted), "success")
 		s.renderAlertsList(w, r)
 		return
 	}

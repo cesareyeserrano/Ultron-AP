@@ -1,7 +1,9 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
@@ -11,6 +13,25 @@ const (
 	tempWarnThresholdC = 60.0
 	tempHighThresholdC = 75.0
 )
+
+// setToast emits an HTMX HX-Trigger header that pops a client-side toast. The
+// payload is JSON-marshalled rather than hand-spliced with fmt.Sprintf, so a
+// message containing quotes, backslashes, or other special characters can never
+// corrupt the JSON the browser parses (D4). This is the correct escaping for a
+// JSON-in-header context — html.EscapeString, used by several call sites
+// before, was the wrong tool for it.
+func setToast(w http.ResponseWriter, message, toastType string) {
+	b, err := json.Marshal(map[string]any{
+		"showToast": map[string]string{
+			"message": message,
+			"type":    toastType,
+		},
+	})
+	if err != nil {
+		return
+	}
+	w.Header().Set("HX-Trigger", string(b))
+}
 
 // --- Formatting Helpers ---
 

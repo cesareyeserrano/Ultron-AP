@@ -14,7 +14,6 @@
   --color-text: #e5e7eb;
   --color-text-muted: #9ca3af;
   --color-accent: #c2c7d0;
-  --color-dashboard-icon: #c2c7d0;
   --color-danger: #e34b6a;
   --color-danger-hover: #c93f5c;
   --color-border: #2a2f37;
@@ -72,6 +71,12 @@
 }
 
 @layer components {
+  /* CSS6: shared panel shadow, previously duplicated verbatim in .panel-soft
+     and .metric-tile. */
+  :root {
+    --shadow-panel: 0 16px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
   .ux-shell {
     @apply selection:bg-accent selection:text-base;
   }
@@ -82,7 +87,7 @@
 
   .panel-soft {
     @apply bg-surface border border-border rounded-lg;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    box-shadow: var(--shadow-panel);
   }
 
   .panel-glow {
@@ -101,7 +106,7 @@
 
   .metric-tile {
     @apply bg-surface border border-border rounded-lg p-4 transition-all duration-200;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    box-shadow: var(--shadow-panel);
   }
 
   .metric-tile:hover {
@@ -137,7 +142,7 @@
   }
 
   .nav-item-dashboard svg {
-    color: var(--color-dashboard-icon);
+    color: var(--color-accent);
   }
 
   .nav-item-dashboard:not(.active-link) svg {
