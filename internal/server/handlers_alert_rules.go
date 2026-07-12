@@ -158,13 +158,7 @@ func (s *Server) handleAlertRuleDelete(w http.ResponseWriter, r *http.Request) {
 func (s *Server) renderRulesTable(w http.ResponseWriter, r *http.Request) {
 	rules, _ := s.db.ListAlertConfigs()
 
-	csrfToken := ""
-	if cookie, err := r.Cookie("session"); err == nil {
-		session, _ := s.db.GetSession(cookie.Value)
-		if session != nil {
-			csrfToken = session.CSRFToken
-		}
-	}
+	csrfToken := s.sessionCSRFToken(r)
 
 	tmpl, ok := s.tmplCache["partials/alert-rules-table.html"]
 	if !ok {

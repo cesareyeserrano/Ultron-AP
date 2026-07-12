@@ -54,15 +54,10 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, page string, tit
 }
 
 func (s *Server) sessionCSRFToken(r *http.Request) string {
-	cookie, err := r.Cookie("session")
-	if err != nil {
-		return ""
+	if session := s.sessionForRequest(r); session != nil {
+		return session.CSRFToken
 	}
-	session, err := s.db.GetSession(cookie.Value)
-	if err != nil || session == nil {
-		return ""
-	}
-	return session.CSRFToken
+	return ""
 }
 
 // formatUptime formats a duration into a human-readable string like "2d 5h 30m" or "45m".

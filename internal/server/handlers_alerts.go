@@ -87,13 +87,7 @@ func (s *Server) renderAlertsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	csrfToken := ""
-	if cookie, err := r.Cookie("session"); err == nil {
-		session, _ := s.db.GetSession(cookie.Value)
-		if session != nil {
-			csrfToken = session.CSRFToken
-		}
-	}
+	csrfToken := s.sessionCSRFToken(r)
 
 	data := map[string]interface{}{
 		"Alerts":    alerts,
