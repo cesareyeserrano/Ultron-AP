@@ -49,14 +49,25 @@
 
             const toast = document.createElement('div');
             toast.className = 'px-4 py-3 rounded-lg shadow-xl border text-sm transition-all duration-300 translate-y-10 opacity-0 pointer-events-auto flex items-center gap-3 backdrop-blur-md';
-            
+
+            // CSS2: the message is server/attacker-influenced (it arrives via the
+            // HX-Trigger showToast event, e.g. a container name or an error
+            // string). Only the static SVG markup goes through innerHTML; the
+            // message is set with textContent so it can never inject HTML/JS.
+            const icon = document.createElement('span');
+            icon.className = 'shrink-0 inline-flex';
+            const text = document.createElement('span');
+            text.textContent = message;
+
             if (type === 'success') {
                 toast.classList.add('bg-green-400/15', 'border-green-400/30', 'text-green-400');
-                toast.innerHTML = '<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>' + message + '</span>';
+                icon.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
             } else {
                 toast.classList.add('bg-danger/15', 'border-danger/30', 'text-danger');
-                toast.innerHTML = '<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span>' + message + '</span>';
+                icon.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
             }
+            toast.appendChild(icon);
+            toast.appendChild(text);
 
             container.appendChild(toast);
             setTimeout(() => toast.classList.remove('translate-y-10', 'opacity-0'), 10);

@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 @source "../templates/**/*.html";
+/* CSS4: also scan the JS widgets/handlers — they toggle utility classes
+   (e.g. toast colours, translate/opacity states) that would otherwise be
+   purged if they ever stop appearing in a template. */
+@source "../static/js/**/*.js";
 
 @theme {
   /* Dark graphite palette */
@@ -152,9 +156,12 @@
     display: none;
   }
 
+  /* CSS3: the ID-scoped selector already outranks the w-*/h-* utility classes
+     on the logo, so no !important is needed once the size lives in classes
+     (see sidebar.html) rather than an inline style. */
   #sidebar.sidebar-collapsed .sidebar-brand img {
-    width: 40px !important;
-    height: 40px !important;
+    width: 40px;
+    height: 40px;
     margin-bottom: 0;
   }
 
