@@ -175,7 +175,15 @@ func (s *Server) parseTemplates() {
 		{"history.html", nil},
 		{"network.html", nil},
 		{"logs.html", nil},
-		{"settings.html", []string{"templates/partials/alert-rules-table.html"}},
+		{"settings.html", []string{
+			"templates/partials/alert-rules-table.html",
+			"templates/partials/settings-telegram.html",
+			"templates/partials/settings-email.html",
+			"templates/partials/settings-performance.html",
+			"templates/partials/settings-backup.html",
+			"templates/partials/settings-maintenance.html",
+			"templates/partials/settings-controls.html",
+		}},
 		{"placeholder.html", nil},
 		{"help.html", nil},
 	}

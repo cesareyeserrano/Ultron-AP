@@ -1,0 +1,118 @@
+{{define "settings-backup"}}            <section id="settings-backup" data-settings-section data-section="backup" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm md:text-[1rem] font-semibold text-text">Backup</h3>
+                    </div>
+                    <span data-form-state-host="backup"></span>
+                </div>
+                <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." data-settings-form="backup" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 text-xs text-text">
+                            <input type="checkbox" name="enabled" {{if .Content.Backup.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
+                            Backup enabled
+                        </label>
+                        <label class="flex items-center gap-2 text-xs text-text">
+                            <input type="checkbox" name="encrypt_enabled" {{if .Content.Backup.EncryptEnabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
+                            Encrypt artifact
+                        </label>
+                    </div>
+
+                    <!-- FR-062: Backup section sub-divided into Limits / Schedule / Destination -->
+                    <div data-subsection="limits" class="space-y-2">
+                        <p data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider mt-6">Limits</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-text-muted">{{rangeLabel "interval_hours"}}</label>
+                                <span data-widget="stepper" data-field="interval_hours" data-min="{{rangeMin "interval_hours"}}" data-max="{{rangeMax "interval_hours"}}" data-value="{{.Content.Backup.IntervalHours}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <input type="number" name="interval_hours" value="{{.Content.Backup.IntervalHours}}" min="{{rangeMin "interval_hours"}}" max="{{rangeMax "interval_hours"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                </span>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-text-muted">{{rangeLabel "retention_count"}}</label>
+                                <span data-widget="stepper" data-field="retention_count" data-min="{{rangeMin "retention_count"}}" data-max="{{rangeMax "retention_count"}}" data-value="{{.Content.Backup.RetentionCount}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <input type="number" name="retention_count" value="{{.Content.Backup.RetentionCount}}" min="{{rangeMin "retention_count"}}" max="{{rangeMax "retention_count"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                </span>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-text-muted">{{rangeLabel "upload_timeout_sec"}}</label>
+                                <span data-widget="stepper" data-field="upload_timeout_sec" data-min="{{rangeMin "upload_timeout_sec"}}" data-max="{{rangeMax "upload_timeout_sec"}}" data-value="{{.Content.Backup.UploadTimeoutSec}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <input type="number" name="upload_timeout_sec" value="{{.Content.Backup.UploadTimeoutSec}}" min="{{rangeMin "upload_timeout_sec"}}" max="{{rangeMax "upload_timeout_sec"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                </span>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-text-muted">{{rangeLabel "max_upload_size_mb"}}</label>
+                                <span data-widget="stepper" data-field="max_upload_size_mb" data-min="{{rangeMin "max_upload_size_mb"}}" data-max="{{rangeMax "max_upload_size_mb"}}" data-value="{{.Content.Backup.MaxUploadSizeMB}}" class="mt-1 inline-flex items-center gap-1 w-full">
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <input type="number" name="max_upload_size_mb" value="{{.Content.Backup.MaxUploadSizeMB}}" min="{{rangeMin "max_upload_size_mb"}}" max="{{rangeMax "max_upload_size_mb"}}" class="w-full px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div data-subsection="schedule" class="space-y-2">
+                        <p data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider mt-6">Schedule</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-text-muted">Schedule cadence</label>
+                                <select name="schedule_mode" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                                    <option value="interval" {{if eq .Content.Backup.ScheduleMode "interval"}}selected{{end}}>By interval (hours)</option>
+                                    <option value="daily" {{if eq .Content.Backup.ScheduleMode "daily"}}selected{{end}}>Daily</option>
+                                    <option value="weekly" {{if eq .Content.Backup.ScheduleMode "weekly"}}selected{{end}}>Weekly</option>
+                                    <option value="biweekly" {{if eq .Content.Backup.ScheduleMode "biweekly"}}selected{{end}}>Biweekly</option>
+                                </select>
+                            </div>
+                            <!-- FR-064: single time picker replaces hour/minute pair -->
+                            <div>
+                                <label class="text-[11px] text-text-muted">Schedule time (24h)</label>
+                                <input type="time" name="time" value="{{printf "%02d:%02d" .Content.Backup.ScheduleHour .Content.Backup.ScheduleMinute}}" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div data-subsection="destination" class="space-y-2">
+                        <p data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider mt-6">Destination</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] text-text-muted">Destination mode</label>
+                                <select name="destination_mode" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                                    <option value="local_only" {{if eq .Content.Backup.DestinationMode "local_only"}}selected{{end}}>Local only</option>
+                                    <option value="local_plus_telegram" {{if eq .Content.Backup.DestinationMode "local_plus_telegram"}}selected{{end}}>Local + Telegram</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-text-muted">Local path (optional)</label>
+                                <input type="text" name="local_path" value="{{.Content.Backup.LocalPath}}" placeholder="/var/lib/ultron-ap/backups" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                            </div>
+                            <!-- FR-068: encryption-key composite picker (scheme select + value + ✓/✗ badge) -->
+                            <div class="md:col-span-2" data-widget="encryption-key">
+                                <label class="text-[11px] text-text-muted">Encryption key reference</label>
+                                <div class="mt-1 flex flex-col sm:flex-row gap-2">
+                                    {{- $rawKey := .Content.Backup.EncryptionKeyRef -}}
+                                    {{- $schemeVal := "env" -}}
+                                    {{- $valuePart := $rawKey -}}
+                                    <select data-enc-scheme class="px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                                        <option value="env">env:</option>
+                                        <option value="file">file:</option>
+                                        <option value="kms">kms://</option>
+                                    </select>
+                                    <input type="text" name="encryption_key_ref" value="{{$rawKey}}" placeholder="ULTRON_BACKUP_KEY" class="flex-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                                    <span id="enc-key-badge" data-enc-badge data-state="idle" class="text-[11px] px-2 py-1 rounded border border-border/50 text-text-muted self-start sm:self-center">idle</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                        <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
+                    </div>
+                    <div id="backup-config-status" class="min-h-[2rem]" aria-live="polite"></div>
+                </form>
+            </section>{{end}}
