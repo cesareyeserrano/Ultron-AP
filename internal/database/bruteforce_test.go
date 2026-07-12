@@ -6,6 +6,7 @@ package database
 
 import (
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -148,4 +149,39 @@ func TestBruteForce_PruneBefore(t *testing.T) {
 	_, _, found2, err := db.BruteForceLookup("203.0.113.2")
 	require.NoError(t, err)
 	assert.True(t, found2, "recent row must survive prune")
+}
+
+// TC-A3 — concurrent failures for the same IP must not lose increments. The
+// previous DEFERRED SELECT-then-UPSERT could drop counts under load (silently
+// weakening the lockout). With the atomic UPSERT every failure is counted.
+func TestBruteForce_RecordFailure_ConcurrentNoLostIncrements(t *testing.T) {
+	db := newTestDB(t)
+	const ip = "203.0.113.99"
+	const n = 200
+	window := 15 * time.Minute
+	base := time.Date(2026, 5, 6, 12, 0, 0, 0, time.UTC)
+
+	var wg sync.WaitGroup
+	errs := make(chan error, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			// All within the window so every call must increment.
+			_, _, err := db.BruteForceRecordFailure(ip, window, base.Add(time.Duration(i)*time.Second))
+			if err != nil {
+				errs <- err
+			}
+		}(i)
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		require.NoError(t, err, "no failure should error out")
+	}
+
+	c, _, found, err := db.BruteForceLookup(ip)
+	require.NoError(t, err)
+	require.True(t, found)
+	assert.Equal(t, n, c, "every concurrent failure must be counted (no lost increments)")
 }

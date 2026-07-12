@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -184,12 +185,12 @@ func (t *TelegramSender) SendFile(filePath string, caption string) error {
 
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("telegram request error: %w", err)
+		return fmt.Errorf("telegram request error: %w", t.redactToken(err))
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return fmt.Errorf("telegram API returned %d: %s", resp.StatusCode, string(respBody))
 	}
 	return nil
@@ -197,6 +198,22 @@ func (t *TelegramSender) SendFile(filePath string, caption string) error {
 
 // sendMessage is preserved for backwards compat with TestTelegramSender_*
 // tests. New code should call sendMessageReturningID.
+// redactToken scrubs the bot token from an error's text. The token is carried
+// in the request URL *path*, so a transport failure returns a *url.Error whose
+// string embeds the full token (url.Error only redacts userinfo, never the
+// path). Without this the token leaks into the "Test" HTTP response and the
+// logs, defeating the masking done everywhere else (A2).
+func (t *TelegramSender) redactToken(err error) error {
+	if err == nil || t.botToken == "" {
+		return err
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, t.botToken) {
+		return err
+	}
+	return errors.New(strings.ReplaceAll(msg, t.botToken, "<redacted-token>"))
+}
+
 func (t *TelegramSender) sendMessage(text string) error {
 	endpoint := telegramAPIBase + t.botToken + "/sendMessage"
 	return t.sendMessageTo(endpoint, text)
@@ -219,7 +236,7 @@ func (t *TelegramSender) sendMessageTo(endpoint string, text string) error {
 	}
 	resp, err := t.client.Post(endpoint, "application/json", bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("telegram: request error: %w", err)
+		return fmt.Errorf("telegram: request error: %w", t.redactToken(err))
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -251,7 +268,7 @@ func (t *TelegramSender) sendMessageReturningID(ctx context.Context, text string
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("telegram: request error: %w", err)
+		return 0, fmt.Errorf("telegram: request error: %w", t.redactToken(err))
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -297,7 +314,7 @@ func (t *TelegramSender) editMessage(ctx context.Context, messageID int64, text 
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("telegram: request error: %w", err)
+		return fmt.Errorf("telegram: request error: %w", t.redactToken(err))
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {

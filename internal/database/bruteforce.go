@@ -35,51 +35,33 @@ func (db *DB) BruteForceLookup(ip string) (count int, firstAt time.Time, found b
 // BruteForceRecordFailure increments the count for ip atomically (with
 // window rollover) and returns the post-update record. If no prior row
 // exists or the previous row is older than window, the count resets to 1.
+//
+// Implemented as a single UPSERT ... RETURNING so the read-modify-write is
+// one atomic write statement. The previous SELECT-then-UPSERT in a DEFERRED
+// transaction could lose increments under concurrent login load (a stale
+// read snapshot upgrading to a write, which busy_timeout does not retry) —
+// and because the caller fails open on error, dropped increments silently
+// weakened the lockout (A3). One statement removes the race entirely.
 func (db *DB) BruteForceRecordFailure(ip string, window time.Duration, now time.Time) (count int, firstAt time.Time, err error) {
-	tx, txErr := db.Begin()
-	if txErr != nil {
-		return 0, time.Time{}, txErr
-	}
-	defer tx.Rollback() //nolint:errcheck — rollback is a no-op after commit
+	nowNs := now.UnixNano()
+	winNs := window.Nanoseconds()
 
-	var (
-		existingCount     int
-		existingFirstAtNs int64
-	)
-	scanErr := tx.QueryRow(
-		`SELECT count, first_at FROM brute_force_attempts WHERE ip = ?`,
-		ip,
-	).Scan(&existingCount, &existingFirstAtNs)
-
-	switch {
-	case errors.Is(scanErr, sql.ErrNoRows):
-		count = 1
-		firstAt = now
-	case scanErr != nil:
+	var firstAtNs int64
+	scanErr := db.QueryRow(
+		`INSERT INTO brute_force_attempts(ip, count, first_at)
+		VALUES(?, 1, ?)
+		ON CONFLICT(ip) DO UPDATE SET
+			count    = CASE WHEN ? - first_at > ? THEN 1   ELSE count + 1 END,
+			first_at = CASE WHEN ? - first_at > ? THEN ?   ELSE first_at  END
+		RETURNING count, first_at`,
+		ip, nowNs,
+		nowNs, winNs,
+		nowNs, winNs, nowNs,
+	).Scan(&count, &firstAtNs)
+	if scanErr != nil {
 		return 0, time.Time{}, scanErr
-	default:
-		existingFirstAt := time.Unix(0, existingFirstAtNs)
-		if now.Sub(existingFirstAt) > window {
-			count = 1
-			firstAt = now
-		} else {
-			count = existingCount + 1
-			firstAt = existingFirstAt
-		}
 	}
-
-	if _, err := tx.Exec(`INSERT INTO brute_force_attempts(ip, count, first_at)
-		VALUES(?, ?, ?)
-		ON CONFLICT(ip) DO UPDATE SET count = excluded.count, first_at = excluded.first_at`,
-		ip, count, firstAt.UnixNano(),
-	); err != nil {
-		return 0, time.Time{}, err
-	}
-	if err := tx.Commit(); err != nil {
-		return 0, time.Time{}, err
-	}
-
-	return count, firstAt, nil
+	return count, time.Unix(0, firstAtNs), nil
 }
 
 // BruteForceReset deletes the attempt record for ip. Called on a successful

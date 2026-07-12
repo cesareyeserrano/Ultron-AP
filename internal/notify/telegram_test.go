@@ -2,6 +2,7 @@ package notify
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -166,4 +167,28 @@ func TestTelegramSender_MessageTruncation(t *testing.T) {
 func TestTelegramSender_Name(t *testing.T) {
 	sender := NewTelegramSender("", "")
 	assert.Equal(t, "telegram", sender.Name())
+}
+
+// --- A2: bot-token redaction in transport errors ---
+
+func TestRedactToken_ScrubsTokenFromError(t *testing.T) {
+	const token = "123456789:AAExampleSecretBotTokenXYZ"
+	s := NewTelegramSender(token, "42")
+
+	// Shape of a real *url.Error string: the token sits in the URL path.
+	raw := fmt.Errorf(`Post "https://api.telegram.org/bot%s/sendMessage": dial tcp: lookup api.telegram.org: no such host`, token)
+	got := s.redactToken(raw)
+
+	require.Error(t, got)
+	assert.NotContains(t, got.Error(), token, "bot token must not survive in the error")
+	assert.Contains(t, got.Error(), "<redacted-token>")
+	assert.Contains(t, got.Error(), "dial tcp", "non-secret context should be preserved")
+}
+
+func TestRedactToken_NilAndEmptyTokenAreSafe(t *testing.T) {
+	s := NewTelegramSender("", "42")
+	assert.Nil(t, s.redactToken(nil))
+	// With an empty token, ReplaceAll must not blank out the whole message.
+	err := fmt.Errorf("some transport failure")
+	assert.Equal(t, "some transport failure", s.redactToken(err).Error())
 }

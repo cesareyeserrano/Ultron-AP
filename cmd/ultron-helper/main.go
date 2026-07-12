@@ -23,7 +23,12 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
 )
 
-var serviceNameRe = regexp.MustCompile(`^[a-zA-Z0-9_.@\-]+$`)
+// serviceNameRe validates systemd unit names. The first character MUST be
+// alphanumeric so a name can never be parsed by systemctl/journalctl as an
+// option token (e.g. "-M<machine>", "--version") — that is an argument-
+// injection guard for the privileged commands this helper runs as root.
+// Callers additionally pass "--" before the name as defence-in-depth.
+var serviceNameRe = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.@-]*$`)
 
 // allowedUIDs holds the set of caller UIDs the helper will accept on its
 // Unix socket. It is populated once in main() from environment variables
@@ -263,7 +268,7 @@ func handleSystemctl(action, name string) error {
 	if !serviceNameRe.MatchString(name) {
 		return fmt.Errorf("invalid service name")
 	}
-	if _, err := run(context.Background(), 20*time.Second, "systemctl", action, name); err != nil {
+	if _, err := run(context.Background(), 20*time.Second, "systemctl", action, "--", name); err != nil {
 		return fmt.Errorf("systemctl %s %s failed: %w", action, name, err)
 	}
 	return nil

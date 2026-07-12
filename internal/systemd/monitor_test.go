@@ -207,6 +207,57 @@ func TestMonitor_SystemctlNotAvailable(t *testing.T) {
 	assert.Empty(t, m.Failed())
 }
 
+// --- Tests: Service-name argument-injection hardening (A1) ---
+
+// capturingRunner records the args of every Run call so a test can assert
+// exactly what would be handed to systemctl. A successful control action also
+// triggers a follow-up list-units refresh, so tests inspect all calls rather
+// than only the last.
+type capturingRunner struct {
+	calls  [][]string
+	output []byte
+	err    error
+}
+
+func (c *capturingRunner) Run(_ context.Context, name string, args ...string) ([]byte, error) {
+	c.calls = append(c.calls, append([]string{name}, args...))
+	return c.output, c.err
+}
+
+func TestRunControl_RejectsOptionLikeServiceNames(t *testing.T) {
+	// Names that getopt would parse as options must never reach the runner.
+	for _, name := range []string{"-Mfoo", "--version", "-Hroot@evil.com", "-r"} {
+		t.Run(name, func(t *testing.T) {
+			cap := &capturingRunner{output: []byte("ok")}
+			m := NewMonitorWithRunner(cap)
+			res := m.StartService(context.Background(), name)
+			assert.False(t, res.Success, "option-like name %q must be rejected", name)
+			assert.Contains(t, res.Message, "Invalid service name")
+			assert.Empty(t, cap.calls, "runner must not be invoked for %q", name)
+		})
+	}
+}
+
+func TestRunControl_PassesDoubleDashBeforeName(t *testing.T) {
+	// A valid name reaches the exec fallback (the helper socket is absent in
+	// tests) and must be separated from the flags by "--". The success path
+	// also fires a list-units refresh, so assert the control call is present.
+	cap := &capturingRunner{output: []byte("ok")}
+	m := NewMonitorWithRunner(cap)
+	res := m.RestartService(context.Background(), "home-assistant@homeassistant")
+	require.True(t, res.Success, res.Message)
+
+	want := []string{"systemctl", "restart", "--", "home-assistant@homeassistant"}
+	found := false
+	for _, call := range cap.calls {
+		if assert.ObjectsAreEqual(want, call) {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "expected a %v call, got %v", want, cap.calls)
+}
+
 func TestMonitor_CommandError_SetsUnavailable(t *testing.T) {
 	mock := &mockRunner{err: fmt.Errorf("exec: systemctl: executable file not found in $PATH")}
 	m := NewMonitorWithRunner(mock)
