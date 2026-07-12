@@ -235,3 +235,18 @@ func TestTC_SR_070h_NoMaxW4xlOnForms(t *testing.T) {
 	// allow class strings to contain 'max-w-4xl' only zero times in the settings region
 	assert.NotContains(t, settingsHTML, "max-w-4xl", "no settings form should use max-w-4xl (FR-070)")
 }
+
+// CSS7 — the settings page controller lives in /static/js/settings.js
+// (loaded from base.html's <head> with the BG-038 widget pattern); the page
+// must not re-grow a page-level inline <script> for it. The only inline
+// script left in the settings content is the alerts-form field toggler.
+func TestCSS7_SettingsControllerIsExternal(t *testing.T) {
+	body := getSettingsBody(t)
+
+	assert.Contains(t, body, `<script src="/static/js/settings.js?v=`,
+		"settings.js must be loaded with an AssetVersion cache-buster")
+	assert.NotContains(t, body, `document.getElementById('settings-shell')`,
+		"settings-shell controller code must not be inlined in the page")
+	assert.NotContains(t, body, "data-accordion-toggle",
+		"accordion markup is built client-side by settings.js, never server-rendered")
+}
