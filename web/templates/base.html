@@ -4,22 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} - Ultron</title>
-    <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon-64.png?v=20260226h">
-    <link rel="apple-touch-icon" href="/static/ultron-192.png?v=20260226h">
+    <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon-64.png?v={{.AssetVersion}}">
+    <link rel="apple-touch-icon" href="/static/ultron-192.png?v={{.AssetVersion}}">
     <link rel="stylesheet" href="/static/css/app.css?v={{.AssetVersion}}">
     <script src="/static/js/htmx.min.js"></script>
     {{if eq .ActivePage "dashboard"}}
-    <script src="/static/js/sse.js?v=20260227ux3"></script>
+    <script src="/static/js/sse.js?v={{.AssetVersion}}"></script>
     {{end}}
     <!-- BG-038: widget scripts must load on every page so they survive hx-boost
          body-swaps to /settings (hx-boost doesn't update <head>). Each widget
          IIFE is idempotent (__*Bound guards) and binds htmx:afterSwap. -->
-    <script src="/static/js/widgets/stepper.js?v=20260511bg038" defer></script>
-    <script src="/static/js/widgets/segmented.js?v=20260511bg038" defer></script>
-    <script src="/static/js/widgets/toggle.js?v=20260511bg038" defer></script>
-    <script src="/static/js/widgets/chip-preset.js?v=20260511bg038" defer></script>
-    <script src="/static/js/widgets/anchor-chip.js?v=20260511bg038" defer></script>
-    <script src="/static/js/widgets/encryption-key.js?v=20260511bg038" defer></script>
+    <script src="/static/js/widgets/stepper.js?v={{.AssetVersion}}" defer></script>
+    <script src="/static/js/widgets/segmented.js?v={{.AssetVersion}}" defer></script>
+    <script src="/static/js/widgets/toggle.js?v={{.AssetVersion}}" defer></script>
+    <script src="/static/js/widgets/chip-preset.js?v={{.AssetVersion}}" defer></script>
+    <script src="/static/js/widgets/anchor-chip.js?v={{.AssetVersion}}" defer></script>
+    <script src="/static/js/widgets/encryption-key.js?v={{.AssetVersion}}" defer></script>
 </head>
 <body class="ux-shell bg-base text-text font-sans min-h-screen flex" hx-boost="true" data-active-page="{{.ActivePage}}">
     <!-- Mobile overlay -->
@@ -38,7 +38,7 @@
     <!-- Toast Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
-    <script src="/static/js/sidebar.js?v=20260227ux3"></script>
+    <script src="/static/js/sidebar.js?v={{.AssetVersion}}"></script>
     <script>
     (function() {
         // Toast system

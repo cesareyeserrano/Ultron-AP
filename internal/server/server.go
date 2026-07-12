@@ -135,7 +135,7 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 		maxUploadMB:   50,
 	})
 
-	s.assetVersion = computeAssetVersion(web.Static, "static/css/app.css")
+	s.assetVersion = computeAssetVersion(web.Static, "static")
 	s.parseTemplates()
 	s.registerRoutes(mux)
 	s.httpServer.Handler = s.securityHeaders(mux)
@@ -225,19 +225,35 @@ func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
 	s.requestBackupReschedule()
 }
 
-// computeAssetVersion returns a short content hash of a bundled static asset,
-// used as the ?v= cache-busting token on the stylesheet link. Deriving it from
-// the file content means editing input.css + `make css` automatically
-// invalidates the cache — no more hand-bumped version strings drifting out of
-// sync across templates (CSS1). Falls back to the build commit if the asset
-// can't be read.
-func computeAssetVersion(fsys fs.FS, path string) string {
-	data, err := fs.ReadFile(fsys, path)
+// computeAssetVersion returns a short content hash of every bundled static
+// asset under root, used as the ?v= cache-busting token on the CSS/JS/icon
+// links. Deriving it from file content means editing any asset (`make css`, a
+// JS tweak) automatically invalidates the cache — no more hand-bumped version
+// strings drifting out of sync across templates (CSS1, and the JS links).
+// WalkDir visits in lexical order, so the hash is deterministic. Falls back to
+// the build commit if the tree can't be read.
+func computeAssetVersion(fsys fs.FS, root string) string {
+	h := sha256.New()
+	err := fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		data, err := fs.ReadFile(fsys, path)
+		if err != nil {
+			return err
+		}
+		h.Write([]byte(path)) // bind the path so a rename changes the hash
+		h.Write([]byte{0})
+		h.Write(data)
+		return nil
+	})
 	if err != nil {
 		return BuildCommit
 	}
-	sum := sha256.Sum256(data)
-	return hex.EncodeToString(sum[:])[:12]
+	return hex.EncodeToString(h.Sum(nil))[:12]
 }
 
 func (s *Server) requestBackupReschedule() {

@@ -121,10 +121,15 @@ func New(cfg Config) *Orchestrator {
 
 // Status returns a copy of the current orchestrator state.
 func (o *Orchestrator) Status() Status {
+	// B14: snapshot the in-memory state under the lock, then run the DB Count()
+	// query outside it. Holding the scheduler mutex across a SQLite query let a
+	// slow/contended DB (e.g. during a large ApplySweep) block the sweep loop,
+	// which also takes this mutex each tick.
 	o.mu.Lock()
-	defer o.mu.Unlock()
 	st := o.status
 	st.CurrentCadence = o.currentCadence
+	o.mu.Unlock()
+
 	if n, err := o.cfg.Store.Count(); err == nil {
 		st.DeviceCount = n
 	}
