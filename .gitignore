@@ -50,3 +50,6 @@ deploy/raspberry-stable/ultron-ap-linux-arm64
 .aitri.lock
 .aitri/local.json
 .aitri/*.lock
+
+# Node (only used for the optional @tailwindcss/cli rebuild path — see Makefile)
+node_modules/
