@@ -102,4 +102,9 @@
   } else {
     initAll();
   }
+
+  // Re-init on hx-boost swaps and history restores — the swapped-in widget is
+  // a fresh node (BG-038 family; __encKeyBound keeps re-init idempotent).
+  document.body.addEventListener('htmx:afterSwap', function (e) { initAll(e.target); });
+  document.body.addEventListener('htmx:historyRestore', function () { initAll(); });
 })();
