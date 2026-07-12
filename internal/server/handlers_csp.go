@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -68,11 +69,11 @@ func logCSPReport(body []byte, truncated bool, remote, contentType string) {
 		Report map[string]any `json:"csp-report"`
 	}
 	if err := json.Unmarshal(body, &legacy); err == nil && legacy.Report != nil {
-		log.Printf("%s remote=%s blocked=%v directive=%v document=%v",
+		log.Printf("%s remote=%s blocked=%q directive=%q document=%q",
 			prefix, remote,
-			legacy.Report["blocked-uri"],
-			legacy.Report["violated-directive"],
-			legacy.Report["document-uri"])
+			cspLogField(legacy.Report["blocked-uri"]),
+			cspLogField(legacy.Report["violated-directive"]),
+			cspLogField(legacy.Report["document-uri"]))
 		return
 	}
 
@@ -86,15 +87,26 @@ func logCSPReport(body []byte, truncated bool, remote, contentType string) {
 			if e.Type != "csp-violation" || e.Body == nil {
 				continue
 			}
-			log.Printf("%s remote=%s blocked=%v directive=%v document=%v",
+			log.Printf("%s remote=%s blocked=%q directive=%q document=%q",
 				prefix, remote,
-				e.Body["blockedURL"],
-				e.Body["effectiveDirective"],
-				e.Body["documentURL"])
+				cspLogField(e.Body["blockedURL"]),
+				cspLogField(e.Body["effectiveDirective"]),
+				cspLogField(e.Body["documentURL"]))
 		}
 		return
 	}
 
 	// Last resort: log the raw body for forensics.
 	log.Printf("%s remote=%s ct=%s raw=%q", prefix, remote, contentType, body)
+}
+
+// cspLogField renders an attacker-controlled report field for a single log
+// line. The %q verb the callers use already escapes CR/LF, but capping the
+// length keeps one sprayed report from dominating the journal (B8).
+func cspLogField(v any) string {
+	s := fmt.Sprintf("%v", v)
+	if len(s) > 256 {
+		s = s[:256] + "…"
+	}
+	return s
 }

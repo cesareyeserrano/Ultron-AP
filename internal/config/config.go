@@ -181,6 +181,12 @@ func parseTrustedProxies(raw string) ([]*net.IPNet, error) {
 			continue
 		}
 		if _, n, err := net.ParseCIDR(part); err == nil {
+			// Reject an all-encompassing mask (0.0.0.0/0 or ::/0): trusting
+			// every peer turns on X-Forwarded-Proto/For spoofing for anyone
+			// (B3). A trusted-proxy allowlist must be specific.
+			if ones, _ := n.Mask.Size(); ones == 0 {
+				return nil, fmt.Errorf("entry %q trusts all peers; specify the actual proxy address/range", part)
+			}
 			out = append(out, n)
 			continue
 		}

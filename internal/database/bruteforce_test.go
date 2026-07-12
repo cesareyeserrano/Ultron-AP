@@ -185,3 +185,28 @@ func TestBruteForce_RecordFailure_ConcurrentNoLostIncrements(t *testing.T) {
 	require.True(t, found)
 	assert.Equal(t, n, c, "every concurrent failure must be counted (no lost increments)")
 }
+
+// B1 — GetSession must not return an expired session, so downstream CSRF/token
+// paths never trust one even if reached without the auth middleware.
+func TestGetSession_ExpiredReturnsNil(t *testing.T) {
+	db := newTestDB(t)
+	require.NoError(t, db.CreateUser("admin", "$2a$10$dummy"))
+	expired := &Session{
+		ID:        "expired-token",
+		UserID:    1,
+		CSRFToken: "csrf",
+		ExpiresAt: time.Now().Add(-time.Minute),
+	}
+	require.NoError(t, db.CreateSession(expired))
+
+	got, err := db.GetSession("expired-token")
+	require.NoError(t, err)
+	assert.Nil(t, got, "expired session must not be returned")
+
+	// A live session is still returned.
+	live := &Session{ID: "live-token", UserID: 1, CSRFToken: "csrf", ExpiresAt: time.Now().Add(time.Hour)}
+	require.NoError(t, db.CreateSession(live))
+	got2, err := db.GetSession("live-token")
+	require.NoError(t, err)
+	require.NotNil(t, got2)
+}

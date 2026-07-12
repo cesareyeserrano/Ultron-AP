@@ -26,11 +26,23 @@ const missingSecretKeyWarning = "SECURITY WARNING: ULTRON_SECRET_KEY is not set 
 // write silently landed in plaintext; it is now refused.
 var errSecretKeyRequired = fmt.Errorf("ULTRON_SECRET_KEY is not set: refusing to store notification secret in plaintext — set ULTRON_SECRET_KEY and retry")
 
+// minSecretKeyLen is the shortest ULTRON_SECRET_KEY we consider adequate. The
+// value is stretched with SHA-256, which does NOT add entropy — a short
+// passphrase yields a brute-forceable AES-GCM key protecting the stored
+// notification secrets (B2).
+const minSecretKeyLen = 16
+
 // WarnIfMissingSecretKey emits the plaintext-secrets warning to the standard
-// logger if ULTRON_SECRET_KEY is not configured. Call this once at startup.
+// logger if ULTRON_SECRET_KEY is not configured, or a weak-key warning if it is
+// set but shorter than minSecretKeyLen. Call this once at startup.
 func WarnIfMissingSecretKey() {
-	if _, ok := secretKeyFromEnv(); !ok {
+	raw := strings.TrimSpace(os.Getenv("ULTRON_SECRET_KEY"))
+	if raw == "" {
 		log.Println(missingSecretKeyWarning)
+		return
+	}
+	if len(raw) < minSecretKeyLen {
+		log.Printf("WARNING: ULTRON_SECRET_KEY is only %d characters; use at least %d random characters — SHA-256 does not add entropy to a short passphrase (B2)", len(raw), minSecretKeyLen)
 	}
 }
 

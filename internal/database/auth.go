@@ -95,6 +95,14 @@ func (db *DB) GetSession(token string) (*Session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot query session: %w", err)
 	}
+	// B1: never hand back an expired session. Filtering here (rather than only
+	// in the auth middleware) means every caller — validateCSRF, the CSRF-token
+	// render path — is protected even if mounted without requireAuth. The
+	// filter is in Go so it's independent of how expires_at is stored. Expired
+	// rows are reaped by the retention job.
+	if !s.ExpiresAt.IsZero() && time.Now().After(s.ExpiresAt) {
+		return nil, nil
+	}
 	return s, nil
 }
 

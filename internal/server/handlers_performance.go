@@ -193,8 +193,18 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleSettingsBackup(w http.ResponseWriter, r *http.Request) {
-	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("ultron-backup-%d.db", time.Now().Unix()))
-	defer os.Remove(tmpFile)
+	// B11: write into a private (0700) temp directory with an unpredictable
+	// name instead of a guessable path in the world-shared temp dir. That
+	// closes the pre-create/symlink race on the os.Remove→VACUUM INTO window,
+	// since no other user can traverse into or plant a symlink inside the dir.
+	tmpDir, err := os.MkdirTemp("", "ultron-backup-")
+	if err != nil {
+		log.Printf("settings: backup temp dir failed: %v", err)
+		http.Error(w, "Backup failed", http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(tmpDir)
+	tmpFile := filepath.Join(tmpDir, "ultron.db")
 
 	if err := s.db.Backup(tmpFile); err != nil {
 		log.Printf("settings: backup failed: %v", err)

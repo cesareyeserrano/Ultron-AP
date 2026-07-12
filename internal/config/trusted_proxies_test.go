@@ -70,3 +70,13 @@ func TestParseTrustedProxies_EmptyEntriesIgnored(t *testing.T) {
 		t.Fatalf("len = %d, want 1 (empty entries should be skipped)", len(got))
 	}
 }
+
+// B3 — an all-encompassing CIDR must be rejected: trusting every peer enables
+// X-Forwarded-* spoofing for anyone.
+func TestParseTrustedProxies_RejectsCatchAll(t *testing.T) {
+	for _, cidr := range []string{"0.0.0.0/0", "::/0"} {
+		if _, err := parseTrustedProxies(cidr); err == nil {
+			t.Errorf("expected %q to be rejected", cidr)
+		}
+	}
+}

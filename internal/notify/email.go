@@ -203,7 +203,26 @@ func formatEmailBody(alert *database.Alert) string {
 // text/plain message identical to the old format.
 //
 // @aitri-trace FR-027 AC-027-002
+// sanitizeHeader strips CR/LF and other control characters (except tab) from an
+// email header value to prevent header injection (B4). From/To/Subject come
+// from operator settings and alert content; a value containing "\r\n" could
+// otherwise smuggle extra headers such as Bcc: into the message.
+func sanitizeHeader(v string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\r' || r == '\n' {
+			return -1
+		}
+		if r < 0x20 && r != '\t' {
+			return -1
+		}
+		return r
+	}, v)
+}
+
 func buildMIMEMessage(from, to, subject, plain, html string) []byte {
+	from = sanitizeHeader(from)
+	to = sanitizeHeader(to)
+	subject = sanitizeHeader(subject)
 	if html == "" {
 		// Backwards-compat: plain-only message.
 		var b strings.Builder
