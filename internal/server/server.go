@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -62,6 +64,7 @@ type Server struct {
 	sseBroker         *sseBroker
 	templates         fs.FS
 	tmplCache         map[string]*template.Template // pre-parsed at startup
+	assetVersion      string                        // content hash of app.css for cache-busting (CSS1)
 	startedAt         time.Time
 
 	// sseIntervalNs holds the SSE broadcast interval as nanoseconds (atomic).
@@ -138,6 +141,7 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 	s.backupUploadTimeout.Store(30)
 	s.backupMaxUploadMB.Store(50)
 
+	s.assetVersion = computeAssetVersion(web.Static, "static/css/app.css")
 	s.parseTemplates()
 	s.registerRoutes(mux)
 	s.httpServer.Handler = s.securityHeaders(mux)
@@ -197,6 +201,21 @@ func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
 	s.backupUploadTimeout.Store(int64(cfg.UploadTimeoutSec))
 	s.backupMaxUploadMB.Store(int64(cfg.MaxUploadSizeMB))
 	s.requestBackupReschedule()
+}
+
+// computeAssetVersion returns a short content hash of a bundled static asset,
+// used as the ?v= cache-busting token on the stylesheet link. Deriving it from
+// the file content means editing input.css + `make css` automatically
+// invalidates the cache — no more hand-bumped version strings drifting out of
+// sync across templates (CSS1). Falls back to the build commit if the asset
+// can't be read.
+func computeAssetVersion(fsys fs.FS, path string) string {
+	data, err := fs.ReadFile(fsys, path)
+	if err != nil {
+		return BuildCommit
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])[:12]
 }
 
 func (s *Server) requestBackupReschedule() {

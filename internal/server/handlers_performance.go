@@ -86,7 +86,12 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	cfg := database.DefaultBackupConfig()
+	// F5: base the update on the STORED config, not on defaults, so a POST that
+	// omits a field preserves its saved value instead of silently resetting it.
+	cfg, err := s.db.GetBackupConfig()
+	if err != nil {
+		cfg = database.DefaultBackupConfig()
+	}
 	cfg.Enabled = r.FormValue("enabled") == "on"
 
 	// Numeric fields go through RangeFor() — out-of-range returns 400 with
@@ -156,16 +161,22 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 	if mode != "" {
 		cfg.DestinationMode = mode
 	}
-	rawLocalPath := strings.TrimSpace(r.FormValue("local_path"))
-	cleanedLocalPath, err := database.ValidateBackupPath(rawLocalPath, s.cfg.BackupRoot)
-	if err != nil {
-		log.Printf("settings: rejected backup local_path %q: %v", rawLocalPath, err)
-		http.Error(w, "Invalid backup path: "+err.Error(), http.StatusBadRequest)
-		return
+	// Only touch local_path / encryption_key_ref when the form actually carries
+	// them, so a partial POST cannot blank out a stored path or key ref (F5).
+	if r.Form.Has("local_path") {
+		rawLocalPath := strings.TrimSpace(r.FormValue("local_path"))
+		cleanedLocalPath, err := database.ValidateBackupPath(rawLocalPath, s.cfg.BackupRoot)
+		if err != nil {
+			log.Printf("settings: rejected backup local_path %q: %v", rawLocalPath, err)
+			http.Error(w, "Invalid backup path: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		cfg.LocalPath = cleanedLocalPath
 	}
-	cfg.LocalPath = cleanedLocalPath
 	cfg.EncryptEnabled = r.FormValue("encrypt_enabled") == "on"
-	cfg.EncryptionKeyRef = strings.TrimSpace(r.FormValue("encryption_key_ref"))
+	if r.Form.Has("encryption_key_ref") {
+		cfg.EncryptionKeyRef = strings.TrimSpace(r.FormValue("encryption_key_ref"))
+	}
 
 	if err := s.db.SaveBackupConfig(cfg); err != nil {
 		log.Printf("settings: failed to save backup config: %v", err)

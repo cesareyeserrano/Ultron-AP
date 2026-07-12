@@ -74,6 +74,21 @@ func TestLoginPage_Renders(t *testing.T) {
 	assert.Contains(t, body, "csrf_token")
 }
 
+// CSS1 — the stylesheet link must carry the content-hash asset version, not a
+// stale hand-bumped string, so editing the CSS auto-invalidates the cache.
+func TestLoginPage_UsesContentHashedAssetVersion(t *testing.T) {
+	srv, _ := setupAuthHandlerTest(t)
+
+	require.NotEmpty(t, srv.assetVersion)
+	req := httptest.NewRequest(http.MethodGet, "/login", nil)
+	rec := httptest.NewRecorder()
+	srv.httpServer.Handler.ServeHTTP(rec, req)
+
+	body := rec.Body.String()
+	assert.Contains(t, body, "/static/css/app.css?v="+srv.assetVersion)
+	assert.NotContains(t, body, "app.css?v=20260304settings1", "stale hardcoded version must be gone")
+}
+
 func TestLogin_Success(t *testing.T) {
 	srv, _ := setupAuthHandlerTest(t)
 

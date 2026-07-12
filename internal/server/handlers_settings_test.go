@@ -439,3 +439,40 @@ func TestLegacyIntegrationDiagnosticsRouteNotFound(t *testing.T) {
 
 	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
+
+// F5 — a partial POST that omits local_path / encryption_key_ref must preserve
+// the stored values instead of blanking them.
+func TestBackupConfigSave_PartialPostPreservesStoredFields(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+	allowedPath := filepath.Join(srv.cfg.BackupRoot, "ultron-backups")
+
+	post := func(form url.Values) int {
+		form.Set("csrf_token", session.CSRFToken)
+		req := httptest.NewRequest(http.MethodPost, "/api/backup/config", strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+		rec := httptest.NewRecorder()
+		srv.httpServer.Handler.ServeHTTP(rec, req)
+		return rec.Code
+	}
+
+	// 1) Establish a full config with a path and a key ref.
+	require.Equal(t, http.StatusOK, post(url.Values{
+		"enabled":            {"on"},
+		"retention_count":    {"9"},
+		"local_path":         {allowedPath},
+		"encryption_key_ref": {"env:ULTRON_BACKUP_KEY"},
+	}))
+
+	// 2) Partial POST that only changes retention and omits the string fields.
+	require.Equal(t, http.StatusOK, post(url.Values{
+		"enabled":         {"on"},
+		"retention_count": {"5"},
+	}))
+
+	cfg, err := srv.db.GetBackupConfig()
+	require.NoError(t, err)
+	assert.Equal(t, 5, cfg.RetentionCount, "changed field should update")
+	assert.Equal(t, allowedPath, cfg.LocalPath, "omitted local_path must be preserved")
+	assert.Equal(t, "env:ULTRON_BACKUP_KEY", cfg.EncryptionKeyRef, "omitted key ref must be preserved")
+}
