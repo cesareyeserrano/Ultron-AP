@@ -20,9 +20,9 @@
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "2.0.0-rc.84",
+  "aitriVersion": "2.0.0-rc.173",
   "artifactsDir": "spec",
-  "updatedAt": "2026-06-15T23:34:35.574Z",
+  "updatedAt": "2026-07-12T16:20:04.622Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,141 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-05-12T18:18:17.076Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0
-    },
-    {
-      "at": "2026-05-12T18:18:40.763Z",
-      "event": "normalize-resolved",
-      "phase": null,
-      "files": 3,
-      "method": "git",
-      "baseRefFrom": "b05c30debad779249b70bca74da62e8d81570bfc",
-      "baseRefTo": "c343c58a43cc123a8e510e8dc7058ba3c628566b"
-    },
-    {
-      "at": "2026-05-22T17:37:11.710Z",
-      "event": "normalize-resolved",
-      "phase": null,
-      "files": 10,
-      "method": "git",
-      "baseRefFrom": "c343c58a43cc123a8e510e8dc7058ba3c628566b",
-      "baseRefTo": "7042db9ed99dba92b71395de03032ac1124e06e0",
-      "reason": "Aitri feature verification state refreshed and committed; root normalize did not advance feature metadata baseline automatically"
-    },
-    {
-      "at": "2026-05-29T21:47:07.499Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-29T21:47:10.102Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0
-    },
-    {
-      "at": "2026-06-14T20:47:45.059Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.84",
-      "category": "fieldRename",
-      "target": ".aitri#reconcileState",
-      "transform": "rename .aitri field normalizeState → reconcileState (preserve baseline)"
-    },
-    {
-      "at": "2026-06-14T20:47:45.060Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.84",
-      "category": "artifactRename",
-      "target": "04_BUILD_REPORT.json",
-      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
-    },
-    {
-      "at": "2026-06-14T20:47:45.060Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.84",
-      "category": "artifactRename",
-      "target": "05_TRACEABILITY.json",
-      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
-    },
-    {
-      "at": "2026-06-15T21:05:39.156Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-06-15T21:06:32.895Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 2,
-      "method": "git",
-      "baseRefFrom": "d9e22ec46089ee8dfacbc06f0ef68244ae93510b",
-      "baseRefTo": "1c16d9e7150b42fb5c8b7b90ac8c2b7e8ce27459"
-    },
-    {
-      "at": "2026-06-15T21:12:49.931Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 2,
-      "method": "git",
-      "baseRefFrom": "1c16d9e7150b42fb5c8b7b90ac8c2b7e8ce27459",
-      "baseRefTo": "d30b5cafe34f5d27f831213c903d49f13cc0bb28"
-    },
-    {
-      "at": "2026-06-15T21:16:24.396Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 2,
-      "method": "git",
-      "baseRefFrom": "d30b5cafe34f5d27f831213c903d49f13cc0bb28",
-      "baseRefTo": "df1eee54094230556bd08eec9ee3b6f335fee8e9"
-    },
-    {
-      "at": "2026-06-15T21:29:37.194Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 4,
-      "method": "git",
-      "baseRefFrom": "df1eee54094230556bd08eec9ee3b6f335fee8e9",
-      "baseRefTo": "4f362a1a70089ec90aebf3ee27d565bb251545f7"
-    },
-    {
-      "at": "2026-06-15T21:55:49.667Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 8,
-      "method": "git",
-      "baseRefFrom": "4f362a1a70089ec90aebf3ee27d565bb251545f7",
-      "baseRefTo": "d00666db1c7b66370f6344cdb7b07c020b819cee"
-    },
-    {
-      "at": "2026-06-15T22:28:27.007Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
     {
       "at": "2026-06-15T22:32:10.101Z",
       "event": "reconcile-resolved",
@@ -212,9 +77,157 @@
       "method": "git",
       "baseRefFrom": "f76d7ef6213b989115a7b44d6355cb3f36bdc8ea",
       "baseRefTo": "9d69e1e52e76d2ca7aeeeab1199fcb15ba9fbcad"
+    },
+    {
+      "at": "2026-07-12T15:56:26.177Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/help-page/spec/04_BUILD_REPORT.json",
+      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.178Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/help-page/spec/05_TRACEABILITY.json",
+      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.178Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/insights-engine/spec/04_BUILD_REPORT.json",
+      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.178Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/insights-engine/spec/05_TRACEABILITY.json",
+      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.178Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/lan-devices/spec/04_BUILD_REPORT.json",
+      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.178Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/lan-devices/spec/05_TRACEABILITY.json",
+      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.179Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/network-alerts/spec/04_BUILD_REPORT.json",
+      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.180Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/network-alerts/spec/05_TRACEABILITY.json",
+      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.180Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/network-monitoring/spec/04_BUILD_REPORT.json",
+      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.180Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/network-monitoring/spec/05_TRACEABILITY.json",
+      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.180Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/settings-revamp/spec/04_BUILD_REPORT.json",
+      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.180Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/settings-revamp/spec/05_TRACEABILITY.json",
+      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.180Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/telegram-message-ux/spec/04_BUILD_REPORT.json",
+      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T15:56:26.180Z",
+      "event": "upgrade_migration",
+      "phase": "upgrade",
+      "from_version": "0.1.65",
+      "to_version": "2.0.0-rc.173",
+      "category": "artifactRename",
+      "target": "features/telegram-message-ux/spec/05_TRACEABILITY.json",
+      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
+    },
+    {
+      "at": "2026-07-12T16:20:04.617Z",
+      "event": "reconcile-pending",
+      "phase": null,
+      "files": 57,
+      "method": "git",
+      "verifyPassedCleared": true
     }
   ],
-  "verifyPassed": true,
+  "verifyPassed": false,
   "verifyTimestamp": "2026-03-18T22:32:14.166Z",
   "driftPhases": [],
   "rejections": {
@@ -226,16 +239,6 @@
   "verifyRanAt": "2026-06-15T23:32:19.737Z",
   "auditLastAt": "2026-06-15T22:09:31.177Z",
   "upgradeFindings": [],
-  "verifySummary": {
-    "total": 45,
-    "passed": 45,
-    "failed": 0,
-    "skipped": 0,
-    "skipped_e2e": 0,
-    "skipped_no_marker": 0,
-    "manual": 0,
-    "manual_verified": 0
-  },
   "lastVerifyRun": {
     "passed": 45,
     "failed": 0,
