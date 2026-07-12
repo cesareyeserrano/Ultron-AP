@@ -157,27 +157,37 @@ func (t *TelegramSender) SendFile(filePath string, caption string) error {
 	}
 	defer file.Close()
 
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("document", filepath.Base(filePath))
-	if err != nil {
-		return fmt.Errorf("failed to create form file: %w", err)
-	}
-	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("failed to copy file to part: %w", err)
-	}
-	if err := writer.WriteField("chat_id", t.chatID); err != nil {
-		return fmt.Errorf("failed to write chat_id: %w", err)
-	}
-	if err := writer.WriteField("caption", caption); err != nil {
-		return fmt.Errorf("failed to write caption: %w", err)
-	}
-	if err := writer.Close(); err != nil {
-		return fmt.Errorf("failed to close writer: %w", err)
-	}
+	// M4: stream the multipart body through an io.Pipe instead of buffering the
+	// whole file in a bytes.Buffer. Backups can approach the Pi's available RAM
+	// (the encryption path already streams to disk in 64 KiB chunks); buffering
+	// the entire artefact here would undo that OOM protection. Peak memory is
+	// now O(pipe buffer), not O(file size).
+	pr, pw := io.Pipe()
+	writer := multipart.NewWriter(pw)
+	go func() {
+		werr := func() error {
+			part, e := writer.CreateFormFile("document", filepath.Base(filePath))
+			if e != nil {
+				return e
+			}
+			if _, e := io.Copy(part, file); e != nil {
+				return e
+			}
+			if e := writer.WriteField("chat_id", t.chatID); e != nil {
+				return e
+			}
+			if e := writer.WriteField("caption", caption); e != nil {
+				return e
+			}
+			return writer.Close()
+		}()
+		// Propagate any producer error to the HTTP reader so the request fails
+		// instead of sending a truncated body.
+		_ = pw.CloseWithError(werr)
+	}()
 
 	endpoint := telegramAPIBase + t.botToken + "/sendDocument"
-	req, err := http.NewRequest("POST", endpoint, body)
+	req, err := http.NewRequest("POST", endpoint, pr)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

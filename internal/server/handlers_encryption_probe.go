@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 const probeReasonMaxLen = 120
@@ -136,13 +137,18 @@ func probeFile(w http.ResponseWriter, raw string) {
 		writeProbe(w, http.StatusOK, probeResult{OK: false, Reason: "file not found"})
 		return
 	}
-	if st.IsDir() {
+	// Only regular files qualify. Rejecting non-regular modes (directories,
+	// FIFOs, devices, sockets) also closes an O_RDONLY-on-a-FIFO hang: opening
+	// a named pipe for read blocks until a writer appears, which would pin the
+	// handler goroutine indefinitely (M8). O_NONBLOCK is belt-and-braces
+	// against a TOCTOU swap between Stat and Open.
+	if !st.Mode().IsRegular() {
 		writeProbe(w, http.StatusOK, probeResult{OK: false, Reason: "file not readable"})
 		return
 	}
-	// Verify readable by opening O_RDONLY and immediately closing — DOES NOT
-	// read content (no key material is ever read here).
-	f, err := os.OpenFile(cleaned, os.O_RDONLY, 0)
+	// Verify readable by opening O_RDONLY|O_NONBLOCK and immediately closing —
+	// DOES NOT read content (no key material is ever read here).
+	f, err := os.OpenFile(cleaned, os.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		writeProbe(w, http.StatusOK, probeResult{OK: false, Reason: "file not readable"})
 		return

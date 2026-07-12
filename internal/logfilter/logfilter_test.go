@@ -125,3 +125,54 @@ func TestFilter_NoFalsePositiveOnNonSecretDottedTokens(t *testing.T) {
 		t.Fatalf("non-secret content must not be redacted, got %q", got)
 	}
 }
+
+// M6 — a quoted secret value containing spaces must be redacted whole; the
+// old \S+ capture stopped at the first space and leaked the remainder.
+func TestFilter_PolicyJournal_RedactsQuotedSecretWithSpaces(t *testing.T) {
+	in := []byte(`app: PASSWORD="hunter2 correct horse" started` + "\n")
+	got := string(Filter(in, PolicyJournal, 0))
+	if strings.Contains(got, "correct horse") {
+		t.Fatalf("quoted secret leaked: %q", got)
+	}
+	if !strings.Contains(got, "[REDACTED]") {
+		t.Fatalf("expected redaction marker, got %q", got)
+	}
+}
+
+// M6 — password inside a connection string must be redacted while keeping the
+// non-secret scheme/user/host for debuggability.
+func TestFilter_PolicyJournal_RedactsConnectionStringPassword(t *testing.T) {
+	in := []byte("app: dsn=postgres://admin:s3cr3tpw@db.internal:5432/app\n")
+	got := string(Filter(in, PolicyJournal, 0))
+	if strings.Contains(got, "s3cr3tpw") {
+		t.Fatalf("connection-string password leaked: %q", got)
+	}
+	if !strings.Contains(got, "db.internal") {
+		t.Fatalf("non-secret host should be preserved, got %q", got)
+	}
+}
+
+// M6 — additional keyword coverage.
+func TestFilter_PolicyJournal_RedactsPassphrase(t *testing.T) {
+	in := []byte("app: passphrase=letmein credential: topsecret\n")
+	got := string(Filter(in, PolicyJournal, 0))
+	if strings.Contains(got, "letmein") || strings.Contains(got, "topsecret") {
+		t.Fatalf("passphrase/credential leaked: %q", got)
+	}
+}
+
+// M7 — a very large journal payload is capped and still redacted at the tail.
+func TestFilter_PolicyJournal_LargeInputCappedAndRedacted(t *testing.T) {
+	var b strings.Builder
+	for i := 0; i < 100000; i++ {
+		b.WriteString("filler line to grow the payload well beyond the cap\n")
+	}
+	b.WriteString("app: TOKEN=leakme\n")
+	got := Filter([]byte(b.String()), PolicyJournal, 64*1024)
+	if len(got) > 64*1024 {
+		t.Fatalf("output not capped: %d bytes", len(got))
+	}
+	if strings.Contains(string(got), "leakme") {
+		t.Fatalf("tail secret not redacted after cap: %q", string(got)[len(string(got))-80:])
+	}
+}

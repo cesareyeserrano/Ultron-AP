@@ -327,7 +327,16 @@ func (s *Server) performAutomatedBackup() error {
 	// 1. Create local backup file
 	backupDir := filepath.Join(filepath.Dir(s.cfg.DBPath), "backups")
 	if strings.TrimSpace(backupPathOverride) != "" {
-		backupDir = filepath.Clean(backupPathOverride)
+		// M2: re-validate the override at run time, not just at config-save
+		// time. A symlink component planted after save could otherwise redirect
+		// the plaintext VACUUM INTO outside BackupRoot. ValidateBackupPath
+		// re-checks containment and the symlink chain on every run.
+		validated, err := database.ValidateBackupPath(backupPathOverride, s.cfg.BackupRoot)
+		if err != nil {
+			log.Printf("backup: rejecting local path override %q: %v", backupPathOverride, err)
+			return fmt.Errorf("backup local path invalid: %w", err)
+		}
+		backupDir = validated
 	}
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
 		log.Printf("backup: failed to create backup dir: %v", err)

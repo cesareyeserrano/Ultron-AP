@@ -8,6 +8,7 @@
 package logfilter
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 )
@@ -43,6 +44,19 @@ func Filter(input []byte, policy Policy, maxBytes int) []byte {
 	}
 
 	out := input
+
+	// M7: bound the redaction work. Redaction makes several full regex passes,
+	// each allocating a copy, so running it over a multi-megabyte payload
+	// spikes memory before the cap ever applies. Pre-trim very large inputs to
+	// the tail on a line boundary first (we keep the tail anyway), so the regex
+	// passes only ever see ~maxBytes. Cutting on '\n' avoids splitting a secret
+	// mid-line at the trim point.
+	if policy == PolicyJournal && len(out) > 2*maxBytes {
+		out = out[len(out)-maxBytes:]
+		if i := bytes.IndexByte(out, '\n'); i >= 0 && i+1 < len(out) {
+			out = out[i+1:]
+		}
+	}
 	if policy == PolicyJournal {
 		out = redactJournal(out)
 	}
@@ -81,17 +95,20 @@ var (
 	// the Bearer keyword; the token is anything that isn't whitespace.
 	bearerRe = regexp.MustCompile(`(?i)\bbearer\s+\S+`)
 
-	// key=value or key: value where key smells like a secret. The
-	// trailing capture is a non-quoted, non-whitespace run; common
-	// log layouts use this form. We deliberately match neither
-	// surrounding quotes nor commas in the value to avoid eating
-	// structured-log delimiters.
-	envRe = regexp.MustCompile(`(?i)\b(token|secret|password|passwd|api[_\-]?key|apikey|access[_\-]?key|auth(?:orization)?)\b\s*[:=]\s*\S+`)
+	// key=value or key: value where key smells like a secret. The value
+	// capture accepts a double/single-quoted string (so a secret containing
+	// spaces is redacted whole — M6) or an unquoted non-whitespace run.
+	envRe = regexp.MustCompile(`(?i)\b(token|secret|password|passwd|passphrase|credentials?|api[_\-]?key|apikey|access[_\-]?key|auth(?:orization)?)\b\s*[:=]\s*("[^"]*"|'[^']*'|\S+)`)
+
+	// Password inside a URL/connection string: scheme://user:PASSWORD@host.
+	// Redacts the password segment while keeping scheme, user and host.
+	connStrRe = regexp.MustCompile(`(?i)([a-z][a-z0-9+.\-]*://[^:/@\s]+:)[^@/\s]+(@)`)
 )
 
 func redactJournal(input []byte) []byte {
 	out := jwtRe.ReplaceAll(input, []byte("[REDACTED-JWT]"))
 	out = bearerRe.ReplaceAll(out, []byte("Bearer [REDACTED]"))
+	out = connStrRe.ReplaceAll(out, []byte("${1}[REDACTED]${2}"))
 	out = envRe.ReplaceAllFunc(out, func(match []byte) []byte {
 		// Keep the key portion visible (first run up to ':' or '='),
 		// replace the value with [REDACTED] so logs remain useful for

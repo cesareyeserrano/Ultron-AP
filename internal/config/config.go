@@ -105,6 +105,16 @@ func Load() (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid session TTL %q: %w", v, err)
 		}
+		// Bound it like the other duration vars. A zero/negative TTL would set
+		// every session's ExpiresAt in the past (locking everyone out and
+		// turning the cookie MaxAge negative → immediate delete); an absurdly
+		// large one creates effectively immortal sessions. (M10)
+		if d < time.Minute {
+			return nil, fmt.Errorf("session TTL %q too small (minimum 1m)", v)
+		}
+		if d > 30*24*time.Hour {
+			return nil, fmt.Errorf("session TTL %q too large (maximum 720h)", v)
+		}
 		cfg.SessionTTL = d
 	}
 
