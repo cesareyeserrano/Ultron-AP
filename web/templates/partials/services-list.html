@@ -33,6 +33,7 @@
                         <span class="text-sm font-medium text-text truncate">{{.Name}}</span>
                         <span class="w-4 h-4 inline-flex items-center justify-center rounded-full border border-border/50 text-[10px] text-text-muted cursor-help" title="{{serviceInfo .Name .Description}}">i</span>
                         <span class="text-xs px-1.5 py-0.5 rounded {{if eq .ActiveState "active"}}bg-green-400/20 text-green-400{{else if eq .ActiveState "failed"}}bg-danger/20 text-danger{{else}}bg-surface text-text-muted{{end}}">{{.ActiveState}}</span>
+                        {{with activeSince .Since}}<span data-active-since class="text-xs px-1.5 py-0.5 rounded bg-card border border-border/50 text-text-muted" title="Active since">active {{.}}</span>{{end}}
                         {{if serviceHasRuntime .Name $.ProcessStats}}
                         <span class="text-xs px-1.5 py-0.5 rounded bg-card border border-border/50 text-text-muted">CPU {{printf "%.1f%%" (serviceCPU .Name $.ProcessStats)}}</span>
                         <span class="text-xs px-1.5 py-0.5 rounded bg-card border border-border/50 text-text-muted">RAM {{formatBytes (serviceRSS .Name $.ProcessStats)}}</span>

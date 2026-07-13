@@ -61,15 +61,14 @@
     <div class="metric-tile">
         <p class="text-xs text-text-muted mb-1">Disk</p>
         {{if .Metrics}}{{if .Metrics.Disks}}<p class="text-2xl font-mono font-bold text-accent">{{formatPercent (index .Metrics.Disks 0).Percent}}</p>
-        <p class="text-xs text-text-muted">{{formatBytes (index .Metrics.Disks 0).Used}} / {{formatBytes (index .Metrics.Disks 0).Total}}</p>
-        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+        {{range .Metrics.Disks}}<p class="text-xs text-text-muted"><span class="font-mono">{{.Path}}</span> {{formatBytes .Used}} / {{formatBytes .Total}} ({{formatPercent .Percent}})</p>
+        {{end}}{{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
     </div>
     <div class="metric-tile">
         <p class="text-xs text-text-muted mb-1">Network</p>
-        {{if .Metrics}}{{if .Metrics.Networks}}<p class="text-sm font-mono text-accent">&#8593; {{formatBytes (index .Metrics.Networks 0).BytesSentPS}}/s</p>
-        <p class="text-sm font-mono text-accent">&#8595; {{formatBytes (index .Metrics.Networks 0).BytesRecvPS}}/s</p>
-        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+        {{if .Metrics}}{{if .Metrics.Networks}}{{range .Metrics.Networks}}<p class="text-sm font-mono text-accent"><span class="text-xs text-text-muted">{{.Name}}</span> &#8593; {{formatBytes .BytesSentPS}}/s &#8595; {{formatBytes .BytesRecvPS}}/s</p>
+        {{end}}{{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
     </div>
     <div class="metric-tile">

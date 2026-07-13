@@ -3,6 +3,7 @@ package database
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -181,4 +182,25 @@ func TestAlert_NilConfigID(t *testing.T) {
 	assert.Len(t, alerts, 1)
 	assert.Nil(t, alerts[0].ConfigID)
 	assert.Nil(t, alerts[0].Value)
+}
+
+// @aitri-tc TC-004c — a fired alert persists to SQLite with its timestamp,
+// severity, and source type, and reads back intact (AC-004-004).
+func TestCreateAlert_PersistsTimestampAndType(t *testing.T) {
+	db := setupAlertTestDB(t)
+
+	before := time.Now().Add(-time.Second)
+	a := &Alert{Severity: "critical", Message: "CPU above threshold", Source: "cpu"}
+	require.NoError(t, db.CreateAlert(a))
+
+	alerts, err := db.ListAlerts(10)
+	require.NoError(t, err)
+	require.Len(t, alerts, 1)
+
+	got := alerts[0]
+	assert.Equal(t, "critical", got.Severity)
+	assert.Equal(t, "cpu", got.Source)
+	assert.False(t, got.CreatedAt.IsZero(), "created_at must persist")
+	assert.True(t, got.CreatedAt.After(before), "created_at must be a real event timestamp")
+	assert.True(t, got.CreatedAt.Before(time.Now().Add(time.Second)))
 }

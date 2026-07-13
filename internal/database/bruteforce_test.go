@@ -156,6 +156,13 @@ func TestBruteForce_PruneBefore(t *testing.T) {
 // weakening the lockout). With the atomic UPSERT every failure is counted.
 func TestBruteForce_RecordFailure_ConcurrentNoLostIncrements(t *testing.T) {
 	db := newTestDB(t)
+	// SQLite allows a single writer; with the default pool, 200 goroutines
+	// race for connections and the slowest can exceed busy_timeout under
+	// machine load, flaking with SQLITE_BUSY. Serializing the pool keeps the
+	// test deterministic while still exercising the application-level race
+	// this test guards (the old SELECT-then-UPSERT lost increments across
+	// interleaved statements regardless of pool size).
+	db.SetMaxOpenConns(1)
 	const ip = "203.0.113.99"
 	const n = 200
 	window := 15 * time.Minute

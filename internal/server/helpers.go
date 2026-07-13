@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
@@ -137,4 +138,18 @@ func usageStrokeForPercent(v float64) string {
 	default:
 		return "var(--color-green-400)"
 	}
+}
+
+// activeSince renders a systemd unit's ActiveEnterTimestamp as a compact
+// "active since" label (FR-003 / AC-003-002). Units that have never activated
+// carry a zero timestamp and render nothing.
+func activeSince(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	d := time.Since(t)
+	if d < 0 {
+		d = 0
+	}
+	return formatUptime(d)
 }

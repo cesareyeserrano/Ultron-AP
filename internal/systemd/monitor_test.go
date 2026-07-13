@@ -2,6 +2,7 @@ package systemd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -328,4 +329,71 @@ func TestMonitor_ManyServices(t *testing.T) {
 
 	services := m.Services()
 	assert.Len(t, services, 120)
+}
+
+// activeSinceRunner answers list-units and `show` with distinct fixtures so the
+// active-since lookup can be exercised without a live systemd.
+type activeSinceRunner struct {
+	listOutput string
+	showOutput string
+	showErr    error
+}
+
+func (r *activeSinceRunner) Run(_ context.Context, _ string, args ...string) ([]byte, error) {
+	if len(args) > 0 && args[0] == "show" {
+		return []byte(r.showOutput), r.showErr
+	}
+	return []byte(r.listOutput), nil
+}
+
+// @aitri-tc TC-003c — each service row carries name, state and active-since
+// (AC-003-002). Units that never activated leave Since at the zero value.
+func TestRefresh_PopulatesActiveSince(t *testing.T) {
+	runner := &activeSinceRunner{
+		listOutput: `nginx.service     loaded active   running  A high performance web server
+cron.service      loaded inactive dead     Regular background program processing daemon
+`,
+		showOutput: `Id=nginx.service
+ActiveEnterTimestamp=Mon 2026-07-13 08:30:00 UTC
+
+Id=cron.service
+ActiveEnterTimestamp=
+`,
+	}
+	m := NewMonitorWithRunner(runner)
+	m.refresh(context.Background())
+
+	services := m.Services()
+	require.Len(t, services, 2)
+
+	byName := map[string]ServiceInfo{}
+	for _, s := range services {
+		byName[s.Name] = s
+	}
+
+	nginx := byName["nginx"]
+	assert.Equal(t, "active", nginx.ActiveState, "state must be reported")
+	require.False(t, nginx.Since.IsZero(), "active unit must carry its ActiveEnterTimestamp")
+	assert.Equal(t, 2026, nginx.Since.Year())
+	assert.Equal(t, 8, nginx.Since.Hour())
+
+	cron := byName["cron"]
+	assert.Equal(t, "inactive", cron.ActiveState)
+	assert.True(t, cron.Since.IsZero(), "a unit that never activated has no active-since")
+}
+
+// A failing `systemctl show` must not break the unit list itself.
+func TestRefresh_ActiveSinceFailureKeepsServices(t *testing.T) {
+	runner := &activeSinceRunner{
+		listOutput: "nginx.service loaded active running A high performance web server\n",
+		showErr:    errors.New("show failed"),
+	}
+	m := NewMonitorWithRunner(runner)
+	m.refresh(context.Background())
+
+	services := m.Services()
+	require.Len(t, services, 1)
+	assert.Equal(t, "nginx", services[0].Name)
+	assert.True(t, services[0].Since.IsZero())
+	assert.True(t, m.Available())
 }

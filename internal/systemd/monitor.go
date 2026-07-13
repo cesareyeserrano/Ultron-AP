@@ -155,9 +155,38 @@ func (m *Monitor) refresh(ctx context.Context) {
 	}
 
 	services := parseListUnits(string(output))
+	m.applyActiveSince(ctx, services)
 
 	m.mu.Lock()
 	m.services = services
 	m.available = true
 	m.mu.Unlock()
+}
+
+// applyActiveSince fills ServiceInfo.Since (FR-003 / AC-003-002 "active-since")
+// with each unit's ActiveEnterTimestamp. It runs one `systemctl show` for the
+// whole set; a failure leaves Since at its zero value rather than failing the
+// refresh, since the unit list itself is still useful without it.
+func (m *Monitor) applyActiveSince(ctx context.Context, services []ServiceInfo) {
+	if len(services) == 0 {
+		return
+	}
+
+	args := []string{"show", "--no-pager", "--property=Id", "--property=ActiveEnterTimestamp"}
+	for i := range services {
+		args = append(args, services[i].Name+".service")
+	}
+
+	output, err := m.runner.Run(ctx, "systemctl", args...)
+	if err != nil {
+		log.Printf("systemd: active-since lookup failed: %v", err)
+		return
+	}
+
+	stamps := parseShowTimestamps(string(output))
+	for i := range services {
+		if t, ok := stamps[services[i].Name]; ok {
+			services[i].Since = t
+		}
+	}
 }

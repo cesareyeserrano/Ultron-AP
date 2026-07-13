@@ -106,15 +106,15 @@
                         <div class="sm:col-span-2 lg:col-span-3">
                             <label class="text-[11px] text-text-muted">{{rangeLabel "cooldown"}}</label>
                             <div data-widget="chip-preset" data-field="cooldown_minutes" class="mt-1 flex flex-wrap items-center gap-1">
-                                <button type="button" data-preset-value="1" data-active="false" class="timeline-chip timeline-chip-idle min-h-[40px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">1m</button>
-                                <button type="button" data-preset-value="5" data-active="false" class="timeline-chip timeline-chip-idle min-h-[40px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">5m</button>
-                                <button type="button" data-preset-value="15" data-active="true" class="timeline-chip timeline-chip-idle min-h-[40px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">15m</button>
-                                <button type="button" data-preset-value="60" data-active="false" class="timeline-chip timeline-chip-idle min-h-[40px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">1h</button>
+                                <button type="button" data-preset-value="1" data-active="false" class="timeline-chip timeline-chip-idle min-h-[44px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">1m</button>
+                                <button type="button" data-preset-value="5" data-active="false" class="timeline-chip timeline-chip-idle min-h-[44px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">5m</button>
+                                <button type="button" data-preset-value="15" data-active="true" class="timeline-chip timeline-chip-idle min-h-[44px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">15m</button>
+                                <button type="button" data-preset-value="60" data-active="false" class="timeline-chip timeline-chip-idle min-h-[44px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">1h</button>
                                 <span class="text-[10px] text-text-muted ml-1">custom:</span>
                                 <span data-widget="stepper" data-field="cooldown" data-min="{{rangeMin "cooldown"}}" data-max="{{rangeMax "cooldown"}}" data-value="15" class="inline-flex items-center gap-1">
-                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[40px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                    <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
                                     <input type="number" name="cooldown" value="15" min="{{rangeMin "cooldown"}}" max="{{rangeMax "cooldown"}}" class="w-16 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
-                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[40px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                                    <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
                                 </span>
                             </div>
                         </div>

@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-07-12T18:49:14.912Z",
+  "executed_at": "2026-07-13T16:41:28.844Z",
   "test_runner": "bash scripts/aitri-test.sh",
   "exit_code": 0,
   "results": [
@@ -227,12 +227,187 @@
       "tc_id": "TC-015f",
       "status": "pass",
       "notes": "✔ TC-015f: backup config save without CSRF is rejected"
+    },
+    {
+      "tc_id": "TC-001a",
+      "status": "pass",
+      "notes": "✔ TC-001a: dashboard metrics tile renders RAM used/total and percentage"
+    },
+    {
+      "tc_id": "TC-001b",
+      "status": "pass",
+      "notes": "✔ TC-001b: dashboard disk tile lists every mounted partition"
+    },
+    {
+      "tc_id": "TC-001c",
+      "status": "pass",
+      "notes": "✔ TC-001c: dashboard network tile shows per-interface byte rates"
+    },
+    {
+      "tc_id": "TC-001d",
+      "status": "pass",
+      "notes": "✔ TC-001d: cPU temperature color thresholds green <60, yellow 60-75, red >75"
+    },
+    {
+      "tc_id": "TC-001g",
+      "status": "pass",
+      "notes": "✔ TC-001g: sSE broadcast pushes metrics to connected clients on the 5s cadence"
+    },
+    {
+      "tc_id": "TC-001i",
+      "status": "pass",
+      "notes": "✔ TC-001i: dashboard header shows system uptime"
+    },
+    {
+      "tc_id": "TC-002a",
+      "status": "pass",
+      "notes": "✔ TC-002a: container health classification green/grey/red by state"
+    },
+    {
+      "tc_id": "TC-002b",
+      "status": "pass",
+      "notes": "✔ TC-002b: docker page polls its container list every 10 seconds"
+    },
+    {
+      "tc_id": "TC-002c",
+      "status": "pass",
+      "notes": "✔ TC-002c: container detail exposes ports, volumes and env var names"
+    },
+    {
+      "tc_id": "TC-003a",
+      "status": "pass",
+      "notes": "✔ TC-003a: service state indicator green active / grey inactive / red failed"
+    },
+    {
+      "tc_id": "TC-003b",
+      "status": "pass",
+      "notes": "✔ TC-003b: services page polls its list every 30 seconds"
+    },
+    {
+      "tc_id": "TC-004a",
+      "status": "pass",
+      "notes": "✔ TC-004a: docker container exit transition fires a docker alert"
+    },
+    {
+      "tc_id": "TC-004b",
+      "status": "pass",
+      "notes": "✔ TC-004b: systemd failed transition fires a critical service alert"
+    },
+    {
+      "tc_id": "TC-004c",
+      "status": "pass",
+      "notes": "✔ TC-004c: fired alert persists to SQLite with timestamp and type"
+    },
+    {
+      "tc_id": "TC-004d",
+      "status": "pass",
+      "notes": "✔ TC-004d: alerts panel severity filter shows only matching entries"
+    },
+    {
+      "tc_id": "TC-004g",
+      "status": "pass",
+      "notes": "✔ TC-004g: rendered alerts carry severity colors red/yellow/accent"
+    },
+    {
+      "tc_id": "TC-005a",
+      "status": "pass",
+      "notes": "✔ TC-005a: telegram channel configured from Bot Token and Chat ID"
+    },
+    {
+      "tc_id": "TC-006a",
+      "status": "pass",
+      "notes": "✔ TC-006a: sMTP channel configured from host/port/user/password/from/to"
+    },
+    {
+      "tc_id": "TC-007a",
+      "status": "pass",
+      "notes": "✔ TC-007a: login page shows username and password form"
+    },
+    {
+      "tc_id": "TC-007b",
+      "status": "pass",
+      "notes": "✔ TC-007b: session cookie expires after the 24h default and is HttpOnly"
+    },
+    {
+      "tc_id": "TC-007c",
+      "status": "pass",
+      "notes": "✔ TC-007c: bootstrapped admin password stored as bcrypt hash, never plaintext"
+    },
+    {
+      "tc_id": "TC-007d",
+      "status": "pass",
+      "notes": "✔ TC-007d: logout button visible in the header on every authenticated page"
+    },
+    {
+      "tc_id": "TC-007g",
+      "status": "pass",
+      "notes": "✔ TC-007g: unauthenticated non-exempt routes redirect to /login"
+    },
+    {
+      "tc_id": "TC-008a",
+      "status": "pass",
+      "notes": "✔ TC-008a: service rows render Start, Stop and Restart controls"
+    },
+    {
+      "tc_id": "TC-008b",
+      "status": "pass",
+      "notes": "✔ TC-008b: failed action renders an explicit error state with message"
+    },
+    {
+      "tc_id": "TC-008c",
+      "status": "pass",
+      "notes": "✔ TC-008c: actions dispatch as HTMX swaps returning in-page fragments"
+    },
+    {
+      "tc_id": "TC-009a",
+      "status": "pass",
+      "notes": "✔ TC-009a: body text tokens meet WCAG AA 4.5:1 on all panel backgrounds"
+    },
+    {
+      "tc_id": "TC-009b",
+      "status": "pass",
+      "notes": "✔ TC-009b: status badges map states to semantic color tokens"
+    },
+    {
+      "tc_id": "TC-009c",
+      "status": "pass",
+      "notes": "✔ TC-009c: interactive settings controls declare 44px touch targets"
+    },
+    {
+      "tc_id": "TC-009d",
+      "status": "pass",
+      "notes": "✔ TC-009d: status text tokens meet WCAG AA on dark backgrounds"
+    },
+    {
+      "tc_id": "TC-011a",
+      "status": "pass",
+      "notes": "✔ TC-011a: host actions route through the privileged helper Unix socket"
+    },
+    {
+      "tc_id": "TC-011b",
+      "status": "pass",
+      "notes": "✔ TC-011b: helper validates unit names against the allow-list before executing"
+    },
+    {
+      "tc_id": "TC-014a",
+      "status": "pass",
+      "notes": "✔ TC-014a: SSE summary event carries the Tailscale/VPN status block"
+    },
+    {
+      "tc_id": "TC-003c",
+      "status": "pass",
+      "notes": "✔ TC-003c: service row shows name, state and active-since"
+    },
+    {
+      "tc_id": "TC-015a",
+      "status": "pass",
+      "notes": "✔ TC-015a: backup written to disk is encrypted at rest"
     }
   ],
   "fr_coverage": [
     {
       "fr_id": "FR-001",
-      "tests_passing": 3,
+      "tests_passing": 9,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -240,7 +415,7 @@
     },
     {
       "fr_id": "FR-002",
-      "tests_passing": 3,
+      "tests_passing": 6,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -248,7 +423,7 @@
     },
     {
       "fr_id": "FR-003",
-      "tests_passing": 3,
+      "tests_passing": 6,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -256,7 +431,7 @@
     },
     {
       "fr_id": "FR-004",
-      "tests_passing": 3,
+      "tests_passing": 8,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -264,7 +439,7 @@
     },
     {
       "fr_id": "FR-005",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -272,7 +447,7 @@
     },
     {
       "fr_id": "FR-006",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -280,7 +455,7 @@
     },
     {
       "fr_id": "FR-007",
-      "tests_passing": 3,
+      "tests_passing": 8,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -288,7 +463,7 @@
     },
     {
       "fr_id": "FR-008",
-      "tests_passing": 3,
+      "tests_passing": 6,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -296,7 +471,7 @@
     },
     {
       "fr_id": "FR-009",
-      "tests_passing": 3,
+      "tests_passing": 7,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -312,7 +487,7 @@
     },
     {
       "fr_id": "FR-011",
-      "tests_passing": 3,
+      "tests_passing": 5,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -336,7 +511,7 @@
     },
     {
       "fr_id": "FR-014",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -344,7 +519,7 @@
     },
     {
       "fr_id": "FR-015",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -364,56 +539,56 @@
     {
       "ac_id": "AC-001-002",
       "fr_id": "FR-001",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-001-003",
       "fr_id": "FR-001",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-001-004",
       "fr_id": "FR-001",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-001-005",
       "fr_id": "FR-001",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-001-006",
       "fr_id": "FR-001",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-001-007",
       "fr_id": "FR-001",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-002-001",
@@ -436,29 +611,29 @@
     {
       "ac_id": "AC-002-003",
       "fr_id": "FR-002",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-002-004",
       "fr_id": "FR-002",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-002-005",
       "fr_id": "FR-002",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-003-001",
@@ -472,20 +647,20 @@
     {
       "ac_id": "AC-003-002",
       "fr_id": "FR-003",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-003-003",
       "fr_id": "FR-003",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-003-004",
@@ -499,11 +674,11 @@
     {
       "ac_id": "AC-003-005",
       "fr_id": "FR-003",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-004-001",
@@ -517,38 +692,38 @@
     {
       "ac_id": "AC-004-002",
       "fr_id": "FR-004",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-004-003",
       "fr_id": "FR-004",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-004-004",
       "fr_id": "FR-004",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-004-005",
       "fr_id": "FR-004",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-004-006",
@@ -562,20 +737,20 @@
     {
       "ac_id": "AC-004-007",
       "fr_id": "FR-004",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-005-001",
       "fr_id": "FR-005",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-005-002",
@@ -616,11 +791,11 @@
     {
       "ac_id": "AC-006-001",
       "fr_id": "FR-006",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-006-002",
@@ -661,11 +836,11 @@
     {
       "ac_id": "AC-007-001",
       "fr_id": "FR-007",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-007-002",
@@ -679,11 +854,11 @@
     {
       "ac_id": "AC-007-003",
       "fr_id": "FR-007",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-007-004",
@@ -697,29 +872,29 @@
     {
       "ac_id": "AC-007-005",
       "fr_id": "FR-007",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-007-006",
       "fr_id": "FR-007",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-007-007",
       "fr_id": "FR-007",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-008-001",
@@ -733,11 +908,11 @@
     {
       "ac_id": "AC-008-002",
       "fr_id": "FR-008",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-008-003",
@@ -751,11 +926,11 @@
     {
       "ac_id": "AC-008-004",
       "fr_id": "FR-008",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-008-005",
@@ -769,29 +944,29 @@
     {
       "ac_id": "AC-008-006",
       "fr_id": "FR-008",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-009-001",
       "fr_id": "FR-009",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-009-002",
       "fr_id": "FR-009",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-009-003",
@@ -805,20 +980,20 @@
     {
       "ac_id": "AC-009-004",
       "fr_id": "FR-009",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-009-005",
       "fr_id": "FR-009",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-010-001",
@@ -859,20 +1034,20 @@
     {
       "ac_id": "AC-011-002",
       "fr_id": "FR-011",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-011-003",
       "fr_id": "FR-011",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-011-004",
@@ -958,11 +1133,11 @@
     {
       "ac_id": "AC-014-003",
       "fr_id": "FR-014",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-015-001",
@@ -985,11 +1160,11 @@
     {
       "ac_id": "AC-015-003",
       "fr_id": "FR-015",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-015-004",
@@ -1002,8 +1177,8 @@
     }
   ],
   "summary": {
-    "total": 45,
-    "passed": 45,
+    "total": 80,
+    "passed": 80,
     "failed": 0,
     "skipped": 0,
     "skipped_e2e": 0,
