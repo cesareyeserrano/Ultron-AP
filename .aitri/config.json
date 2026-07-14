@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.1",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-14T14:20:40.838Z",
+  "updatedAt": "2026-07-14T16:08:54.521Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,36 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-07-12T15:56:26.180Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.173",
-      "category": "artifactRename",
-      "target": "features/settings-revamp/spec/05_TRACEABILITY.json",
-      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
-    },
-    {
-      "at": "2026-07-12T15:56:26.180Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.173",
-      "category": "artifactRename",
-      "target": "features/telegram-message-ux/spec/04_BUILD_REPORT.json",
-      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
-    },
-    {
-      "at": "2026-07-12T15:56:26.180Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.173",
-      "category": "artifactRename",
-      "target": "features/telegram-message-ux/spec/05_TRACEABILITY.json",
-      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
-    },
     {
       "at": "2026-07-12T16:20:04.617Z",
       "event": "reconcile-pending",
@@ -208,6 +178,30 @@
       "artifact": "03_TEST_CASES.json",
       "before_hash": "01ef9973ed7d0d6b3f645d1aac8b8aeee4751ddd97fe7082810165716fc35da1",
       "after_hash": "9358d1c448081eb12e0a6df49f273e4fd81dfdef86804d11228bbc2742571eff"
+    },
+    {
+      "at": "2026-07-14T16:08:52.870Z",
+      "event": "reconcile-pending",
+      "phase": null,
+      "files": 5,
+      "method": "git",
+      "verifyPassedCleared": true
+    },
+    {
+      "at": "2026-07-14T16:08:54.455Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-14T16:08:54.508Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
@@ -219,7 +213,7 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-07-14T14:16:50.952Z",
+  "verifyRanAt": "2026-07-14T16:08:54.455Z",
   "auditLastAt": "2026-06-15T22:09:31.177Z",
   "upgradeFindings": [
     {
@@ -260,10 +254,10 @@
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-07-14T14:16:50.952Z"
+    "at": "2026-07-14T16:08:54.455Z"
   },
   "coverageAuditLastAt": "2026-06-15T22:00:30.312Z",
-  "verifyResultsHash": "05d587864296ef49154ce4c52f26861af4b429a327c76e9898fc282fc01357ef",
+  "verifyResultsHash": "ad86b2d886c3360d0a2966e624d3282803a4e4f363483c38a2e2fd538193f0e5",
   "verifySummary": {
     "total": 86,
     "passed": 86,
