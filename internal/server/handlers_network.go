@@ -70,10 +70,14 @@ func (s *Server) gatherNetworkTargetViews(historyPoints int) []NetworkTargetView
 	views := make([]NetworkTargetView, 0, len(snaps))
 	for _, snap := range snaps {
 		view := NetworkTargetView{Snapshot: snap}
-		if snap.Target != "" && s.db != nil {
-			rows, err := s.db.RecentNetSamples(snap.Target, historyPoints)
+		// BG-073: samples are INSERTED keyed by snap.Label (main.go), so they
+		// must be READ by Label too. Querying by snap.Target (the resolved IP)
+		// only matched when label == host — "gateway" and "dns" therefore showed
+		// "no samples yet" forever, even though their live values were fine.
+		if snap.Label != "" && s.db != nil {
+			rows, err := s.db.RecentNetSamples(snap.Label, historyPoints)
 			if err != nil {
-				log.Printf("network: recent samples for %s failed: %v", snap.Target, err)
+				log.Printf("network: recent samples for %s failed: %v", snap.Label, err)
 			}
 			view.Series, view.MinMs, view.MaxMs, view.AvgMs = computeRTTSeries(rows)
 			view.HasData = len(view.Series) > 0

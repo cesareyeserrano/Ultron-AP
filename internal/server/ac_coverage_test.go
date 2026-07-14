@@ -460,3 +460,38 @@ func TestServicesPartial_RendersNameStateAndActiveSince(t *testing.T) {
 	assert.Contains(t, html, "data-active-since", "row must show the active-since label")
 	assert.Contains(t, html, "active 1h 30m", "active-since must render the elapsed duration")
 }
+
+// --- BG-073 / BG-074 — network history and insights variables ---------------
+
+// BG-073 — the RTT history is stored keyed by the probe's LABEL, so it must be
+// read back by label. Reading it by the resolved IP silently returned nothing
+// for every target whose label != host ("gateway", "dns"), leaving their
+// dashboard sparklines empty forever while their live numbers looked fine.
+func TestNetworkTargetViews_ReadHistoryByLabelNotResolvedIP(t *testing.T) {
+	srv, _ := setupTestServerWithSession(t)
+
+	// Two samples stored the way main.go stores them: keyed by LABEL.
+	now := time.Now()
+	for i, rtt := range []float64{4.2, 5.1} {
+		v := rtt
+		require.NoError(t, srv.db.InsertNetSample(database.NetSample{
+			TS:     now.Add(time.Duration(i) * time.Second),
+			Target: "gateway", // the label — NOT 192.168.1.1
+			Kind:   "icmp",
+			RTTMs:  &v,
+			Status: "ok",
+		}))
+	}
+
+	rows, err := srv.db.RecentNetSamples("gateway", 12)
+	require.NoError(t, err)
+	require.Len(t, rows, 2, "history is keyed by label")
+
+	series, _, _, _ := computeRTTSeries(rows)
+	assert.Len(t, series, 2, "the sparkline must find the samples it stored")
+
+	// The resolved IP is what the old code queried with — it holds nothing.
+	byIP, err := srv.db.RecentNetSamples("192.168.1.1", 12)
+	require.NoError(t, err)
+	assert.Empty(t, byIP, "querying by resolved IP finds nothing — that was the bug")
+}

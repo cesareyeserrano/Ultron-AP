@@ -1680,6 +1680,50 @@
       "fix_at": "2026-07-14T16:08:41.625Z",
       "close_commit_sha": "7d256c9e3a683aa1aab6d6fdc16fb6fa4a2ed5db",
       "close_at": "2026-07-14T16:08:41.708Z"
+    },
+    {
+      "id": "BG-073",
+      "title": "Dashboard latency sparklines for 'gateway' and 'dns' are always empty: history is stored by Label but queried by resolved IP",
+      "description": "",
+      "steps_to_reproduce": [
+        "Open the dashboard and look at the per-target latency tiles"
+      ],
+      "expected_result": "Every probed target shows its RTT sparkline",
+      "actual_result": "gateway and dns tiles show 'no samples yet' forever — NetSample rows are inserted with Target=snap.Label (main.go:201) but gatherNetworkTargetViews queries RecentNetSamples(snap.Target) with the RESOLVED IP (handlers_network.go:73). They only match when label==host (1.1.1.1, 8.8.8.8). Live values are fine; only the chart history is broken.",
+      "environment": "prod (Pi), found during the Network-tile analysis 2026-07-14",
+      "severity": "medium",
+      "status": "open",
+      "fr": "FR-001",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "claude-analysis",
+      "created_at": "2026-07-14T16:31:58.356Z",
+      "updated_at": "2026-07-14T16:31:58.356Z",
+      "resolution": null
+    },
+    {
+      "id": "BG-074",
+      "title": "Insights: wan_cloudflare_ok never populated (rule keys on a target label 'cloudflare' that does not exist) and loss_pct never injected — two bundled rules can never fire",
+      "description": "",
+      "steps_to_reproduce": [
+        "Run with default net targets (gateway, 1.1.1.1, 8.8.8.8, dns)"
+      ],
+      "expected_result": "The bundled rules wan_lan_disambig and sustained_packet_loss can evaluate",
+      "actual_result": "evalInsightsTick switches on snap.Label with case 'cloudflare', but no default target carries that label, so wan_cloudflare_ok is never set; loss_pct is never published at all. Both bundled rules are dead code with the default configuration.",
+      "environment": "found during the Network-tile analysis 2026-07-14",
+      "severity": "medium",
+      "status": "open",
+      "fr": "FR-001",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "claude-analysis",
+      "created_at": "2026-07-14T16:34:37.526Z",
+      "updated_at": "2026-07-14T16:34:37.526Z",
+      "resolution": null
     }
   ]
 }

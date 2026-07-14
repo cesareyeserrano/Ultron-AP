@@ -14,6 +14,7 @@ import (
 
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
 )
 
 func setupSSETestServer(t *testing.T) (*Server, *database.Session) {
@@ -298,4 +299,46 @@ func TestChartWindowIsPerClient(t *testing.T) {
 	w, p = empty.chart()
 	assert.Equal(t, "5m", w)
 	assert.Equal(t, 60, p)
+}
+
+// BG-074 — the insights tick used to key on a probe label ("cloudflare") that no
+// default target carries, so wan_cloudflare_ok was never set and loss_pct was
+// never published: two bundled rules could never fire. The flags are now derived
+// structurally from the probe list.
+func TestInsightsVars_WANFlagsAndLossFromDefaultProbeLabels(t *testing.T) {
+	dd := DashboardData{Network: []*gatewayprobe.Snapshot{
+		{Label: "gateway", Status: "ok", LossPct: 0},
+		{Label: "1.1.1.1", Status: "timeout", LossPct: 25},
+		{Label: "8.8.8.8", Status: "ok", LossPct: 5},
+		{Label: "dns", Status: "ok", LossPct: 0},
+	}}
+
+	vars := insightsNetworkVars(dd)
+
+	require.Contains(t, vars, "wan_gateway_ok")
+	assert.Equal(t, 1.0, vars["wan_gateway_ok"], "the gateway answered")
+
+	require.Contains(t, vars, "wan_cloudflare_ok",
+		"the internet-reachable flag must be set with the DEFAULT labels — no target is named 'cloudflare'")
+	assert.Equal(t, 1.0, vars["wan_cloudflare_ok"], "8.8.8.8 answered, so the internet is reachable")
+
+	require.Contains(t, vars, "loss_pct")
+	assert.Equal(t, 25.0, vars["loss_pct"], "loss_pct is the worst loss across the probes")
+}
+
+// The internet flag must go to 0 when EVERY off-box probe fails, while the
+// gateway still answers — that is exactly the "LAN fine, WAN dead" case the
+// wan_lan_disambig rule exists to catch.
+func TestInsightsVars_InternetDownButGatewayUp(t *testing.T) {
+	dd := DashboardData{Network: []*gatewayprobe.Snapshot{
+		{Label: "gateway", Status: "ok"},
+		{Label: "1.1.1.1", Status: "timeout", LossPct: 100},
+		{Label: "8.8.8.8", Status: "timeout", LossPct: 100},
+	}}
+
+	vars := insightsNetworkVars(dd)
+
+	assert.Equal(t, 1.0, vars["wan_gateway_ok"])
+	assert.Equal(t, 0.0, vars["wan_cloudflare_ok"], "no off-box target answered")
+	assert.Equal(t, 100.0, vars["loss_pct"])
 }

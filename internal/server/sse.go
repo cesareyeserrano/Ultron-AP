@@ -444,8 +444,35 @@ func (s *Server) evalInsightsTick(dd DashboardData) {
 	}
 	vars["containers_failed"] = lang.Number(float64(failedCont))
 
-	// WAN gateway / cloudflare ok flags inferred from the gatewayprobe
-	// snapshot list (best-effort name match — labels are operator-set).
+	for k, v := range insightsNetworkVars(dd) {
+		vars[k] = lang.Number(v)
+	}
+
+	s.insights.EvalWithVars(now, vars)
+}
+
+// gatewayProbeLabel is the label defaultNetTargets() gives the probe whose Host
+// is empty — the one resolved from the routing table. Everything else in the
+// probe list is an off-box target (BG-074).
+const gatewayProbeLabel = "gateway"
+
+// insightsNetworkVars derives the network variables the insight rules read.
+//
+// BG-074: this used to switch on snap.Label with case "cloudflare" — a label no
+// default target carries (they are gateway, 1.1.1.1, 8.8.8.8, dns), so
+// wan_cloudflare_ok was NEVER set and the bundled wan_lan_disambig rule could
+// not fire. loss_pct was never published at all, killing sustained_packet_loss.
+// Both are now derived STRUCTURALLY rather than by name: the gateway is the
+// probe resolved from the routing table, every other probe is an off-box
+// target, and "the internet is reachable" means ANY of them answers. That
+// survives an operator renaming their targets, which the old name-match did not.
+func insightsNetworkVars(dd DashboardData) map[string]float64 {
+	out := make(map[string]float64, 3)
+
+	var (
+		internetSeen, internetOK bool
+		worstLoss                float64
+	)
 	for _, snap := range dd.Network {
 		if snap == nil {
 			continue
@@ -454,15 +481,27 @@ func (s *Server) evalInsightsTick(dd DashboardData) {
 		if string(snap.Status) == "ok" {
 			ok = 1.0
 		}
-		switch snap.Label {
-		case "gateway":
-			vars["wan_gateway_ok"] = lang.Number(ok)
-		case "cloudflare":
-			vars["wan_cloudflare_ok"] = lang.Number(ok)
+		if snap.LossPct > worstLoss {
+			worstLoss = snap.LossPct
+		}
+		if snap.Label == gatewayProbeLabel {
+			out["wan_gateway_ok"] = ok
+			continue
+		}
+		internetSeen = true
+		if ok == 1.0 {
+			internetOK = true
 		}
 	}
 
-	s.insights.EvalWithVars(now, vars)
+	if internetSeen {
+		out["wan_cloudflare_ok"] = 0.0
+		if internetOK {
+			out["wan_cloudflare_ok"] = 1.0
+		}
+	}
+	out["loss_pct"] = worstLoss
+	return out
 }
 
 func writeSSEEvent(buf *bytes.Buffer, event string, data string) {
