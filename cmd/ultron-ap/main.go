@@ -112,6 +112,13 @@ func main() {
 	dispatcher.Start()
 	defer dispatcher.Stop()
 
+	// FR-080: daily email digest. One goroutine on a 1-minute ticker; the 24h
+	// alert query runs once a day. Additive — per-event alert emails keep
+	// going out through the dispatcher above.
+	digest := notify.NewDigestScheduler(db)
+	digest.Start(context.Background())
+	defer digest.Stop()
+
 	// Start alert engine. Rich callback wires through to DispatchEvent so
 	// the renderer receives FirstFiredAt + Rule context.
 	//

@@ -33,6 +33,26 @@
                             <input type="email" name="to" value="{{if .Content.Email}}{{index .Content.Email.Fields "to"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                         </div>
                     </div>
+                    <!-- FR-080: daily digest — an email-channel setting, saved by this form. -->
+                    <div id="email-digest" class="rounded-lg border border-border/40 bg-card/25 p-3 space-y-2">
+                        <label data-widget="toggle" data-field="digest_enabled" data-state="{{if .Content.Digest.Enabled}}on{{else}}off{{end}}" class="flex items-center gap-2 text-xs text-text cursor-pointer min-h-[44px]">
+                            <span data-toggle-track class="relative inline-block w-10 h-6 rounded-full bg-card border border-border transition-colors data-[state=on]:bg-accent/40 data-[state=on]:border-accent" data-state="{{if .Content.Digest.Enabled}}on{{else}}off{{end}}">
+                                <span data-toggle-thumb class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-text-muted transition-all data-[state=on]:bg-accent data-[state=on]:left-[18px]" data-state="{{if .Content.Digest.Enabled}}on{{else}}off{{end}}"></span>
+                            </span>
+                            <input type="checkbox" name="digest_enabled" data-toggle-input {{if .Content.Digest.Enabled}}checked{{end}} class="sr-only" aria-label="Daily digest enabled">
+                            <span data-toggle-label>Daily digest</span>
+                        </label>
+                        <div>
+                            <label class="text-[11px] text-text-muted">Digest hour (0–23)</label>
+                            <span data-widget="stepper" data-field="digest_hour" data-min="0" data-max="23" data-value="{{.Content.Digest.Hour}}" class="mt-1 inline-flex items-center gap-1">
+                                <button type="button" data-step="-1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">−</button>
+                                <input type="number" name="digest_hour" value="{{.Content.Digest.Hour}}" min="0" max="23" class="w-16 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text text-center tabular-nums focus:outline-none focus:border-accent">
+                                <button type="button" data-step="1" class="min-w-[44px] min-h-[44px] px-2 text-sm bg-base border border-border rounded-lg text-text hover:bg-card">+</button>
+                            </span>
+                        </div>
+                        <p class="text-xs text-text-muted">One email a day summarising the last 24h of alerts. Per-alert emails keep sending as usual.</p>
+                    </div>
+
                     <div class="flex flex-wrap items-center gap-2">
                         <!-- FR-061: toggle replaces checkbox -->
                         <label data-widget="toggle" data-field="email_enabled" data-state="{{if and .Content.Email .Content.Email.Enabled}}on{{else}}off{{end}}" class="flex items-center gap-2 text-xs text-text cursor-pointer min-h-[44px]">

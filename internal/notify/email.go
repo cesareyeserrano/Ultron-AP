@@ -261,3 +261,20 @@ func buildMIMEMessage(from, to, subject, plain, html string) []byte {
 	b.WriteString(fmt.Sprintf("--%s--\r\n", boundary))
 	return []byte(b.String())
 }
+
+// SendDigest sends the FR-080 daily digest. It reuses the same MIME builder,
+// header sanitisation and context-aware SMTP path as an alert email — the
+// digest is the same channel with a different body, not a second mail stack.
+func (e *EmailSender) SendDigest(ctx context.Context, subject, plain, htmlBody string) error {
+	if e.host == "" || e.from == "" || e.to == "" {
+		return fmt.Errorf("email not configured")
+	}
+
+	msg := buildMIMEMessage(e.from, e.to, subject, plain, htmlBody)
+	addr := net.JoinHostPort(e.host, e.port)
+	var auth smtp.Auth
+	if e.user != "" && e.password != "" {
+		auth = smtp.PlainAuth("", e.user, e.password, e.host)
+	}
+	return e.sendMail(ctx, addr, auth, e.from, []string{e.to}, msg)
+}

@@ -1,0 +1,36 @@
+{{define "partials/settings-mute.html"}}{{template "settings-mute" .}}{{end}}
+{{define "settings-mute"}}
+<div id="telegram-mute" class="rounded-lg border border-border/40 bg-card/25 p-3 space-y-2">
+    <div class="flex items-center justify-between gap-2 flex-wrap">
+        <label class="text-[11px] text-text-muted">Mute alerts</label>
+        {{if .Muted}}
+        <span data-mute-state class="text-xs px-2 py-0.5 rounded border border-yellow-400/50 text-yellow-400">Muted — {{.Remaining}} left</span>
+        {{end}}
+    </div>
+
+    {{if .Muted}}
+    <div class="flex items-center gap-2 flex-wrap">
+        <button
+            type="button"
+            data-mute-cancel
+            hx-post="/api/notifications/mute/clear"
+            hx-target="#telegram-mute"
+            hx-swap="outerHTML"
+            hx-include="[name='csrf_token']"
+            data-settings-ignore-state
+            class="min-h-[44px] px-3 py-1.5 text-xs rounded border border-border text-text hover:bg-card transition-colors">
+            Cancel mute ({{.Hours}}h)
+        </button>
+    </div>
+    {{else}}
+    <div data-widget="chip-preset" data-field="mute_hours" class="flex flex-wrap items-center gap-1">
+        <button type="button" data-preset-value="1" data-active="false" class="timeline-chip timeline-chip-idle min-h-[44px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">1h</button>
+        <button type="button" data-preset-value="4" data-active="false" class="timeline-chip timeline-chip-idle min-h-[44px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">4h</button>
+        <button type="button" data-preset-value="24" data-active="false" class="timeline-chip timeline-chip-idle min-h-[44px] data-[active=true]:bg-accent/20 data-[active=true]:text-accent data-[active=true]:border-accent/30">24h</button>
+        <input type="number" name="mute_hours" value="" class="sr-only" tabindex="-1" aria-hidden="true">
+    </div>
+    {{end}}
+
+    <p class="text-xs text-text-muted">Alerts keep firing and keep appearing here — only Telegram delivery pauses.</p>
+</div>
+{{end}}

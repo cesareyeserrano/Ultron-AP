@@ -203,3 +203,24 @@ func TestFilter_PolicyJournal_RedactsCredentialOnlyURL(t *testing.T) {
 		t.Fatalf("host should be preserved: %q", got)
 	}
 }
+
+// A prefixed secret key (bot_token, api_token, smtp_password…) must redact too:
+// \b(token) alone never matches "bot_token=" because "_" is a word character,
+// so the Telegram bot token leaked through the journal filter (AC-081-003).
+func TestFilter_RedactsPrefixedSecretKeys(t *testing.T) {
+	cases := map[string]string{
+		"bot_token=123456:AAHfakefake":    "123456:AAHfakefake",
+		"smtp_password=hunter2":           "hunter2",
+		"ULTRON_SECRET_KEY: deadbeefcafe": "deadbeefcafe",
+		"service-api_key = abc123":        "abc123",
+	}
+	for line, secret := range cases {
+		got := string(Filter([]byte(line), PolicyJournal, 0))
+		if strings.Contains(got, secret) {
+			t.Errorf("secret leaked for %q: got %q", line, got)
+		}
+		if !strings.Contains(got, "[REDACTED]") {
+			t.Errorf("expected a redaction marker for %q, got %q", line, got)
+		}
+	}
+}

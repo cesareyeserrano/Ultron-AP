@@ -1,0 +1,467 @@
+{
+  "executed_at": "2026-07-14T13:58:56.944Z",
+  "test_runner": "go test -C ../.. ./... -run TestTC_ACG -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-ACG-079Ah",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_079Ah_NoMuteDeliversToTelegram (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-079Bh",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_079Bh_OpenMuteSkipsTelegramButPersistsAlert (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-079Ce",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_079Ce_ExpiredMuteResumesDelivery (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-079De",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_079De_MutePersistsAcrossRestart (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-079Eh",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_079Eh_CancelMuteRestoresDelivery (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-079Ff",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_079Ff_InvalidMuteDurationRejected (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-079Gf",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_079Gf_CorruptMuteRowStillDelivers (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-079HE2E",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_079HE2E_MuteFlowRendersRemainingTime (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-080Ah",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_080Ah_DigestSendsSummaryOfLast24h (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-080Be",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_080Be_AtMostOneDigestPerCalendarDay (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-080Ce",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_080Ce_EmptyWindowStillSendsOneDigest (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-080Df",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_080Df_DisabledDigestSendsNothing (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-080Eh",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_080Eh_PerEventEmailsSurviveTheDigest (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-080Ff",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_080Ff_FailedDigestIsRecordedAndNeverRetryStorms (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-081Ah",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_081Ah_DrawerReturnsLast100JournalLines (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-081Bf",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_081Bf_InjectionUnitNameRejectedBeforeHelper (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-081Ce",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_081Ce_DrawerRedactsSecretsAndEscapesHTML (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-081Df",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_081Df_HelperUnavailableRendersErrorState (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-081Ef",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_081Ef_DrawerRequiresAuth (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-081FE2E",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_081FE2E_ServicesPageDrawerClosedUntilOpened (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-082Ah",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_082Ah_SettingsRendersFanModes (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-082Bh",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_082Bh_SavingFanModePersists (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-082Cf",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_082Cf_InvalidFanModeRejected (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-082Df",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_082Df_HardwareSaveRequiresCSRF (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-082Ee",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_082Ee_FreshDatabaseSeedsHardwareDefaults (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-083Ah",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_083Ah_SettingsRendersOLEDConfig (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-083Bh",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_083Bh_SavingOLEDConfigPersists (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-083Cf",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_083Cf_InvalidOLEDMetricRejected (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-083Df",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_083Df_OLEDSaveRequiresCSRF (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-083Ee",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_083Ee_OmittedOLEDToggleTurnsItOff (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-087h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_087h_NoInlineControllerReturns (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-088f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_088f_DrawerAddsNoNewPrivilegedAction (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-087e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_087e_HardwareSectionJoinsExistingVocabulary (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-087f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_087f_ExistingSettingsFormsStillSave (0.00s)"
+    },
+    {
+      "tc_id": "TC-ACG-091h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_091h_MuteActionsRecordedInHistory (0.01s)"
+    },
+    {
+      "tc_id": "TC-ACG-090e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_ACG_090e_CorruptLastSentDateDoesNotSuppressDigest (0.00s)"
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-079",
+      "tests_passing": 8,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-080",
+      "tests_passing": 6,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-081",
+      "tests_passing": 7,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-082",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-083",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "ac_coverage": [
+    {
+      "ac_id": "AC-079-001",
+      "fr_id": "FR-079",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-079-002",
+      "fr_id": "FR-079",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-079-003",
+      "fr_id": "FR-079",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-079-004",
+      "fr_id": "FR-079",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-079-005",
+      "fr_id": "FR-079",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-079-006",
+      "fr_id": "FR-079",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-080-001",
+      "fr_id": "FR-080",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-080-002",
+      "fr_id": "FR-080",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-080-003",
+      "fr_id": "FR-080",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-080-004",
+      "fr_id": "FR-080",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-080-005",
+      "fr_id": "FR-080",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-080-006",
+      "fr_id": "FR-080",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-081-001",
+      "fr_id": "FR-081",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-081-002",
+      "fr_id": "FR-081",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-081-003",
+      "fr_id": "FR-081",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-081-004",
+      "fr_id": "FR-081",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-081-005",
+      "fr_id": "FR-081",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-082-001",
+      "fr_id": "FR-082",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-082-002",
+      "fr_id": "FR-082",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-082-003",
+      "fr_id": "FR-082",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-082-004",
+      "fr_id": "FR-082",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-083-001",
+      "fr_id": "FR-083",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-083-002",
+      "fr_id": "FR-083",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-083-003",
+      "fr_id": "FR-083",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-083-004",
+      "fr_id": "FR-083",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 36,
+    "passed": 36,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "low_confidence_tcs": []
+}

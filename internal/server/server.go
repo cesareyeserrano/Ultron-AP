@@ -598,10 +598,15 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/settings/backup", s.requireAuth(http.HandlerFunc(s.handleSettingsBackup)))
 	mux.Handle("POST /api/settings/backup/run", s.requireAuth(http.HandlerFunc(s.handleSettingsBackupRun)))
 	mux.Handle("GET /api/settings/encryption-key/probe", s.requireAuth(http.HandlerFunc(s.handleEncryptionKeyProbe)))
+	// FR-079: more specific than /api/notifications/{channel}, so Go's mux
+	// routes it here rather than treating "mute" as a channel name.
+	mux.Handle("POST /api/notifications/mute/clear", s.requireAuth(http.HandlerFunc(s.handleMuteClear)))
 	mux.Handle("POST /api/notifications/{channel}", s.requireAuth(http.HandlerFunc(s.handleNotificationSave)))
 	mux.Handle("POST /api/notifications/{channel}/test", s.requireAuth(http.HandlerFunc(s.handleNotificationTest)))
 	mux.Handle("POST /api/performance", s.requireAuth(http.HandlerFunc(s.handlePerformanceSave)))
 	mux.Handle("POST /api/backup/config", s.requireAuth(http.HandlerFunc(s.handleBackupConfigSave)))
+	mux.Handle("POST /api/settings/hardware", s.requireAuth(http.HandlerFunc(s.handleHardwareSave)))
+	mux.Handle("GET /api/services/{name}/logs", s.requireAuth(http.HandlerFunc(s.handleServiceLogs)))
 	mux.Handle("POST /api/services/{name}/start", s.requireAuth(http.HandlerFunc(s.handleServiceStart)))
 	mux.Handle("POST /api/services/{name}/stop", s.requireAuth(http.HandlerFunc(s.handleServiceStop)))
 	mux.Handle("POST /api/services/{name}/restart", s.requireAuth(http.HandlerFunc(s.handleServiceRestart)))

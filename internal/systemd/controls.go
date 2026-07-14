@@ -19,6 +19,15 @@ const controlTimeout = 30 * time.Second
 // before the name.
 var validServiceName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.@-]*$`)
 
+// IsValidServiceName reports whether name is a well-formed systemd unit name.
+// It is the same check runControl applies before any privileged call, exported
+// so other callers (the FR-081 log drawer) validate against ONE authority
+// rather than growing a second, divergent regex. The root helper re-validates
+// independently — this is defence in depth, not the guarantee.
+func IsValidServiceName(name string) bool {
+	return validServiceName.MatchString(name)
+}
+
 // ServiceAction represents the result of a service control operation.
 type ServiceAction struct {
 	ServiceName string

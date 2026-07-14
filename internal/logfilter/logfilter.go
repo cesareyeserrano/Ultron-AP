@@ -110,7 +110,11 @@ var (
 	// key=value or key: value where key smells like a secret. The value
 	// capture accepts a double/single-quoted string (so a secret containing
 	// spaces is redacted whole — M6) or an unquoted non-whitespace run.
-	envRe = regexp.MustCompile(`(?i)\b(token|secret|password|passwd|passphrase|credentials?|api[_\-]?key|apikey|access[_\-]?key|auth(?:orization)?)\b\s*[:=]\s*("[^"]*"|'[^']*'|\S+)`)
+	// The leading [\w.\-]* matters: \b(token) does NOT match "bot_token=" —
+	// there is no word boundary between "_" and "token", so a Telegram
+	// bot_token, an api_token or a service_password sailed through unredacted.
+	// Consuming any prefix run makes those cases match too (AC-081-003).
+	envRe = regexp.MustCompile(`(?i)\b[\w.\-]*(?:token|secret|password|passwd|passphrase|credentials?|api[_\-]?key|apikey|access[_\-]?key|auth(?:orization)?)[\w.\-]*\s*[:=]\s*("[^"]*"|'[^']*'|\S+)`)
 
 	// Password inside a URL/connection string: scheme://user:PASSWORD@host.
 	// Redacts the password segment while keeping scheme, user and host.

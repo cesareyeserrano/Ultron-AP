@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
 )
@@ -16,7 +18,24 @@ type settingsData struct {
 	Email          *notifDisplay
 	Perf           database.PerformanceConfig
 	Backup         database.BackupConfig
+	Hardware       database.HardwareConfig
+	Mute           muteDisplay
+	Digest         digestDisplay
 	Flash          string
+}
+
+// muteDisplay is what the Telegram section renders for FR-079: either the
+// chip-preset ("mute for 1h/4h/24h") or the muted state with its countdown.
+type muteDisplay struct {
+	Muted     bool
+	Hours     int    // what the admin picked — 1, 4 or 24
+	Remaining string // human-readable, e.g. "3h 59m"
+}
+
+// digestDisplay is the FR-080 daily-digest row inside the Email section.
+type digestDisplay struct {
+	Enabled bool
+	Hour    int // 0–23
 }
 
 type notifDisplay struct {
@@ -50,7 +69,59 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 		data.Backup = database.DefaultBackupConfig()
 	}
 
+	// FR-082/FR-083: one singleton read. Ultron stores these; it drives no
+	// hardware — no goroutine, no GPIO, nothing that could cost the Pi.
+	if hw, err := s.db.GetHardwareConfig(); err == nil {
+		data.Hardware = hw
+	} else {
+		log.Printf("settings: hardware config unavailable, using defaults: %v", err)
+		data.Hardware = database.DefaultHardwareConfig()
+	}
+
+	data.Mute = s.muteDisplay()
+	data.Digest = digestFromNotifConfig(data.Email)
+
 	s.render(w, r, "settings.html", "Settings", "settings", data)
+}
+
+// muteDisplay reads the FR-079 mute window for rendering. A read error is
+// rendered as "not muted" — the same fail-open posture the send path takes, so
+// the UI never claims a mute the dispatcher would not honour (NFR-090).
+func (s *Server) muteDisplay() muteDisplay {
+	now := time.Now()
+	expiresAt, muted, err := s.db.NotificationMuteUntil(now)
+	if err != nil {
+		log.Printf("settings: mute state unreadable: %v", err)
+		return muteDisplay{}
+	}
+	if !muted {
+		return muteDisplay{}
+	}
+	hours, err := s.db.MuteHours()
+	if err != nil {
+		log.Printf("settings: mute hours unreadable: %v", err)
+	}
+	return muteDisplay{
+		Muted:     true,
+		Hours:     hours,
+		Remaining: formatUptime(expiresAt.Sub(now)),
+	}
+}
+
+// digestFromNotifConfig pulls the two digest keys out of the (already masked)
+// email config. They are not secrets, so masking leaves them intact.
+func digestFromNotifConfig(email *notifDisplay) digestDisplay {
+	d := digestDisplay{Hour: 8} // the default the scheduler assumes
+	if email == nil {
+		return d
+	}
+	if strings.EqualFold(email.Fields["digest_enabled"], "true") {
+		d.Enabled = true
+	}
+	if h, err := strconv.Atoi(email.Fields["digest_hour"]); err == nil && h >= 0 && h <= 23 {
+		d.Hour = h
+	}
+	return d
 }
 
 func maskNotifConfig(nc *database.NotificationConfig, channel string) *notifDisplay {

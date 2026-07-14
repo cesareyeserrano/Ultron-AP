@@ -1,0 +1,177 @@
+{
+  "project": "Ultron-AP — ac-coverage-gaps",
+  "version": "1.0.0",
+  "generated_at": "2026-07-14",
+  "phases_completed": [1, 2, 3, 4, 5],
+  "overall_status": "partial",
+  "overall_status_rationale": "Every FR is implemented and every one of the feature's 36 test cases passes (34 unit/integration + 2 e2e), so no requirement is uncovered or placeholder. The roll-up is 'partial' — not 'compliant' — because FR-082 and FR-083 ship with DECLARED technical debt: they persist the fan/OLED settings but drive no hardware. That was the owner's explicit decision (a previous hardware-control attempt cost the Pi significant CPU and memory) and it is recorded in the no_go_zone, surfaced to the admin in the UI, and carried below. Calling this 'compliant' would hide a promise the system does not keep.",
+  "deployment_target": "Raspberry Pi (ARM64) — native binaries under systemd. NOT containerized: the project rejected Docker at the Phase 5 gate on 2026-03-18 and this feature changes nothing about that.",
+  "deployment_artifacts": {
+    "model": "binary + systemd (unchanged by this feature)",
+    "binaries": [
+      "ultron-ap — unprivileged panel process (make build-arm → bin/ultron-ap-linux-arm64)",
+      "ultron-helper — root helper on a Unix socket (make build-arm → bin/ultron-helper-linux-arm64)"
+    ],
+    "systemd_units": "deploy/ (unchanged — this feature adds no unit, no timer, no new service)",
+    "privilege_boundary": "UNCHANGED. The log drawer reuses the helper's existing allow-listed 'logs' action; no new privileged verb, no new capability, no new socket.",
+    "schema_migration": "Three new tables (NotificationMute, DigestState, HardwareConfig) are appended to the CREATE TABLE IF NOT EXISTS block and are created on first start. No data migration, no downtime. Rollback is safe: an older binary simply never reads them, and the two new keys in the email config JSON (digest_enabled, digest_hour) are unknown fields it ignores.",
+    "static_assets": "web/static/css/app.css is a committed build artifact. This feature adds no new Tailwind class beyond the existing widget vocabulary, but `make css` should still be run and its output committed if it produces a diff. One new JS file ships: web/static/js/widgets/service-logs.js (loaded from <head> like the other widgets; the AssetVersion content hash busts its cache automatically).",
+    "deploy_command": "make build-arm && scp bin/ultron-ap-linux-arm64 <pi>:/opt/ultron-ap/ultron-ap && sudo systemctl restart ultron-ap"
+  },
+  "environment_variables": [
+    {
+      "name": "ULTRON_SECRET_KEY",
+      "type": "string (32+ chars)",
+      "required": "required (pre-existing) — the email/telegram channel configs are encrypted at rest with it",
+      "example": "0123456789abcdef0123456789abcdef",
+      "notes": "This feature adds the two digest keys INSIDE that encrypted email config, so the digest cannot be configured without the key. The mute window is deliberately NOT stored there (see below) so it can be read — and fail open — even if the key is missing."
+    },
+    {
+      "name": "ULTRON_HELPER_SOCKET",
+      "type": "path",
+      "required": "optional (pre-existing) — defaults to /run/ultron-helper.sock",
+      "example": "/run/ultron-helper.sock",
+      "notes": "The log drawer dials this socket. No new value or permission is needed."
+    },
+    {
+      "name": "ULTRON_HELPER_TIMEOUT",
+      "type": "duration",
+      "required": "optional (pre-existing) — defaults to 5s",
+      "example": "5s",
+      "notes": "Bounds the drawer's journalctl round-trip. The drawer additionally caps its own request at 10s."
+    },
+    {
+      "name": "ULTRON_DB_PATH",
+      "type": "path",
+      "required": "optional (pre-existing) — defaults to /var/lib/ultron-ap/ultron.db",
+      "example": "/var/lib/ultron-ap/ultron.db",
+      "notes": "The three new tables live here. No separate store is introduced."
+    },
+    {
+      "name": "ULTRON_ADMIN_USER / ULTRON_ADMIN_PASS",
+      "type": "string",
+      "required": "required on first run only (pre-existing) — bootstraps the admin",
+      "example": "admin / <a real password>",
+      "notes": "Unchanged by this feature."
+    }
+  ],
+  "requirement_compliance": [
+    {
+      "id": "FR-079",
+      "title": "Telegram mute window (1h / 4h / 24h)",
+      "level": "complete",
+      "evidence": "8 test cases, all passing. TC-ACG-079Ah (no mute → exactly 1 telegram send, email unaffected), TC-ACG-079Bh (open window → 0 telegram sends AND the alert still persists to the Alert table), TC-ACG-079Ce (an expired window resumes delivery with no admin action), TC-ACG-079De (a 4h window's expiry survives a database reopen, ±60s), TC-ACG-079Eh (cancel → next fire delivers; the row swaps back to its chip state), TC-ACG-079Ff (mute_hours=7 → HTTP 400, no window opened), TC-ACG-079Gf (a corrupt mute row FAILS OPEN — the critical alert is still delivered), TC-ACG-079HE2E (full flow through the running server: login → mute 4h → the section renders 'Muted — 3h 59m left' with a cancel control). Browser-verified in Chrome (M1/M2/M3): the chip row, the countdown, and the cancel swap all work against the live app."
+    },
+    {
+      "id": "FR-080",
+      "title": "Daily email digest of the last 24h of alerts",
+      "level": "complete",
+      "evidence": "6 test cases, all passing, driven through DigestScheduler.Tick(now) — the clock is a parameter, so no test sleeps or races the wall clock. TC-ACG-080Ah (digest hour → exactly 1 email listing all 3 alerts with severity/source/timestamp, plus an ActionLog row), TC-ACG-080Be (a second tick the same day sends nothing), TC-ACG-080Ce (an empty 24h window STILL sends one email saying 'No alerts' — silence would be ambiguous), TC-ACG-080Df (digest disabled → the hour passes silently), TC-ACG-080Eh (a per-event alert email still fires independently of the digest), TC-ACG-080Ff (a failing SMTP relay is attempted exactly once, recorded in ActionLog as failed, and never retry-storms). Browser-verified (D1/D2/D3): the toggle, the 0–23 stepper, and persistence across reload."
+    },
+    {
+      "id": "FR-081",
+      "title": "Per-service log drawer (last 100 journalctl lines)",
+      "level": "partial",
+      "evidence": "7 test cases, all passing, driving the REAL Unix socket against a fake helper. TC-ACG-081Ah (the drawer returns the tail; the helper received action='logs', source='service:nginx', lines=100), TC-ACG-081Bf (--version, foo;rm, -Mroot, 'foo bar' → HTTP 400 and ZERO helper calls), TC-ACG-081Ce (a bot_token in the journal is redacted and <script> is escaped), TC-ACG-081Df (helper down → a readable error state, not an empty panel or a 5xx), TC-ACG-081Ef (unauthenticated → 401, no journal content, helper never called), TC-ACG-081FE2E (nothing is prefetched — exactly one helper round-trip per open), TC-ACG-088f (the drawer introduces NO new privileged action). DEBT: the drawer's browser behaviour (open → fetch → collapse) could not be exercised in Chrome here — the dev host is macOS with no systemd, so /services has no rows. Remediation: open a failing unit's drawer once on the Pi after deploy."
+    },
+    {
+      "id": "FR-082",
+      "title": "Hardware section in Settings — fan mode",
+      "level": "partial",
+      "evidence": "5 test cases, all passing. TC-ACG-082Ah (the section renders with exactly auto/quiet/performance/off and the honesty note), TC-ACG-082Bh (saving 'quiet' persists and re-renders as selected), TC-ACG-082Cf (fan_mode=turbo → HTTP 400, stored value unchanged), TC-ACG-082Df (no CSRF → 403, nothing persisted), TC-ACG-082Ee (a fresh database seeds auto/false/cpu with no hardware I/O). Browser-verified (H1–H5) in Chrome, including persistence across a reload. DECLARED DEBT: the persisted fan mode drives NOTHING — no PWM, no GPIO, no daemon. This is the owner's explicit constraint, is in the no_go_zone, and is stated to the admin in the section itself ('Ultron stores these settings; it does not drive the fan or OLED panel yet')."
+    },
+    {
+      "id": "FR-083",
+      "title": "Hardware section in Settings — OLED display configuration",
+      "level": "partial",
+      "evidence": "5 test cases, all passing. TC-ACG-083Ah (the toggle + cpu/ram/temp/ip metrics render), TC-ACG-083Bh (enabled + metric=temp persists and re-renders), TC-ACG-083Cf (oled_metric=disk → HTTP 400, stored metric unchanged), TC-ACG-083Df (no CSRF → 403), TC-ACG-083Ee (an omitted checkbox means off — standard HTML semantics — while the metric is untouched). Browser-verified (H4/H5). SAME DECLARED DEBT as FR-082: nothing writes to the OLED panel."
+    },
+    {
+      "id": "NFR-085",
+      "title": "Regression — Telegram delivery and FR-024 storm coalescing keep working",
+      "level": "complete",
+      "evidence": "TC-ACG-079Ah/Ce/Gf assert that with no (or an expired, or an unreadable) mute window, exactly one telegram send happens. The mute filter runs in Dispatcher.send() BEFORE Notify is called, so the storm cache never sees a muted event; withoutChannel copies the notifier slice rather than mutating the dispatcher's cached list (which would have turned a 4h mute into a permanent one). The pre-existing notify suite, including the storm tests, passes unchanged."
+    },
+    {
+      "id": "NFR-086",
+      "title": "Regression — per-event email keeps sending; the digest is additive",
+      "level": "complete",
+      "evidence": "TC-ACG-080Eh (a fire still produces exactly one per-event email with the digest enabled), TC-ACG-080Df and TC-ACG-080Be (digest state never suppresses per-event mail). The digest is a separate caller of the same EmailSender via a new SendDigest method that reuses the existing MIME builder, header sanitisation and context-aware SMTP path — not a second mail stack. TC-006h/e/f pass unchanged."
+    },
+    {
+      "id": "NFR-087",
+      "title": "Regression — the settings page keeps its shape, widgets and CSRF gating",
+      "level": "complete",
+      "evidence": "TC-ACG-087h (settings.js is still referenced and NO page-level inline controller returned to the page), TC-ACG-087e (the hardware section carries data-settings-section / data-settings-form / data-form-state-host exactly like the six existing sections, every control is ≥44px, and no 40px marker exists), TC-ACG-087f (the pre-existing performance and telegram forms still save, and a save that omits mute_hours leaves the mute state alone). The full settings markup and revamp suites pass unchanged, and the Chrome pass confirmed the new section builds exactly one accordion and binds through the existing controller."
+    },
+    {
+      "id": "NFR-088",
+      "title": "Security — no new host action bypasses the privileged helper",
+      "level": "complete",
+      "evidence": "TC-ACG-088f asserts the helper receives ONLY the existing 'logs' action (source='service:nginx', lines=100) — the drawer introduces no new privileged verb. TC-ACG-081Bf asserts injection-shaped unit names are rejected before any helper call. The unit name is validated against systemd.IsValidServiceName — the same authority start/stop/restart uses, exported for this purpose so a second, divergent regex could not drift — and the root helper re-validates independently (TestServiceNameRe_RejectsOptionLikeNames). Tests drive the real Unix socket, not a mocked Go method."
+    },
+    {
+      "id": "NFR-090",
+      "title": "Reliability — mute and digest survive a restart and never panic the process",
+      "level": "complete",
+      "evidence": "TC-ACG-079Gf (a corrupt mute row → muted=false + an error, and the alert is STILL delivered: fail-open, because silently swallowing a critical alert is worse than an unwanted notification), TC-ACG-079De (the mute window survives a database reopen), TC-ACG-090e (a corrupt last_sent_date is treated as never-sent and rewritten — a bad marker can never permanently suppress the digest), TC-ACG-080Ff (an SMTP failure is surfaced and logged without terminating the process; the scheduler's Start() loop logs a failed Tick and continues)."
+    },
+    {
+      "id": "NFR-091",
+      "title": "Observability — mute and digest activity is visible in action history",
+      "level": "complete",
+      "evidence": "TC-ACG-091h (muting writes action='mute' target='telegram' result='success' with the duration in details; cancelling writes action='mute_clear'), TC-ACG-080Ah (a successful digest writes action='digest' result='success' with the alert count), TC-ACG-080Ff (a failed digest writes result='failed' with the error). All are visible on /history without reading the journal, and each digest also emits one structured log line."
+    }
+  ],
+  "test_evidence": {
+    "runner": "go test -C ../.. ./... -run TestTC_ACG -v",
+    "result": "36/36 passing (34 unit + integration, 2 e2e) — verified by `aitri feature verify-complete ac-coverage-gaps`",
+    "full_suite": "go vet ./... clean; go test ./... green (the whole project, including the 80 pre-existing test cases — zero regressions)",
+    "browser": "14/14 checks in Chrome against the running app (hardware section, Telegram mute, daily digest). Two markup defects were caught by that pass and fixed: the OLED toggle did not follow toggle.js's data-toggle-input contract, and the mute chip-preset wrote into a hidden input that chip-preset.js does not drive. Neither was visible to the HTML-string tests — which is exactly why the browser pass exists."
+  },
+  "security_findings": [
+    {
+      "severity": "medium",
+      "finding": "internal/logfilter's secret-key pattern used \\b(token|secret|password|…) — and \\b never matches between '_' and 'token'. So bot_token=…, api_token=… and ULTRON_SECRET_KEY: … passed through the journal filter UNREDACTED, in the /logs page and in the root helper, not only in the new drawer.",
+      "status": "FIXED in this feature. The pattern now consumes surrounding word runs on both sides ([\\w.\\-]*). Regression test: TestFilter_RedactsPrefixedSecretKeys (internal/logfilter).",
+      "found_by": "Writing the AC-081-003 test (secrets in the journal must not reach the browser) — the test failed against the real filter, which is how the pre-existing hole surfaced."
+    }
+  ],
+  "non_functional_compliance": {
+    "performance": "The mute check is one singleton-PK SELECT per alert fire (alerts fire at human frequency; storms are coalesced by FR-024). The digest scheduler wakes once a minute and returns after a config read and an integer compare on ~99.9% of ticks; the 24h alert query runs once a day and is bounded by the existing retention job. The hardware section costs one SELECT on render and one UPDATE on save — no goroutine, no polling, no hardware I/O, which was the owner's hard constraint. The drawer fetches only when clicked (hx-trigger='click once'), never live-tails. Net new goroutines: one.",
+    "security": "All new POSTs go through the existing CSRF middleware (403 asserted); the drawer is a GET behind requireAuth (401 asserted). Closed enums and a bounded integer are validated server-side (400 asserted, stored values unchanged). Journal output is escaped by html/template and redacted by logfilter. The backup encryption key never reaches the client. Mute grants no capability an authenticated admin did not already have (they could disable the channel outright), and every mute is recorded in ActionLog.",
+    "ci_cd": "The existing GitHub Actions workflow (build · vet · race-test · arm64 · lint) covers this feature: its tests are part of `go test ./...` and need no new runner, no browser stack and no service container. The digest's clock-as-a-parameter seam is what keeps them CI-safe (no sleeps, no wall-clock flake). Known pre-existing CI state, unchanged by this feature: the govulncheck gate is red on two unfixable docker/docker v27 advisories pending a v28 SDK bump, and lint runs in soak mode."
+  },
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-082",
+      "substitution": "The fan-mode selector persists its value; nothing actuates the Pironman fan (no PWM/GPIO write, no daemon connection).",
+      "reason": "Owner constraint confirmed 2026-07-13 — a previous hardware-control attempt cost the Pi significant CPU and memory — plus it cannot be verified in CI without the physical board.",
+      "remediation": "A follow-up feature adds an actuator that reads HardwareConfig.fan_mode and drives the Pironman daemon, with a measured CPU/memory budget. The stored schema is already what such an actuator would read."
+    },
+    {
+      "fr_id": "FR-083",
+      "substitution": "The OLED configuration persists (enabled + metric); nothing writes to the OLED panel.",
+      "reason": "Same owner constraint and same verifiability limit as FR-082.",
+      "remediation": "The same follow-up actuator reads HardwareConfig.oled_enabled / oled_metric."
+    },
+    {
+      "fr_id": "FR-081",
+      "substitution": "The drawer's browser behaviour (open → fetch → collapse) is proven by Go tests through the real Unix socket plus a fake helper, but was not exercised in a browser: the dev host is macOS with no systemd, so /services renders its unavailable state and has no rows to open a drawer on.",
+      "reason": "No systemd on the dev host; the project has no headless-browser stack in CI (same precedent as settings-revamp FR-063 and help-page FR-050/051/053).",
+      "remediation": "Open one failing unit's drawer on the Pi (192.168.1.29) after deploy and confirm the tail renders and collapses."
+    }
+  ],
+  "parent_pipeline_impact": {
+    "acceptance_criteria_closed": [
+      "AC-005-005 (Telegram mute window) → FR-079",
+      "AC-006-004 (daily email digest) → FR-080",
+      "AC-010-002 (per-service log drawer, last 100 journalctl lines) → FR-081",
+      "AC-013-002 (fan-mode selector in Settings) → FR-082",
+      "AC-013-003 (OLED display configuration in Settings) → FR-083"
+    ],
+    "acceptance_criteria_still_open": [
+      "AC-015-004 (list prior backups and download the stored encrypted file) — deferred by the owner on 2026-07-13 and excluded from this feature's scope. Tracked as BL-034. It remains the parent pipeline's single untested acceptance criterion, so `aitri verify-complete` on the MAIN pipeline will report 1 untested AC (down from 41 at the start of this work)."
+    ]
+  }
+}

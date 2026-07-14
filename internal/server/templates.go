@@ -91,6 +91,8 @@ func (s *Server) parseTemplates() {
 		"partials/tailscale-peers.html",
 		"partials/lan-devices.html",
 		"partials/sse-verdicts.html",
+		"partials/settings-mute.html",
+		"partials/service-logs.html",
 	}
 
 	for _, name := range partials {
@@ -180,6 +182,8 @@ func (s *Server) parseTemplates() {
 		{"settings.html", []string{
 			"templates/partials/alert-rules-table.html",
 			"templates/partials/settings-telegram.html",
+			"templates/partials/settings-mute.html",
+			"templates/partials/settings-hardware.html",
 			"templates/partials/settings-email.html",
 			"templates/partials/settings-performance.html",
 			"templates/partials/settings-backup.html",

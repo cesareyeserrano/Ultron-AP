@@ -161,6 +161,39 @@ CREATE TABLE IF NOT EXISTS brute_force_attempts (
 	first_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_brute_force_first_at ON brute_force_attempts(first_at);
+
+-- FR-079: Telegram mute window. Singleton. An absent row means "not muted".
+-- Deliberately NOT stored inside NotificationConfig.config: that blob is
+-- encrypted (BG-044), and a mute expiry is not secret material — keeping it
+-- in the clear lets the send path read it without the key and, crucially,
+-- fail OPEN (deliver) rather than fail closed (silently swallow an alert).
+CREATE TABLE IF NOT EXISTS NotificationMute (
+	id         INTEGER PRIMARY KEY CHECK (id = 1),
+	expires_at DATETIME NOT NULL,
+	hours      INTEGER  NOT NULL,
+	created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- FR-080: daily digest de-duplication. Singleton. last_sent_date is the local
+-- calendar date (YYYY-MM-DD) of the last digest attempt — written on
+-- completion (success OR failure) so a broken SMTP relay cannot turn the
+-- digest into a once-a-minute retry storm.
+CREATE TABLE IF NOT EXISTS DigestState (
+	id             INTEGER PRIMARY KEY CHECK (id = 1),
+	last_sent_date TEXT NOT NULL DEFAULT '',
+	updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- FR-082 / FR-083: hardware panel settings. Singleton, same shape as
+-- BackupConfig. Ultron STORES these; it does not drive the fan or the OLED
+-- panel (no_go_zone) — no goroutine, no GPIO/I2C, no per-request hardware I/O.
+CREATE TABLE IF NOT EXISTS HardwareConfig (
+	id           INTEGER PRIMARY KEY CHECK (id = 1),
+	fan_mode     TEXT    NOT NULL DEFAULT 'auto',
+	oled_enabled INTEGER NOT NULL DEFAULT 0,
+	oled_metric  TEXT    NOT NULL DEFAULT 'cpu',
+	updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 `
 
 type DB struct {

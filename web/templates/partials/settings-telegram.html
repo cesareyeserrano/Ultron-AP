@@ -7,6 +7,7 @@
                 </div>
                 <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" data-status-target="#telegram-status" data-saving-label="Saving Telegram settings..." data-settings-form="telegram" class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    {{template "settings-mute" .Content.Mute}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] text-text-muted">Bot Token</label>

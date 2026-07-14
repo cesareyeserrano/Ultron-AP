@@ -263,6 +263,19 @@ func (d *Dispatcher) send(evt *Event) {
 	renderMs := time.Since(t0).Milliseconds()
 
 	notifiers := d.getNotifiers()
+
+	// FR-079: while a mute window is open, the Telegram channel is dropped from
+	// this event's fan-out. The filter lives here, not inside TelegramSender,
+	// for two reasons: the notifier stays a dumb transport, and the FR-024
+	// storm cache is never touched for a muted event (NFR-085) — an early
+	// return inside Notify would already have recorded it.
+	//
+	// Mute is DELIVERY-only: the alert row was written by the engine before
+	// this ran, and the alert-count SSE event still counts it (AC-079-002).
+	if d.telegramMuted() {
+		notifiers = withoutChannel(notifiers, "telegram")
+	}
+
 	channelsFailed := 0
 	for _, n := range notifiers {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -689,6 +702,39 @@ func (d *Dispatcher) buildNotifiers() []Notifier {
 		}
 	}
 	return notifiers
+}
+
+// telegramMuted reports whether the Telegram mute window is open right now.
+//
+// It FAILS OPEN: NotificationMuteUntil returns muted=false on any error, and
+// this method logs it and delivers anyway. Silently swallowing a critical
+// alert because a mute row could not be read is the one outcome worse than an
+// unwanted notification (NFR-090).
+func (d *Dispatcher) telegramMuted() bool {
+	if d.db == nil {
+		return false
+	}
+	_, muted, err := d.db.NotificationMuteUntil(time.Now())
+	if err != nil {
+		log.Printf("notify: mute state unreadable, delivering anyway: %v", err)
+		return false
+	}
+	return muted
+}
+
+// withoutChannel returns the notifiers minus the named channel. It copies
+// rather than filtering in place: the slice it receives is the dispatcher's
+// CACHED notifier list (BL-030), and mutating it would drop the channel for
+// every future event, turning a 4h mute into a permanent one.
+func withoutChannel(notifiers []Notifier, name string) []Notifier {
+	out := make([]Notifier, 0, len(notifiers))
+	for _, n := range notifiers {
+		if n.Name() == name {
+			continue
+		}
+		out = append(out, n)
+	}
+	return out
 }
 
 // errNoTelegramConfigured is returned by NotifyTest when no enabled telegram

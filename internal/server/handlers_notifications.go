@@ -6,6 +6,7 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -86,6 +87,10 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 		if v := r.FormValue("chat_id"); v != "" {
 			config["chat_id"] = v
 		}
+		// FR-079: the mute chip-preset submits with this form.
+		if !s.applyMuteFromForm(w, r) {
+			return
+		}
 	case "email":
 		config["smtp_host"] = r.FormValue("smtp_host")
 		config["smtp_port"] = r.FormValue("smtp_port")
@@ -95,6 +100,18 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 		}
 		config["from"] = r.FormValue("from")
 		config["to"] = r.FormValue("to")
+
+		// FR-080: the digest is an email-channel setting, saved by this form.
+		// Standard HTML checkbox semantics — an omitted toggle means off.
+		config["digest_enabled"] = strconv.FormatBool(r.FormValue("digest_enabled") == "on")
+		if v := r.FormValue("digest_hour"); v != "" {
+			hour, err := strconv.Atoi(v)
+			if err != nil || hour < 0 || hour > 23 {
+				http.Error(w, "digest hour must be between 0 and 23", http.StatusBadRequest)
+				return
+			}
+			config["digest_hour"] = strconv.Itoa(hour)
+		}
 	}
 
 	configJSON, _ := json.Marshal(config)
