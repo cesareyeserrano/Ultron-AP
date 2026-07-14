@@ -453,3 +453,64 @@ func TestNetworkTargetViews_ReadHistoryByLabelNotResolvedIP(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, byIP, "querying by resolved IP finds nothing — that was the bug")
 }
+
+// --- BG-076 — the sidebar survives a boosted navigation ---------------------
+
+// The collapse rules must NOT sit inside @layer components. Under CSS cascade
+// layers a later layer wins over an earlier one REGARDLESS of specificity, and
+// Tailwind orders theme → base → components → utilities — so the logo's
+// h-[76px] utility silently beat the 40px height, the flex container squeezed
+// the width to ~39px, and the logo rendered stretched whenever the sidebar was
+// collapsed. Unlayered styles outrank every layer, which is what a state
+// override needs.
+func TestSidebarCollapseRules_AreUnlayered(t *testing.T) {
+	css, err := os.ReadFile("../../web/css/input.css")
+	require.NoError(t, err)
+
+	src := string(css)
+	i := strings.Index(src, "#sidebar.sidebar-collapsed .sidebar-brand img")
+	require.GreaterOrEqual(t, i, 0, "the logo collapse rule must exist")
+
+	// Everything before the rule must have balanced braces at depth 0 — i.e. the
+	// rule is not nested inside an @layer (or any other) block.
+	depth := 0
+	for _, c := range src[:i] {
+		switch c {
+		case '{':
+			depth++
+		case '}':
+			depth--
+		}
+	}
+	assert.Zero(t, depth,
+		"the sidebar collapse rules are nested inside a block (depth %d) — inside @layer they lose to Tailwind's utilities layer no matter how specific they are, and the logo stretches", depth)
+
+	// And the built artifact must actually carry them.
+	built, err := os.ReadFile("../../web/static/css/app.css")
+	require.NoError(t, err)
+	assert.Contains(t, string(built), "#sidebar.sidebar-collapsed .sidebar-brand img",
+		"the committed app.css must carry the collapse rules — run: make css")
+}
+
+// The sidebar controller must not cache DOM nodes: hx-boost replaces the body on
+// every navigation, so any node captured at load becomes detached and the
+// collapse silently stops working (BG-076, same family as BG-038).
+func TestSidebarScript_SurvivesBoostedNavigation(t *testing.T) {
+	js, err := os.ReadFile("../../web/static/js/sidebar.js")
+	require.NoError(t, err)
+	src := string(js)
+
+	// State is re-applied after a swap AND after the settle — with hx-boost the
+	// body is still settling when afterSwap fires, so classes written then land
+	// on a node htmx is about to discard.
+	for _, evt := range []string{"htmx:afterSwap", "htmx:afterSettle", "htmx:historyRestore"} {
+		assert.Contains(t, src, evt, "the sidebar must re-apply its state on %s", evt)
+	}
+
+	// The click handling must be delegated, not bound to buttons that get
+	// replaced by the swap.
+	assert.Contains(t, src, "document.addEventListener('click'",
+		"the toggle must be delegated on the document, or it dies with the first body swap")
+	assert.NotContains(t, src, "toggleBtn.addEventListener",
+		"binding directly to the toggle button is exactly what broke: hx-boost replaces it")
+}

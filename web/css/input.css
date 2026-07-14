@@ -173,23 +173,35 @@
     background: linear-gradient(180deg, rgba(194, 199, 208, 0.1), rgba(194, 199, 208, 0.03));
   }
 
-  #sidebar.sidebar-collapsed .sidebar-label {
-    display: none;
-  }
+}
 
-  /* CSS3: the ID-scoped selector already outranks the w-*/h-* utility classes
-     on the logo, so no !important is needed once the size lives in classes
-     (see sidebar.html) rather than an inline style. */
-  #sidebar.sidebar-collapsed .sidebar-brand img {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 0;
-  }
+/* BG-076 — these rules MUST live outside @layer.
+ *
+ * They used to sit in @layer components, with a comment claiming the ID-scoped
+ * selector already outranked the width/height utility classes on the logo. That
+ * is wrong under CSS cascade layers: a later layer (or no layer at all) wins
+ * over an earlier one REGARDLESS of specificity, and Tailwind v4 orders
+ * theme, base, components, utilities. So the h-[76px] utility silently beat the
+ * 40px height here: the height stayed at 76px while the flex container squeezed
+ * the width to ~39px, and the logo rendered stretched whenever the sidebar was
+ * collapsed.
+ *
+ * Unlayered styles outrank every layer — which is exactly what a state override
+ * like this one needs.
+ */
+#sidebar.sidebar-collapsed .sidebar-label {
+  display: none;
+}
 
-  #sidebar.sidebar-collapsed .sidebar-brand {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-  }
+#sidebar.sidebar-collapsed .sidebar-brand img {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0;
+}
+
+#sidebar.sidebar-collapsed .sidebar-brand {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 /* A11y: honour the OS "reduce motion" setting. The UI uses transitions and

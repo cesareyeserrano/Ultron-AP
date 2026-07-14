@@ -1758,6 +1758,28 @@
       "fix_at": "2026-07-14T17:37:16.913Z",
       "close_commit_sha": "1a298e63efad623a78132b717136ec428b2bbf13",
       "close_at": "2026-07-14T17:37:17.005Z"
+    },
+    {
+      "id": "BG-076",
+      "title": "Sidebar broken after hx-boost navigation: logo stretches (39x76) and the collapsed state is lost, the toggle stops resizing",
+      "description": "",
+      "steps_to_reproduce": [
+        "Collapse the sidebar, then navigate with a sidebar link"
+      ],
+      "expected_result": "The sidebar stays collapsed and the logo stays square (40x40)",
+      "actual_result": "The logo renders 39x76 (stretched) because the collapse rules live in @layer components and Tailwind v4's utilities layer always wins over components regardless of specificity — the h-[76px] utility overrides them. After a boost swap the sidebar comes back with the server's classes (sidebar-hidden) and no one reapplies the stored state, so the collapse is lost and the toggle no longer resizes.",
+      "environment": "prod (Pi), reported by owner 2026-07-14",
+      "severity": "medium",
+      "status": "open",
+      "fr": "FR-009",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "cesareyeserrano",
+      "created_at": "2026-07-14T20:05:04.952Z",
+      "updated_at": "2026-07-14T20:05:04.952Z",
+      "resolution": null
     }
   ]
 }
