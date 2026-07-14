@@ -296,6 +296,14 @@
       "problem": "aitri verify-complete now hard-gates on AC coverage: 41 acceptance criteria in user_stories have no TC tracing via ac_id (pre-existing debt from the original pipeline; suite itself passes 45/45 TCs). Until covered, the maintenance-path reconcile --resolve cannot advance the baseline.",
       "status": "open",
       "createdAt": "2026-07-12T19:02:53.615Z"
+    },
+    {
+      "id": "BL-034",
+      "title": "AC-015-004: list prior backups in Settings and download the stored encrypted file",
+      "priority": "P2",
+      "problem": "The only download route (GET /api/settings/backup) generates a FRESH plaintext SQLite snapshot; prior encrypted backups on disk are neither listed nor downloadable. Deferred by the owner on 2026-07-13 ('omite este por ahora') and excluded from the ac-coverage-gaps feature. It is the single remaining untested acceptance criterion — aitri verify-complete will report 1 untested AC until it ships.",
+      "status": "open",
+      "createdAt": "2026-07-13T17:22:17.035Z"
     }
   ]
 }

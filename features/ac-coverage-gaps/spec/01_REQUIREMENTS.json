@@ -1,0 +1,435 @@
+{
+  "project_name": "Ultron-AP — ac-coverage-gaps",
+  "project_summary": {
+    "north_star_kpi": "Acceptance criteria of the approved requirements with a passing traced test: 74/80 today → 79/80. AC-015-004 (list prior backups and download the encrypted file) is deferred by the owner and remains the single untested AC after this feature.",
+    "jtbd": "As the sole admin of a headless Raspberry Pi, I hire Ultron-AP to tell me what my box is doing and let me act on it from one panel — without SSHing in, and without it waking me at 3am for a storm I already know about.",
+    "guardrail_metric": "Zero regressions: the 80 test cases passing today keep passing, and no new host action bypasses the privileged helper's allow-list.",
+    "context": "A coverage audit of the main pipeline (BL-033) found 41 acceptance criteria with no traced test. 35 were real behaviors that were merely untested and are now covered. The remaining 6 traced to behavior the approved requirements demand and the code never grew. This feature builds those six. It adds no new product surface beyond what FR-005, FR-006, FR-010, FR-013 and FR-015 already promise. The owner deferred the backup listing/download (parent AC-015-004) on 2026-07-13 and required the hardware controls to drive nothing, because a previous hardware-control attempt cost the Pi significant CPU and memory."
+  },
+  "functional_requirements": [
+    {
+      "id": "FR-079",
+      "title": "Telegram mute window (1h / 4h / 24h)",
+      "description": "The admin can open a mute window of 1, 4 or 24 hours from Settings. While the window is open, alert notifications are not delivered to Telegram. The window expires on its own; the admin can also cancel it early. Extends FR-005 (Telegram notifications) and realises the parent's AC-005-005. The mute suppresses DELIVERY only — alerts keep firing, keep persisting to SQLite, and keep appearing in the Alerts panel and the alert-count SSE badge.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "With a mute window open (expires_at in the future), a fired alert produces zero Telegram send attempts — the notifier is not invoked.",
+        "With no mute window open, or with one whose expires_at has passed, a fired alert produces exactly one Telegram send attempt (unchanged FR-005 behaviour).",
+        "Selecting 1h / 4h / 24h persists a mute row whose expires_at equals the selection time plus 1 / 4 / 24 hours (±60s), surviving a process restart.",
+        "Cancelling an open window clears it, and the next fired alert is delivered to Telegram.",
+        "A muted alert is still written to the Alert table and still counted by the alert-count SSE event — mute never suppresses persistence or the in-panel view.",
+        "The Settings Telegram section shows the remaining mute time while a window is open, and a Mute/Cancel control otherwise."
+      ]
+    },
+    {
+      "id": "FR-080",
+      "title": "Daily email digest of the last 24h of alerts",
+      "description": "The admin can enable a daily digest and choose the hour (0–23) at which it is sent. At that hour, a single email summarising the previous 24 hours of alerts is delivered over the existing SMTP channel. Extends FR-006 (email notifications) and realises the parent's AC-006-004. The digest is additive: per-event alert emails keep sending exactly as they do today.",
+      "priority": "MUST",
+      "type": "reporting",
+      "acceptance_criteria": [
+        "With the digest enabled and the digest hour reached, exactly one email is sent, whose body lists the alerts created in the preceding 24 hours with their severity, source and timestamp.",
+        "The digest is sent at most once per calendar day: a second scheduler tick within the same hour of the same day sends nothing.",
+        "With zero alerts in the preceding 24h, the digest email is still sent once and states that no alerts fired (so silence is distinguishable from a broken digest).",
+        "With the digest disabled, the digest hour passing sends no email.",
+        "Per-event alert emails (FR-006) keep sending on every fire regardless of digest configuration.",
+        "The digest send is recorded in action_history so a failed send is observable without reading the journal."
+      ]
+    },
+    {
+      "id": "FR-081",
+      "title": "Per-service log drawer (last 100 journalctl lines)",
+      "description": "Each systemd service row on /services can expand a log drawer showing the last 100 journalctl lines for that unit, fetched through the privileged helper. Realises the parent's AC-010-002. The existing page-level /logs source dropdown (FR-010) is unchanged.",
+      "priority": "MUST",
+      "type": "UX",
+      "acceptance_criteria": [
+        "Opening a service row's log drawer issues one authenticated request that returns the last 100 journalctl lines for that unit, rendered inside the row.",
+        "The drawer request routes through the privileged helper's Unix socket with the unit name validated against the helper's allow-list — an injection-shaped name is rejected before any journalctl runs.",
+        "Log content is HTML-escaped and passes through the existing logfilter secret redaction, so a leaked token in the journal is not rendered to the browser.",
+        "When the helper is unavailable, the drawer renders an explicit error state with a message instead of an empty panel.",
+        "The drawer is closed by default: loading /services issues no journalctl fetch until the admin opens a drawer."
+      ]
+    },
+    {
+      "id": "FR-082",
+      "title": "Hardware section in Settings — fan mode",
+      "description": "The Settings page renders a hardware section containing a fan-mode selector (auto / quiet / performance / off) whose value persists. Realises the parent's AC-013-002. The panel does NOT drive the fan: the owner ran hardware control before and it cost the Pi significant CPU and memory, so this FR is the control surface plus its persisted value — a future actuator reads that value. Persisting a selection must add no polling loop, no daemon connection, and no per-request hardware I/O.",
+      "priority": "MUST",
+      "type": "persistence",
+      "acceptance_criteria": [
+        "The rendered /settings page contains a hardware section with a fan-mode selector offering exactly the modes auto, quiet, performance and off.",
+        "Saving a fan mode persists it and a subsequent page load renders that mode as the selected one, surviving a process restart.",
+        "A fan-mode value outside the four allowed modes is rejected with HTTP 400 and the stored value is unchanged.",
+        "Saving the hardware section without a valid CSRF token is rejected with HTTP 403 and nothing is persisted.",
+        "Saving or reading the fan mode performs no hardware I/O and starts no background loop — the hardware section costs one SQLite read on page render and one write on save."
+      ]
+    },
+    {
+      "id": "FR-083",
+      "title": "Hardware section in Settings — OLED display configuration",
+      "description": "The hardware section also carries an OLED display configuration: enable/disable and which metric the panel shows (cpu / ram / temp / ip). The value persists. Realises the parent's AC-013-003. The panel does NOT write to the OLED — same rationale as FR-082: the owner requires this to stay lightweight on the Pi.",
+      "priority": "MUST",
+      "type": "persistence",
+      "acceptance_criteria": [
+        "The rendered /settings page's hardware section contains an OLED display configuration with an enable toggle and a metric selector offering cpu, ram, temp and ip.",
+        "Saving the OLED configuration persists both the enabled flag and the selected metric; a subsequent page load renders them, surviving a process restart.",
+        "An OLED metric outside the four allowed values is rejected with HTTP 400 and the stored value is unchanged.",
+        "Saving without a valid CSRF token is rejected with HTTP 403 and nothing is persisted.",
+        "Saving or reading the OLED configuration performs no hardware I/O and starts no background loop."
+      ]
+    }
+  ],
+  "user_personas": [
+    {
+      "role": "Pi Admin (sole operator)",
+      "tech_level": "high",
+      "goal": "Run a headless Raspberry Pi at home and know, from one browser panel, what it is doing — and act on it (restart a unit, read its logs, take a backup) without opening a terminal.",
+      "pain_point": "Alert storms wake them at 3am for an outage they are already handling; the only backup they can download is unencrypted; reading a failing unit's logs means leaving the panel and using the page-level log dropdown or SSHing in."
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-079",
+      "requirement_id": "FR-079",
+      "as_a": "Pi Admin",
+      "i_want": "to mute Telegram alerts for 1, 4 or 24 hours while I am already dealing with an incident",
+      "so_that": "my phone stops buzzing about a problem I know about, without me losing the alert history",
+      "acceptance_criteria": [
+        {
+          "id": "AC-079-001",
+          "given": "no mute window is open and Telegram is configured and enabled",
+          "when": "an alert fires",
+          "then": "exactly one Telegram send is attempted (baseline FR-005 behaviour is unchanged)"
+        },
+        {
+          "id": "AC-079-002",
+          "given": "the admin selected a 1h mute window 10 minutes ago",
+          "when": "an alert fires",
+          "then": "zero Telegram sends are attempted, and the alert is still persisted to the Alert table"
+        },
+        {
+          "id": "AC-079-003",
+          "given": "a mute window whose expires_at is 1 second in the past",
+          "when": "an alert fires",
+          "then": "exactly one Telegram send is attempted — the window expires without any admin action"
+        },
+        {
+          "id": "AC-079-004",
+          "given": "the admin selects a 4h mute window at 12:00",
+          "when": "the mute state is read back after a process restart",
+          "then": "the persisted expires_at is 16:00 ±60s and the window is still reported as open"
+        },
+        {
+          "id": "AC-079-005",
+          "given": "an open mute window",
+          "when": "the admin cancels it",
+          "then": "the window is cleared and the next fired alert is delivered to Telegram"
+        },
+        {
+          "id": "AC-079-006",
+          "given": "an open mute window",
+          "when": "the Settings Telegram section renders",
+          "then": "the section shows the remaining mute time and a control to cancel it"
+        }
+      ]
+    },
+    {
+      "id": "US-080",
+      "requirement_id": "FR-080",
+      "as_a": "Pi Admin",
+      "i_want": "one email each day summarising the alerts of the last 24 hours",
+      "so_that": "I can see the pattern of what my box did overnight without scrolling the Alerts panel event by event",
+      "acceptance_criteria": [
+        {
+          "id": "AC-080-001",
+          "given": "the digest is enabled with digest_hour=8 and three alerts fired in the last 24h",
+          "when": "the scheduler ticks at 08:00",
+          "then": "exactly one email is sent whose body lists all three alerts with severity, source and timestamp"
+        },
+        {
+          "id": "AC-080-002",
+          "given": "the digest already ran today at 08:00",
+          "when": "the scheduler ticks again at 08:30 the same day",
+          "then": "no second email is sent (at most one digest per calendar day)"
+        },
+        {
+          "id": "AC-080-003",
+          "given": "the digest is enabled and zero alerts fired in the last 24h",
+          "when": "the digest hour is reached",
+          "then": "exactly one email is sent stating that no alerts fired"
+        },
+        {
+          "id": "AC-080-004",
+          "given": "the digest is disabled",
+          "when": "the digest hour is reached",
+          "then": "no email is sent"
+        },
+        {
+          "id": "AC-080-005",
+          "given": "the digest is enabled",
+          "when": "a single alert fires at any time",
+          "then": "its per-event email (FR-006) is still sent immediately — the digest never replaces per-event delivery"
+        },
+        {
+          "id": "AC-080-006",
+          "given": "a digest send that fails at the SMTP layer",
+          "when": "the scheduler completes the attempt",
+          "then": "the failure is recorded in action_history with its error, and the process does not panic"
+        }
+      ]
+    },
+    {
+      "id": "US-081",
+      "requirement_id": "FR-081",
+      "as_a": "Pi Admin",
+      "i_want": "to read a failing unit's last 100 log lines from its row on the Services page",
+      "so_that": "I can diagnose it in place instead of leaving the panel or SSHing into the box",
+      "acceptance_criteria": [
+        {
+          "id": "AC-081-001",
+          "given": "an authenticated admin on /services",
+          "when": "they open the log drawer of nginx.service",
+          "then": "the drawer renders the last 100 journalctl lines for that unit"
+        },
+        {
+          "id": "AC-081-002",
+          "given": "a unit name shaped like an injection or a systemctl option (e.g. \"--version\", \"foo;rm -rf /\")",
+          "when": "a log-drawer request carries it",
+          "then": "the request is rejected before any journalctl runs and no log output is returned"
+        },
+        {
+          "id": "AC-081-003",
+          "given": "journal output containing a bot token or password",
+          "when": "the drawer renders it",
+          "then": "the secret is redacted by logfilter and the content is HTML-escaped"
+        },
+        {
+          "id": "AC-081-004",
+          "given": "the privileged helper is unavailable",
+          "when": "the admin opens a log drawer",
+          "then": "the drawer renders an explicit error message rather than an empty panel"
+        },
+        {
+          "id": "AC-081-005",
+          "given": "an unauthenticated client",
+          "when": "it requests a service's log drawer",
+          "then": "it is redirected to /login and no journalctl output is returned"
+        }
+      ]
+    },
+    {
+      "id": "US-082",
+      "requirement_id": "FR-082",
+      "as_a": "Pi Admin",
+      "i_want": "to choose how the Pironman fan should behave from the Settings page",
+      "so_that": "the box stays quiet at night and ramps up under load, and the choice survives a reboot",
+      "acceptance_criteria": [
+        {
+          "id": "AC-082-001",
+          "given": "an authenticated admin",
+          "when": "the /settings page renders",
+          "then": "a hardware section is present containing a fan-mode selector with exactly the modes auto, quiet, performance and off"
+        },
+        {
+          "id": "AC-082-002",
+          "given": "the fan mode is auto",
+          "when": "the admin saves the mode quiet",
+          "then": "the value persists and a subsequent page load renders quiet as selected"
+        },
+        {
+          "id": "AC-082-003",
+          "given": "a stored fan mode of quiet",
+          "when": "a save arrives with fan_mode=turbo (not an allowed mode)",
+          "then": "the response is HTTP 400 and the stored value is still quiet"
+        },
+        {
+          "id": "AC-082-004",
+          "given": "an authenticated session without a CSRF token",
+          "when": "it posts a fan-mode save",
+          "then": "the response is HTTP 403 and nothing is persisted"
+        }
+      ]
+    },
+    {
+      "id": "US-083",
+      "requirement_id": "FR-083",
+      "as_a": "Pi Admin",
+      "i_want": "to configure what the little OLED panel on the case displays",
+      "so_that": "I can glance at the box and see the metric I care about, without opening the panel",
+      "acceptance_criteria": [
+        {
+          "id": "AC-083-001",
+          "given": "an authenticated admin",
+          "when": "the /settings hardware section renders",
+          "then": "an OLED configuration is present with an enable toggle and a metric selector offering cpu, ram, temp and ip"
+        },
+        {
+          "id": "AC-083-002",
+          "given": "the OLED is disabled",
+          "when": "the admin enables it with metric=temp and saves",
+          "then": "both values persist and a subsequent page load renders the OLED enabled with temp selected"
+        },
+        {
+          "id": "AC-083-003",
+          "given": "a stored OLED metric of cpu",
+          "when": "a save arrives with oled_metric=disk (not an allowed metric)",
+          "then": "the response is HTTP 400 and the stored metric is still cpu"
+        },
+        {
+          "id": "AC-083-004",
+          "given": "an authenticated session without a CSRF token",
+          "when": "it posts an OLED save",
+          "then": "the response is HTTP 403 and nothing is persisted"
+        }
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-085",
+      "category": "Regression",
+      "requirement": "Telegram alerts (FR-005) keep sending immediately when no mute window is open, and the FR-024 60s storm coalescing window keeps operating independently of mute.",
+      "acceptance_criteria": "The existing notify test suite (TC-005h/e/f and the storm tests) passes unchanged, and a fired alert with no mute window produces exactly one send attempt."
+    },
+    {
+      "id": "NFR-086",
+      "category": "Regression",
+      "requirement": "Per-event email alerts (FR-006) keep sending on every fire; the digest is additive.",
+      "acceptance_criteria": "TC-006h/e/f pass unchanged, and enabling the digest does not change the number of per-event emails sent for a given fire."
+    },
+    {
+      "id": "NFR-087",
+      "category": "Regression",
+      "requirement": "Every existing Settings section (alerts, telegram, email, performance, backup, maintenance, system controls) keeps saving, and the accordion, form-state pills, widgets and CSRF gating (FR-057..FR-070) keep working — including after an hx-boost body swap and a history restore.",
+      "acceptance_criteria": "The settings markup and revamp test suites pass unchanged, and the new hardware section binds through the same settings.js controller with no additional inline <script> in the page."
+    },
+    {
+      "id": "NFR-088",
+      "category": "Security",
+      "requirement": "No new host action bypasses the privileged helper: the log drawer reaches journalctl only through the helper's Unix socket, with the unit name validated against the helper's allow-list (FR-011).",
+      "acceptance_criteria": "An injection-shaped unit name is rejected before execution, and no new code path shells out to journalctl/systemctl directly."
+    },
+    {
+      "id": "NFR-090",
+      "category": "Reliability",
+      "requirement": "The digest scheduler and the mute window survive a process restart and never panic the process on a failed send or a corrupt stored value.",
+      "acceptance_criteria": "A digest send failure is logged and recorded in action_history without terminating the process; a corrupt mute row is treated as no mute (fail-open for delivery, so an alert is never silently swallowed)."
+    },
+    {
+      "id": "NFR-091",
+      "category": "Observability",
+      "requirement": "Mute activation/cancellation and digest sends are observable without reading the code.",
+      "acceptance_criteria": "Each is recorded in action_history with its outcome, and the journal carries one line per digest send with the alert count."
+    }
+  ],
+  "no_go_zone": [
+    "Physically driving the Pironman fan (PWM/GPIO) or writing pixels to the OLED panel — FR-082/FR-083 deliver the control surface and its persistence only. The owner explicitly required this on 2026-07-13: a previous hardware-control attempt cost the Pi significant CPU and memory, and it cannot be verified in CI. Actuating the hardware is deferred and must be declared as technical debt in Phase 4.",
+    "Any polling loop, daemon connection or per-request hardware I/O introduced by the hardware section — it must cost one SQLite read on render and one write on save, nothing more.",
+    "Listing prior backups and downloading the stored encrypted file (parent AC-015-004) — deferred by the owner on 2026-07-13. AC-015-004 therefore stays untested after this feature; it is tracked in the backlog. The existing GET /api/settings/backup snapshot route is untouched.",
+    "Restoring or deleting a backup from Settings — follows from the deferral above.",
+    "Per-rule, per-source or per-severity mute — FR-079 is a single global window of exactly 1h / 4h / 24h, as the parent AC-005-005 specifies. No custom durations.",
+    "Muting email or any channel other than Telegram — the parent AC scopes mute to Telegram delivery.",
+    "Digest scheduling beyond a single daily hour — no weekly, custom-cron, or per-severity digest.",
+    "Streaming or tailing logs live in the drawer — FR-081 is a one-shot fetch of the last 100 lines, not a follow."
+  ],
+  "constraints": [
+    "Go + HTMX + Tailwind, no SPA framework and no new frontend runtime dependency.",
+    "Privilege separation is mandatory: any host-level action goes through the ultron-helper Unix socket, never a direct exec from the panel process.",
+    "SQLite is the only datastore; new persisted state extends the existing schema via the migration path already in internal/database.",
+    "Runs on a Raspberry Pi: no polling loop or fan-out that would be expensive on ARM with limited RAM.",
+    "The settings page carries no page-level inline <script> — client behaviour lives in web/static/js/settings.js and the widget files (CSS7)."
+  ],
+  "technology_preferences": [
+    "Reuse internal/notify's existing SMTP notifier for the digest rather than a second mail path.",
+    "Reuse privileged.SystemLogs(ctx, source, 100) for the drawer — the 100-line fetch already exists.",
+    "Reuse encryptFileAESGCM / the ULTRONENC2 format for backups; the download path only reads what the backup writer already produced.",
+    "Reuse the settings widget vocabulary (segmented, toggle, chip-preset, stepper) for the new controls so the hardware section binds through the existing settings.js controller."
+  ],
+  "idea_provenance": {
+    "problem": "confirmed",
+    "users": "confirmed",
+    "baseline": "confirmed",
+    "success_metric": "confirmed",
+    "no_go_zone": "confirmed"
+  },
+  "idea_provenance_sources": {
+    "problem": "The six gaps were enumerated to the user with their exact evidence (grep results, file:line of the missing behavior) on 2026-07-13; the user chose 'implement all six via the feature pipeline' over amending the requirements or deferring them.",
+    "users": "Inherited from the parent's approved 01_REQUIREMENTS.json — a single Pi admin; this feature introduces no new user type.",
+    "baseline": "Measured, not inferred: aitri verify-complete reported 41 untested ACs; 35 are now covered by traced tests (commit f2b4d72); the remaining 6 were each confirmed absent from the codebase by grep (no mute/silence in internal/notify, no digest anywhere, no hardware section in any template, the download route serving a fresh plaintext snapshot at handlers_performance.go).",
+    "success_metric": "The gate itself: aitri verify-complete passing with zero untested ACs — an objective, mechanical check the user accepted when choosing to close it.",
+    "no_go_zone": "Confirmed by the owner on 2026-07-13: hardware controls must drive nothing and stay lightweight ('esto antes le consumia mucho cpu y memoria a la pi... no controlar nada por ahora'), and the backup listing is deferred ('omite este por ahora')."
+  },
+  "idea_gaps": [],
+  "coverage_map": [
+    {
+      "need": "Telegram mute window of 1h / 4h / 24h that suppresses sends until it expires (parent AC-005-005)",
+      "disposition": "FR-079"
+    },
+    {
+      "need": "Daily email digest summarising the last 24h of alerts at a chosen hour (parent AC-006-004)",
+      "disposition": "FR-080"
+    },
+    {
+      "need": "Per-service log drawer showing the last 100 journalctl lines (parent AC-010-002)",
+      "disposition": "FR-081"
+    },
+    {
+      "need": "Fan-mode selector in a Settings hardware section (parent AC-013-002)",
+      "disposition": "FR-082"
+    },
+    {
+      "need": "OLED display configuration in the Settings hardware section (parent AC-013-003)",
+      "disposition": "FR-083"
+    },
+    {
+      "need": "Existing Telegram delivery keeps working when no mute window is open",
+      "disposition": "NFR-085"
+    },
+    {
+      "need": "Existing per-event email delivery keeps working alongside the digest",
+      "disposition": "NFR-086"
+    },
+    {
+      "need": "Existing Settings sections, widgets and CSRF gating keep working",
+      "disposition": "NFR-087"
+    },
+    {
+      "need": "The privileged helper's allow-list still gates every host action",
+      "disposition": "NFR-088"
+    },
+    {
+      "need": "Physically driving the Pironman fan and OLED panel",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Per-rule mute, custom mute durations, muting channels other than Telegram",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Weekly / custom-cron / per-severity digest scheduling",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Live log streaming / tailing in the drawer",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Mute activation, digest sends and their failures are observable in action_history",
+      "disposition": "NFR-091"
+    },
+    {
+      "need": "Digest scheduler and mute window survive a restart and never panic the process",
+      "disposition": "NFR-090"
+    },
+    {
+      "need": "List prior backups and download the stored encrypted file (parent AC-015-004)",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Hardware controls must not cost the Pi CPU/memory — no actuation, no polling loop",
+      "disposition": "FR-082"
+    }
+  ],
+  "original_brief": "## Feature\nBuild the six behaviors the approved requirements already promise but the product never implemented: a Telegram mute window, a daily email digest, a per-service log drawer, a hardware section in Settings (fan mode + OLED display), and a backup list with encrypted download.\n\n## Problem / Why\n`aitri verify-complete` gates on acceptance-criteria coverage. An audit of the main pipeline (BL-033) found 41 acceptance criteria with no test. 35 turned out to be real behaviors that were merely untested (now covered) — but 6 traced to behavior the requirements demand and the code never grew:\n\n- **AC-005-005** — the admin can pick a mute window (1h / 4h / 24h); no Telegram message is sent while it is open. Nothing in `internal/notify` implements mute/silence; the only suppression is the 60s storm coalescing window (FR-024), which is a different mechanism.\n- **AC-006-004** — with the daily digest enabled, one email summarising the last 24h of alerts is sent at the digest hour. `grep -ri digest internal/` returns nothing.\n- **AC-010-002** — a service row opens a log drawer showing the last 100 lines from journalctl. The substance exists (`handleFetchSystemLogs` → `privileged.SystemLogs(ctx, source, 100)` → `journalctl -u <unit> -n 100`), but only as the page-level `/logs` dropdown; service rows have no drawer.\n- **AC-013-002 / AC-013-003** — the Settings page shows a hardware section with a fan-mode selector and an OLED display configuration. No hardware section exists at all.\n- **AC-015-004** — Settings lists prior backups and clicking download delivers the encrypted file. The encryption primitive exists (`encryptFileAESGCM`, ULTRONENC2, exercised by `backup_crypto_test.go`) and the automated backup flow uses it, but the only download route (`GET /api/settings/backup`) makes a FRESH plaintext SQLite snapshot and serves it as `application/x-sqlite3`. Prior backups are neither listed nor downloadable.\n\n[ASSUMPTION] The user's intent is that these six ship as originally specified, not that the requirements were aspirational — confirmed on 2026-07-13 when they chose \"implement all six via the feature pipeline\" over amending the requirements.\n\n## Target Users\nThe single admin operating the Raspberry Pi panel. No new user types.\n\n## New Behavior\n- The system must let the admin open a mute window of 1h, 4h or 24h, and must suppress Telegram sends for its duration, resuming automatically when it expires.\n- The system must let the admin enable a daily digest with a digest hour, and must send exactly one email at that hour summarising the previous 24h of alerts.\n- The system must let the admin open a log drawer on any systemd service row, showing the last 100 journalctl lines for that unit, fetched through the privileged helper.\n- The system must render a hardware section in Settings containing a fan-mode selector and an OLED display configuration, persisting both.\n- The system must list prior backups in Settings, and must deliver the stored encrypted backup file (not a fresh plaintext snapshot) when the admin clicks download.\n\n## Success Criteria\n- GIVEN a 1h mute window is open, WHEN an alert fires, THEN no Telegram message is sent; WHEN the window expires, THEN sends resume. (AC-005-005)\n- GIVEN the daily digest is enabled, WHEN the digest hour is reached, THEN exactly one email summarising the last 24h of alerts is sent. (AC-006-004)\n- GIVEN a systemd service row, WHEN the admin opens its log drawer, THEN the last 100 journalctl lines for that unit are shown. (AC-010-002)\n- GIVEN the Settings page, WHEN the hardware section renders, THEN a fan-mode selector and an OLED display configuration are present and persist. (AC-013-002, AC-013-003)\n- GIVEN Settings lists prior backups, WHEN the admin clicks download, THEN the encrypted backup file is delivered to the browser. (AC-015-004)\n- `aitri verify-complete` passes with zero untested acceptance criteria.\n\n## Touch Points\nMODIFIES:\n- FR-005 (Telegram) — `internal/notify/dispatcher.go`, `internal/notify/telegram.go`: consult the mute window before sending.\n- FR-006 (Email) — `internal/notify/email.go` + a new digest scheduler.\n- FR-010 (Logs) — `internal/server/handlers_system.go` (`handleFetchSystemLogs` already fetches 100 lines), `web/templates/partials/services-list.html`.\n- FR-013 (Hardware) — `web/templates/partials/` (new `settings-hardware.html`), `internal/server/templates.go`, `internal/server/handlers_settings.go`.\n- FR-015 (Backup) — `internal/server/handlers_performance.go` (`handleSettingsBackup` currently serves a plaintext snapshot), `web/templates/partials/settings-maintenance.html`.\n- `internal/database/` — new persisted config for mute window, digest hour, fan mode, OLED.\n- `scripts/aitri-test.sh` + `spec/03_TEST_CASES.json` — new TC emit lines traced by `ac_id`.\n\nPURELY ADDS: backup listing endpoint, digest scheduler, log-drawer endpoint.\n\n## Must Not Break (Regression Boundary)\n- Telegram alerts (FR-005) keep sending immediately when NO mute window is open; the FR-024 60s storm coalescing keeps working independently of mute.\n- Per-event email alerts (FR-006) keep sending on every fire; the digest is additive, not a replacement.\n- The `/logs` page (FR-010) keeps working as a page-level source dropdown.\n- Every existing Settings section (alerts, telegram, email, performance, backup, maintenance, system controls) keeps saving; the accordion, form-state pills, widgets and CSRF gating (FR-057..FR-070) keep working, including after hx-boost swaps.\n- The privileged helper (FR-011) keeps validating every unit name against its allow-list; no new host action bypasses the Unix socket.\n- Backups stay encrypted at rest (AC-015-003) and the automated schedule keeps running; the existing `GET /api/settings/backup` snapshot path must not start leaking an unencrypted file to a new caller.\n- All 80 currently-passing test cases keep passing.\n\n## Out of Scope\n- Physically driving the Pironman fan or writing to the OLED panel (the ACs require the Settings controls and their persistence; actuating the hardware needs the Pironman daemon on the Pi and is deferred — declare it as technical debt).\n- Per-rule or per-source mute (the AC specifies a global 1h/4h/24h window only).\n- Digest scheduling granularity beyond a single daily hour (no weekly/custom cron).\n- Backup retention/pruning changes — the existing retention job stays as-is.\n- Restoring a backup from the listing (download only).\n"
+}

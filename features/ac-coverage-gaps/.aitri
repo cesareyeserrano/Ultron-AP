@@ -1,0 +1,138 @@
+{
+  "currentPhase": 3,
+  "approvedPhases": [
+    1,
+    "ux",
+    2,
+    3
+  ],
+  "completedPhases": [
+    1,
+    "ux",
+    2,
+    3
+  ],
+  "projectName": "ac-coverage-gaps",
+  "createdAt": "2026-07-13T16:43:30.887Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-07-14T04:17:02.746Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-07-13T16:44:15.097Z",
+      "event": "started",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-13T16:44:19.275Z",
+      "event": "started",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-13T16:44:24.712Z",
+      "event": "started",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-13T16:51:03.890Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-13T16:53:59.974Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-13T17:22:17.505Z",
+      "event": "approved",
+      "phase": 1,
+      "ideaArchived": true
+    },
+    {
+      "at": "2026-07-13T17:22:24.522Z",
+      "event": "started",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-07-13T17:24:23.616Z",
+      "event": "completed",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-07-13T17:26:29.973Z",
+      "event": "approved",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-07-13T17:26:30.079Z",
+      "event": "started",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-13T17:26:36.808Z",
+      "event": "started",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-13T17:46:03.333Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-14T03:32:09.125Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-14T03:32:09.228Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-14T04:00:51.780Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-14T04:15:52.683Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-14T04:17:02.721Z",
+      "event": "approved",
+      "phase": 3
+    }
+  ],
+  "cascadedPhases": [],
+  "artifactHashes": {
+    "1": "166d0aee8e35629cedcbe41beb12be3aa50af5ffd987a8e947568e08f2b8a6dc",
+    "2": "43f237cb2a2fe61ed36611043d949daba3aea8099a730eaf46e215e98f3c6e38",
+    "3": "87c8c919bab8ceffb9fec7d1c816c6dbc338d1c938fde91a4c77b136111d03f2",
+    "ux": "333eb3e4f92cade462704e1f0af9ba9f1df26ca18b1f74d261eefd7f25ce5864"
+  },
+  "frSnapshots": {
+    "2": [
+      "FR-079",
+      "FR-080",
+      "FR-081",
+      "FR-082",
+      "FR-083"
+    ],
+    "3": [
+      "FR-079",
+      "FR-080",
+      "FR-081",
+      "FR-082",
+      "FR-083"
+    ],
+    "ux": [
+      "FR-079",
+      "FR-080",
+      "FR-081",
+      "FR-082",
+      "FR-083"
+    ]
+  }
+}
