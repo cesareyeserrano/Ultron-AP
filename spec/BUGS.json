@@ -1666,7 +1666,7 @@
       "actual_result": "14 rows including br-2ce4512f3708, veth87e1c5c, docker0 and lo — the tile grows several times its former height and the values are noise",
       "environment": "prod (Pi 192.168.1.29), reported by owner 2026-07-14",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": "FR-001",
       "tc_reference": null,
       "phase_detected": null,
@@ -1674,8 +1674,12 @@
       "evidence": null,
       "reported_by": "cesareyeserrano",
       "created_at": "2026-07-14T15:43:31.720Z",
-      "updated_at": "2026-07-14T15:43:31.720Z",
-      "resolution": null
+      "updated_at": "2026-07-14T16:08:41.708Z",
+      "resolution": "Fixed and verified: 14 network rows → 3 on the owner's Pi, disk 2 → 1.",
+      "fix_commit_sha": "7d256c9e3a683aa1aab6d6fdc16fb6fa4a2ed5db",
+      "fix_at": "2026-07-14T16:08:41.625Z",
+      "close_commit_sha": "7d256c9e3a683aa1aab6d6fdc16fb6fa4a2ed5db",
+      "close_at": "2026-07-14T16:08:41.708Z"
     }
   ]
 }
