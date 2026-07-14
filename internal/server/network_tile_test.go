@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -125,12 +124,13 @@ func TestTC_NT_085Be_NoProbesIsUnknown(t *testing.T) {
 	assert.Equal(t, "unknown", dashboardLinkState(nil, nil).Verdict)
 	assert.Equal(t, "unknown", dashboardLinkState([]*gatewayprobe.Snapshot{}, wanUp()).Verdict)
 
-	// …and the tile still renders, falling back to throughput.
+	// …and the tile still renders, saying plainly that it cannot know.
 	html := networkTileHTML(t, renderTile(t, DashboardData{
 		Metrics: &metrics.Snapshot{Networks: piInterfaces()},
 	}))
 	assert.NotContains(t, html, "data-link-state", "no verdict may be claimed without probes")
-	assert.Contains(t, html, "eth0", "the tile falls back to the throughput readout")
+	assert.Contains(t, html, "no probes", "the tile admits what it does not know instead of inventing a state")
+	assert.NotContains(t, html, "eth0", "the throughput readout was removed on the owner's call")
 }
 
 // TC-NT-085Bh / AC-085-001 — ADR-2: one dropped ping must not flap the tile.
@@ -143,94 +143,6 @@ func TestTC_NT_085Bh_SingleDroppedPingDoesNotFlap(t *testing.T) {
 	assert.Equal(t, "stable", got.Verdict,
 		"a >0%% rule would turn the tile yellow on a single lost packet and train the admin to ignore it")
 	assert.Equal(t, 5.0, got.WorstLoss, "the loss is still reported, it just does not trip the verdict")
-}
-
-// --- FR-086 — throughput subtitle and collapsed detail --------------------
-
-// TC-NT-086h / AC-086-001
-func TestTC_NT_086h_SubtitleNamesBusiestInterface(t *testing.T) {
-	html := networkTileHTML(t, renderTile(t, DashboardData{
-		Metrics: &metrics.Snapshot{Networks: piInterfaces()},
-		Network: healthyProbes(),
-		WAN:     wanUp(),
-	}))
-
-	assert.Contains(t, html, "Stable")
-	assert.Contains(t, html, "eth0", "the busiest interface is named in the subtitle")
-	assert.Contains(t, html, formatBytes(7200)+"/s")
-	assert.Contains(t, html, formatBytes(54700)+"/s")
-
-	// The idle interfaces exist, but only inside the disclosure.
-	before, after, found := strings.Cut(html, "<details")
-	require.True(t, found, "the per-interface detail must be a disclosure")
-	assert.NotContains(t, before, "wlan0", "an idle interface must not sit in the tile body")
-	assert.Contains(t, after, "wlan0")
-}
-
-// TC-NT-086e / AC-086-002 (also NFR-090b)
-func TestTC_NT_086e_DetailIsCollapsedByDefault(t *testing.T) {
-	html := networkTileHTML(t, renderTile(t, DashboardData{
-		Metrics: &metrics.Snapshot{Networks: piInterfaces()},
-		Network: healthyProbes(),
-		WAN:     wanUp(),
-	}))
-
-	require.Contains(t, html, "<details")
-	openTag := regexp.MustCompile(`<details[^>]*>`).FindString(html)
-	assert.NotContains(t, openTag, " open",
-		"the breakdown must be closed by default — an open one reproduces the exact complaint")
-}
-
-// TC-NT-089h / AC-086-003 (also NFR-089b)
-func TestTC_NT_089h_ExpandedDetailListsEveryInterface(t *testing.T) {
-	html := networkTileHTML(t, renderTile(t, DashboardData{
-		Metrics: &metrics.Snapshot{Networks: piInterfaces()},
-		Network: healthyProbes(),
-		WAN:     wanUp(),
-	}))
-
-	_, detail, found := strings.Cut(html, "<details")
-	require.True(t, found)
-	for _, want := range []string{"eth0", "wlan0", "tailscale0"} {
-		assert.Contains(t, detail, want, "the expanded detail must list %q", want)
-	}
-}
-
-// TC-NT-086f / AC-086-004 — ADR-3: max, never sum.
-func TestTC_NT_086f_BusiestInterfaceIsMaxNotSum(t *testing.T) {
-	// tailscale0 tunnels over eth0 — the SAME bytes seen twice.
-	ifaces := []metrics.NetworkIface{
-		{Name: "eth0", BytesSentPS: 30000, BytesRecvPS: 30000},
-		{Name: "tailscale0", BytesSentPS: 25000, BytesRecvPS: 25000},
-	}
-
-	got := primaryNetwork(ifaces)
-
-	require.NotNil(t, got)
-	assert.Equal(t, "eth0", got.Name, "the busiest single interface, not a total")
-	assert.Equal(t, uint64(30000), got.BytesSentPS,
-		"summing would report 110 KB/s for 60 KB/s of real traffic")
-
-	html := networkTileHTML(t, renderTile(t, DashboardData{
-		Metrics: &metrics.Snapshot{Networks: ifaces},
-		Network: healthyProbes(),
-		WAN:     wanUp(),
-	}))
-	assert.NotContains(t, html, formatBytes(55000), "no summed total may appear anywhere in the tile")
-}
-
-// TC-NT-089f / AC-086-005 (also NFR-089b) — BG-072 still holds.
-func TestTC_NT_089f_VirtualInterfacesStayHidden(t *testing.T) {
-	html := networkTileHTML(t, renderTile(t, DashboardData{
-		Metrics: &metrics.Snapshot{Networks: piInterfaces()},
-		Network: healthyProbes(),
-		WAN:     wanUp(),
-	}))
-
-	for _, hidden := range []string{"docker0", "br-2ce4512f3708", "br-80ea838d7698", "veth87e1c5c", ">lo<"} {
-		assert.NotContains(t, html, hidden,
-			"virtual interface %q must not reappear, expanded or not", hidden)
-	}
 }
 
 // --- FR-087 — the absorbed WAN chip --------------------------------------
@@ -314,48 +226,6 @@ func TestTC_NT_088f_NilProbeEntryDoesNotPanic(t *testing.T) {
 		got := dashboardLinkState(probes, wanUp())
 		assert.Equal(t, "stable", got.Verdict)
 	})
-}
-
-// TC-NT-088e / NFR-089b — the BG-072 fallback: never empty the tile.
-func TestTC_NT_088e_FilterNeverEmptiesTheTile(t *testing.T) {
-	only := []metrics.NetworkIface{{Name: "docker0", BytesSentPS: 10, BytesRecvPS: 20}}
-
-	got := primaryNetwork(only)
-
-	require.NotNil(t, got, "an unusual host must still see its traffic rather than an empty tile")
-	assert.Equal(t, "docker0", got.Name)
-}
-
-// TC-NT-090h / NFR-090b — the disclosure meets the project's touch-target floor.
-func TestTC_NT_090h_DisclosureMeetsTouchTarget(t *testing.T) {
-	html := networkTileHTML(t, renderTile(t, DashboardData{
-		Metrics: &metrics.Snapshot{Networks: piInterfaces()},
-		Network: healthyProbes(),
-		WAN:     wanUp(),
-	}))
-
-	summary := regexp.MustCompile(`<summary[^>]*>`).FindString(html)
-	require.NotEmpty(t, summary, "the disclosure must have a summary")
-	assert.Contains(t, summary, "min-h-[44px]", "the toggle must meet the 44px floor the project enforces")
-}
-
-// TC-NT-090f / NFR-090b — nothing leaks out of the disclosure.
-func TestTC_NT_090f_NoInterfaceRowLeaksOutsideDisclosure(t *testing.T) {
-	tile := networkTileHTML(t, renderTile(t, DashboardData{
-		Metrics: &metrics.Snapshot{Networks: piInterfaces()},
-		Network: healthyProbes(),
-		WAN:     wanUp(),
-	}))
-
-	// Strip the whole disclosure; whatever remains is the visible tile body.
-	body := regexp.MustCompile(`(?s)<details.*?</details>`).ReplaceAllString(tile, "")
-
-	for _, iface := range []string{"wlan0", "tailscale0"} {
-		assert.NotContains(t, body, iface,
-			"%q must live only inside the collapsed disclosure", iface)
-	}
-	// eth0 is allowed in the body: it is the named busiest interface (the subtitle).
-	assert.Contains(t, body, "eth0")
 }
 
 // --- e2e -----------------------------------------------------------------

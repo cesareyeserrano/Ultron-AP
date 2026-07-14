@@ -65,37 +65,23 @@
         {{end}}{{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
     </div>
-    <!-- FR-085/086/087: the tile leads with a link-state verdict (the other four
-         tiles all answer a question at a glance; this one used to list bytes,
-         which have no good or bad value). Throughput is the subtitle; the
-         per-interface breakdown is collapsed. The standalone WAN chip that used
-         to float below the grid is absorbed here. -->
+    <!-- FR-085/087: one word, one reason. The tile used to list bytes per
+         interface — a number with no good or bad value, which is why it was the
+         only tile in this row that had to be interpreted rather than scanned.
+         The throughput readout and its disclosure were removed on the owner's
+         call (2026-07-14): he does not read KB/s to decide anything, and a
+         second line of it only diluted the verdict. The standalone WAN chip
+         that floated below the grid is absorbed here too. -->
     {{$link := dashboardLinkState .Network .WAN}}
     <div class="metric-tile {{linkStateClass $link.Verdict}}">
         <p class="text-xs text-text-muted mb-1">Network</p>
         {{if eq $link.Verdict "unknown"}}
-            {{if .Metrics}}{{$primary := primaryNetwork .Metrics.Networks}}{{if $primary}}
-            <p class="text-lg font-mono font-bold text-accent truncate">&#8593; {{formatBytes $primary.BytesSentPS}}/s &#8595; {{formatBytes $primary.BytesRecvPS}}/s</p>
-            <p class="text-xs text-text-muted truncate">{{$primary.Name}}</p>
-            {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
-            {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+        <p class="text-2xl font-mono font-bold text-text-muted">--</p>
+        <p class="text-xs text-text-muted truncate">no probes</p>
         {{else}}
-            <p data-link-state="{{$link.Verdict}}" class="text-2xl font-mono font-bold {{linkStateTextClass $link.Verdict}}">{{linkStateLabel $link.Verdict}}</p>
-            {{if .Metrics}}{{$primary := primaryNetwork .Metrics.Networks}}{{if $primary}}
-            <p class="text-xs text-text-muted truncate"><span class="font-mono">{{$primary.Name}}</span> &#8593; {{formatBytes $primary.BytesSentPS}}/s &#8595; {{formatBytes $primary.BytesRecvPS}}/s</p>
-            {{end}}{{end}}
-            <p class="text-xs text-text-muted truncate">{{$link.Reason}}</p>
+        <p data-link-state="{{$link.Verdict}}" class="text-2xl font-mono font-bold {{linkStateTextClass $link.Verdict}}">{{linkStateLabel $link.Verdict}}</p>
+        <p class="text-xs text-text-muted truncate">{{$link.Reason}}</p>
         {{end}}
-
-        {{if .Metrics}}{{$nets := dashboardNetworks .Metrics.Networks}}{{if $nets}}
-        <details data-network-detail class="mt-1">
-            <summary class="min-h-[44px] flex items-center text-[11px] text-text-muted cursor-pointer hover:text-text transition-colors">per-interface</summary>
-            <div class="mt-1 space-y-0.5">
-                {{range $nets}}<p class="text-xs font-mono text-accent truncate"><span class="text-text-muted">{{.Name}}</span> &#8593; {{formatBytes .BytesSentPS}}/s &#8595; {{formatBytes .BytesRecvPS}}/s</p>
-                {{end}}
-            </div>
-        </details>
-        {{end}}{{end}}
     </div>
     <div class="metric-tile">
         <p class="text-xs text-text-muted mb-1">Temp</p>

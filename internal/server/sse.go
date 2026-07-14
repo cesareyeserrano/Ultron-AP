@@ -121,6 +121,23 @@ type sseBroker struct {
 	// Small hard limits protect low-resource Pi from reconnect floods.
 	maxClients int
 	maxPerIP   int
+
+	// done is closed once on shutdown. SSE handlers select on it and return, so
+	// http.Server.Shutdown can finish: it waits for active connections, and an
+	// SSE stream only ends when the CLIENT disconnects. Without this the wait
+	// always hit its 10s deadline, the process exited 1, and systemd recorded a
+	// failed service on every single restart (BG-075).
+	done     chan struct{}
+	doneOnce sync.Once
+}
+
+// shutdown releases every SSE handler. Idempotent.
+func (b *sseBroker) shutdown() {
+	b.doneOnce.Do(func() {
+		if b.done != nil {
+			close(b.done)
+		}
+	})
 }
 
 func newSSEBroker() *sseBroker {
@@ -129,6 +146,7 @@ func newSSEBroker() *sseBroker {
 		ipCount:    make(map[string]int),
 		maxClients: 50,
 		maxPerIP:   8,
+		done:       make(chan struct{}),
 	}
 }
 
@@ -240,6 +258,11 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-ctx.Done():
+			return
+		case <-s.sseBroker.done:
+			// BG-075: the server is shutting down. Returning here lets
+			// http.Server.Shutdown finish instead of waiting out its deadline on
+			// a stream that only ever ends when the browser goes away.
 			return
 		case data, ok := <-client.ch:
 			if !ok {

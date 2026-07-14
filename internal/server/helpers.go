@@ -158,38 +158,6 @@ func activeSince(t time.Time) string {
 	return formatUptime(d)
 }
 
-// virtualIfacePrefixes are interfaces the dashboard hides: container bridges
-// (docker0, br-*), veth pairs, and loopback. They are real interfaces — the
-// collector still records them — but on a Pi running containers they add a
-// dozen always-zero rows that bury the two the admin actually watches (BG-072).
-var virtualIfacePrefixes = []string{"lo", "docker", "br-", "veth", "virbr", "cni", "flannel", "kube"}
-
-// dashboardNetworks returns the interfaces worth showing on the dashboard tile.
-// Everything is filtered as virtual only when SOMETHING survives — a host whose
-// only interface is unusual still sees its traffic rather than an empty tile.
-func dashboardNetworks(all []metrics.NetworkIface) []metrics.NetworkIface {
-	kept := make([]metrics.NetworkIface, 0, len(all))
-	for _, n := range all {
-		if isVirtualIface(n.Name) {
-			continue
-		}
-		kept = append(kept, n)
-	}
-	if len(kept) == 0 {
-		return all
-	}
-	return kept
-}
-
-func isVirtualIface(name string) bool {
-	for _, p := range virtualIfacePrefixes {
-		if name == p || strings.HasPrefix(name, p) {
-			return true
-		}
-	}
-	return false
-}
-
 // dashboardDisks returns the partitions worth showing. Firmware/boot mounts are
 // hidden: they are a few hundred MB that never move, and on the Pi they doubled
 // the tile's height for no signal (BG-072). The root filesystem always survives.
@@ -340,24 +308,4 @@ func linkStateLabel(verdict string) string {
 	default:
 		return "Unknown"
 	}
-}
-
-// primaryNetwork returns the busiest real interface — max(sent+recv), NEVER the
-// sum of all of them. tailscale0 tunnels over eth0: adding them would
-// double-count the same bytes the moment the VPN carries traffic, inflating the
-// headline precisely when the admin is looking at it (ADR-3).
-func primaryNetwork(ifaces []metrics.NetworkIface) *metrics.NetworkIface {
-	candidates := dashboardNetworks(ifaces)
-	if len(candidates) == 0 {
-		return nil
-	}
-	best := 0
-	for i := 1; i < len(candidates); i++ {
-		if candidates[i].BytesSentPS+candidates[i].BytesRecvPS >
-			candidates[best].BytesSentPS+candidates[best].BytesRecvPS {
-			best = i
-		}
-	}
-	out := candidates[best]
-	return &out
 }

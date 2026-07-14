@@ -342,3 +342,40 @@ func TestInsightsVars_InternetDownButGatewayUp(t *testing.T) {
 	assert.Equal(t, 0.0, vars["wan_cloudflare_ok"], "no off-box target answered")
 	assert.Equal(t, 100.0, vars["loss_pct"])
 }
+
+// BG-075 — an SSE stream only ends when the browser disconnects, so
+// http.Server.Shutdown used to wait out its full 10s deadline with a dashboard
+// tab open, exit 1, and leave systemd recording a failed unit on every restart.
+// Shutdown now releases the streams first.
+func TestShutdown_ReleasesSSEStreamsInsteadOfTimingOut(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+
+	// A live SSE client, exactly as a dashboard tab would be.
+	req := httptest.NewRequest(http.MethodGet, "/api/sse/dashboard", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	handlerDone := make(chan struct{})
+	go func() {
+		srv.httpServer.Handler.ServeHTTP(rec, req)
+		close(handlerDone)
+	}()
+
+	// Let the handler register and write its initial payload.
+	require.Eventually(t, func() bool {
+		srv.sseBroker.mu.RLock()
+		defer srv.sseBroker.mu.RUnlock()
+		return len(srv.sseBroker.clients) > 0
+	}, 2*time.Second, 20*time.Millisecond, "the SSE client must register")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	require.NoError(t, srv.Shutdown(ctx), "shutdown must not hit its deadline")
+
+	select {
+	case <-handlerDone:
+		// The stream let go — this is the whole fix.
+	case <-time.After(3 * time.Second):
+		t.Fatal("the SSE handler never returned: Shutdown would hang until its deadline, exit 1, and systemd would mark the unit failed")
+	}
+}

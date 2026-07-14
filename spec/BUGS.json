@@ -1732,6 +1732,28 @@
       "fix_at": "2026-07-14T16:36:48.277Z",
       "close_commit_sha": "5303ee7f238853df8ce517b86f83a2a0d0734733",
       "close_at": "2026-07-14T16:36:48.359Z"
+    },
+    {
+      "id": "BG-075",
+      "title": "Unclean shutdown: SSE connections never close, so httpServer.Shutdown always times out and systemd marks the service failed on every restart",
+      "description": "",
+      "steps_to_reproduce": [
+        "systemctl restart ultron-ap while a dashboard tab is open"
+      ],
+      "expected_result": "The process exits cleanly (status 0)",
+      "actual_result": "'Server forced to shutdown: context deadline exceeded' after 10s, exit code 1, 'ultron-ap.service: Failed with result exit-code'. httpServer.Shutdown waits for active connections; the SSE handler loops until the CLIENT disconnects, so it never returns. Restarts also take 10s longer than they should.",
+      "environment": "prod (Pi), seen on every deploy 2026-07-14",
+      "severity": "medium",
+      "status": "open",
+      "fr": "FR-001",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "claude-analysis",
+      "created_at": "2026-07-14T17:13:39.110Z",
+      "updated_at": "2026-07-14T17:13:39.110Z",
+      "resolution": null
     }
   ]
 }

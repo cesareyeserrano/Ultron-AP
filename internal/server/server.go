@@ -687,5 +687,15 @@ func (s *Server) Start() error {
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	log.Println("Shutting down server...")
+
+	// Release the SSE streams FIRST. http.Server.Shutdown waits for active
+	// connections to finish, and an SSE stream only finishes when the browser
+	// disconnects — so with a dashboard tab open it always hit its deadline,
+	// the process exited 1, and systemd recorded a failed unit on every
+	// restart (BG-075).
+	if s.sseBroker != nil {
+		s.sseBroker.shutdown()
+	}
+
 	return s.httpServer.Shutdown(ctx)
 }
