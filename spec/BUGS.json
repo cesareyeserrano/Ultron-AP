@@ -1692,7 +1692,7 @@
       "actual_result": "gateway and dns tiles show 'no samples yet' forever — NetSample rows are inserted with Target=snap.Label (main.go:201) but gatherNetworkTargetViews queries RecentNetSamples(snap.Target) with the RESOLVED IP (handlers_network.go:73). They only match when label==host (1.1.1.1, 8.8.8.8). Live values are fine; only the chart history is broken.",
       "environment": "prod (Pi), found during the Network-tile analysis 2026-07-14",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": "FR-001",
       "tc_reference": null,
       "phase_detected": null,
@@ -1700,8 +1700,12 @@
       "evidence": null,
       "reported_by": "claude-analysis",
       "created_at": "2026-07-14T16:31:58.356Z",
-      "updated_at": "2026-07-14T16:31:58.356Z",
-      "resolution": null
+      "updated_at": "2026-07-14T16:36:48.231Z",
+      "resolution": "Fixed, tested, verified.",
+      "fix_commit_sha": "5303ee7f238853df8ce517b86f83a2a0d0734733",
+      "fix_at": "2026-07-14T16:36:48.150Z",
+      "close_commit_sha": "5303ee7f238853df8ce517b86f83a2a0d0734733",
+      "close_at": "2026-07-14T16:36:48.231Z"
     },
     {
       "id": "BG-074",
@@ -1714,7 +1718,7 @@
       "actual_result": "evalInsightsTick switches on snap.Label with case 'cloudflare', but no default target carries that label, so wan_cloudflare_ok is never set; loss_pct is never published at all. Both bundled rules are dead code with the default configuration.",
       "environment": "found during the Network-tile analysis 2026-07-14",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": "FR-001",
       "tc_reference": null,
       "phase_detected": null,
@@ -1722,8 +1726,12 @@
       "evidence": null,
       "reported_by": "claude-analysis",
       "created_at": "2026-07-14T16:34:37.526Z",
-      "updated_at": "2026-07-14T16:34:37.526Z",
-      "resolution": null
+      "updated_at": "2026-07-14T16:36:48.359Z",
+      "resolution": "Fixed, tested, verified.",
+      "fix_commit_sha": "5303ee7f238853df8ce517b86f83a2a0d0734733",
+      "fix_at": "2026-07-14T16:36:48.277Z",
+      "close_commit_sha": "5303ee7f238853df8ce517b86f83a2a0d0734733",
+      "close_at": "2026-07-14T16:36:48.359Z"
     }
   ]
 }
