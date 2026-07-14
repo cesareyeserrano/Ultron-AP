@@ -20,7 +20,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.1",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-14T21:08:25.632Z",
+  "updatedAt": "2026-07-14T22:48:07.161Z",
   "artifactHashes": {
     "1": "1a10259aae8d677034a5d7d59745ed93c3f60567bbaa4ead2abd51c28e2b18e9",
     "2": "0426c3455ceb59555d78ef8f4014303632ebf1f2de1301433fd826e3a9d9fde9",
@@ -30,21 +30,6 @@
     "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda"
   },
   "events": [
-    {
-      "at": "2026-07-14T18:31:11.624Z",
-      "event": "completed",
-      "phase": 3
-    },
-    {
-      "at": "2026-07-14T18:31:11.713Z",
-      "event": "approved",
-      "phase": 3
-    },
-    {
-      "at": "2026-07-14T18:31:13.547Z",
-      "event": "completed",
-      "phase": 4
-    },
     {
       "at": "2026-07-14T18:31:13.656Z",
       "event": "approved",
@@ -174,6 +159,30 @@
       "method": "git",
       "baseRefFrom": "7071acbf677e24f97a8d855b0bc396227ed542c2",
       "baseRefTo": "cb55dab52e4a9a3815b70affe17cbe681d37944a"
+    },
+    {
+      "at": "2026-07-14T22:48:04.521Z",
+      "event": "reconcile-pending",
+      "phase": null,
+      "files": 3,
+      "method": "git",
+      "verifyPassedCleared": true
+    },
+    {
+      "at": "2026-07-14T22:48:07.078Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-14T22:48:07.145Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
@@ -289,14 +298,14 @@
       "FR-015"
     ]
   },
-  "verifyResultsHash": "3d19eb0715c348f80171532960052ad76f1a7ef29df7bab01a126b3af29e276f",
-  "verifyRanAt": "2026-07-14T21:05:25.355Z",
+  "verifyResultsHash": "016112761d98b2fe70ee2c68bc8beac5a05c41826af8976d43664a387f0de07a",
+  "verifyRanAt": "2026-07-14T22:48:07.078Z",
   "lastVerifyRun": {
     "passed": 86,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-07-14T21:05:25.355Z"
+    "at": "2026-07-14T22:48:07.078Z"
   },
   "verifySummary": {
     "total": 86,
