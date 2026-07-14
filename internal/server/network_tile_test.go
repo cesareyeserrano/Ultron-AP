@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -277,4 +278,54 @@ func TestTC_NT_E2E_002h_SSEMetricsEventRendersTheTile(t *testing.T) {
 	assert.Contains(t, payload, ">Network<",
 		"the tile must render through the SSE FuncMap too — a missing registration fails silently here")
 	assert.NotContains(t, payload, "template", "no template error text may leak into the event")
+}
+
+// --- tile uniformity -----------------------------------------------------
+
+// Owner, 2026-07-14: "haz las tarjetas uniformes. todos tienen título e
+// indicador grande. máximo 3 cosas en cada una."
+//
+// Every tile in the metric row must have exactly the same shape: a label, one
+// big value, and one context line. Nothing more. This test fails if a future
+// change gives one tile a fourth element or drops a third — which is precisely
+// how the Network tile drifted into listing fourteen rows in the first place.
+func TestMetricTiles_AreUniform(t *testing.T) {
+	temp := 51.0
+	html := renderTile(t, DashboardData{
+		Metrics: &metrics.Snapshot{
+			CPU:         metrics.CPUMetrics{TotalPercent: 22.2, PerCore: []float64{18, 45, 12, 14}},
+			RAM:         metrics.RAMMetrics{Total: 7900000000, Used: 3600000000, Percent: 45.7},
+			Temperature: &temp,
+			Disks:       []metrics.DiskPartition{{Path: "/", Total: 915300000000, Used: 71600000000, Percent: 8.2}},
+			Networks:    piInterfaces(),
+		},
+		Network: healthyProbes(),
+		WAN:     wanUp(),
+	})
+
+	tileRe := regexp.MustCompile(`(?s)<div class="metric-tile[^"]*">(.*?)</div>`)
+	pRe := regexp.MustCompile(`(?s)<p[^>]*>(.*?)</p>`)
+
+	tiles := tileRe.FindAllStringSubmatch(html, -1)
+	require.Len(t, tiles, 5, "the metric row must hold exactly five tiles")
+
+	wantLabels := []string{"CPU", "Memory", "Disk", "Network", "Temp"}
+	for i, tile := range tiles {
+		lines := pRe.FindAllStringSubmatch(tile[1], -1)
+		require.Len(t, lines, 3,
+			"tile %q must have exactly 3 elements (label, value, context) — it has %d",
+			wantLabels[i], len(lines))
+
+		label := strings.TrimSpace(stripTags(lines[0][1]))
+		value := strings.TrimSpace(stripTags(lines[1][1]))
+		context := strings.TrimSpace(stripTags(lines[2][1]))
+
+		assert.Equal(t, wantLabels[i], label, "tile %d's label", i)
+		assert.NotEmpty(t, value, "tile %q must show a value", label)
+		assert.NotEmpty(t, context, "tile %q must show a context line", label)
+	}
+}
+
+func stripTags(s string) string {
+	return regexp.MustCompile(`<[^>]+>`).ReplaceAllString(s, "")
 }

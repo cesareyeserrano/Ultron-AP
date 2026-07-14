@@ -309,3 +309,27 @@ func linkStateLabel(verdict string) string {
 		return "Unknown"
 	}
 }
+
+// cpuCoreSummary is the CPU tile's context line: how many cores, and how hot the
+// hottest one is running. The total percentage alone hides the case that matters
+// on a Pi — one core pinned at 100% while the average looks calm.
+func cpuCoreSummary(cpu metrics.CPUMetrics) string {
+	if len(cpu.PerCore) == 0 {
+		return ""
+	}
+	max := cpu.PerCore[0]
+	for _, c := range cpu.PerCore[1:] {
+		if c > max {
+			max = c
+		}
+	}
+	return fmt.Sprintf("%d cores · max %s", len(cpu.PerCore), formatPercent(max))
+}
+
+// tempThresholdHint is the Temp tile's context line. It states the thresholds
+// the colour is already using, so a number in the middle of the range means
+// something without the admin having to remember what "hot" is for this box.
+// Reads the same constants tempClassForValue does — they can never diverge.
+func tempThresholdHint() string {
+	return fmt.Sprintf("warn %.0f° · crit %.0f°", tempWarnThresholdC, tempHighThresholdC)
+}
