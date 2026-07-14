@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-rc.174",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-14T14:16:51.016Z",
+  "updatedAt": "2026-07-14T14:19:56.538Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,16 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-07-12T15:56:26.180Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.173",
-      "category": "artifactRename",
-      "target": "features/network-monitoring/spec/05_TRACEABILITY.json",
-      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
-    },
     {
       "at": "2026-07-12T15:56:26.180Z",
       "event": "upgrade_migration",
@@ -211,6 +201,15 @@
       "phase": "verify",
       "passed": 86,
       "failed": 0
+    },
+    {
+      "at": "2026-07-14T14:19:56.517Z",
+      "event": "reconcile-resolved",
+      "phase": null,
+      "files": 37,
+      "method": "git",
+      "baseRefFrom": "444fc2028346490ec52937c689d9683fe6cba605",
+      "baseRefTo": "59f2a84673e47646b74f897796bfd60c75e0a24a"
     }
   ],
   "verifyPassed": true,
