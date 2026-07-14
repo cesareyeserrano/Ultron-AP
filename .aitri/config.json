@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.1",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-14T16:11:54.741Z",
+  "updatedAt": "2026-07-14T17:05:50.575Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,33 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-07-12T18:35:30.229Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-12T18:49:14.915Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-13T15:22:41.592Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 33,
-      "manual": 0
-    },
     {
       "at": "2026-07-13T15:23:26.927Z",
       "event": "verify-run",
@@ -203,6 +176,30 @@
       "method": "git",
       "baseRefFrom": "59f2a84673e47646b74f897796bfd60c75e0a24a",
       "baseRefTo": "22f947bc2abd659f3b9cbbd8f00695f130c3b486"
+    },
+    {
+      "at": "2026-07-14T17:05:47.798Z",
+      "event": "reconcile-pending",
+      "phase": null,
+      "files": 5,
+      "method": "git",
+      "verifyPassedCleared": true
+    },
+    {
+      "at": "2026-07-14T17:05:50.503Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-14T17:05:50.561Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
@@ -214,7 +211,7 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-07-14T16:08:54.455Z",
+  "verifyRanAt": "2026-07-14T17:05:50.503Z",
   "auditLastAt": "2026-06-15T22:09:31.177Z",
   "upgradeFindings": [
     {
@@ -255,10 +252,10 @@
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-07-14T16:08:54.455Z"
+    "at": "2026-07-14T17:05:50.503Z"
   },
   "coverageAuditLastAt": "2026-06-15T22:00:30.312Z",
-  "verifyResultsHash": "ad86b2d886c3360d0a2966e624d3282803a4e4f363483c38a2e2fd538193f0e5",
+  "verifyResultsHash": "6733359595cda61f356221175b7acb78107c35f8441f7738db9982e6576c72e6",
   "verifySummary": {
     "total": 86,
     "passed": 86,
