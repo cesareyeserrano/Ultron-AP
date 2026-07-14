@@ -138,4 +138,11 @@ emit "internal/server" "TC-014a" "SSE summary event carries the Tailscale/VPN st
 emit "internal/systemd" "TC-003c" "service row shows name, state and active-since"
 emit "internal/server"  "TC-015a" "backup written to disk is encrypted at rest"
 
+# ac-coverage-gaps feature — realises the parent ACs the code never grew.
+emit "internal/notify" "TC-005b" "telegram mute window suppresses delivery until it expires"
+emit "internal/notify" "TC-006b" "daily digest sends one email summarising the last 24h"
+emit "internal/server" "TC-010a" "service log drawer shows the last 100 journalctl lines"
+emit "internal/server" "TC-013a" "settings hardware section renders a fan-mode selector"
+emit "internal/server" "TC-013b" "settings hardware section renders an OLED configuration"
+
 exit $EXIT_CODE

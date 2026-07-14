@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-07-13T16:41:28.844Z",
+  "executed_at": "2026-07-14T14:09:17.845Z",
   "test_runner": "bash scripts/aitri-test.sh",
   "exit_code": 0,
   "results": [
@@ -402,6 +402,31 @@
       "tc_id": "TC-015a",
       "status": "pass",
       "notes": "✔ TC-015a: backup written to disk is encrypted at rest"
+    },
+    {
+      "tc_id": "TC-010a",
+      "status": "pass",
+      "notes": "✔ TC-010a: service log drawer shows the last 100 journalctl lines"
+    },
+    {
+      "tc_id": "TC-013a",
+      "status": "pass",
+      "notes": "✔ TC-013a: settings hardware section renders a fan-mode selector"
+    },
+    {
+      "tc_id": "TC-013b",
+      "status": "pass",
+      "notes": "✔ TC-013b: settings hardware section renders an OLED configuration"
+    },
+    {
+      "tc_id": "TC-005b",
+      "status": "pass",
+      "notes": "✔ TC-005b: telegram mute window suppresses delivery until it expires"
+    },
+    {
+      "tc_id": "TC-006b",
+      "status": "pass",
+      "notes": "✔ TC-006b: daily digest sends one email summarising the last 24h"
     }
   ],
   "fr_coverage": [
@@ -439,7 +464,7 @@
     },
     {
       "fr_id": "FR-005",
-      "tests_passing": 4,
+      "tests_passing": 5,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -447,7 +472,7 @@
     },
     {
       "fr_id": "FR-006",
-      "tests_passing": 4,
+      "tests_passing": 5,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -479,7 +504,7 @@
     },
     {
       "fr_id": "FR-010",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -503,7 +528,7 @@
     },
     {
       "fr_id": "FR-013",
-      "tests_passing": 3,
+      "tests_passing": 5,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -782,11 +807,11 @@
     {
       "ac_id": "AC-005-005",
       "fr_id": "FR-005",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-006-001",
@@ -818,11 +843,11 @@
     {
       "ac_id": "AC-006-004",
       "fr_id": "FR-006",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-006-005",
@@ -1007,11 +1032,11 @@
     {
       "ac_id": "AC-010-002",
       "fr_id": "FR-010",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-010-003",
@@ -1097,20 +1122,20 @@
     {
       "ac_id": "AC-013-002",
       "fr_id": "FR-013",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-013-003",
       "fr_id": "FR-013",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "untested"
+      "status": "covered"
     },
     {
       "ac_id": "AC-014-001",
@@ -1177,8 +1202,8 @@
     }
   ],
   "summary": {
-    "total": 80,
-    "passed": 80,
+    "total": 85,
+    "passed": 85,
     "failed": 0,
     "skipped": 0,
     "skipped_e2e": 0,

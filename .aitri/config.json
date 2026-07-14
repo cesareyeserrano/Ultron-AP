@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.0-rc.174",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-13T16:41:28.879Z",
+  "updatedAt": "2026-07-14T14:09:17.860Z",
   "artifactHashes": {
     "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
     "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
@@ -33,46 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-07-12T15:56:26.177Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.173",
-      "category": "artifactRename",
-      "target": "features/help-page/spec/04_BUILD_REPORT.json",
-      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
-    },
-    {
-      "at": "2026-07-12T15:56:26.178Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.173",
-      "category": "artifactRename",
-      "target": "features/help-page/spec/05_TRACEABILITY.json",
-      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
-    },
-    {
-      "at": "2026-07-12T15:56:26.178Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.173",
-      "category": "artifactRename",
-      "target": "features/insights-engine/spec/04_BUILD_REPORT.json",
-      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
-    },
-    {
-      "at": "2026-07-12T15:56:26.178Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.173",
-      "category": "artifactRename",
-      "target": "features/insights-engine/spec/05_TRACEABILITY.json",
-      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
-    },
     {
       "at": "2026-07-12T15:56:26.178Z",
       "event": "upgrade_migration",
@@ -225,6 +185,42 @@
       "failed": 0,
       "skipped": 0,
       "manual": 0
+    },
+    {
+      "at": "2026-07-14T14:02:14.870Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 80,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-14T14:03:55.277Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 80,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-14T14:07:33.865Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 80,
+      "failed": 0,
+      "skipped": 3,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-14T14:09:17.846Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 85,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
     }
   ],
   "verifyPassed": false,
@@ -236,7 +232,7 @@
       "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
     }
   },
-  "verifyRanAt": "2026-07-13T16:41:28.850Z",
+  "verifyRanAt": "2026-07-14T14:09:17.846Z",
   "auditLastAt": "2026-06-15T22:09:31.177Z",
   "upgradeFindings": [
     {
@@ -273,12 +269,12 @@
     }
   ],
   "lastVerifyRun": {
-    "passed": 80,
+    "passed": 85,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-07-13T16:41:28.850Z"
+    "at": "2026-07-14T14:09:17.846Z"
   },
   "coverageAuditLastAt": "2026-06-15T22:00:30.312Z",
-  "verifyResultsHash": "758478467ac84a670bc52393f4b4f0edf8c1d171d1c988bd155ee11299ab58f6"
+  "verifyResultsHash": "c4637a100663adc2b722e3384d0226619f4fae35bc635a2e2ee83e02e31e8d52"
 }
