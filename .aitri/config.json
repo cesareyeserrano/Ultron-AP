@@ -20,7 +20,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.1",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-14T19:42:16.035Z",
+  "updatedAt": "2026-07-14T19:45:16.259Z",
   "artifactHashes": {
     "1": "1a10259aae8d677034a5d7d59745ed93c3f60567bbaa4ead2abd51c28e2b18e9",
     "2": "0426c3455ceb59555d78ef8f4014303632ebf1f2de1301433fd826e3a9d9fde9",
@@ -30,11 +30,6 @@
     "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda"
   },
   "events": [
-    {
-      "at": "2026-07-14T17:46:44.764Z",
-      "event": "approved",
-      "phase": 1
-    },
     {
       "at": "2026-07-14T17:49:28.626Z",
       "event": "completed",
@@ -157,6 +152,15 @@
       "phase": "verify",
       "passed": 86,
       "failed": 0
+    },
+    {
+      "at": "2026-07-14T19:45:16.226Z",
+      "event": "reconcile-resolved",
+      "phase": null,
+      "files": 4,
+      "method": "git",
+      "baseRefFrom": "362fffc23e505a246456dbb86d50ce41549e6e92",
+      "baseRefTo": "7071acbf677e24f97a8d855b0bc396227ed542c2"
     }
   ],
   "verifyPassed": true,
