@@ -79,13 +79,13 @@ type Server struct {
 	// key ref — because ApplyBackupConfig wrote them one at a time.
 	backupCfg          atomic.Pointer[backupSettings]
 	backupRescheduleCh chan struct{}
-	privileged          *privileged.Client
-	gateway             *gatewayprobe.Probe
-	wan                 *wanmonitor.Monitor
-	landevices          *landevices.Orchestrator
-	landevicesStore     *landevicesstore.Store
-	insights            *insights.Service
-	help                *help.Service
+	privileged         *privileged.Client
+	gateway            *gatewayprobe.Probe
+	wan                *wanmonitor.Monitor
+	landevices         *landevices.Orchestrator
+	landevicesStore    *landevicesstore.Store
+	insights           *insights.Service
+	help               *help.Service
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -597,6 +597,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/alerts/clear", s.requireAuth(http.HandlerFunc(s.handleAlertsClear)))
 	mux.Handle("GET /api/settings/backup", s.requireAuth(http.HandlerFunc(s.handleSettingsBackup)))
 	mux.Handle("POST /api/settings/backup/run", s.requireAuth(http.HandlerFunc(s.handleSettingsBackupRun)))
+	mux.Handle("GET /api/settings/backups/{name}", s.requireAuth(http.HandlerFunc(s.handleBackupDownload)))
 	mux.Handle("GET /api/settings/encryption-key/probe", s.requireAuth(http.HandlerFunc(s.handleEncryptionKeyProbe)))
 	// FR-079: more specific than /api/notifications/{channel}, so Go's mux
 	// routes it here rather than treating "mute" as a channel name.

@@ -652,3 +652,98 @@ func TestTC_ACG_087f_ExistingSettingsFormsStillSave(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, muted)
 }
+
+// --- FR-084 — list prior backups and download the encrypted file ---------
+
+func writeBackup(t *testing.T, srv *Server, name string, content []byte) string {
+	t.Helper()
+	dir, err := srv.backupDir()
+	require.NoError(t, err)
+	require.NoError(t, os.MkdirAll(dir, 0o755))
+	path := filepath.Join(dir, name)
+	require.NoError(t, os.WriteFile(path, content, 0o600))
+	return path
+}
+
+// TC-ACG-084Ah / AC-084-001 — prior backups are listed, newest first.
+func TestTC_ACG_084Ah_SettingsListsPriorBackups(t *testing.T) {
+	srv, session := setupACGServer(t, nil)
+
+	older := writeBackup(t, srv, "ultron-20260701-030000.db.enc", []byte("ULTRONENC2 older"))
+	newer := writeBackup(t, srv, "ultron-20260713-030000.db.enc", []byte("ULTRONENC2 newer"))
+	require.NoError(t, os.Chtimes(older, time.Now().Add(-48*time.Hour), time.Now().Add(-48*time.Hour)))
+	require.NoError(t, os.Chtimes(newer, time.Now().Add(-1*time.Hour), time.Now().Add(-1*time.Hour)))
+
+	body := acgGet(t, srv, session, "/settings").Body.String()
+
+	assert.Contains(t, body, "ultron-20260701-030000.db.enc")
+	assert.Contains(t, body, "ultron-20260713-030000.db.enc")
+	assert.Contains(t, body, "encrypted", "an encrypted artefact must be labelled as such")
+
+	iNewer := strings.Index(body, "ultron-20260713-030000.db.enc")
+	iOlder := strings.Index(body, "ultron-20260701-030000.db.enc")
+	assert.Less(t, iNewer, iOlder, "backups must be listed newest first")
+}
+
+// TC-ACG-084Be / AC-084-002 — no backups renders an explicit empty state.
+func TestTC_ACG_084Be_EmptyBackupListRendersEmptyState(t *testing.T) {
+	srv, session := setupACGServer(t, nil)
+
+	body := acgGet(t, srv, session, "/settings").Body.String()
+
+	assert.Contains(t, body, "data-backup-empty")
+	assert.Contains(t, body, "No backups on disk yet.")
+	assert.NotContains(t, body, "data-backup-download", "no download links without backups")
+}
+
+// TC-ACG-084Ch / AC-084-003 — downloading serves the STORED encrypted bytes.
+func TestTC_ACG_084Ch_DownloadServesStoredEncryptedFile(t *testing.T) {
+	srv, session := setupACGServer(t, nil)
+
+	stored := []byte("ULTRONENC2\x00\x01ciphertext-bytes-not-a-sqlite-header")
+	writeBackup(t, srv, "ultron-20260713-030000.db.enc", stored)
+
+	rec := acgGet(t, srv, session, "/api/settings/backups/ultron-20260713-030000.db.enc")
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, stored, rec.Body.Bytes(),
+		"the response must be the stored file byte-for-byte, not a fresh snapshot")
+	assert.True(t, strings.HasPrefix(rec.Body.String(), "ULTRONENC2"),
+		"an encrypted backup must arrive encrypted")
+	assert.Contains(t, rec.Header().Get("Content-Disposition"), "ultron-20260713-030000.db.enc")
+	assert.NotContains(t, rec.Body.String(), "SQLite format 3", "no plaintext database may be served here")
+}
+
+// TC-ACG-084Df / AC-084-004 — traversal and non-artefact names are rejected.
+func TestTC_ACG_084Df_DownloadRejectsPathTraversal(t *testing.T) {
+	srv, session := setupACGServer(t, nil)
+	writeBackup(t, srv, "ultron-20260713-030000.db.enc", []byte("ULTRONENC2 real"))
+
+	// A file OUTSIDE the backup dir that an attacker would want.
+	secret := filepath.Join(t.TempDir(), "secret.txt")
+	require.NoError(t, os.WriteFile(secret, []byte("TOP SECRET"), 0o600))
+
+	for _, name := range []string{
+		"../../etc/passwd",
+		"..%2F..%2Fetc%2Fpasswd",
+		"not-an-ultron-backup.db",
+		secret,
+	} {
+		rec := acgGet(t, srv, session, "/api/settings/backups/"+url.PathEscape(name))
+		assert.NotEqual(t, http.StatusOK, rec.Code, "name %q must not be served", name)
+		assert.NotContains(t, rec.Body.String(), "TOP SECRET")
+		assert.NotContains(t, rec.Body.String(), "root:")
+	}
+}
+
+// TC-ACG-084Ef / AC-084-005 — an unauthenticated download gets no bytes.
+func TestTC_ACG_084Ef_DownloadRequiresAuth(t *testing.T) {
+	srv, _ := setupACGServer(t, nil)
+	writeBackup(t, srv, "ultron-20260713-030000.db.enc", []byte("ULTRONENC2 secret-bytes"))
+
+	rec := acgGet(t, srv, nil, "/api/settings/backups/ultron-20260713-030000.db.enc")
+
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	assert.NotContains(t, rec.Body.String(), "ULTRONENC2")
+	assert.NotContains(t, rec.Body.String(), "secret-bytes")
+}

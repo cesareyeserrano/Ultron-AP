@@ -20,13 +20,13 @@ const probeReasonMaxLen = 120
 // Locked enum of probe-reason strings. Adding a new reason requires updating
 // this list AND its corresponding test (TC-SR-068sec1).
 var probeReasonEnum = map[string]bool{
-	"file readable":                   true,
-	"file not found":                  true,
-	"file not readable":               true,
-	"env var not set":                 true,
-	"kms scheme not supported in v1":  true,
-	"scheme required":                 true,
-	"value required":                  true,
+	"file readable":                  true,
+	"file not found":                 true,
+	"file not readable":              true,
+	"env var not set":                true,
+	"kms scheme not supported in v1": true,
+	"scheme required":                true,
+	"value required":                 true,
 }
 
 // envFoundReason is generated dynamically — listed separately because the

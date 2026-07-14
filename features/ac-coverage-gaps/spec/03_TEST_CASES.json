@@ -737,6 +737,106 @@
       ],
       "expected_result": "emailSendCount == 1 and DigestLastSentDate() == '2026-07-13'",
       "test_data": {}
+    },
+    {
+      "id": "TC-ACG-084Ah",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-001",
+      "title": "Prior backups are listed newest first with size, date and an encrypted label",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "two ultron-* artefacts on disk, one 48h old and one 1h old",
+      "when": "GET /settings renders the maintenance section",
+      "then": "both filenames appear, the newer one first, with size and creation time, and the .enc artefact is labelled 'encrypted'",
+      "steps": [
+        "GET /settings renders the maintenance section"
+      ],
+      "expected_result": "body lists both names; index(newer) < index(older); 'encrypted' label present",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Ah_SettingsListsPriorBackups"
+    },
+    {
+      "id": "TC-ACG-084Be",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-002",
+      "title": "No backups on disk renders an explicit empty state",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an empty backup directory",
+      "when": "GET /settings renders the maintenance section",
+      "then": "'No backups on disk yet.' is shown and no download link is rendered",
+      "steps": [
+        "GET /settings renders the maintenance section"
+      ],
+      "expected_result": "body contains data-backup-empty and no data-backup-download",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Be_EmptyBackupListRendersEmptyState"
+    },
+    {
+      "id": "TC-ACG-084Ch",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-003",
+      "title": "Downloading serves the stored encrypted bytes, not a fresh snapshot",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an encrypted backup on disk whose bytes begin with ULTRONENC2",
+      "when": "GET /api/settings/backups/ultron-20260713-030000.db.enc",
+      "then": "status 200 and the body is byte-identical to the stored file, begins with ULTRONENC2, and contains no 'SQLite format 3' header",
+      "steps": [
+        "GET /api/settings/backups/ultron-20260713-030000.db.enc"
+      ],
+      "expected_result": "response bytes == file bytes; ULTRONENC2 prefix; Content-Disposition names the file",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Ch_DownloadServesStoredEncryptedFile"
+    },
+    {
+      "id": "TC-ACG-084Df",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-004",
+      "title": "Path traversal and non-artefact names are rejected without serving bytes",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a real backup on disk plus a secret file outside the backup directory",
+      "when": "GET the download route with '../../etc/passwd', an absolute path, and 'not-an-ultron-backup.db'",
+      "then": "none returns 200 and no bytes of the targeted file are served",
+      "steps": [
+        "GET the download route with '../../etc/passwd', an absolute path, and 'not-an-ultron-backup.db'"
+      ],
+      "expected_result": "status != 200 for each; response never contains the out-of-directory content",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Df_DownloadRejectsPathTraversal"
+    },
+    {
+      "id": "TC-ACG-084Ef",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-005",
+      "title": "An unauthenticated download returns no file bytes",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an encrypted backup on disk and no session cookie",
+      "when": "GET /api/settings/backups/ultron-20260713-030000.db.enc",
+      "then": "status 401 and the body contains none of the stored bytes",
+      "steps": [
+        "GET /api/settings/backups/ultron-20260713-030000.db.enc"
+      ],
+      "expected_result": "status 401; body excludes ULTRONENC2 and the file content",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Ef_DownloadRequiresAuth"
     }
   ]
 }

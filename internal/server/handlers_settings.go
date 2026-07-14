@@ -19,6 +19,7 @@ type settingsData struct {
 	Perf           database.PerformanceConfig
 	Backup         database.BackupConfig
 	Hardware       database.HardwareConfig
+	Backups        []backupFile
 	Mute           muteDisplay
 	Digest         digestDisplay
 	Flash          string
@@ -80,6 +81,14 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 
 	data.Mute = s.muteDisplay()
 	data.Digest = digestFromNotifConfig(data.Email)
+
+	// FR-084: list the backups already on disk. A read failure degrades to an
+	// empty list — the settings page must still render.
+	if backups, err := s.listBackupFiles(); err == nil {
+		data.Backups = backups
+	} else {
+		log.Printf("settings: could not list backups: %v", err)
+	}
 
 	s.render(w, r, "settings.html", "Settings", "settings", data)
 }

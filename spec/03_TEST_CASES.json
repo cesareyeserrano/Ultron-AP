@@ -1289,6 +1289,21 @@
       "when": "the scheduler ticks at 08:00",
       "then": "exactly one email is sent listing all three alerts with severity, source and timestamp",
       "expected_result": "one SMTP send; body lists every alert; at most one digest per calendar day (FR-080)"
+    },
+    {
+      "id": "TC-015b",
+      "requirement_id": "FR-015",
+      "user_story_id": "US-015",
+      "ac_id": "AC-015-004",
+      "type": "integration",
+      "scenario": "happy_path",
+      "title": "Settings lists prior backups and downloads the stored encrypted file",
+      "file": "internal/server/ac_gaps_test.go",
+      "test_function": "TestTC_ACG_084Ch_DownloadServesStoredEncryptedFile",
+      "given": "an encrypted backup on disk whose bytes begin with ULTRONENC2",
+      "when": "the admin clicks download on a listed backup",
+      "then": "the stored encrypted file is delivered byte-for-byte — not a fresh plaintext snapshot",
+      "expected_result": "response bytes identical to the stored file with the ULTRONENC2 magic; traversal names are rejected (FR-084)"
     }
   ]
 }

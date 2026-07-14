@@ -145,4 +145,6 @@ emit "internal/server" "TC-010a" "service log drawer shows the last 100 journalc
 emit "internal/server" "TC-013a" "settings hardware section renders a fan-mode selector"
 emit "internal/server" "TC-013b" "settings hardware section renders an OLED configuration"
 
+emit "internal/server" "TC-015b" "settings lists prior backups and downloads the stored encrypted file"
+
 exit $EXIT_CODE

@@ -16,4 +16,30 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- FR-084: prior backups on disk. Downloading one serves the STORED
+                     file (encrypted when it was written encrypted), not a fresh
+                     plaintext snapshot the way the legacy .db link does. -->
+                <div class="rounded-lg border border-border/40 bg-card/25 p-3 space-y-2">
+                    <p class="text-[11px] text-text-muted">Prior backups</p>
+                    {{if .Content.Backups}}
+                    <ul data-backup-list class="space-y-1">
+                        {{range .Content.Backups}}
+                        <li class="flex items-center justify-between gap-2 flex-wrap text-xs">
+                            <span class="flex items-center gap-2 min-w-0">
+                                <span class="font-mono truncate text-text">{{.Name}}</span>
+                                {{if .Encrypted}}<span class="text-[10px] px-1.5 py-0.5 rounded border border-green-400/40 text-green-400">encrypted</span>{{end}}
+                            </span>
+                            <span class="flex items-center gap-3 shrink-0">
+                                <span class="text-text-muted tabular-nums">{{.Size}}</span>
+                                <span class="text-text-muted tabular-nums">{{.Created}}</span>
+                                <a href="/api/settings/backups/{{.Name}}" data-backup-download class="min-h-[44px] inline-flex items-center px-3 py-1.5 rounded border border-border text-text-muted hover:bg-card hover:text-text transition-colors">Download</a>
+                            </span>
+                        </li>
+                        {{end}}
+                    </ul>
+                    {{else}}
+                    <p data-backup-empty class="text-xs text-text-muted">No backups on disk yet.</p>
+                    {{end}}
+                </div>
             </section>{{end}}

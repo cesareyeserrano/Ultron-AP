@@ -1,7 +1,7 @@
 {
   "project_name": "Ultron-AP — ac-coverage-gaps",
   "project_summary": {
-    "north_star_kpi": "Acceptance criteria of the approved requirements with a passing traced test: 74/80 today → 79/80. AC-015-004 (list prior backups and download the encrypted file) is deferred by the owner and remains the single untested AC after this feature.",
+    "north_star_kpi": "Acceptance criteria of the approved requirements with a passing traced test: 74/80 at the start of this feature → 80/80 (aitri verify-complete reports zero untested ACs).",
     "jtbd": "As the sole admin of a headless Raspberry Pi, I hire Ultron-AP to tell me what my box is doing and let me act on it from one panel — without SSHing in, and without it waking me at 3am for a storm I already know about.",
     "guardrail_metric": "Zero regressions: the 80 test cases passing today keep passing, and no new host action bypasses the privileged helper's allow-list.",
     "context": "A coverage audit of the main pipeline (BL-033) found 41 acceptance criteria with no traced test. 35 were real behaviors that were merely untested and are now covered. The remaining 6 traced to behavior the approved requirements demand and the code never grew. This feature builds those six. It adds no new product surface beyond what FR-005, FR-006, FR-010, FR-013 and FR-015 already promise. The owner deferred the backup listing/download (parent AC-015-004) on 2026-07-13 and required the hardware controls to drive nothing, because a previous hardware-control attempt cost the Pi significant CPU and memory."
@@ -77,6 +77,20 @@
         "An OLED metric outside the four allowed values is rejected with HTTP 400 and the stored value is unchanged.",
         "Saving without a valid CSRF token is rejected with HTTP 403 and nothing is persisted.",
         "Saving or reading the OLED configuration performs no hardware I/O and starts no background loop."
+      ]
+    },
+    {
+      "id": "FR-084",
+      "title": "List prior backups and download the stored encrypted file",
+      "description": "Settings lists the backup artefacts already on disk (name, size, creation time, whether encrypted), and downloading one delivers THAT stored file — encrypted when it was written encrypted — rather than generating a fresh plaintext snapshot. Realises the parent's AC-015-004 and closes the gap where the only download route served an unencrypted SQLite copy. Re-scoped IN by the owner on 2026-07-14 after initially deferring it.",
+      "priority": "MUST",
+      "type": "security",
+      "acceptance_criteria": [
+        "The Settings maintenance section lists each ultron-* artefact in the backup directory with filename, size and creation time, newest first; with none present it renders an explicit empty state.",
+        "Downloading a listed encrypted backup returns the bytes of that stored file — byte-identical to disk, beginning with the ULTRONENC2 magic — never a freshly generated plaintext snapshot.",
+        "A traversal attempt (../, an absolute path, a symlink out of the backup directory) or a name that is not one of our own ultron-* artefacts is rejected without serving any bytes.",
+        "An unauthenticated download request returns no file bytes.",
+        "The listing and the download never expose the backup encryption key, its length, or any key material."
       ]
     }
   ],
@@ -283,6 +297,45 @@
           "then": "the response is HTTP 403 and nothing is persisted"
         }
       ]
+    },
+    {
+      "id": "US-084",
+      "requirement_id": "FR-084",
+      "as_a": "Pi Admin",
+      "i_want": "to see the backups my Pi already took and download one of them",
+      "so_that": "I can keep an off-box copy that is still encrypted, instead of a fresh plaintext dump of my database",
+      "acceptance_criteria": [
+        {
+          "id": "AC-084-001",
+          "given": "two backup artefacts on disk with different mtimes",
+          "when": "the Settings maintenance section renders",
+          "then": "both are listed with filename, size and creation time, newest first, and the encrypted one is labelled 'encrypted'"
+        },
+        {
+          "id": "AC-084-002",
+          "given": "no backup files on disk",
+          "when": "the maintenance section renders",
+          "then": "an explicit empty state ('No backups on disk yet.') is shown and no download link is rendered"
+        },
+        {
+          "id": "AC-084-003",
+          "given": "an encrypted backup file on disk whose bytes begin with ULTRONENC2",
+          "when": "the admin downloads it",
+          "then": "the response body is byte-identical to the stored file, begins with ULTRONENC2, and contains no 'SQLite format 3' header"
+        },
+        {
+          "id": "AC-084-004",
+          "given": "a download request for '../../etc/passwd', an absolute path, or a non-ultron filename",
+          "when": "the handler resolves it",
+          "then": "the response is not 200 and no bytes of the target file are served"
+        },
+        {
+          "id": "AC-084-005",
+          "given": "an unauthenticated client",
+          "when": "it requests a backup download",
+          "then": "the response is 401 and no file bytes are written"
+        }
+      ]
     }
   ],
   "non_functional_requirements": [
@@ -326,12 +379,12 @@
   "no_go_zone": [
     "Physically driving the Pironman fan (PWM/GPIO) or writing pixels to the OLED panel — FR-082/FR-083 deliver the control surface and its persistence only. The owner explicitly required this on 2026-07-13: a previous hardware-control attempt cost the Pi significant CPU and memory, and it cannot be verified in CI. Actuating the hardware is deferred and must be declared as technical debt in Phase 4.",
     "Any polling loop, daemon connection or per-request hardware I/O introduced by the hardware section — it must cost one SQLite read on render and one write on save, nothing more.",
-    "Listing prior backups and downloading the stored encrypted file (parent AC-015-004) — deferred by the owner on 2026-07-13. AC-015-004 therefore stays untested after this feature; it is tracked in the backlog. The existing GET /api/settings/backup snapshot route is untouched.",
     "Restoring or deleting a backup from Settings — follows from the deferral above.",
     "Per-rule, per-source or per-severity mute — FR-079 is a single global window of exactly 1h / 4h / 24h, as the parent AC-005-005 specifies. No custom durations.",
     "Muting email or any channel other than Telegram — the parent AC scopes mute to Telegram delivery.",
     "Digest scheduling beyond a single daily hour — no weekly, custom-cron, or per-severity digest.",
-    "Streaming or tailing logs live in the drawer — FR-081 is a one-shot fetch of the last 100 lines, not a follow."
+    "Streaming or tailing logs live in the drawer — FR-081 is a one-shot fetch of the last 100 lines, not a follow.",
+    "Restoring a backup from the Settings listing, or deleting one — FR-084 is list + download only. Restore stays where it is today and deletion remains the retention job's business."
   ],
   "constraints": [
     "Go + HTMX + Tailwind, no SPA framework and no new frontend runtime dependency.",
@@ -423,12 +476,12 @@
       "disposition": "NFR-090"
     },
     {
-      "need": "List prior backups and download the stored encrypted file (parent AC-015-004)",
-      "disposition": "out_of_scope"
-    },
-    {
       "need": "Hardware controls must not cost the Pi CPU/memory — no actuation, no polling loop",
       "disposition": "FR-082"
+    },
+    {
+      "need": "List prior backups and download the stored encrypted file (parent AC-015-004)",
+      "disposition": "FR-084"
     }
   ],
   "original_brief": "## Feature\nBuild the six behaviors the approved requirements already promise but the product never implemented: a Telegram mute window, a daily email digest, a per-service log drawer, a hardware section in Settings (fan mode + OLED display), and a backup list with encrypted download.\n\n## Problem / Why\n`aitri verify-complete` gates on acceptance-criteria coverage. An audit of the main pipeline (BL-033) found 41 acceptance criteria with no test. 35 turned out to be real behaviors that were merely untested (now covered) — but 6 traced to behavior the requirements demand and the code never grew:\n\n- **AC-005-005** — the admin can pick a mute window (1h / 4h / 24h); no Telegram message is sent while it is open. Nothing in `internal/notify` implements mute/silence; the only suppression is the 60s storm coalescing window (FR-024), which is a different mechanism.\n- **AC-006-004** — with the daily digest enabled, one email summarising the last 24h of alerts is sent at the digest hour. `grep -ri digest internal/` returns nothing.\n- **AC-010-002** — a service row opens a log drawer showing the last 100 lines from journalctl. The substance exists (`handleFetchSystemLogs` → `privileged.SystemLogs(ctx, source, 100)` → `journalctl -u <unit> -n 100`), but only as the page-level `/logs` dropdown; service rows have no drawer.\n- **AC-013-002 / AC-013-003** — the Settings page shows a hardware section with a fan-mode selector and an OLED display configuration. No hardware section exists at all.\n- **AC-015-004** — Settings lists prior backups and clicking download delivers the encrypted file. The encryption primitive exists (`encryptFileAESGCM`, ULTRONENC2, exercised by `backup_crypto_test.go`) and the automated backup flow uses it, but the only download route (`GET /api/settings/backup`) makes a FRESH plaintext SQLite snapshot and serves it as `application/x-sqlite3`. Prior backups are neither listed nor downloadable.\n\n[ASSUMPTION] The user's intent is that these six ship as originally specified, not that the requirements were aspirational — confirmed on 2026-07-13 when they chose \"implement all six via the feature pipeline\" over amending the requirements.\n\n## Target Users\nThe single admin operating the Raspberry Pi panel. No new user types.\n\n## New Behavior\n- The system must let the admin open a mute window of 1h, 4h or 24h, and must suppress Telegram sends for its duration, resuming automatically when it expires.\n- The system must let the admin enable a daily digest with a digest hour, and must send exactly one email at that hour summarising the previous 24h of alerts.\n- The system must let the admin open a log drawer on any systemd service row, showing the last 100 journalctl lines for that unit, fetched through the privileged helper.\n- The system must render a hardware section in Settings containing a fan-mode selector and an OLED display configuration, persisting both.\n- The system must list prior backups in Settings, and must deliver the stored encrypted backup file (not a fresh plaintext snapshot) when the admin clicks download.\n\n## Success Criteria\n- GIVEN a 1h mute window is open, WHEN an alert fires, THEN no Telegram message is sent; WHEN the window expires, THEN sends resume. (AC-005-005)\n- GIVEN the daily digest is enabled, WHEN the digest hour is reached, THEN exactly one email summarising the last 24h of alerts is sent. (AC-006-004)\n- GIVEN a systemd service row, WHEN the admin opens its log drawer, THEN the last 100 journalctl lines for that unit are shown. (AC-010-002)\n- GIVEN the Settings page, WHEN the hardware section renders, THEN a fan-mode selector and an OLED display configuration are present and persist. (AC-013-002, AC-013-003)\n- GIVEN Settings lists prior backups, WHEN the admin clicks download, THEN the encrypted backup file is delivered to the browser. (AC-015-004)\n- `aitri verify-complete` passes with zero untested acceptance criteria.\n\n## Touch Points\nMODIFIES:\n- FR-005 (Telegram) — `internal/notify/dispatcher.go`, `internal/notify/telegram.go`: consult the mute window before sending.\n- FR-006 (Email) — `internal/notify/email.go` + a new digest scheduler.\n- FR-010 (Logs) — `internal/server/handlers_system.go` (`handleFetchSystemLogs` already fetches 100 lines), `web/templates/partials/services-list.html`.\n- FR-013 (Hardware) — `web/templates/partials/` (new `settings-hardware.html`), `internal/server/templates.go`, `internal/server/handlers_settings.go`.\n- FR-015 (Backup) — `internal/server/handlers_performance.go` (`handleSettingsBackup` currently serves a plaintext snapshot), `web/templates/partials/settings-maintenance.html`.\n- `internal/database/` — new persisted config for mute window, digest hour, fan mode, OLED.\n- `scripts/aitri-test.sh` + `spec/03_TEST_CASES.json` — new TC emit lines traced by `ac_id`.\n\nPURELY ADDS: backup listing endpoint, digest scheduler, log-drawer endpoint.\n\n## Must Not Break (Regression Boundary)\n- Telegram alerts (FR-005) keep sending immediately when NO mute window is open; the FR-024 60s storm coalescing keeps working independently of mute.\n- Per-event email alerts (FR-006) keep sending on every fire; the digest is additive, not a replacement.\n- The `/logs` page (FR-010) keeps working as a page-level source dropdown.\n- Every existing Settings section (alerts, telegram, email, performance, backup, maintenance, system controls) keeps saving; the accordion, form-state pills, widgets and CSRF gating (FR-057..FR-070) keep working, including after hx-boost swaps.\n- The privileged helper (FR-011) keeps validating every unit name against its allow-list; no new host action bypasses the Unix socket.\n- Backups stay encrypted at rest (AC-015-003) and the automated schedule keeps running; the existing `GET /api/settings/backup` snapshot path must not start leaking an unencrypted file to a new caller.\n- All 80 currently-passing test cases keep passing.\n\n## Out of Scope\n- Physically driving the Pironman fan or writing to the OLED panel (the ACs require the Settings controls and their persistence; actuating the hardware needs the Pironman daemon on the Pi and is deferred — declare it as technical debt).\n- Per-rule or per-source mute (the AC specifies a global 1h/4h/24h window only).\n- Digest scheduling granularity beyond a single daily hour (no weekly/custom cron).\n- Backup retention/pruning changes — the existing retention job stays as-is.\n- Restoring a backup from the listing (download only).\n"

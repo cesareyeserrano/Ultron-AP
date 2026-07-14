@@ -123,4 +123,3 @@ func computeRTTSeries(rows []database.NetSample) (series []float64, minMs, maxMs
 	avgMs = sum / float64(count)
 	return series, minMs, maxMs, avgMs
 }
-

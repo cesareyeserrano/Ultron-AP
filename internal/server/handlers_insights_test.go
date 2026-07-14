@@ -131,21 +131,21 @@ func TestTC_IE_006h_FragmentSortsCriticalWarnInfo(t *testing.T) {
 	// Three custom rules: one per severity, distinct ids.
 	require.NoError(t, st.SeedRule(insightsstore.Rule{
 		ID: "test_critical", Title: "TestCritical",
-		ConditionJSON:  json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
-		Severity:       insightsstore.SeverityCritical,
-		Verdict:        "v", Recommendation: "r", Links: []string{},
+		ConditionJSON: json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
+		Severity:      insightsstore.SeverityCritical,
+		Verdict:       "v", Recommendation: "r", Links: []string{},
 	}))
 	require.NoError(t, st.SeedRule(insightsstore.Rule{
 		ID: "test_warn", Title: "TestWarn",
-		ConditionJSON:  json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
-		Severity:       insightsstore.SeverityWarn,
-		Verdict:        "v", Recommendation: "r", Links: []string{},
+		ConditionJSON: json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
+		Severity:      insightsstore.SeverityWarn,
+		Verdict:       "v", Recommendation: "r", Links: []string{},
 	}))
 	require.NoError(t, st.SeedRule(insightsstore.Rule{
 		ID: "test_info", Title: "TestInfo",
-		ConditionJSON:  json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
-		Severity:       insightsstore.SeverityInfo,
-		Verdict:        "v", Recommendation: "r", Links: []string{},
+		ConditionJSON: json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
+		Severity:      insightsstore.SeverityInfo,
+		Verdict:       "v", Recommendation: "r", Links: []string{},
 	}))
 	svc := insights.New(insights.Config{Store: st})
 	require.NoError(t, svc.RefreshFromStore())
@@ -197,11 +197,11 @@ func TestTC_IE_006e_HundredVerdictsRenderUnderBudget(t *testing.T) {
 			sev = insightsstore.SeverityInfo
 		}
 		require.NoError(t, st.SeedRule(insightsstore.Rule{
-			ID:             "stress_" + intToStrLocal(i),
-			Title:          "Stress " + intToStrLocal(i),
-			ConditionJSON:  json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
-			Severity:       sev,
-			Verdict:        "v", Recommendation: "r", Links: []string{},
+			ID:            "stress_" + intToStrLocal(i),
+			Title:         "Stress " + intToStrLocal(i),
+			ConditionJSON: json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
+			Severity:      sev,
+			Verdict:       "v", Recommendation: "r", Links: []string{},
 		}))
 	}
 	svc := insights.New(insights.Config{Store: st})
@@ -233,11 +233,11 @@ func TestTC_IE_012h_VerdictsAPIReturnsSortedJSON(t *testing.T) {
 		insightsstore.SeverityInfo,
 	} {
 		require.NoError(t, st.SeedRule(insightsstore.Rule{
-			ID:             "sort_" + string(sev),
-			Title:          "Sort " + string(sev),
-			ConditionJSON:  json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
-			Severity:       sev,
-			Verdict:        "v", Recommendation: "r", Links: []string{},
+			ID:            "sort_" + string(sev),
+			Title:         "Sort " + string(sev),
+			ConditionJSON: json.RawMessage(`{"op":"gt","left":{"var":"x"},"right":{"const":1}}`),
+			Severity:      sev,
+			Verdict:       "v", Recommendation: "r", Links: []string{},
 		}))
 	}
 	svc := insights.New(insights.Config{Store: st})
