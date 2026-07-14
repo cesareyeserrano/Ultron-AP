@@ -1,0 +1,471 @@
+{
+  "project_name": "Ultron-AP — network-tile",
+  "version": "1.0.0",
+  "test_runner": "go test -C ../.. ./internal/server -run TestTC_NT -v",
+  "source": "internal/server/*_test.go",
+  "test_plan": {
+    "strategy": "The verdict is a pure function, so its rules are unit-tested directly with crafted probe snapshots — including the two cases the design argues hardest about: a single dropped ping must NOT flap the tile (ADR-2) and a VPN tunnel must NOT double-count throughput (ADR-3). The tile's markup is tested by rendering the real partial through renderPartial (the same path SSE uses), asserting the collapsed disclosure, the absorbed WAN chip and the surviving BG-072 filter. Two regression cases guard the neighbouring tiles and the nil-safety of the SSE render path, because a panic here would kill the dashboard for every connected client.",
+    "coverage_goal": "Every acceptance criterion of FR-085/086/087 and the three NFRs has a traced, passing test; zero regressions in the 86 existing test cases.",
+    "test_types": [
+      "unit",
+      "integration",
+      "e2e"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "TC-NT-085h",
+      "requirement_id": "FR-085",
+      "user_story_id": "US-085",
+      "ac_id": "AC-085-001",
+      "title": "All probes healthy → Stable",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "probes gateway(ok,0% loss,1.4ms), 1.1.1.1(ok,0%,12ms), 8.8.8.8(ok,0%,14ms), dns(ok,0%,11ms) and WAN state=up",
+      "when": "dashboardLinkState(probes, wan) runs",
+      "then": "Verdict == 'stable' and the reason mentions 'WAN up' and 0% loss",
+      "steps": [
+        "dashboardLinkState(probes, wan) runs"
+      ],
+      "expected_result": "LinkState{Verdict:'stable'} with a reason naming WAN up and 0% loss",
+      "test_data": {},
+      "test_function": "TestTC_NT_085h_AllProbesHealthyIsStable"
+    },
+    {
+      "id": "TC-NT-085e",
+      "requirement_id": "FR-085",
+      "user_story_id": "US-085",
+      "ac_id": "AC-085-002",
+      "title": "A probe at 15% loss → Unstable, and the reason names the failing target",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "gateway ok at 0% loss, but 8.8.8.8 reports 15% loss (3 of its 20-sample window)",
+      "when": "dashboardLinkState(probes, wan=up) runs",
+      "then": "Verdict == 'unstable', WorstLoss == 15, and Reason contains '8.8.8.8' and '15%'",
+      "steps": [
+        "dashboardLinkState(probes, wan=up) runs"
+      ],
+      "expected_result": "LinkState{Verdict:'unstable', WorstLoss:15} naming 8.8.8.8",
+      "test_data": {},
+      "test_function": "TestTC_NT_085e_LossMakesItUnstable"
+    },
+    {
+      "id": "TC-NT-085f",
+      "requirement_id": "FR-085",
+      "user_story_id": "US-085",
+      "ac_id": "AC-085-003",
+      "title": "WAN monitor down → Offline",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "every probe still answers, but the WAN monitor reports state 'down'",
+      "when": "dashboardLinkState(probes, wan) runs",
+      "then": "Verdict == 'offline' — the WAN monitor is the authority and it needs 3 consecutive failures to flip, so this is not a flap",
+      "steps": [
+        "dashboardLinkState(probes, wan) runs"
+      ],
+      "expected_result": "LinkState{Verdict:'offline'}",
+      "test_data": {},
+      "test_function": "TestTC_NT_085f_WANDownIsOffline"
+    },
+    {
+      "id": "TC-NT-085Bf",
+      "requirement_id": "FR-085",
+      "user_story_id": "US-085",
+      "ac_id": "AC-085-004",
+      "title": "Gateway unreachable → Offline, not merely Unstable",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "the gateway probe reports status 'timeout' while off-box targets still answer",
+      "when": "dashboardLinkState(probes, wan=unknown) runs",
+      "then": "Verdict == 'offline' — a box that cannot reach its own gateway has a broken LAN, a different problem from a lossy internet path",
+      "steps": [
+        "dashboardLinkState(probes, wan=unknown) runs"
+      ],
+      "expected_result": "LinkState{Verdict:'offline'} driven by the gateway, not by the off-box targets",
+      "test_data": {},
+      "test_function": "TestTC_NT_085Bf_GatewayDownIsOffline"
+    },
+    {
+      "id": "TC-NT-085Be",
+      "user_story_id": "US-085",
+      "ac_id": "AC-085-005",
+      "title": "No probes configured → no verdict claimed",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an empty probe list (and a nil WAN snapshot)",
+      "when": "dashboardLinkState(nil, nil) runs",
+      "then": "Verdict == 'unknown' — the tile must not claim a state it cannot know, and must not panic on the nil inputs",
+      "steps": [
+        "dashboardLinkState(nil, nil) runs"
+      ],
+      "expected_result": "LinkState{Verdict:'unknown'}; no panic",
+      "test_data": {},
+      "test_function": "TestTC_NT_085Be_NoProbesIsUnknown",
+      "frs": [
+        "FR-085",
+        "NFR-088b"
+      ]
+    },
+    {
+      "id": "TC-NT-085Bh",
+      "requirement_id": "FR-085",
+      "user_story_id": "US-085",
+      "ac_id": "AC-085-001",
+      "title": "A single dropped ping (5% loss) does NOT flip the tile to Unstable",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "every probe ok, but one reports 5% loss — exactly one dropped packet in its 20-sample window",
+      "when": "dashboardLinkState(probes, wan=up) runs",
+      "then": "Verdict == 'stable' — a >0% rule would flap on one lost packet and train the admin to ignore the tile (ADR-2)",
+      "steps": [
+        "dashboardLinkState(probes, wan=up) runs"
+      ],
+      "expected_result": "LinkState{Verdict:'stable'} despite 5% loss",
+      "test_data": {},
+      "test_function": "TestTC_NT_085Bh_SingleDroppedPingDoesNotFlap"
+    },
+    {
+      "id": "TC-NT-086h",
+      "requirement_id": "FR-086",
+      "user_story_id": "US-086",
+      "ac_id": "AC-086-001",
+      "title": "Tile subtitle names the busiest interface with both rates",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "eth0 at 7.2 KB/s up / 54.7 KB/s down, wlan0 and tailscale0 idle",
+      "when": "the sse-metrics partial renders",
+      "then": "the subtitle names eth0 with its send and receive rates, and neither wlan0 nor tailscale0 appears outside the collapsed disclosure",
+      "steps": [
+        "the sse-metrics partial renders"
+      ],
+      "expected_result": "rendered HTML: eth0 + both rates in the subtitle; idle interfaces only inside <details>",
+      "test_data": {},
+      "test_function": "TestTC_NT_086h_SubtitleNamesBusiestInterface"
+    },
+    {
+      "id": "TC-NT-086e",
+      "user_story_id": "US-086",
+      "ac_id": "AC-086-002",
+      "title": "No per-interface row is visible before interaction",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "three interfaces present in the snapshot",
+      "when": "the sse-metrics partial renders",
+      "then": "the per-interface rows live inside a <details> element that carries no 'open' attribute — the visible body is the verdict plus one subtitle plus the toggle",
+      "steps": [
+        "the sse-metrics partial renders"
+      ],
+      "expected_result": "rendered HTML contains <details> without open, and the rows are inside it",
+      "test_data": {},
+      "test_function": "TestTC_NT_086e_DetailIsCollapsedByDefault",
+      "frs": [
+        "FR-086",
+        "NFR-090b"
+      ]
+    },
+    {
+      "id": "TC-NT-089h",
+      "user_story_id": "US-086",
+      "ac_id": "AC-086-003",
+      "title": "Expanding the disclosure shows every non-virtual interface",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "eth0, wlan0 and tailscale0 in the snapshot",
+      "when": "the disclosure body is inspected in the rendered HTML",
+      "then": "all three interfaces appear with their send and receive rates",
+      "steps": [
+        "the disclosure body is inspected in the rendered HTML"
+      ],
+      "expected_result": "the <details> body lists eth0, wlan0 and tailscale0 with rates",
+      "test_data": {},
+      "test_function": "TestTC_NT_089h_ExpandedDetailListsEveryInterface",
+      "frs": [
+        "FR-086",
+        "NFR-089b"
+      ]
+    },
+    {
+      "id": "TC-NT-086f",
+      "requirement_id": "FR-086",
+      "user_story_id": "US-086",
+      "ac_id": "AC-086-004",
+      "title": "The busiest interface is picked by max, never by summing (a VPN would double-count)",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "eth0 carrying 60 KB/s and tailscale0 carrying 50 KB/s of the SAME tunnelled traffic",
+      "when": "primaryNetwork(ifaces) runs",
+      "then": "eth0 is returned — the rates are never added together, which would report 110 KB/s for 60 KB/s of real traffic",
+      "steps": [
+        "primaryNetwork(ifaces) runs"
+      ],
+      "expected_result": "primaryNetwork returns eth0; no summed total exists anywhere in the tile",
+      "test_data": {},
+      "test_function": "TestTC_NT_086f_BusiestInterfaceIsMaxNotSum"
+    },
+    {
+      "id": "TC-NT-089f",
+      "user_story_id": "US-086",
+      "ac_id": "AC-086-005",
+      "title": "Virtual docker interfaces never appear, even expanded (BG-072 still holds)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a host with eth0 plus docker0, five br-* bridges and four veth pairs",
+      "when": "the sse-metrics partial renders",
+      "then": "no docker0, br-* or veth* appears anywhere in the tile, expanded or not",
+      "steps": [
+        "the sse-metrics partial renders"
+      ],
+      "expected_result": "rendered HTML excludes every virtual interface name",
+      "test_data": {},
+      "test_function": "TestTC_NT_089f_VirtualInterfacesStayHidden",
+      "frs": [
+        "FR-086",
+        "NFR-089b"
+      ]
+    },
+    {
+      "id": "TC-NT-087h",
+      "requirement_id": "FR-087",
+      "user_story_id": "US-087",
+      "ac_id": "AC-087-001",
+      "title": "WAN state lives in the tile; the standalone chip is gone",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "WAN up and healthy probes",
+      "when": "the sse-metrics partial renders",
+      "then": "the tile's subtitle contains 'WAN up' and the partial contains no standalone WAN chip element below the metric grid",
+      "steps": [
+        "the sse-metrics partial renders"
+      ],
+      "expected_result": "subtitle contains WAN up; the old chip markup is absent",
+      "test_data": {},
+      "test_function": "TestTC_NT_087h_WANStateMovesIntoTheTile"
+    },
+    {
+      "id": "TC-NT-087f",
+      "requirement_id": "FR-087",
+      "user_story_id": "US-087",
+      "ac_id": "AC-087-002",
+      "title": "WAN down: the tile reads Offline and there is still no second WAN element",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "the WAN monitor reports down",
+      "when": "the sse-metrics partial renders",
+      "then": "the tile reads Offline and the page contains no standalone WAN chip — the tile is the single source of WAN truth",
+      "steps": [
+        "the sse-metrics partial renders"
+      ],
+      "expected_result": "tile shows Offline; no duplicate WAN element anywhere in the partial",
+      "test_data": {},
+      "test_function": "TestTC_NT_087f_WANDownRendersOfflineWithNoChip"
+    },
+    {
+      "id": "TC-NT-087e",
+      "requirement_id": "FR-087",
+      "user_story_id": "US-087",
+      "ac_id": "AC-087-003",
+      "title": "No WAN snapshot: nothing is claimed and the template does not crash",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a nil WAN snapshot (the monitor never observed anything yet)",
+      "when": "the sse-metrics partial renders",
+      "then": "the tile renders without claiming a WAN state, and the template executes without error",
+      "steps": [
+        "the sse-metrics partial renders"
+      ],
+      "expected_result": "partial renders non-empty HTML; no 'WAN up'/'WAN down' text; no template error",
+      "test_data": {},
+      "test_function": "TestTC_NT_087e_NilWANDoesNotCrashTheTile"
+    },
+    {
+      "id": "TC-NT-088h",
+      "user_story_id": "US-085",
+      "ac_id": "AC-085-001",
+      "title": "The other four tiles are untouched",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a snapshot with CPU 22.2%, RAM 45.7%, disk and temp populated",
+      "when": "the sse-metrics partial renders",
+      "then": "CPU, Memory, Disk and Temp still render their values with their existing thresholds",
+      "steps": [
+        "the sse-metrics partial renders"
+      ],
+      "expected_result": "all four neighbouring tiles render unchanged alongside the new Network tile",
+      "test_data": {},
+      "test_function": "TestTC_NT_088h_NeighbouringTilesUnchanged",
+      "frs": [
+        "NFR-088b"
+      ]
+    },
+    {
+      "id": "TC-NT-088f",
+      "user_story_id": "US-085",
+      "ac_id": "AC-085-005",
+      "title": "A nil probe entry never panics the SSE render",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a probe slice containing a nil element",
+      "when": "dashboardLinkState runs",
+      "then": "the nil entry is skipped and a verdict is still returned — a panic here would kill the dashboard for every connected client",
+      "steps": [
+        "dashboardLinkState runs"
+      ],
+      "expected_result": "no panic; a valid LinkState is returned",
+      "test_data": {},
+      "test_function": "TestTC_NT_088f_NilProbeEntryDoesNotPanic",
+      "frs": [
+        "NFR-088b"
+      ]
+    },
+    {
+      "id": "TC-NT-088e",
+      "user_story_id": "US-086",
+      "ac_id": "AC-086-005",
+      "title": "The BG-072 fallback survives: a host with only virtual interfaces still sees its traffic",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an interface list containing only docker0",
+      "when": "primaryNetwork / dashboardNetworks run",
+      "then": "docker0 is returned rather than an empty list — the filter must never empty the tile",
+      "steps": [
+        "primaryNetwork / dashboardNetworks run"
+      ],
+      "expected_result": "the unfiltered list is returned as a fallback",
+      "test_data": {},
+      "test_function": "TestTC_NT_088e_FilterNeverEmptiesTheTile",
+      "frs": [
+        "NFR-089b"
+      ]
+    },
+    {
+      "id": "TC-NT-090h",
+      "user_story_id": "US-086",
+      "ac_id": "AC-086-002",
+      "title": "The disclosure toggle meets the project's 44px touch target",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "three interfaces present",
+      "when": "the sse-metrics partial renders",
+      "then": "the <summary> element carries the min-h-[44px] marker the project enforces everywhere else",
+      "steps": [
+        "the sse-metrics partial renders"
+      ],
+      "expected_result": "rendered summary contains min-h-[44px]",
+      "test_data": {},
+      "test_function": "TestTC_NT_090h_DisclosureMeetsTouchTarget",
+      "frs": [
+        "NFR-090b"
+      ]
+    },
+    {
+      "id": "TC-NT-090f",
+      "frs": [
+        "NFR-090b",
+        "FR-086"
+      ],
+      "user_story_id": "US-086",
+      "ac_id": "AC-086-002",
+      "title": "The tile never renders a per-interface row outside the disclosure",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a host with three real interfaces",
+      "when": "the sse-metrics partial renders and the <details> block is removed from the HTML",
+      "then": "no interface rate row remains — proving every row lives inside the disclosure and none leaked back into the tile body",
+      "steps": [
+        "render the partial",
+        "strip the <details> block",
+        "assert no interface rows remain"
+      ],
+      "expected_result": "with the disclosure stripped, the HTML contains no per-interface rate rows",
+      "test_data": {},
+      "test_function": "TestTC_NT_090f_NoInterfaceRowLeaksOutsideDisclosure"
+    },
+    {
+      "id": "TC-NT-E2E-001h",
+      "frs": [
+        "FR-085",
+        "FR-087"
+      ],
+      "user_story_id": "US-085",
+      "ac_id": "AC-085-005",
+      "title": "Full page flow: an authenticated admin loads the dashboard and gets the new tile",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a running server with an admin user (and no probes wired, as in a fresh box)",
+      "when": "the client logs in at POST /login and then GETs /",
+      "then": "status 200; the dashboard HTML contains the Network tile with its collapsed per-interface disclosure, and contains NO standalone WAN chip element",
+      "steps": [
+        "POST /login",
+        "GET /"
+      ],
+      "expected_result": "dashboard renders through the PAGE template path (not the SSE path) with the new tile and without the orphan chip",
+      "test_data": {},
+      "test_function": "TestTC_NT_E2E_001h_DashboardPageRendersTheNewTile"
+    },
+    {
+      "id": "TC-NT-E2E-002h",
+      "frs": [
+        "FR-085",
+        "FR-086"
+      ],
+      "user_story_id": "US-086",
+      "ac_id": "AC-086-002",
+      "title": "Full SSE flow: the live metrics event carries the new tile through the OTHER FuncMap",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an authenticated session and the SSE broadcast path",
+      "when": "buildSharedSSEEvents renders the metrics event the browser swaps into the page",
+      "then": "the event body contains the Network tile's verdict markup and its collapsed disclosure — proving the new template funcs are registered in BOTH FuncMaps (templates.go carries two; registering in one silently breaks the other path)",
+      "steps": [
+        "register an SSE client",
+        "build the shared SSE events",
+        "inspect the metrics event"
+      ],
+      "expected_result": "the SSE metrics event renders the tile without a template error",
+      "test_data": {},
+      "test_function": "TestTC_NT_E2E_002h_SSEMetricsEventRendersTheTile"
+    }
+  ]
+}

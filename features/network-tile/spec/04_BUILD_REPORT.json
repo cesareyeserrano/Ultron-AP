@@ -1,0 +1,46 @@
+{
+  "feature": "network-tile",
+  "phase": "build",
+  "stack": {
+    "language": "Go 1.25",
+    "frontend": "HTMX + Tailwind v4 (committed app.css) + a native <details> element — no new JS",
+    "datastore": "none touched",
+    "deployment": "native binary + systemd on the Pi (unchanged)"
+  },
+  "files_created": [
+    "../../internal/server/network_tile_test.go"
+  ],
+  "files_modified": [
+    "../../internal/server/helpers.go",
+    "../../internal/server/templates.go",
+    "../../web/templates/partials/sse-metrics.html",
+    "../../web/static/css/app.css"
+  ],
+  "implementation_notes": [
+    "The whole feature is two pure functions plus a template rewrite. dashboardLinkState(probes, wan) collapses the probe fleet into one word; primaryNetwork(ifaces) picks the busiest real interface. No new field in DashboardData, no new SSE event, no new query, no goroutine, no database access — every input already reached the partial.",
+    "Thresholds are NOT redefined: the verdict reads the same latencyCritLossPct/latencyCritRTTMs constants the sparklines colour by (helpers_sparkline.go). Two threshold sets on one page would eventually contradict each other, and a tile saying 'Stable' above a chart rendered red is worse than either threshold being slightly off.",
+    "ADR-2 (the one that matters): 'Unstable' trips at >=10% loss, NOT at >0%. The probe's loss window is 20 samples, so ONE dropped ping is 5%. A >0% rule would flip the tile yellow on a single lost packet on a healthy home link — the tile would cry wolf, the admin would learn to ignore it, and the feature would be worse than the byte counter it replaced. TC-NT-085Bh locks this in.",
+    "ADR-3: the subtitle names the BUSIEST interface, never a sum. tailscale0 tunnels over eth0 — summing them double-counts the same bytes the moment the VPN carries traffic, inflating the headline precisely when the admin is looking at it. TC-NT-086f asserts no summed total appears anywhere in the tile.",
+    "Rule ORDER carries meaning: WAN down or gateway-not-ok => 'Offline'; a lossy off-box target => 'Unstable'. A box that cannot reach its own gateway has a broken LAN, which is a different problem (and a different fix) from a lossy internet path. Blurring them into one word would make the tile useless exactly when it matters.",
+    "The template funcs are registered in BOTH FuncMaps in templates.go (the file carries two — page cache and SSE cache). Registering in one fails silently in the other path, which is why TC-NT-E2E-002h renders through the SSE path specifically."
+  ],
+  "verification": {
+    "go_vet": "clean",
+    "go_test": "full suite green (go test ./...) — zero regressions in the 86 pre-existing test cases",
+    "feature_tests": "21/21 passing (go test ./internal/server -run TestTC_NT)",
+    "browser": "Verified in Chrome against the running app: the disclosure is closed by default (details.open == false), the tile's content height is 124px collapsed vs 432px expanded, and the orphan WAN chip is gone from the page. On macOS the verdict reads 'Offline' — correct, since there is no Linux routing table for the gateway probe to read; on the Pi it reads Stable.",
+    "css": "make css added exactly one class (space-y-0.5) and removed none. The rebuilt artifact is committed — the same discipline that caught the hardware section's missing grid-cols-4 before it shipped unstyled."
+  },
+  "technical_debt": [
+    {
+      "fr_id": "FR-085",
+      "substitution": "dashboardLinkState identifies the gateway probe by matching the label 'gateway'. An operator who renames that target via ULTRON_NET_TARGETS would leave the verdict with no gateway clause: a broken LAN would then read 'Unstable' instead of 'Offline'.",
+      "reason": "gatewayprobe.Snapshot does not carry the probe's configured Host, so the gateway cannot currently be identified structurally (Host == \"\") from the snapshot alone. Name-matching is what caused BG-074; this is the same class of weakness, contained.",
+      "remediation": "Carry the configured Host (or an IsGateway flag) through to gatewayprobe.Snapshot and identify the gateway structurally. That belongs in gatewayprobe, not in the tile. The degradation until then is graceful: the tile still warns, just with a less precise word."
+    }
+  ],
+  "test_runner": "go test -C ../.. ./internal/server -run TestTC_NT -v",
+  "test_files": [
+    "../../internal/server/network_tile_test.go"
+  ]
+}

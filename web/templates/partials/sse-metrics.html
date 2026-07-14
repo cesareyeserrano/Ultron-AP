@@ -65,11 +65,37 @@
         {{end}}{{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
     </div>
-    <div class="metric-tile">
+    <!-- FR-085/086/087: the tile leads with a link-state verdict (the other four
+         tiles all answer a question at a glance; this one used to list bytes,
+         which have no good or bad value). Throughput is the subtitle; the
+         per-interface breakdown is collapsed. The standalone WAN chip that used
+         to float below the grid is absorbed here. -->
+    {{$link := dashboardLinkState .Network .WAN}}
+    <div class="metric-tile {{linkStateClass $link.Verdict}}">
         <p class="text-xs text-text-muted mb-1">Network</p>
-        {{if .Metrics}}{{$nets := dashboardNetworks .Metrics.Networks}}{{if $nets}}{{range $nets}}<p class="text-xs font-mono text-accent truncate"><span class="text-text-muted">{{.Name}}</span> &#8593; {{formatBytes .BytesSentPS}}/s &#8595; {{formatBytes .BytesRecvPS}}/s</p>
-        {{end}}{{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
-        {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+        {{if eq $link.Verdict "unknown"}}
+            {{if .Metrics}}{{$primary := primaryNetwork .Metrics.Networks}}{{if $primary}}
+            <p class="text-lg font-mono font-bold text-accent truncate">&#8593; {{formatBytes $primary.BytesSentPS}}/s &#8595; {{formatBytes $primary.BytesRecvPS}}/s</p>
+            <p class="text-xs text-text-muted truncate">{{$primary.Name}}</p>
+            {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+            {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
+        {{else}}
+            <p data-link-state="{{$link.Verdict}}" class="text-2xl font-mono font-bold {{linkStateTextClass $link.Verdict}}">{{linkStateLabel $link.Verdict}}</p>
+            {{if .Metrics}}{{$primary := primaryNetwork .Metrics.Networks}}{{if $primary}}
+            <p class="text-xs text-text-muted truncate"><span class="font-mono">{{$primary.Name}}</span> &#8593; {{formatBytes $primary.BytesSentPS}}/s &#8595; {{formatBytes $primary.BytesRecvPS}}/s</p>
+            {{end}}{{end}}
+            <p class="text-xs text-text-muted truncate">{{$link.Reason}}</p>
+        {{end}}
+
+        {{if .Metrics}}{{$nets := dashboardNetworks .Metrics.Networks}}{{if $nets}}
+        <details data-network-detail class="mt-1">
+            <summary class="min-h-[44px] flex items-center text-[11px] text-text-muted cursor-pointer hover:text-text transition-colors">per-interface</summary>
+            <div class="mt-1 space-y-0.5">
+                {{range $nets}}<p class="text-xs font-mono text-accent truncate"><span class="text-text-muted">{{.Name}}</span> &#8593; {{formatBytes .BytesSentPS}}/s &#8595; {{formatBytes .BytesRecvPS}}/s</p>
+                {{end}}
+            </div>
+        </details>
+        {{end}}{{end}}
     </div>
     <div class="metric-tile">
         <p class="text-xs text-text-muted mb-1">Temp</p>
@@ -77,15 +103,7 @@
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
     </div>
 </div>
-{{if and .Network .WAN}}
-<div class="mt-3 flex justify-end">
-    {{if eq (printf "%s" .WAN.State) "up"}}
-        <span class="text-[11px] px-2 py-0.5 rounded border border-green-400/40 bg-green-400/10 text-green-400 font-mono">WAN up</span>
-    {{else if eq (printf "%s" .WAN.State) "down"}}
-        <span class="text-[11px] px-2 py-0.5 rounded border border-danger/50 bg-danger/10 text-danger font-mono" title="{{if .WAN.LastEvent}}{{.WAN.LastEvent.Detail}}{{end}}">WAN DOWN</span>
-    {{else}}
-        <span class="text-[11px] px-2 py-0.5 rounded border border-border/50 bg-card/50 text-text-muted font-mono">WAN ?</span>
-    {{end}}
-</div>
-{{end}}
+{{/* FR-087: the standalone WAN chip that used to float here is gone — its state
+     is the Network tile's verdict now, so the page has one source of WAN truth
+     instead of two, and one fewer orphan element. */}}
 {{end}}

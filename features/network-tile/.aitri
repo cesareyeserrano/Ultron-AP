@@ -1,0 +1,164 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "network-tile",
+  "createdAt": "2026-07-14T16:36:57.812Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-07-14T17:05:15.764Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-07-14T16:39:10.813Z",
+      "event": "started",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-14T16:39:26.143Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-14T16:39:26.262Z",
+      "event": "approved",
+      "phase": 1,
+      "ideaArchived": true
+    },
+    {
+      "at": "2026-07-14T16:40:28.740Z",
+      "event": "completed",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-07-14T16:40:28.838Z",
+      "event": "approved",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-07-14T16:42:11.872Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-14T16:42:11.969Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-14T16:45:42.858Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-14T16:45:42.957Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-14T17:03:24.457Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-14T17:03:24.595Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-14T17:03:27.307Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-14T17:03:27.360Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 21,
+      "failed": 0
+    },
+    {
+      "at": "2026-07-14T17:05:15.616Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-07-14T17:05:15.742Z",
+      "event": "approved",
+      "phase": 5
+    }
+  ],
+  "cascadedPhases": [],
+  "artifactHashes": {
+    "1": "251c88a9da86dead8ef83bef4d5604d1215f9390f532f8dcea787324a6095b37",
+    "2": "215aaa896bc7031b56aa4f4306b9411af2840a2a43be410dbb0dea8934ed9d76",
+    "3": "9eee569f085dc856a85c6edce77811144a6d88363ee15566fa738d8f0055b0ab",
+    "4": "e3da74fede31232a92b48cc6e1ef0a70941185420baed164aa319e7b4cbdc14a",
+    "5": "9cb24fc44fcbab7404ac4278651113bfb8c59c8a4d8f600a3b58c83039e1cc6b",
+    "ux": "dee2dd21eacdccb81463664468734a2a4c272dbc5453851d0f6f06d2c41e1328"
+  },
+  "frSnapshots": {
+    "2": [
+      "FR-085",
+      "FR-086",
+      "FR-087"
+    ],
+    "3": [
+      "FR-085",
+      "FR-086",
+      "FR-087"
+    ],
+    "4": [
+      "FR-085",
+      "FR-086",
+      "FR-087"
+    ],
+    "5": [
+      "FR-085",
+      "FR-086",
+      "FR-087"
+    ],
+    "ux": [
+      "FR-085",
+      "FR-086",
+      "FR-087"
+    ]
+  },
+  "verifyResultsHash": "57704663042f0783d0ef3023769f144cc9b72a5964166d9081cde96a21c08ca5",
+  "verifyRanAt": "2026-07-14T17:03:27.307Z",
+  "lastVerifyRun": {
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-07-14T17:03:27.307Z"
+  },
+  "verifyPassed": true,
+  "verifySummary": {
+    "total": 21,
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  }
+}
