@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
+	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 )
 
@@ -152,4 +154,53 @@ func activeSince(t time.Time) string {
 		d = 0
 	}
 	return formatUptime(d)
+}
+
+// virtualIfacePrefixes are interfaces the dashboard hides: container bridges
+// (docker0, br-*), veth pairs, and loopback. They are real interfaces — the
+// collector still records them — but on a Pi running containers they add a
+// dozen always-zero rows that bury the two the admin actually watches (BG-072).
+var virtualIfacePrefixes = []string{"lo", "docker", "br-", "veth", "virbr", "cni", "flannel", "kube"}
+
+// dashboardNetworks returns the interfaces worth showing on the dashboard tile.
+// Everything is filtered as virtual only when SOMETHING survives — a host whose
+// only interface is unusual still sees its traffic rather than an empty tile.
+func dashboardNetworks(all []metrics.NetworkIface) []metrics.NetworkIface {
+	kept := make([]metrics.NetworkIface, 0, len(all))
+	for _, n := range all {
+		if isVirtualIface(n.Name) {
+			continue
+		}
+		kept = append(kept, n)
+	}
+	if len(kept) == 0 {
+		return all
+	}
+	return kept
+}
+
+func isVirtualIface(name string) bool {
+	for _, p := range virtualIfacePrefixes {
+		if name == p || strings.HasPrefix(name, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// dashboardDisks returns the partitions worth showing. Firmware/boot mounts are
+// hidden: they are a few hundred MB that never move, and on the Pi they doubled
+// the tile's height for no signal (BG-072). The root filesystem always survives.
+func dashboardDisks(all []metrics.DiskPartition) []metrics.DiskPartition {
+	kept := make([]metrics.DiskPartition, 0, len(all))
+	for _, d := range all {
+		if strings.HasPrefix(d.Path, "/boot") {
+			continue
+		}
+		kept = append(kept, d)
+	}
+	if len(kept) == 0 {
+		return all
+	}
+	return kept
 }

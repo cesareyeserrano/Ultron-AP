@@ -60,14 +60,14 @@
     </div>
     <div class="metric-tile">
         <p class="text-xs text-text-muted mb-1">Disk</p>
-        {{if .Metrics}}{{if .Metrics.Disks}}<p class="text-2xl font-mono font-bold text-accent">{{formatPercent (index .Metrics.Disks 0).Percent}}</p>
-        {{range .Metrics.Disks}}<p class="text-xs text-text-muted"><span class="font-mono">{{.Path}}</span> {{formatBytes .Used}} / {{formatBytes .Total}} ({{formatPercent .Percent}})</p>
+        {{if .Metrics}}{{$disks := dashboardDisks .Metrics.Disks}}{{if $disks}}<p class="text-2xl font-mono font-bold text-accent">{{formatPercent (index $disks 0).Percent}}</p>
+        {{range $disks}}<p class="text-xs text-text-muted truncate"><span class="font-mono">{{.Path}}</span> {{formatBytes .Used}} / {{formatBytes .Total}}</p>
         {{end}}{{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
     </div>
     <div class="metric-tile">
         <p class="text-xs text-text-muted mb-1">Network</p>
-        {{if .Metrics}}{{if .Metrics.Networks}}{{range .Metrics.Networks}}<p class="text-sm font-mono text-accent"><span class="text-xs text-text-muted">{{.Name}}</span> &#8593; {{formatBytes .BytesSentPS}}/s &#8595; {{formatBytes .BytesRecvPS}}/s</p>
+        {{if .Metrics}}{{$nets := dashboardNetworks .Metrics.Networks}}{{if $nets}}{{range $nets}}<p class="text-xs font-mono text-accent truncate"><span class="text-text-muted">{{.Name}}</span> &#8593; {{formatBytes .BytesSentPS}}/s &#8595; {{formatBytes .BytesRecvPS}}/s</p>
         {{end}}{{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>{{end}}
     </div>

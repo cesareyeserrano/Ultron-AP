@@ -1654,6 +1654,28 @@
       "created_at": "2026-07-12T18:27:28.017Z",
       "updated_at": "2026-07-12T18:27:28.017Z",
       "resolution": null
+    },
+    {
+      "id": "BG-072",
+      "title": "Dashboard tiles bloated: disk/network cards list every partition and every virtual docker interface (br-*, veth*, docker0, lo)",
+      "description": "",
+      "steps_to_reproduce": [
+        "Open the dashboard on a host running Docker"
+      ],
+      "expected_result": "The network tile shows the host's real interfaces compactly, as it did before",
+      "actual_result": "14 rows including br-2ce4512f3708, veth87e1c5c, docker0 and lo — the tile grows several times its former height and the values are noise",
+      "environment": "prod (Pi 192.168.1.29), reported by owner 2026-07-14",
+      "severity": "medium",
+      "status": "open",
+      "fr": "FR-001",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "cesareyeserrano",
+      "created_at": "2026-07-14T15:43:31.720Z",
+      "updated_at": "2026-07-14T15:43:31.720Z",
+      "resolution": null
     }
   ]
 }

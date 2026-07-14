@@ -52,6 +52,7 @@ func TestDashboardMetricsPartial_RendersEveryPartition(t *testing.T) {
 		Disks: []metrics.DiskPartition{
 			{Path: "/", Total: 32 << 30, Used: 16 << 30, Percent: 50.0},
 			{Path: "/data", Total: 128 << 30, Used: 96 << 30, Percent: 75.0},
+			{Path: "/boot/firmware", Total: 511 << 20, Used: 80 << 20, Percent: 15.7},
 		},
 	}}
 	html := srv.renderPartial("partials/sse-metrics.html", dd)
@@ -61,27 +62,52 @@ func TestDashboardMetricsPartial_RendersEveryPartition(t *testing.T) {
 	}
 	assert.Contains(t, html, formatBytes(16<<30))
 	assert.Contains(t, html, formatBytes(96<<30))
-	assert.Contains(t, html, formatPercent(75.0))
+
+	// BG-072: the firmware mount is a few hundred MB that never move — it only
+	// made the tile taller.
+	assert.NotContains(t, html, "/boot/firmware", "boot/firmware must not clutter the disk tile")
 }
 
 // @aitri-tc TC-001c — per-interface send/receive byte rates render on the
-// dashboard network tile (AC-001-004).
+// dashboard network tile (AC-001-004). Container bridges and veth pairs are
+// hidden: on a Pi running Docker they add a dozen always-zero rows that bury
+// the interfaces the admin actually watches (BG-072).
 func TestDashboardMetricsPartial_RendersEveryInterface(t *testing.T) {
 	srv, _ := setupTestServerWithSession(t)
 
 	dd := DashboardData{Metrics: &metrics.Snapshot{
 		Networks: []metrics.NetworkIface{
+			{Name: "lo", BytesSentPS: 1400, BytesRecvPS: 1400},
 			{Name: "eth0", BytesSentPS: 1024, BytesRecvPS: 2048},
 			{Name: "wlan0", BytesSentPS: 512, BytesRecvPS: 4096},
+			{Name: "tailscale0", BytesSentPS: 64, BytesRecvPS: 128},
+			{Name: "docker0", BytesSentPS: 0, BytesRecvPS: 0},
+			{Name: "br-2ce4512f3708", BytesSentPS: 618, BytesRecvPS: 552},
+			{Name: "veth87e1c5c", BytesSentPS: 618, BytesRecvPS: 580},
 		},
 	}}
 	html := srv.renderPartial("partials/sse-metrics.html", dd)
 
-	assert.Contains(t, html, "eth0")
-	assert.Contains(t, html, "wlan0")
+	for _, want := range []string{"eth0", "wlan0", "tailscale0"} {
+		assert.Contains(t, html, want, "real interface %q must render", want)
+	}
 	for _, b := range []uint64{1024, 2048, 512, 4096} {
 		assert.Contains(t, html, formatBytes(b)+"/s", "rate %d must render as bytes/s", b)
 	}
+
+	for _, hidden := range []string{"docker0", "br-2ce4512f3708", "veth87e1c5c", ">lo<"} {
+		assert.NotContains(t, html, hidden, "virtual interface %q must not clutter the tile", hidden)
+	}
+}
+
+// BG-072 — a host whose only interfaces look "virtual" still sees its traffic
+// rather than an empty tile: the filter never returns nothing.
+func TestDashboardNetworks_NeverFiltersEverythingAway(t *testing.T) {
+	only := []metrics.NetworkIface{{Name: "docker0", BytesSentPS: 10, BytesRecvPS: 20}}
+	assert.Equal(t, only, dashboardNetworks(only))
+
+	mixed := []metrics.NetworkIface{{Name: "eth0"}, {Name: "veth1"}}
+	assert.Equal(t, []metrics.NetworkIface{{Name: "eth0"}}, dashboardNetworks(mixed))
 }
 
 // @aitri-tc TC-001g — metrics reach connected SSE clients from the
