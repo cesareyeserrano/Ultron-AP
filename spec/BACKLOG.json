@@ -302,8 +302,9 @@
       "title": "AC-015-004: list prior backups in Settings and download the stored encrypted file",
       "priority": "P2",
       "problem": "The only download route (GET /api/settings/backup) generates a FRESH plaintext SQLite snapshot; prior encrypted backups on disk are neither listed nor downloadable. Deferred by the owner on 2026-07-13 ('omite este por ahora') and excluded from the ac-coverage-gaps feature. It is the single remaining untested acceptance criterion — aitri verify-complete will report 1 untested AC until it ships.",
-      "status": "open",
-      "createdAt": "2026-07-13T17:22:17.035Z"
+      "status": "closed",
+      "createdAt": "2026-07-13T17:22:17.035Z",
+      "closedAt": "2026-07-14T14:13:47.541Z"
     }
   ]
 }
