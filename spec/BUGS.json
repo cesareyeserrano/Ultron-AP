@@ -1796,7 +1796,7 @@
       "actual_result": "The body is a flex row, so min-h-screen makes the aside stretch to the tallest child (the dashboard content, 1486px). The button lands at y=1450 — below the fold — and sticky does nothing because the element already spans the whole page. The sidebar cannot be collapsed without scrolling to the very bottom.",
       "environment": "prod (Pi), reported by owner 2026-07-14",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": "FR-009",
       "tc_reference": null,
       "phase_detected": null,
@@ -1804,8 +1804,12 @@
       "evidence": null,
       "reported_by": "cesareyeserrano",
       "created_at": "2026-07-14T22:34:00.164Z",
-      "updated_at": "2026-07-14T22:34:00.164Z",
-      "resolution": null
+      "updated_at": "2026-07-14T22:48:04.412Z",
+      "resolution": "Fixed and browser-verified with real mouse clicks.",
+      "fix_commit_sha": "3e147b3ba5e99129c156084b25a14d5b955acc75",
+      "fix_at": "2026-07-14T22:48:04.319Z",
+      "close_commit_sha": "3e147b3ba5e99129c156084b25a14d5b955acc75",
+      "close_at": "2026-07-14T22:48:04.412Z"
     }
   ]
 }
