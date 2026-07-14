@@ -1744,7 +1744,7 @@
       "actual_result": "'Server forced to shutdown: context deadline exceeded' after 10s, exit code 1, 'ultron-ap.service: Failed with result exit-code'. httpServer.Shutdown waits for active connections; the SSE handler loops until the CLIENT disconnects, so it never returns. Restarts also take 10s longer than they should.",
       "environment": "prod (Pi), seen on every deploy 2026-07-14",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": "FR-001",
       "tc_reference": null,
       "phase_detected": null,
@@ -1752,8 +1752,12 @@
       "evidence": null,
       "reported_by": "claude-analysis",
       "created_at": "2026-07-14T17:13:39.110Z",
-      "updated_at": "2026-07-14T17:13:39.110Z",
-      "resolution": null
+      "updated_at": "2026-07-14T17:37:17.005Z",
+      "resolution": "Fixed and tested.",
+      "fix_commit_sha": "1a298e63efad623a78132b717136ec428b2bbf13",
+      "fix_at": "2026-07-14T17:37:16.913Z",
+      "close_commit_sha": "1a298e63efad623a78132b717136ec428b2bbf13",
+      "close_at": "2026-07-14T17:37:17.005Z"
     }
   ]
 }

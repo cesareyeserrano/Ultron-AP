@@ -1,13 +1,12 @@
 {
-  "currentPhase": "ux",
+  "currentPhase": 5,
   "approvedPhases": [
     "discovery",
     1,
     2,
     3,
     4,
-    5,
-    "ux"
+    5
   ],
   "completedPhases": [
     1,
@@ -15,150 +14,22 @@
     2,
     3,
     4,
-    5,
-    "ux"
+    5
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.1",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-14T17:08:50.805Z",
+  "updatedAt": "2026-07-14T18:31:32.845Z",
   "artifactHashes": {
-    "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
-    "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
-    "3": "9358d1c448081eb12e0a6df49f273e4fd81dfdef86804d11228bbc2742571eff",
+    "1": "1a10259aae8d677034a5d7d59745ed93c3f60567bbaa4ead2abd51c28e2b18e9",
+    "2": "0426c3455ceb59555d78ef8f4014303632ebf1f2de1301433fd826e3a9d9fde9",
+    "3": "2cf227b1908f98aa44cff690765892f3aa40e217917fa89f15af00ff39b14963",
     "4": "8dbfb0b1610624ffb323e1fbf36d0aa89d51330ae692c072bb387d0b221fed64",
     "5": "648618a873e11b8c446821b41c69340ec8aa24da4ba2585041a963cad0e7777a",
-    "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda",
-    "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
+    "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda"
   },
   "events": [
-    {
-      "at": "2026-07-13T16:41:28.850Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 80,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-14T14:02:14.870Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 80,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-14T14:03:55.277Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 80,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-14T14:07:33.865Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 80,
-      "failed": 0,
-      "skipped": 3,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-14T14:09:17.846Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 85,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-14T14:13:31.862Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 86,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-14T14:13:31.914Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 86,
-      "failed": 0
-    },
-    {
-      "at": "2026-07-14T14:16:41.030Z",
-      "event": "reconcile-pending",
-      "phase": null,
-      "files": 37,
-      "method": "git",
-      "verifyPassedCleared": true
-    },
-    {
-      "at": "2026-07-14T14:16:50.952Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 86,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-14T14:16:51.003Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 86,
-      "failed": 0
-    },
-    {
-      "at": "2026-07-14T14:19:56.517Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 37,
-      "method": "git",
-      "baseRefFrom": "444fc2028346490ec52937c689d9683fe6cba605",
-      "baseRefTo": "59f2a84673e47646b74f897796bfd60c75e0a24a"
-    },
-    {
-      "at": "2026-07-14T14:20:29.994Z",
-      "event": "rehash",
-      "phase": "3",
-      "artifact": "03_TEST_CASES.json",
-      "before_hash": "01ef9973ed7d0d6b3f645d1aac8b8aeee4751ddd97fe7082810165716fc35da1",
-      "after_hash": "9358d1c448081eb12e0a6df49f273e4fd81dfdef86804d11228bbc2742571eff"
-    },
-    {
-      "at": "2026-07-14T16:08:52.870Z",
-      "event": "reconcile-pending",
-      "phase": null,
-      "files": 5,
-      "method": "git",
-      "verifyPassedCleared": true
-    },
-    {
-      "at": "2026-07-14T16:08:54.455Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 86,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-14T16:08:54.508Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 86,
-      "failed": 0
-    },
     {
       "at": "2026-07-14T16:11:54.711Z",
       "event": "reconcile-resolved",
@@ -200,18 +71,93 @@
       "method": "git",
       "baseRefFrom": "a8e95a36218e91b08fa95d1b7a50f57a484b71a1",
       "baseRefTo": "f836477d6d059212ad35af645a32cfb679b4839d"
+    },
+    {
+      "at": "2026-07-14T17:38:19.776Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-14T17:44:48.549Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-14T17:46:44.764Z",
+      "event": "approved",
+      "phase": 1
+    },
+    {
+      "at": "2026-07-14T17:49:28.626Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-14T18:31:11.372Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-14T18:31:11.430Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-14T18:31:11.520Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-14T18:31:11.624Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-14T18:31:11.713Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-14T18:31:13.547Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-14T18:31:13.656Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-14T18:31:13.773Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-07-14T18:31:13.870Z",
+      "event": "approved",
+      "phase": 5
+    },
+    {
+      "at": "2026-07-14T18:31:32.763Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-14T18:31:32.829Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
   "verifyTimestamp": "2026-03-18T22:32:14.166Z",
   "driftPhases": [],
-  "rejections": {
-    "5": {
-      "at": "2026-03-18T22:23:12.077Z",
-      "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
-    }
-  },
-  "verifyRanAt": "2026-07-14T17:05:50.503Z",
+  "rejections": {},
   "auditLastAt": "2026-06-15T22:09:31.177Z",
   "upgradeFindings": [
     {
@@ -247,15 +193,89 @@
       "recordedAt": "2026-07-14T14:20:40.837Z"
     }
   ],
+  "coverageAuditLastAt": "2026-06-15T22:00:30.312Z",
+  "cascadedPhases": [
+    "ux"
+  ],
+  "frSnapshots": {
+    "2": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ],
+    "3": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ],
+    "4": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ],
+    "5": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ]
+  },
+  "verifyResultsHash": "009fb510043e3ff020b519330bc88c26daf0b0f37788ade34d2d8b49546e98bf",
+  "verifyRanAt": "2026-07-14T18:31:32.763Z",
   "lastVerifyRun": {
     "passed": 86,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-07-14T17:05:50.503Z"
+    "at": "2026-07-14T18:31:32.763Z"
   },
-  "coverageAuditLastAt": "2026-06-15T22:00:30.312Z",
-  "verifyResultsHash": "6733359595cda61f356221175b7acb78107c35f8441f7738db9982e6576c72e6",
   "verifySummary": {
     "total": 86,
     "passed": 86,

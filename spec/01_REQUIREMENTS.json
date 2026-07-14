@@ -209,7 +209,7 @@
       "id": "FR-013",
       "feature": "FT-013",
       "type": "integration",
-      "priority": "COULD",
+      "priority": "NICE",
       "title": "Hardware integration (Pironman 5)",
       "description": "Configure RGB lighting, fan modes, and OLED display for Pironman 5 enclosure from the settings panel.",
       "acceptance_criteria": [
@@ -223,7 +223,7 @@
       "id": "FR-014",
       "feature": "FT-014",
       "type": "integration",
-      "priority": "COULD",
+      "priority": "NICE",
       "title": "VPN status (Tailscale)",
       "description": "Display Tailscale VPN peer connectivity status on the dashboard.",
       "acceptance_criteria": [
@@ -299,9 +299,9 @@
         },
         {
           "id": "AC-001-004",
-          "given": "the host has at least one network interface",
-          "when": "the dashboard renders",
-          "then": "bytes in/out per second are shown per interface"
+          "given": "the panel probes its gateway and off-box targets (the default probe set)",
+          "when": "the dashboard renders the Network tile",
+          "then": "a link-state verdict reports whether the network is healthy — Stable, Unstable (a probe at or above the critical loss/RTT thresholds) or Offline (the WAN monitor is down, or the gateway itself is unreachable) — with the reason beside it. Per-interface throughput is NOT shown: the owner removed it on 2026-07-14 ('casi nunca lo miro'), because bytes per second have no healthy or unhealthy value and made the tile the only one on the row that had to be interpreted rather than scanned."
         },
         {
           "id": "AC-001-005",
@@ -840,5 +840,118 @@
       ]
     }
   ],
-  "original_brief": "# Project Idea\n\nUltron-AP is a professional monitoring and management dashboard for the Raspberry Pi. It solves the problem of operators needing reliable, low-friction, real-time visibility into system health without requiring SSH access or heavyweight tooling. The primary user is a Raspberry Pi operator/admin who needs to understand critical system state and act quickly — restarting containers, viewing logs, configuring alerts — from a single web interface.\n\nThe project provides real-time monitoring of CPU, RAM, Disk, Network, and temperature via SSE; Docker and Systemd service controls; a threshold-based alert engine with Telegram and Email notifications; hardware integration with Pironman 5; and security features including CSRF protection, bcrypt sessions, brute-force protection, and a full action audit trail. A privilege-separation model keeps the web process unprivileged while delegating host-level actions to a root-owned helper over a Unix socket.\n\nBuilt with a zero-runtime-dependency philosophy using Go, HTMX, Tailwind CSS, and SQLite. Targets ARM64 (Raspberry Pi) with a ~15MB RAM footprint.\n"
+  "original_brief": "# Project Idea\n\nUltron-AP is a professional monitoring and management dashboard for the Raspberry Pi. It solves the problem of operators needing reliable, low-friction, real-time visibility into system health without requiring SSH access or heavyweight tooling. The primary user is a Raspberry Pi operator/admin who needs to understand critical system state and act quickly — restarting containers, viewing logs, configuring alerts — from a single web interface.\n\nThe project provides real-time monitoring of CPU, RAM, Disk, Network, and temperature via SSE; Docker and Systemd service controls; a threshold-based alert engine with Telegram and Email notifications; hardware integration with Pironman 5; and security features including CSRF protection, bcrypt sessions, brute-force protection, and a full action audit trail. A privilege-separation model keeps the web process unprivileged while delegating host-level actions to a root-owned helper over a Unix socket.\n\nBuilt with a zero-runtime-dependency philosophy using Go, HTMX, Tailwind CSS, and SQLite. Targets ARM64 (Raspberry Pi) with a ~15MB RAM footprint.\n",
+  "no_go_zone": [
+    "Docker/container deployment — rejected at the Phase 5 gate on 2026-03-18. The target is a Raspberry Pi running the binaries under systemd; the compliance proof and DEPLOYMENT.md cover only that path.",
+    "Multi-user access, roles or permissions — Ultron-AP is a single-admin panel. Every route is either public (/login, /health) or behind one admin session; there is no user management, no RBAC, and no audit-by-user beyond the action log.",
+    "Cloud dependencies for core function — the panel must work on a LAN with no internet: metrics, containers, services, alerts and backups all work offline. Only the optional notification channels (Telegram, SMTP) and the WAN probes reach outside.",
+    "Per-interface network throughput on the dashboard — removed on 2026-07-14 by owner decision. Bytes per second have no healthy or unhealthy value, which made the Network tile the only one on the row that had to be interpreted rather than scanned. The tile now reports a link-state verdict instead. (This is what AC-001-004 now describes.)",
+    "Driving the Pironman hardware (fan PWM/GPIO, OLED panel) — the Settings hardware section stores the configuration and actuates nothing. A previous hardware-control attempt cost the Pi significant CPU and memory; declared as technical debt in the ac-coverage-gaps feature.",
+    "Live log streaming/tailing — logs are fetched as a bounded 100-line tail through the privileged helper, never followed, so a dead browser tab cannot keep a journalctl process alive on the Pi.",
+    "Restoring a database backup from the panel — Settings lists and downloads backups; restore stays a manual, off-panel operation."
+  ],
+  "idea_provenance": {
+    "problem": "confirmed",
+    "users": "confirmed",
+    "baseline": "assumed",
+    "success_metric": "assumed",
+    "no_go_zone": "confirmed"
+  },
+  "idea_provenance_sources": {
+    "problem": "original_brief carried into this artifact from sdlc-studio/prd.md: 'operators needing reliable, low-friction, real-time visibility into system health' on a Raspberry Pi.",
+    "users": "user_personas in this artifact, consistent with the product as built and operated: a single Pi admin. Confirmed again by the owner in the 2026-07-14 exchanges.",
+    "baseline": "The original brief records no before-state metric (no 'today it takes N minutes to SSH in and check'). Nothing in the artifact grounds it.",
+    "success_metric": "No North Star KPI was recorded when the project was adopted from sdlc-studio; the FRs carry acceptance criteria, but there is no single success metric for the product as a whole.",
+    "no_go_zone": "Written 2026-07-14 from decisions the owner actually made and that are recorded in the project's history: Docker rejected at the Phase 5 gate (2026-03-18), single-admin by design, offline-first core, per-interface throughput removed (2026-07-14), Pironman hardware not actuated (2026-07-13), no live log tailing, no restore-from-panel."
+  },
+  "idea_gaps": [
+    "baseline: the original brief records no before-state measurement (how long a check took by SSH, how often an outage went unnoticed). Confirm with the owner if a baseline is ever needed to judge whether the product actually helped.",
+    "success_metric: no North Star KPI was ever recorded for the product as a whole. The pipeline measures AC coverage and test pass rate, which are process metrics, not product ones. Confirm with the owner what 'this panel is working for me' would look like as a single number."
+  ],
+  "coverage_map": [
+    {
+      "need": "Real-time visibility into system health (CPU, RAM, disk, network, temperature) without SSHing in",
+      "disposition": "FR-001"
+    },
+    {
+      "need": "See what Docker containers are running and their health",
+      "disposition": "FR-002"
+    },
+    {
+      "need": "See what systemd services are running and their health",
+      "disposition": "FR-003"
+    },
+    {
+      "need": "Be told when something crosses a threshold, instead of having to look",
+      "disposition": "FR-004"
+    },
+    {
+      "need": "Get those alerts on the phone (Telegram)",
+      "disposition": "FR-005"
+    },
+    {
+      "need": "Get those alerts by email",
+      "disposition": "FR-006"
+    },
+    {
+      "need": "Keep the panel private — only the admin gets in",
+      "disposition": "FR-007"
+    },
+    {
+      "need": "Act on a service (start/stop/restart) from the panel, not only observe it",
+      "disposition": "FR-008"
+    },
+    {
+      "need": "A dark, readable UI that works on a phone",
+      "disposition": "FR-009"
+    },
+    {
+      "need": "Read a unit's logs without opening a terminal",
+      "disposition": "FR-010"
+    },
+    {
+      "need": "Do all of the above without the panel process running as root",
+      "disposition": "FR-011"
+    },
+    {
+      "need": "Protect state-changing requests from cross-site forgery",
+      "disposition": "FR-012"
+    },
+    {
+      "need": "Configure the Pironman case hardware (fan, OLED)",
+      "disposition": "FR-013"
+    },
+    {
+      "need": "See whether the Tailscale VPN is up and who is on it",
+      "disposition": "FR-014"
+    },
+    {
+      "need": "Take and keep database backups, encrypted",
+      "disposition": "FR-015"
+    },
+    {
+      "need": "Per-interface network throughput on the dashboard",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Docker/container deployment of the panel itself",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Multi-user accounts, roles or permissions",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Actually driving the Pironman fan/OLED hardware",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Live log streaming / tailing",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Restoring a backup from inside the panel",
+      "disposition": "out_of_scope"
+    }
+  ]
 }

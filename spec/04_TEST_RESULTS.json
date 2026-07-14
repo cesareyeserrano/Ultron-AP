@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-07-14T17:05:50.501Z",
+  "executed_at": "2026-07-14T18:31:32.760Z",
   "test_runner": "bash scripts/aitri-test.sh",
   "exit_code": 0,
   "results": [
@@ -241,7 +241,7 @@
     {
       "tc_id": "TC-001c",
       "status": "pass",
-      "notes": "✔ TC-001c: dashboard network tile shows per-interface byte rates"
+      "notes": "✔ TC-001c: dashboard network tile reports a link-state verdict"
     },
     {
       "tc_id": "TC-001d",

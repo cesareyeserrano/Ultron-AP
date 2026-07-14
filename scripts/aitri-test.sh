@@ -103,7 +103,7 @@ emit "internal/server"    "TC-015f" "backup config save without CSRF is rejected
 # AC-coverage backfill (BL-033) — traces the remaining acceptance criteria.
 emit "internal/server" "TC-001a" "dashboard metrics tile renders RAM used/total and percentage"
 emit "internal/server" "TC-001b" "dashboard disk tile lists every mounted partition"
-emit "internal/server" "TC-001c" "dashboard network tile shows per-interface byte rates"
+emit "internal/server" "TC-001c" "dashboard network tile reports a link-state verdict"
 emit "internal/server" "TC-001d" "cPU temperature color thresholds green <60, yellow 60-75, red >75"
 emit "internal/server" "TC-001g" "sSE broadcast pushes metrics to connected clients on the 5s cadence"
 emit "internal/server" "TC-001i" "dashboard header shows system uptime"

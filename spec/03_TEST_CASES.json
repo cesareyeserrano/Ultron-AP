@@ -727,13 +727,13 @@
       "ac_id": "AC-001-004",
       "type": "unit",
       "scenario": "happy_path",
-      "title": "Dashboard network tile shows per-interface byte rates",
-      "file": "internal/server/ac_coverage_test.go",
-      "test_function": "TestDashboardMetricsPartial_RendersEveryInterface",
-      "given": "two interfaces in the snapshot",
-      "when": "the sse-metrics partial renders",
-      "then": "each interface shows send/receive bytes per second",
-      "expected_result": "each interface shows send/receive bytes per second"
+      "title": "Dashboard Network tile reports a link-state verdict",
+      "file": "internal/server/network_tile_test.go",
+      "test_function": "TestTC_NT_085h_AllProbesHealthyIsStable",
+      "given": "the panel's probes (gateway, 1.1.1.1, 8.8.8.8, dns) all answer with no loss and low RTT, and the WAN monitor reports up",
+      "when": "the dashboard renders the Network tile",
+      "then": "the tile reads 'Stable' with its reason beside it; a probe at or above the critical loss/RTT thresholds reads 'Unstable', and a down WAN or an unreachable gateway reads 'Offline'",
+      "expected_result": "the verdict is Stable/Unstable/Offline with the reason; no per-interface throughput is rendered (removed by owner decision 2026-07-14)"
     },
     {
       "id": "TC-001d",
