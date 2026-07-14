@@ -1770,7 +1770,7 @@
       "actual_result": "The logo renders 39x76 (stretched) because the collapse rules live in @layer components and Tailwind v4's utilities layer always wins over components regardless of specificity — the h-[76px] utility overrides them. After a boost swap the sidebar comes back with the server's classes (sidebar-hidden) and no one reapplies the stored state, so the collapse is lost and the toggle no longer resizes.",
       "environment": "prod (Pi), reported by owner 2026-07-14",
       "severity": "medium",
-      "status": "open",
+      "status": "closed",
       "fr": "FR-009",
       "tc_reference": null,
       "phase_detected": null,
@@ -1778,8 +1778,12 @@
       "evidence": null,
       "reported_by": "cesareyeserrano",
       "created_at": "2026-07-14T20:05:04.952Z",
-      "updated_at": "2026-07-14T20:05:04.952Z",
-      "resolution": null
+      "updated_at": "2026-07-14T21:05:06.994Z",
+      "resolution": "Fixed, browser-verified across five navigation steps.",
+      "fix_commit_sha": "9bb04cf76bf74d0fe956ee33c055157fe4901717",
+      "fix_at": "2026-07-14T21:05:06.900Z",
+      "close_commit_sha": "9bb04cf76bf74d0fe956ee33c055157fe4901717",
+      "close_at": "2026-07-14T21:05:06.994Z"
     }
   ]
 }
