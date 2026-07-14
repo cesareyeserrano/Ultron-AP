@@ -514,3 +514,35 @@ func TestSidebarScript_SurvivesBoostedNavigation(t *testing.T) {
 	assert.NotContains(t, src, "toggleBtn.addEventListener",
 		"binding directly to the toggle button is exactly what broke: hx-boost replaces it")
 }
+
+// BG-077 — the sidebar must be pinned to ONE viewport, not stretched to the page.
+// The body is a flex row, so min-h-screen made the aside grow to the tallest
+// child (1486px on the dashboard) and the collapse button — which lives at the
+// bottom of the aside — landed below the fold, unreachable. sticky did not help:
+// the element already spanned the whole page.
+func TestSidebar_IsPinnedToOneViewport(t *testing.T) {
+	markup, err := os.ReadFile("../../web/templates/partials/sidebar.html")
+	require.NoError(t, err)
+	src := string(markup)
+
+	// Inspect the aside's class attribute only — the comment above it explains
+	// the bug and necessarily names the offending class.
+	aside := regexp.MustCompile(`<aside[^>]*class="([^"]*)"`).FindStringSubmatch(src)
+	require.NotNil(t, aside, "the sidebar aside must carry a class attribute")
+	classes := aside[1]
+
+	assert.Contains(t, classes, "h-screen", "the aside must be exactly one viewport tall")
+	assert.NotContains(t, classes, "min-h-screen",
+		"min-h-screen lets the flex row stretch the aside to the full page height, pushing the collapse button off-screen")
+
+	// The nav scrolls inside, so a long menu never pushes the button out.
+	assert.Contains(t, src, "overflow-y-auto", "the nav must scroll inside the pinned aside")
+
+	// And the class must actually exist in the built CSS — Tailwind only emits
+	// what it sees, and h-screen had never been used before, so the first fix
+	// silently did nothing until `make css` ran.
+	css, err := os.ReadFile("../../web/static/css/app.css")
+	require.NoError(t, err)
+	assert.Contains(t, string(css), ".h-screen",
+		"the committed app.css does not carry .h-screen — run: make css")
+}

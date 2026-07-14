@@ -1784,6 +1784,28 @@
       "fix_at": "2026-07-14T21:05:06.900Z",
       "close_commit_sha": "9bb04cf76bf74d0fe956ee33c055157fe4901717",
       "close_at": "2026-07-14T21:05:06.994Z"
+    },
+    {
+      "id": "BG-077",
+      "title": "Sidebar collapse button unreachable: min-h-screen stretches the aside to the full page height (1486px), pushing the button below the viewport",
+      "description": "",
+      "steps_to_reproduce": [
+        "Open the dashboard on a 900px-tall screen and look for the collapse button"
+      ],
+      "expected_result": "The button sits at the bottom of the sidebar, on screen",
+      "actual_result": "The body is a flex row, so min-h-screen makes the aside stretch to the tallest child (the dashboard content, 1486px). The button lands at y=1450 — below the fold — and sticky does nothing because the element already spans the whole page. The sidebar cannot be collapsed without scrolling to the very bottom.",
+      "environment": "prod (Pi), reported by owner 2026-07-14",
+      "severity": "medium",
+      "status": "open",
+      "fr": "FR-009",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": "cesareyeserrano",
+      "created_at": "2026-07-14T22:34:00.164Z",
+      "updated_at": "2026-07-14T22:34:00.164Z",
+      "resolution": null
     }
   ]
 }
