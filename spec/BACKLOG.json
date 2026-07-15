@@ -306,6 +306,54 @@
       "status": "closed",
       "createdAt": "2026-07-13T17:22:17.035Z",
       "closedAt": "2026-07-14T14:13:47.541Z"
+    },
+    {
+      "id": "BL-035",
+      "title": "SEC: default deployment ships CSP as Report-Only with script-src 'unsafe-inline' (enforces no XSS protection)",
+      "priority": "P2",
+      "problem": "middleware.go:96-101 sets Content-Security-Policy-Report-Only unless ULTRON_CSP_ENFORCE=1 (default off); script-src also allows 'unsafe-inline'. Even once enforced the CSP would not stop inline-script XSS. Flip to enforcing after the soak and drop 'unsafe-inline' (nonce/hash the inline scripts in base.html). MEDIUM. Found by aitri audit security 2026-07-14 (RQ-SEC-001).",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.135Z"
+    },
+    {
+      "id": "BL-036",
+      "title": "SEC: deploy/ultron-ap.sudoers is a parallel root path that bypasses the helper; pironman5 * grants arbitrary root args",
+      "priority": "P2",
+      "problem": "The sudoers profile grants user ultron NOPASSWD for 'pironman5 *' (trailing wildcard = any args to a root binary the panel never even calls) plus systemctl/shutdown. The Go code never uses sudo — all privilege goes through the validated helper — so if the web process were RCE'd and this file is installed, the attacker sidesteps every cmd/ultron-helper guard. Delete the sudoers file (helper is the sole privilege channel), or replace the pironman5 wildcard with argument-pinned entries. Mitigated: install is a manual step, currently dormant. MEDIUM. RQ-SEC-002.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.210Z"
+    },
+    {
+      "id": "BL-037",
+      "title": "SEC: backup encryption key has no length/entropy floor and uses bare unsalted SHA-256 as KDF",
+      "priority": "P2",
+      "problem": "backup_crypto.go:49-63 backupKeyFromRef does sha256.Sum256(raw) with no salt and no min-length check, while ULTRON_SECRET_KEY (secrets.go:33-46) warns below 16 chars. A weak operator-chosen ULTRON_BACKUP_KEY + a leaked .db.enc (backups upload to Telegram) is offline-brute-forceable. Emit the same <16 warning; ideally a salted KDF (scrypt/argon2, salt in the header). LOW. RQ-SEC-003.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.283Z"
+    },
+    {
+      "id": "BL-038",
+      "title": "SEC: /static/ serves a Go autoindex directory listing (unauth), and a .DS_Store is embedded in the binary",
+      "priority": "P2",
+      "problem": "server.go:572-573 mounts a bare http.FileServer; a dir without index.html gets Go's default autoindex, so GET /static/ and /static/js/ enumerate every file to unauthenticated callers, including a committed .DS_Store (in .gitignore, but go:embed reads the filesystem not git). Wrap the FileServer to 404 on directory paths; delete web/static/.DS_Store before build. LOW. RQ-SEC-004.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.355Z"
+    },
+    {
+      "id": "BL-039",
+      "title": "SEC: internal Aitri traceability IDs (FR-/BG-/AC-) ship in client-facing HTML/JS comments",
+      "priority": "P2",
+      "problem": "base.html:14 (BG-038), settings-backup.html:94 (FR-068), sidebar.js:3 (BG-076), settings.js:2 (FR-065), service-logs.js:1 (FR-081) etc. reach the browser (even /login, unauth). No secrets — only requirement/bug IDs, a minor recon aid. Strip FR-/BG-/AC-/TC- from shipped comments at build time or add a CI grep gate. LOW. RQ-SEC-005.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.429Z"
+    },
+    {
+      "id": "BL-040",
+      "title": "SEC: unauthenticated /version discloses build commit and Go toolchain version",
+      "priority": "P2",
+      "problem": "handlers.go:21 handleVersion (public, server.go:563) returns {version,commit,go:runtime.Version()} with no auth — lets an unauthenticated LAN/Tailscale peer fingerprint the exact build+toolchain for CVE targeting. Move /version behind requireAuth or drop commit/go for anonymous callers; /health stays public+minimal. LOW. RQ-SEC-006.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.503Z"
     }
   ]
 }

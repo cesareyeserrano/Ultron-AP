@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.1",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-15T00:12:43.610Z",
+  "updatedAt": "2026-07-15T01:02:54.085Z",
   "artifactHashes": {
     "1": "1a10259aae8d677034a5d7d59745ed93c3f60567bbaa4ead2abd51c28e2b18e9",
     "2": "0426c3455ceb59555d78ef8f4014303632ebf1f2de1301433fd826e3a9d9fde9",
@@ -196,7 +196,7 @@
   "verifyTimestamp": "2026-03-18T22:32:14.166Z",
   "driftPhases": [],
   "rejections": {},
-  "auditLastAt": "2026-06-15T22:09:31.177Z",
+  "auditLastAt": "2026-07-15T01:01:44.733Z",
   "upgradeFindings": [
     {
       "target": "features/help-page/spec/04_BUILD_REPORT.json",
@@ -338,5 +338,6 @@
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
-  }
+  },
+  "securityAuditLastAt": "2026-07-15T01:02:54.083Z"
 }
