@@ -294,8 +294,9 @@
       "title": "Cover 41 untested ACs from main pipeline (verify-complete gate, blocks reconcile --resolve since rc.173+)",
       "priority": "P2",
       "problem": "aitri verify-complete now hard-gates on AC coverage: 41 acceptance criteria in user_stories have no TC tracing via ac_id (pre-existing debt from the original pipeline; suite itself passes 45/45 TCs). Until covered, the maintenance-path reconcile --resolve cannot advance the baseline.",
-      "status": "open",
-      "createdAt": "2026-07-12T19:02:53.615Z"
+      "status": "closed",
+      "createdAt": "2026-07-12T19:02:53.615Z",
+      "closedAt": "2026-07-15T00:01:41.144Z"
     },
     {
       "id": "BL-034",
