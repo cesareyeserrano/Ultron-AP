@@ -1,12 +1,13 @@
 {
-  "currentPhase": 5,
+  "currentPhase": "ux",
   "approvedPhases": [
     "discovery",
     1,
     2,
     3,
     4,
-    5
+    5,
+    "ux"
   ],
   "completedPhases": [
     1,
@@ -14,32 +15,24 @@
     2,
     3,
     4,
-    5
+    5,
+    "ux"
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.0.1",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-14T22:51:07.376Z",
+  "updatedAt": "2026-07-15T00:12:43.610Z",
   "artifactHashes": {
     "1": "1a10259aae8d677034a5d7d59745ed93c3f60567bbaa4ead2abd51c28e2b18e9",
     "2": "0426c3455ceb59555d78ef8f4014303632ebf1f2de1301433fd826e3a9d9fde9",
     "3": "2cf227b1908f98aa44cff690765892f3aa40e217917fa89f15af00ff39b14963",
     "4": "8dbfb0b1610624ffb323e1fbf36d0aa89d51330ae692c072bb387d0b221fed64",
     "5": "648618a873e11b8c446821b41c69340ec8aa24da4ba2585041a963cad0e7777a",
-    "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda"
+    "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda",
+    "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-07-14T18:31:13.773Z",
-      "event": "completed",
-      "phase": 5
-    },
-    {
-      "at": "2026-07-14T18:31:13.870Z",
-      "event": "approved",
-      "phase": 5
-    },
     {
       "at": "2026-07-14T18:31:32.763Z",
       "event": "verify-run",
@@ -187,6 +180,16 @@
       "method": "git",
       "baseRefFrom": "cb55dab52e4a9a3815b70affe17cbe681d37944a",
       "baseRefTo": "df49b1382b1f9082a9abbb1dbad40d93e235c65c"
+    },
+    {
+      "at": "2026-07-15T00:11:32.465Z",
+      "event": "completed",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-07-15T00:12:43.583Z",
+      "event": "approved",
+      "phase": "ux"
     }
   ],
   "verifyPassed": true,
@@ -229,9 +232,7 @@
     }
   ],
   "coverageAuditLastAt": "2026-06-15T22:00:30.312Z",
-  "cascadedPhases": [
-    "ux"
-  ],
+  "cascadedPhases": [],
   "frSnapshots": {
     "2": [
       "FR-001",
@@ -285,6 +286,23 @@
       "FR-015"
     ],
     "5": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ],
+    "ux": [
       "FR-001",
       "FR-002",
       "FR-003",
