@@ -1,8 +1,38 @@
 # Ultron-AP — Audit Report
 
-## Security (adversarial audit — `aitri audit security`, 2026-07-14)
+## Security — consolidated review record (2026-07-14)
 
-Defensive, passive, non-destructive review of **both** surfaces: static (source, repo history, dependencies, build/deploy config) and runtime (the deployed panel at `http://192.168.1.29:8080`). Threat model: a single-admin, LAN/Tailscale, plain-HTTP-by-design tool with privilege separation. The threats that matter here are — an **unauthenticated LAN device** reaching data or actions, the **root-helper boundary** (privilege escalation), **secrets leaking**, and **supply chain**.
+The security posture was reviewed in **three independent passes** with different scopes and lenses. This document consolidates all three. Threat model throughout: a single-admin, LAN/Tailscale, plain-HTTP-by-design tool with privilege separation. The threats that matter — an **unauthenticated LAN device** reaching data or actions, the **root-helper boundary** (privilege escalation), **secrets leaking**, and **supply chain**.
+
+| # | Pass | Tool | Scope | Result |
+|---|---|---|---|---|
+| 1 | Branch-change security review | Claude `/security-review` | Only the diff of this branch (the session's new code) | **0 findings** — the changes introduced no vulnerability |
+| 2 | Adversarial security audit | `aitri audit security` | Whole project — static (code, git history, deps, deploy) **and** runtime (the deployed Pi) | **6 P2** (2 MEDIUM, 4 LOW) + 1 accepted dependency risk |
+| 3 | Secret-exposure hunt | manual, on owner's prompt | Repo tree + full git history + Pi env file + journal + rendered pages | **0 exposed secrets** |
+
+The three do not contradict — they layer. Pass 1 answered "did we break anything?" (no). Pass 2 answered "what does the whole deployed product expose?" (six minor items). Pass 3 answered "is any real key exposed anywhere?" (no). The 6 findings are all **hardening / defence-in-depth** (nothing is broken behaviour), filed as backlog items **BL-035..BL-040**.
+
+### Pass 1 — Branch-change security review (`/security-review`) — 0 findings
+
+Reviewed only the diff of `claude/code-review-adversarial-22o5na` (the session's new features and fixes). Traced every new data flow from user input to sensitive sink. Verified clean: path traversal in the backup download and log drawer, command/option injection into the helper's `journalctl`, the widened secret-redaction regex (strictly more inclusive — a fix, not a bypass), SQL in the new `mute`/`digest`/`hardware` layers (all parameterised), HTML/header injection in the digest email (every attacker-influenceable field `html.EscapeString`d), authorization + CSRF on the four new routes, and template auto-escaping in the new partials. **No vulnerability introduced by the branch.**
+
+### Pass 3 — Secret-exposure hunt — 0 exposed secrets
+
+Prompted by the owner's suspicion that a key was exposed somewhere neither prior pass looked. Checked, all clean:
+- **Working tree** — no Telegram-token shapes, no PEM blocks, no non-placeholder secret assignments.
+- **Full git history** (388 commits) — pickaxe on secret env vars + Telegram-token regex over all blobs; no `.env`/`.db`/`.pem`/`credentials.json` ever committed (even later-deleted).
+- **Aitri spec JSON + feature `.env.example`** — only empty templates / placeholders (`change-me-…`).
+- **Test files** — only obvious dummies (`abc123`, `123:abc`).
+- **systemd units in `deploy/`** — the secret is referenced via `EnvironmentFile=-/etc/ultron-ap/ultron-ap.env`, **not** inlined as `Environment=`.
+- **The running Pi** — `/etc/ultron-ap/ultron-ap.env` is `-rw------- root root` (not readable without privilege); the live unit has no inline key; the journal shows no key leak.
+- **Rendered pages** — the backup `encryption_key_ref` field renders a *reference* (`env:NAME`), not key material; `maskNotifConfig` masks `bot_token`/`smtp_password` to the last 4 chars before they reach the browser.
+- **High-entropy sweep** — no unexplained 32+ char hex/base64 blobs in code, env, or scripts.
+
+Note: a throwaway dev key (`ULTRON_SECRET_KEY=0123…`) was typed into local dev-server commands this session — it is not the production key, is worthless outside the local test box, and is not committed anywhere. (Known minor, deferred: `maskNotifConfig` reveals the last 4 chars of masked secrets — BG-015-class, unchanged.)
+
+### Pass 2 — Adversarial security audit (`aitri audit security`)
+
+Defensive, passive, non-destructive review of **both** surfaces: static (source, repo history, dependencies, build/deploy config) and runtime (the deployed panel at `http://192.168.1.29:8080`).
 
 ### Surfaces covered / not reached
 
