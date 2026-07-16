@@ -1,0 +1,219 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    "ux",
+    2,
+    3
+  ],
+  "completedPhases": [
+    1,
+    "ux",
+    2,
+    3
+  ],
+  "projectName": "NUT_UPS_Pi_On_Dashboard",
+  "createdAt": "2026-07-15T02:47:48.424Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-07-16T01:11:45.850Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-07-15T14:51:58.935Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-07-15T14:52:16.250Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-15T15:01:37.426Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-15T15:01:56.889Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-15T15:04:20.303Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-15T15:07:22.808Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-15T22:32:03.248Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-15T23:30:23.786Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-16T00:38:47.795Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-16T00:38:52.014Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 0,
+      "failed": 0,
+      "skipped": 55,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-16T00:39:26.750Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 55,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-16T00:39:37.085Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 55,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-16T00:40:10.172Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 55,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-16T00:41:44.536Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 55,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-16T00:42:51.315Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 56,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-16T00:42:56.482Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 56,
+      "failed": 0
+    },
+    {
+      "at": "2026-07-16T00:54:14.979Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-07-16T00:56:32.705Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-07-16T00:59:38.830Z",
+      "event": "approved",
+      "phase": 5
+    },
+    {
+      "at": "2026-07-16T01:11:45.814Z",
+      "event": "approved",
+      "phase": 3,
+      "afterDrift": true
+    }
+  ],
+  "cascadedPhases": [
+    "4",
+    "5"
+  ],
+  "artifactHashes": {
+    "1": "766ccbe1fd5c3fed8e90eaea126c04af48e128055831798e72094403997fef00",
+    "2": "7abb22fb468c1d64559acc68a1a4d002c5c5289ca178b12215ee79f1442ad87c",
+    "3": "fd22b75ea1120ed57f126bcee046cd31088cd44cfa4edb7912d5eb71dced3f6c",
+    "ux": "575687525b0cf46c3631a8685eb313921436fe86e290e7283b4bbb809c4a9868"
+  },
+  "coverageAuditLastAt": "2026-07-15T13:25:51.293Z",
+  "coverageAuditReqHash": "e37296fa43a68674ef5d7a2e905a13860e509dfe0ef3b8d2708e06b191e530e4",
+  "verifyPassed": false,
+  "frSnapshots": {
+    "2": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024"
+    ],
+    "3": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024"
+    ],
+    "4": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024"
+    ],
+    "5": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024"
+    ],
+    "ux": [
+      "FR-016",
+      "FR-017",
+      "FR-018",
+      "FR-019",
+      "FR-020",
+      "FR-021",
+      "FR-022",
+      "FR-023",
+      "FR-024"
+    ]
+  }
+}

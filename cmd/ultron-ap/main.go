@@ -27,6 +27,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/notify/cause"
 	"github.com/cesareyeserrano/ultron-ap/internal/server"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
+	"github.com/cesareyeserrano/ultron-ap/internal/ups"
 )
 
 func main() {
@@ -260,6 +261,47 @@ func main() {
 		helpSvc.ValidateLinks(insightsSvc.RuleLinks())
 	}
 
+	// UPS monitoring (FR-016/017): native read-only NUT client polling the local
+	// upsd. Gated by ULTRON_UPS_ENABLED; degrades cleanly when NUT is absent so
+	// the panel boots and every other tile keeps working (NFR-016). The mock
+	// (ULTRON_UPS_MOCK) is dev-only and absent from the production unit (NFR-022).
+	var upsPoller *ups.Poller
+	if upsCfg := ups.Load(); upsCfg.Enabled {
+		upsPoller = ups.NewPoller(ups.NewClient(upsCfg), upsCfg)
+		// Persist samples + outage events in the existing SQLite DB, reconciling
+		// any outage left open by a previous run (FR-019/FR-020).
+		upsPoller.SetStore(ups.NewStore(db.DB))
+		// Power-event alerts (FR-021): deliver through the existing notify
+		// dispatcher (Telegram) and persist to the Alert history, reusing the
+		// engine's cooldown/mute/storm handling downstream.
+		upsPoller.SetAlerter(ups.NewAlerter(upsCfg, func(a ups.Alert) {
+			alert := &database.Alert{Severity: string(a.Severity), Source: "ups", Message: a.Message}
+			if a.Resolve {
+				dispatcher.DispatchEvent(&notify.Event{
+					Alert:      alert,
+					Kind:       notify.EventResolve,
+					Surface:    notify.SurfaceFromSource("ups"),
+					ResolvedAt: time.Now(),
+				})
+				return
+			}
+			if err := db.CreateAlert(alert); err != nil {
+				log.Printf("ups: persist alert failed: %v", err)
+			}
+			dispatcher.Dispatch(alert)
+		}))
+		upsCtx, upsCancel := context.WithCancel(context.Background())
+		go upsPoller.Run(upsCtx)
+		defer upsCancel()
+		mode := "real NUT"
+		if upsCfg.Mock != "" {
+			mode = "MOCK=" + upsCfg.Mock
+		}
+		log.Printf("UPS monitor started (addr=%s ups=%s poll=%s, %s)", upsCfg.Addr, upsCfg.UPSName, upsCfg.PollInterval, mode)
+	} else {
+		log.Printf("UPS monitor disabled (set ULTRON_UPS_ENABLED=1 to enable)")
+	}
+
 	srv := server.New(cfg, db, reader, collector, dockerMon, systemdMon, alertEng)
 	srv.SetInsights(insightsSvc)
 	if helpSvc != nil {
@@ -267,6 +309,9 @@ func main() {
 	}
 	srv.SetGatewayProbe(gateway)
 	srv.SetWANMonitor(wan)
+	if upsPoller != nil {
+		srv.SetUPSPoller(upsPoller)
+	}
 	srv.SetLANDevices(landevicesOrch, landevicesStore)
 	srv.ApplyPerformanceConfig(perf)
 	backupCfg, err := db.GetBackupConfig()

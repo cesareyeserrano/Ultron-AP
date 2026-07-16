@@ -1,0 +1,51 @@
+{{define "partials/sse-ups.html"}}
+{{if .UPS}}
+{{$u := .UPS}}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <div id="ups-card" class="metric-tile {{$u.SeverityClass}}" data-state="{{$u.State}}" title="estado NUT: {{$u.RawStatus}}">
+        <p class="text-[11px] text-text-muted uppercase tracking-wider mb-1">UPS · Powest</p>
+        <div class="flex items-baseline gap-2 mb-2">
+            <span id="ups-state" class="text-lg font-mono font-semibold {{$u.HeadlineTextClass}}">{{$u.StateLabel}}</span>
+            {{if $u.Reachable}}
+            <span class="text-xs text-text-muted">batería {{$u.BattPctStr}} %<span class="ml-1 px-1 py-0.5 rounded border border-border text-[10px]">estimado</span></span>
+            <span class="text-xs text-text-muted ml-auto">beeper {{$u.BeeperLabel}}</span>
+            {{else}}
+            <span class="text-xs text-text-muted" id="ups-reason">{{$u.Reason}}</span>
+            {{end}}
+        </div>
+        {{if $u.Reachable}}
+        <div class="flex items-center justify-between gap-2 text-xs mb-2 font-mono">
+            <span class="text-text-muted">carga <span class="text-text">{{$u.LoadStr}}</span></span>
+            <span class="text-text-muted">entrada <span class="text-text">{{$u.InputStr}}</span></span>
+            <span class="text-text-muted">batería <span class="text-text">{{$u.BatteryStr}}</span></span>
+        </div>
+        <div class="h-1.5 bg-card rounded overflow-hidden mb-2"><span class="block h-full bg-accent" style="width:{{$u.BattPctWidth}}%"></span></div>
+        {{if .UPSOnlineSince}}
+        <div class="text-[10px] text-text-muted mb-2 font-mono">en red desde hace {{.UPSOnlineSince}}</div>
+        {{end}}
+        <div id="ups-shutdown" class="rounded border border-border/40 bg-card/30 p-2">
+            <p class="text-xs text-text-muted mb-2">Apagado seguro <span class="ml-1 px-1 py-0.5 rounded border border-border text-[10px]">gestionado por NUT</span></p>
+            <div class="space-y-1">
+                <div class="flex items-center justify-between gap-2 text-xs"><span class="text-text-muted">Delay apagado</span><span class="font-mono text-text">{{$u.DelayShutStr}}</span></div>
+                <div class="flex items-center justify-between gap-2 text-xs"><span class="text-text-muted">Delay arranque</span><span class="font-mono text-text">{{$u.DelayStartStr}}</span></div>
+                <div class="flex items-center justify-between gap-2 text-xs"><span class="text-text-muted">Punto de apagado</span><span class="font-mono text-text">{{$u.CutoffStr}}</span></div>
+            </div>
+        </div>
+        {{else}}
+        <div class="flex items-center justify-between gap-2 text-xs mb-2 font-mono">
+            <span class="text-text-muted">carga <span class="text-text">—</span></span>
+            <span class="text-text-muted">entrada <span class="text-text">—</span></span>
+            <span class="text-text-muted">batería <span class="text-text">—</span></span>
+        </div>
+        {{end}}
+        {{if .UPSInsights}}
+        <div id="ups-insights" class="mt-2 border-t border-border pt-2">
+            {{range .UPSInsights}}
+            <p class="text-xs mb-0.5 {{if eq (printf "%s" .Severity) "warning"}}text-yellow-400{{else}}text-text-muted{{end}}">• {{.Text}}</p>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}
+{{end}}

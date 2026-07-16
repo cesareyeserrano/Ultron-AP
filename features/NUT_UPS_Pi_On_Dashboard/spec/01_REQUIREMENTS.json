@@ -1,0 +1,610 @@
+{
+  "project_name": "Ultron-AP — NUT_UPS_Pi_On_Dashboard",
+  "project_summary": "Adds a UPS monitoring module to the existing Ultron-AP dashboard. Ultron-AP already watches CPU/RAM/disk/network/temp, Docker and systemd, but has no visibility into the power feeding the Pi. A Powest UPS (USB, driven by NUT/nutdrv_qx on the host) already protects the Pi; this feature reads it over the native NUT TCP protocol (127.0.0.1:3493) from a new Go package internal/ups, shows a live UPS card on the dashboard via the existing SSE channel, persists history and outage events, and raises Telegram alerts on power events — without ever issuing a shutdown command (safe shutdown stays exclusively with nut-monitor). North Star KPI: the operator learns of a mains outage on their phone within 15 s of it starting, and can answer 'how many outages this month and for how long' from the panel history. JTBD: 'know the state of the power feeding my Pi and be told the moment it changes, without opening Home Assistant or SSHing in.' Guardrail metric (must not get worse): Ultron-AP still boots and every existing tile keeps working when NUT is absent or the UPS is unreachable; the web process gains no new privileges and the ~15 MB idle RAM footprint is preserved. Hardware constraint carried from the seed: this UPS does NOT publish battery.charge, battery.runtime or ups.realpower, so battery % is an estimate interpolated from battery.voltage between 21.0 V and 27.4 V and must always be labelled 'estimado'; remaining-runtime minutes are out of scope.",
+  "functional_requirements": [
+    {
+      "id": "FR-016",
+      "feature": "NUT_UPS_Pi_On_Dashboard",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Native NUT client (internal/ups)",
+      "description": "New Go package internal/ups speaks the NUT protocol over TCP to 127.0.0.1:3493 (LIST VAR powest / GET VAR) in pure Go. It must NOT exec the upsc binary. It authenticates with a dedicated Ultron read-only NUT user (not the existing homeassistant user). It polls every 10 s (configurable) and reconnects with backoff when upsd is down; an unreachable UPS is a valid state to surface, never a panic.",
+      "acceptance_criteria": [
+        "Against a simulated upsd, LIST VAR powest / GET VAR responses are parsed into a variable map exposing at least ups.status, ups.load, input.voltage, battery.voltage, ups.beeper.status",
+        "The client never invokes exec/os.exec of upsc — the NUT session is a raw TCP socket to 127.0.0.1:3493",
+        "When upsd is stopped mid-run, the client retries with backoff, does not panic, and reports state 'unreachable' after the configured timeout (default 2 min)",
+        "The client only issues read commands (LIST/GET); a write/SET/INSTCMD command is never sent",
+        "Polling interval defaults to 10 s and is read from configuration at startup"
+      ]
+    },
+    {
+      "id": "FR-017",
+      "feature": "NUT_UPS_Pi_On_Dashboard",
+      "type": "UX",
+      "priority": "MUST",
+      "title": "Live UPS card on the dashboard",
+      "description": "A new UPS card on the dashboard, updated live over the same SSE channel the other tiles use. Shows a large translated status, UPS load %, input voltage, battery voltage plus estimated %, and beeper state. When the UPS is unreachable it shows an explicit 'Sin datos' state — never a blank card or zeros.",
+      "acceptance_criteria": [
+        "ups.status maps to readable Spanish state: OL→'En red', OB→'En batería', LB→'Batería baja', OL CHRG→'Cargando', RB→'Reemplazar batería', OFF→'Apagado', BYPASS→'Bypass', ALARM→'Alarma'",
+        "Card shows ups.load (%), input.voltage (V) and battery.voltage (V) with their units",
+        "Card shows the beeper state from ups.beeper.status (e.g. 'activado' / 'silenciado' / 'deshabilitado')",
+        "Battery % is shown with a visible 'estimado' label adjacent to the value",
+        "When internal/ups reports 'unreachable', the card shows 'Sin datos' explicitly, not zeros or a blank card",
+        "The card refreshes via the existing SSE channel without a page reload",
+        "Card renders without horizontal scroll at a 375px mobile viewport",
+        "All values originating from NUT are HTML-escaped before rendering (no innerHTML injection)"
+      ]
+    },
+    {
+      "id": "FR-018",
+      "feature": "NUT_UPS_Pi_On_Dashboard",
+      "type": "logic",
+      "priority": "MUST",
+      "title": "Estimated battery percentage from voltage",
+      "description": "Because this UPS does not publish battery.charge, the battery percentage must be estimated by linear interpolation of battery.voltage between the configured low (default 21.0 V) and high (default 27.4 V) bounds, clamped to 0–100%. It must always be presented as an estimate, never as a device-reported value.",
+      "acceptance_criteria": [
+        "battery.voltage = 24.2 V yields ~50% (±2%) with default bounds 21.0–27.4 V",
+        "battery.voltage ≤ 21.0 V clamps to 0% and battery.voltage ≥ 27.4 V clamps to 100%",
+        "The estimate is always emitted with an 'estimado' marker so no consumer can present it as a measured battery.charge",
+        "The low/high voltage bounds are read from configuration (default 21.0 / 27.4 V)"
+      ]
+    },
+    {
+      "id": "FR-019",
+      "feature": "NUT_UPS_Pi_On_Dashboard",
+      "type": "persistence",
+      "priority": "SHOULD",
+      "title": "UPS sample history and charts",
+      "description": "Persist UPS samples in the existing SQLite database (new table ups_samples), reusing the internal/metrics persistence/purge machinery. Store series for input.voltage, battery.voltage, ups.load and status. Default retention 30 days with automatic purge. Show 24 h / 7 d charts on the dashboard.",
+      "acceptance_criteria": [
+        "A written ups_samples row survives a process restart and is returned by a subsequent query",
+        "Samples older than the configured retention (default 30 days) are purged automatically",
+        "The dashboard renders a 24 h and a 7 d chart for input.voltage, battery.voltage and ups.load with ≥1 data point when history exists",
+        "With zero history the chart shows an explicit empty state, not an error"
+      ]
+    },
+    {
+      "id": "FR-020",
+      "feature": "NUT_UPS_Pi_On_Dashboard",
+      "type": "persistence",
+      "priority": "SHOULD",
+      "title": "Mains-outage event log",
+      "description": "Record power-outage events: each transition to OB opens an event, each return to OL closes it, storing start time, end time and duration. This answers 'how many outages this month and for how long'.",
+      "acceptance_criteria": [
+        "A transition OL→OB creates an open outage event with a start timestamp",
+        "The following OB→OL transition closes the same event, setting end timestamp and computed duration",
+        "A closed event persists across a process restart and is queryable by time range",
+        "If the process restarts while an event is open, the open event is not double-counted when power returns (no orphaned duplicate outage)"
+      ]
+    },
+    {
+      "id": "FR-021",
+      "feature": "NUT_UPS_Pi_On_Dashboard",
+      "type": "logic",
+      "priority": "SHOULD",
+      "title": "UPS power alerts via existing alert + Telegram engine",
+      "description": "Integrate with the existing internal/alerts + internal/notify (Telegram) engine. Rules: OB (Warning, immediate), LB (Critical, immediate), OL return (Info, immediate, includes outage duration), battery.voltage near 21.0 V (Critical, immediate), input.voltage outside ~100–140 V (Warning, debounced), RB (Warning, once per day), UPS unreachable > 2 min (Warning, once). All rules debounce/deduplicate so a mains flicker cannot fire ten messages.",
+      "acceptance_criteria": [
+        "A transition to OB fires a Warning alert and, if Telegram is configured, one Telegram message within 15 s",
+        "An LB (low battery) status fires a Critical alert and, if Telegram is configured, an immediate Telegram message",
+        "A return to OL fires an Info alert whose message includes the outage duration",
+        "battery.voltage crossing near 21.0 V fires a Critical alert",
+        "input.voltage outside ~100–140 V fires a Warning only after the debounce window — a single out-of-range sample that recovers does not alert",
+        "The Pi losing communication with the UPS for more than the configured timeout (default 2 min) fires a single Warning 'UPS sin comunicación', with no repeat while it stays down",
+        "Repeated identical conditions within the dedup window produce no duplicate message (RB alerts at most once per day, unreachable at most once per outage)"
+      ]
+    },
+    {
+      "id": "FR-022",
+      "feature": "NUT_UPS_Pi_On_Dashboard",
+      "type": "reporting",
+      "priority": "NICE",
+      "title": "UPS insights",
+      "description": "Feed the existing insights engine with UPS-derived observations, e.g. 'the mains had 4 outages this week' and 'resting battery voltage fell from 27.4 V to 26.1 V over two months → the battery is degrading'.",
+      "acceptance_criteria": [
+        "Given ≥1 closed outage event in the last 7 days, an insight reports the weekly outage count",
+        "Given a downward trend in resting battery.voltage across the retention window, an insight reports probable battery degradation",
+        "With insufficient history, no misleading insight is emitted (no degradation claim from a single sample)"
+      ]
+    },
+    {
+      "id": "FR-023",
+      "feature": "NUT_UPS_Pi_On_Dashboard",
+      "type": "UX",
+      "priority": "SHOULD",
+      "title": "Read-only safe-shutdown configuration display",
+      "description": "Display, read-only, the safe-shutdown configuration owned by NUT: the UPS delays (ups.delay.shutdown, ups.delay.start) and the low-battery cutoff — the configured low-battery voltage (default 21.0 V, the same bound used by the estimator FR-018 / config FR-024) shown as the point at which the UPS reports LB and NUT will act. The cutoff is the KNOWN configured low bound, NOT read from /etc/nut/upsmon.conf (that would require privileges and break RS-2/NFR-017). Everything is clearly labelled 'gestionado por NUT'. The panel shows these values but must NOT edit or execute any shutdown-related setting or command.",
+      "acceptance_criteria": [
+        "ups.delay.shutdown and ups.delay.start are shown with their values and a 'gestionado por NUT' label",
+        "The low-battery cutoff (default 21.0 V) is shown labelled 'punto de apagado — gestionado por NUT', sourced from the configured low bound (FR-024), not from a privileged read of upsmon.conf",
+        "The section is display-only: it exposes no control that issues SET VAR, INSTCMD, shutdown.* or load.off",
+        "When a shutdown-related variable is not published by the UPS, its field shows 'no disponible', not a blank or a zero",
+        "The displayed values are HTML-escaped like all other NUT-sourced values"
+      ]
+    },
+    {
+      "id": "FR-024",
+      "feature": "NUT_UPS_Pi_On_Dashboard",
+      "type": "logic",
+      "priority": "SHOULD",
+      "title": "Configurable UPS module parameters",
+      "description": "Expose module parameters via the service configuration (/etc/ultron-ap/ultron-ap.env): (a) alert thresholds — input voltage range (~100–140 V), critical battery voltage (~21.0 V), debounce windows and the 'UPS unreachable' timeout; (b) poll interval (default 10 s); (c) battery-estimate voltage range (default 21.0–27.4 V); (d) history retention (default 30 days). The whole module is gated by ULTRON_UPS_ENABLED.",
+      "acceptance_criteria": [
+        "Each parameter has a documented default and, when its env key is set, the configured value overrides the default at startup",
+        "An invalid value (non-numeric, or low ≥ high for the battery range) is rejected at startup with a clear log message and the default is used — the process does not crash",
+        "With ULTRON_UPS_ENABLED unset or false, the UPS module does not start, no NUT connection is attempted, and no UPS card is rendered",
+        "Configured thresholds are the ones actually applied by the alert engine (FR-021) and the estimator (FR-018)"
+      ]
+    }
+  ],
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator",
+      "tech_level": "mid",
+      "goal": "Know the state of the power feeding the Pi and be told the moment mains fails, from the same dashboard used for everything else, without opening Home Assistant or SSHing in",
+      "pain_point": "Ultron-AP is blind to power: an outage or a dying UPS battery is invisible until the Pi actually goes down"
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-016",
+      "requirement_id": "FR-016",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "Ultron to read the UPS over the native NUT protocol without shelling out or gaining privileges",
+      "so_that": "power telemetry is available cleanly and the panel never needs root to see it",
+      "acceptance_criteria": [
+        {
+          "id": "AC-016-001",
+          "given": "a simulated upsd serving the powest device on 127.0.0.1:3493",
+          "when": "internal/ups performs a poll",
+          "then": "it returns a variable map containing ups.status, ups.load, input.voltage and battery.voltage parsed from the LIST/GET responses"
+        },
+        {
+          "id": "AC-016-002",
+          "given": "the client is polling",
+          "when": "the NUT session is established",
+          "then": "it is a raw TCP connection and no upsc process is ever exec'd"
+        },
+        {
+          "id": "AC-016-003",
+          "given": "upsd is stopped while Ultron is running",
+          "when": "the next poll fails and keeps failing past the unreachable timeout",
+          "then": "the client reconnects with backoff, does not panic, and reports state 'unreachable' rather than fabricating values"
+        },
+        {
+          "id": "AC-016-004",
+          "given": "the module is configured with the Ultron read-only NUT user",
+          "when": "any poll runs",
+          "then": "only read commands are issued and no SET/INSTCMD/shutdown command is ever sent"
+        }
+      ]
+    },
+    {
+      "id": "US-017",
+      "requirement_id": "FR-017",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "a live UPS card showing status, load, voltages, estimated battery and beeper",
+      "so_that": "I can read the power state at a glance like the other tiles",
+      "acceptance_criteria": [
+        {
+          "id": "AC-017-001",
+          "given": "the UPS reports ups.status = OL",
+          "when": "the card renders",
+          "then": "it shows 'En red' plus load %, input voltage, battery voltage and estimated battery %"
+        },
+        {
+          "id": "AC-017-002",
+          "given": "the UPS transitions to ups.status = OB",
+          "when": "the SSE push arrives",
+          "then": "the card updates to 'En batería' without a page reload"
+        },
+        {
+          "id": "AC-017-003",
+          "given": "internal/ups reports the UPS as unreachable",
+          "when": "the card renders",
+          "then": "it shows an explicit 'Sin datos' state, never zeros or a blank card"
+        },
+        {
+          "id": "AC-017-004",
+          "given": "a NUT value contains HTML metacharacters",
+          "when": "it is rendered into the card",
+          "then": "it is escaped and not interpreted as markup"
+        },
+        {
+          "id": "AC-017-005",
+          "given": "the UPS reports ups.beeper.status = enabled",
+          "when": "the card renders",
+          "then": "the beeper state is shown as 'activado' (and reflects 'silenciado'/'deshabilitado' for the other values)"
+        }
+      ]
+    },
+    {
+      "id": "US-018",
+      "requirement_id": "FR-018",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "an honest, clearly-labelled battery estimate",
+      "so_that": "I get a 'doing well / half / running out' sense without being misled into thinking it is a real gauge",
+      "acceptance_criteria": [
+        {
+          "id": "AC-018-001",
+          "given": "default bounds 21.0–27.4 V",
+          "when": "battery.voltage = 24.2 V is estimated",
+          "then": "the result is ~50% (±2%)"
+        },
+        {
+          "id": "AC-018-002",
+          "given": "default bounds 21.0–27.4 V",
+          "when": "battery.voltage is 20.5 V or 28.0 V",
+          "then": "the estimate clamps to 0% and 100% respectively"
+        },
+        {
+          "id": "AC-018-003",
+          "given": "any estimated percentage",
+          "when": "it is emitted to the UI or history",
+          "then": "it carries an 'estimado' marker and is never presented as battery.charge"
+        }
+      ]
+    },
+    {
+      "id": "US-019",
+      "requirement_id": "FR-019",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "UPS history persisted with 24h/7d charts",
+      "so_that": "I can see trends in mains and battery voltage over time",
+      "acceptance_criteria": [
+        {
+          "id": "AC-019-001",
+          "given": "a ups_samples row is written",
+          "when": "the process restarts and the row is queried",
+          "then": "the sample is returned intact"
+        },
+        {
+          "id": "AC-019-002",
+          "given": "samples older than the configured retention exist",
+          "when": "the purge runs",
+          "then": "only rows within retention remain"
+        },
+        {
+          "id": "AC-019-003",
+          "given": "no UPS history has been collected yet",
+          "when": "the chart renders",
+          "then": "it shows an empty state, not an error"
+        }
+      ]
+    },
+    {
+      "id": "US-020",
+      "requirement_id": "FR-020",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "each outage recorded with start, end and duration",
+      "so_that": "I can answer how many times the power failed this month and for how long",
+      "acceptance_criteria": [
+        {
+          "id": "AC-020-001",
+          "given": "the UPS is OL",
+          "when": "it transitions to OB",
+          "then": "an open outage event with a start timestamp is created"
+        },
+        {
+          "id": "AC-020-002",
+          "given": "an open outage event",
+          "when": "the UPS returns to OL",
+          "then": "the event is closed with an end timestamp and computed duration"
+        },
+        {
+          "id": "AC-020-003",
+          "given": "the process restarts while an outage event is open",
+          "when": "power returns after the restart",
+          "then": "the outage is not double-counted and no orphaned duplicate event is created"
+        }
+      ]
+    },
+    {
+      "id": "US-021",
+      "requirement_id": "FR-021",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "debounced Telegram alerts on power events",
+      "so_that": "I hear about a real outage fast but a flicker does not spam me",
+      "acceptance_criteria": [
+        {
+          "id": "AC-021-001",
+          "given": "Telegram is configured and the UPS is OL",
+          "when": "it transitions to OB",
+          "then": "a Warning alert fires and one Telegram message is sent within 15 s"
+        },
+        {
+          "id": "AC-021-002",
+          "given": "an outage that has been recorded",
+          "when": "power returns to OL",
+          "then": "an Info alert is sent whose text includes the outage duration"
+        },
+        {
+          "id": "AC-021-003",
+          "given": "input.voltage briefly dips out of the ~100–140 V range for a single sample and recovers",
+          "when": "the debounce window has not elapsed",
+          "then": "no alert is fired"
+        },
+        {
+          "id": "AC-021-004",
+          "given": "a persistent RB (replace battery) condition",
+          "when": "it remains true across many polls in a day",
+          "then": "at most one RB Warning is sent per day"
+        },
+        {
+          "id": "AC-021-005",
+          "given": "the UPS reports ups.status carrying the LB (low battery) flag",
+          "when": "the alert engine evaluates the status",
+          "then": "a Critical alert is fired and, if Telegram is configured, an immediate Telegram message is sent"
+        },
+        {
+          "id": "AC-021-006",
+          "given": "the Pi loses communication with the UPS and internal/ups reports 'unreachable' continuously past the configured timeout (default 2 min)",
+          "when": "the alert engine evaluates the unreachable state",
+          "then": "a single Warning alert 'UPS sin comunicación' is fired and, if Telegram is configured, one Telegram message is sent — with no repeat message while it stays unreachable, and a recovery is signalled when the UPS becomes reachable again"
+        }
+      ]
+    },
+    {
+      "id": "US-022",
+      "requirement_id": "FR-022",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "insights summarising outages and battery health",
+      "so_that": "I notice a degrading battery or a bad-power week without reading raw charts",
+      "acceptance_criteria": [
+        {
+          "id": "AC-022-001",
+          "given": "≥1 closed outage event in the last 7 days",
+          "when": "insights are generated",
+          "then": "an insight states the weekly outage count"
+        },
+        {
+          "id": "AC-022-002",
+          "given": "only a single sample of history",
+          "when": "insights are generated",
+          "then": "no battery-degradation claim is emitted"
+        }
+      ]
+    },
+    {
+      "id": "US-023",
+      "requirement_id": "FR-023",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "to see the safe-shutdown settings NUT will use, read-only",
+      "so_that": "I know when and how the Pi would shut down without the panel being able to change or trigger it",
+      "acceptance_criteria": [
+        {
+          "id": "AC-023-001",
+          "given": "the UPS publishes ups.delay.shutdown and ups.delay.start",
+          "when": "the shutdown-config section renders",
+          "then": "both values are shown with a 'gestionado por NUT' label"
+        },
+        {
+          "id": "AC-023-002",
+          "given": "the shutdown-config section",
+          "when": "it is inspected for controls",
+          "then": "it exposes no control that issues SET VAR, INSTCMD, shutdown.* or load.off"
+        },
+        {
+          "id": "AC-023-003",
+          "given": "the UPS does not publish a given shutdown variable",
+          "when": "that field renders",
+          "then": "it shows 'no disponible' rather than a blank or a zero"
+        },
+        {
+          "id": "AC-023-004",
+          "given": "the configured low-battery bound is 21.0 V",
+          "when": "the shutdown-config section renders",
+          "then": "it shows 21.0 V labelled 'punto de apagado — gestionado por NUT', taken from the configured bound and without any read of /etc/nut/upsmon.conf"
+        }
+      ]
+    },
+    {
+      "id": "US-024",
+      "requirement_id": "FR-024",
+      "as_a": "Raspberry Pi operator",
+      "i_want": "poll interval, thresholds, battery range and retention to be configurable",
+      "so_that": "I can tune the module to my hardware and grid without a rebuild",
+      "acceptance_criteria": [
+        {
+          "id": "AC-024-001",
+          "given": "an env key overriding a parameter (e.g. poll interval)",
+          "when": "the module starts",
+          "then": "the configured value is used instead of the default"
+        },
+        {
+          "id": "AC-024-002",
+          "given": "an invalid value (non-numeric, or battery low ≥ high)",
+          "when": "the module starts",
+          "then": "the value is rejected with a clear log message, the default is used, and the process does not crash"
+        },
+        {
+          "id": "AC-024-003",
+          "given": "ULTRON_UPS_ENABLED is unset or false",
+          "when": "Ultron-AP boots",
+          "then": "the UPS module does not start, no NUT connection is attempted, and no UPS card is rendered"
+        }
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-016",
+      "category": "Regression",
+      "priority": "MUST",
+      "requirement": "Clean degradation: if NUT is not installed or the UPS does not respond, Ultron-AP boots normally and every existing tile keeps working; the UPS card shows a disabled/'Sin datos' state and the module is gated by ULTRON_UPS_ENABLED.",
+      "acceptance_criteria": "With NUT absent and ULTRON_UPS_ENABLED=true, the process boots, existing dashboard tiles render, and the UPS card shows 'Sin datos'; with ULTRON_UPS_ENABLED unset the module is fully inert."
+    },
+    {
+      "id": "NFR-017",
+      "category": "Regression",
+      "priority": "MUST",
+      "requirement": "No new privileges: the UPS module needs no root and does not touch ultron-helper; the existing privilege-separation model (FR-011, NoNewPrivileges=true) is unchanged.",
+      "acceptance_criteria": "The web process still runs with NoNewPrivileges=true; the UPS module opens only a TCP socket to 127.0.0.1:3493 and adds no privileged helper call."
+    },
+    {
+      "id": "NFR-018",
+      "category": "Regression",
+      "priority": "MUST",
+      "requirement": "The module must never be able to power down the host: no shutdown.*, load.off, or any INSTCMD/SET path is reachable from the UPS module; safe shutdown remains exclusively nut-monitor's job.",
+      "acceptance_criteria": "Static and runtime inspection show the UPS module issues no INSTCMD/SET/shutdown/load.off command on any code path, including the read-only shutdown-config display (FR-023)."
+    },
+    {
+      "id": "NFR-019",
+      "category": "Security",
+      "priority": "MUST",
+      "requirement": "All values received from NUT are untrusted external input and must be HTML-escaped before rendering (do not reintroduce the toast innerHTML XSS). The NUT credential is a dedicated read-only user stored in /etc/ultron-ap/ultron-ap.env (ULTRON_NUT_USER/ULTRON_NUT_PASS), never in the repo, and encrypted at rest with ULTRON_SECRET_KEY if persisted in the DB.",
+      "acceptance_criteria": "A NUT value containing <script> renders as inert text; the NUT password is never written to logs, the repo, or plaintext DB columns."
+    },
+    {
+      "id": "NFR-020",
+      "category": "Observability",
+      "priority": "MUST",
+      "requirement": "The UPS module logs poll failures, reconnect attempts and the unreachable transition to stderr with a timestamp, without flooding the log while the UPS stays down.",
+      "acceptance_criteria": "When upsd is down, a bounded set of timestamped reconnect log lines is emitted (not one per poll indefinitely), and recovery is logged once."
+    },
+    {
+      "id": "NFR-021",
+      "category": "CI/CD",
+      "priority": "MUST",
+      "requirement": "The test suite covers the NUT protocol parser and the ups.status→state mapping against a simulated upsd, and runs in the pipeline on every push to the main branch (go test ./internal/ups/... must pass).",
+      "acceptance_criteria": "The CI workflow invokes the Go test suite including ./internal/ups/...; a failing internal/ups test fails the pipeline."
+    },
+    {
+      "id": "NFR-022",
+      "category": "Usability",
+      "priority": "SHOULD",
+      "requirement": "Local dev/testability: a mock/dummy UPS data mode lets the real UPS card (FR-017) and the shutdown-config block (FR-023) render while running Ultron-AP locally on a dev machine, with NO physical UPS and NO deploy to the Pi. It reuses the simulated upsd already required for tests (NFR-021/RS-5): a dev toggle (e.g. ULTRON_UPS_MOCK=1, or the module pointed at a fake upsd fixture) feeds representative values and lets the developer drive the card through each ups.status state. The mock path must never be active in the production/systemd configuration and must not weaken the read-only NUT credential or the shutdown prohibition (NFR-018/NFR-019).",
+      "acceptance_criteria": "With the mock enabled and no real UPS present, running Ultron-AP locally (e.g. `make run`) renders the live UPS card driven by mock data; the mock can be switched through at least OL, OB, LB and unreachable so each card state is validated in a local browser without deploying; with the mock unset (production default) the module connects only to the real read-only NUT endpoint and no mock data can be served."
+    }
+  ],
+  "no_go_zone": [
+    "Executing or replacing safe shutdown — nut-monitor owns it. The module issues no shutdown.* or load.off on any path; the safe-shutdown config is display-only (FR-023).",
+    "Editing the safe-shutdown configuration from the panel — changing UPS delays via SET VAR or NUT's trigger threshold via upsmon.conf is out of scope; it would require a write NUT user (breaks RS-1 read-only) or root file edits (breaks RS-2 no-new-privileges). Read-only display only.",
+    "Showing remaining runtime in minutes — this UPS does not publish battery.runtime and the value cannot be shown honestly without a calibrated discharge model; excluded.",
+    "battery.charge / ups.realpower as device data — not published by this Q1-protocol UPS; battery % is an interpolated estimate, always labelled 'estimado'.",
+    "Supporting multiple UPS units or network UPS — there is exactly one UPS, over USB.",
+    "Duplicating Home Assistant's NUT integration — Ultron-AP wants this for its own infrastructure view and its own alerts, not to mirror HA.",
+    "RF-6 UPS actions (beeper mute/enable, quick battery test via upscmd through ultron-helper) — deferred as optional P2, not committed in this feature."
+  ],
+  "constraints": [
+    "UPS is a Powest offline/line-interactive unit on USB (Cypress USB-to-Serial, VID 0665 / PID 5161), driven by NUT 2.8.1 nutdrv_qx, NUT device name 'powest', upsd on TCP 3493.",
+    "Battery nominal 24 V; configured useful range 21.0 V (low) — 27.4 V (high).",
+    "Available NUT variables: ups.status, ups.load, input.voltage, input.frequency, output.voltage, battery.voltage, ups.beeper.status, ups.delay.shutdown, ups.delay.start, ups.type. NOT available: battery.charge, battery.runtime, ups.realpower.",
+    "ultron-ap runs with ProtectSystem=full and NoNewPrivileges — a TCP NUT client is required over exec of upsc."
+  ],
+  "technology_preferences": [
+    "Pure Go NUT client in new package internal/ups (no cgo, no exec).",
+    "Reuse existing internal/metrics (persistence + purge), internal/alerts, internal/notify (Telegram), the SSE channel, the insights engine, and the existing SQLite database.",
+    "Single statically-linked Go binary for linux/arm64 (NFR-002/NFR-003 of the parent project preserved)."
+  ],
+  "idea_provenance": {
+    "problem": "confirmed",
+    "users": "confirmed",
+    "baseline": "confirmed",
+    "success_metric": "confirmed",
+    "no_go_zone": "confirmed"
+  },
+  "idea_provenance_sources": {
+    "problem": "feature_context/ultron-ap-REQ-UPS.md §1 (owner-authored, user-designated): Ultron-AP has no visibility into the power feeding the Pi though a NUT-managed UPS already protects it.",
+    "users": "Inherited Raspberry Pi Operator persona (parent PRD), reaffirmed as the REQ author (César) and confirmed in this chat's feature scoping exchange.",
+    "baseline": "REQ §2 documents the concrete current state verified on the Pi 2026-07-14 (real upsc powest output, hardware IDs, NUT version, available/missing variables) — the before-state is explicitly recorded.",
+    "success_metric": "REQ §6 acceptance criteria give concrete observable success (mains-off shown + Telegram within 15 s; restore message with outage duration; 'Sin datos' on nut-server stop; battery always labelled estimated; go test ./internal/ups/... passes).",
+    "no_go_zone": "REQ §5 plus this chat's decisions: safe-shutdown display is read-only (editing delays / upsmon.conf out of scope), no runtime minutes, single USB UPS, no HA duplication, RF-6 deferred."
+  },
+  "idea_gaps": [],
+  "coverage_map": [
+    {
+      "need": "Read the UPS over native NUT TCP without exec or new privileges (RF-1)",
+      "disposition": "FR-016"
+    },
+    {
+      "need": "Poll every 10 s with backoff reconnect; unreachable is a valid state (RF-1)",
+      "disposition": "FR-016"
+    },
+    {
+      "need": "Dedicated read-only NUT credential, not homeassistant (RS-1)",
+      "disposition": "NFR-019"
+    },
+    {
+      "need": "Live UPS card with translated status, load, voltages, beeper, 'Sin datos' (RF-2)",
+      "disposition": "FR-017"
+    },
+    {
+      "need": "Estimated battery % interpolated 21.0–27.4 V, always labelled estimated (RF-2/§2)",
+      "disposition": "FR-018"
+    },
+    {
+      "need": "Persist samples in SQLite with retention/purge and 24h/7d charts (RF-3)",
+      "disposition": "FR-019"
+    },
+    {
+      "need": "Outage event log: OB opens, OL closes, start/end/duration (RF-3)",
+      "disposition": "FR-020"
+    },
+    {
+      "need": "Debounced Telegram alerts on power events (RF-4)",
+      "disposition": "FR-021"
+    },
+    {
+      "need": "UPS insights: outage counts, battery degradation (RF-5)",
+      "disposition": "FR-022"
+    },
+    {
+      "need": "Read-only display of NUT safe-shutdown config (chat decision)",
+      "disposition": "FR-023"
+    },
+    {
+      "need": "Configurable poll/thresholds/battery-range/retention, module gated by ULTRON_UPS_ENABLED (chat decision + RS-3)",
+      "disposition": "FR-024"
+    },
+    {
+      "need": "Clean degradation when NUT absent / UPS unreachable (RS-3, Must-Not-Break)",
+      "disposition": "NFR-016"
+    },
+    {
+      "need": "No new privileges / ultron-helper untouched (RS-2, Must-Not-Break)",
+      "disposition": "NFR-017"
+    },
+    {
+      "need": "Never issue a shutdown/load.off command (RF-6 prohibition, Must-Not-Break)",
+      "disposition": "NFR-018"
+    },
+    {
+      "need": "Escape all NUT input before render; protect secret (RS-4/RS-1, Must-Not-Break)",
+      "disposition": "NFR-019"
+    },
+    {
+      "need": "Log poll failures/reconnect without flooding",
+      "disposition": "NFR-020"
+    },
+    {
+      "need": "Test parser + state mapping against simulated upsd in CI (RS-5, §6)",
+      "disposition": "NFR-021"
+    },
+    {
+      "need": "Render the real UPS card locally with dummy/mock data — validate the front without a physical UPS or a prod deploy (chat decision)",
+      "disposition": "NFR-022"
+    },
+    {
+      "need": "Show remaining runtime in minutes",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Edit safe-shutdown delays / upsmon.conf from the panel",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Support multiple / network UPS",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Duplicate Home Assistant's NUT integration",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "RF-6 beeper/battery-test commands via upscmd",
+      "disposition": "out_of_scope"
+    }
+  ],
+  "original_brief": "## Feature\nMódulo UPS para Ultron AP: leer el UPS (Powest, USB, gestionado por NUT en la Pi) vía protocolo NUT nativo, mostrarlo en el dashboard, guardar historial de cortes y alertar por Telegram.\n\n## Problem / Why\nUltron AP monitorea red, Docker, systemd y métricas del host, pero hoy no sabe nada de la energía que lo mantiene vivo. La Pi está protegida por un UPS conectado por USB y gestionado con NUT, y no hay visibilidad ni alertas sobre cortes de luz, estado de batería o autonomía del sistema. Alcance: **monitoreo, historial y alertas** — el apagado seguro lo sigue haciendo NUT (`nut-monitor`) y este módulo no lo reemplaza.\n\n## Target Users\nEl operador/administrador de la infraestructura casera (César) que ya usa el dashboard de Ultron AP para vigilar la Pi. No abre nuevos tipos de usuario.\n\n## New Behavior\n- El sistema debe hablar el protocolo NUT por TCP contra `127.0.0.1:3493` en Go puro (paquete nuevo `internal/ups`), sin ejecutar `upsc` por `exec`, con usuario NUT de solo lectura propio de Ultron.\n- El sistema debe sondear el UPS cada 10 s (configurable) y reconectar con backoff; \"UPS inalcanzable\" es un estado válido a mostrar, no un panic.\n- El sistema debe mostrar una tarjeta de UPS en el dashboard con actualización en vivo por SSE: estado traducido (`OL`→En red, `OB`→En batería, `LB`→Batería baja, etc.), carga (%), voltaje de entrada, voltaje de batería + **% estimado** (siempre etiquetado \"estimado\"), estado del beeper, y \"Sin datos\" explícito cuando el UPS está inalcanzable.\n- El sistema debe estimar el % de batería interpolando `battery.voltage` entre 21.0 V y 27.4 V (el UPS no entrega `battery.charge` ni `battery.runtime` ni `ups.realpower`).\n- El sistema debe persistir muestras en SQLite (tabla `ups_samples`, reutilizando `internal/metrics`): series de `input.voltage`, `battery.voltage`, `ups.load` y estado, retención 30 días con purga, y gráficas 24 h / 7 d.\n- El sistema debe registrar eventos de corte: cada transición a `OB` abre un evento y cada regreso a `OL` lo cierra, guardando inicio, fin y duración.\n- El sistema debe integrarse con `internal/alerts` + `internal/notify` (Telegram) con antirrebote/deduplicación para: paso a batería (Warning), batería baja (Crítico), regreso de red (Info, con duración), `battery.voltage` cerca de 21.0 V (Crítico), voltaje de entrada fuera de ~100–140 V (Warning), `RB` (Warning 1×/día), UPS inalcanzable > 2 min (Warning 1×).\n- El sistema debe alimentar el motor de insights existente (P2): conteo de cortes por semana, degradación de batería por caída del voltaje en reposo.\n- El sistema debe mostrar (solo lectura) la configuración de apagado seguro del UPS/NUT: los delays del UPS (`ups.delay.shutdown`, `ups.delay.start`) y el umbral de batería con que NUT dispara el apagado, claramente etiquetados como \"gestionado por NUT\". No edita ni ejecuta nada de apagado.\n- El sistema debe exponer como configurables (vía `/etc/ultron-ap/ultron-ap.env` / config del service): (a) los umbrales de alerta — rango de voltaje de entrada ~100–140 V, voltaje crítico de batería ~21.0 V, ventanas de antirrebote y timeout de \"UPS inalcanzable\"; (b) el intervalo de sondeo (default 10 s); (c) el rango de voltaje para el % estimado de batería (default 21.0–27.4 V); (d) la retención del historial (default 30 días).\n\n## Success Criteria\n- Given el UPS en red, When se abre el dashboard, Then muestra \"En red\", carga, voltajes y batería estimada, refrescándose solo por SSE.\n- Given el UPS conectado, When se desconecta de la pared, Then en < 15 s el dashboard dice \"En batería\" y llega un mensaje de Telegram.\n- Given un corte activo, When vuelve la red, Then llega un mensaje \"red restablecida\" con la duración del corte y el evento queda guardado en el historial.\n- Given Ultron corriendo, When se para `nut-server`, Then el panel muestra \"Sin datos\", no se cae ni llena el log de errores.\n- La estimación de batería aparece siempre marcada como estimada.\n- `go test ./internal/ups/...` pasa.\n\n## Touch Points\n- **ADD:** paquete nuevo `internal/ups` (cliente NUT + parser + mapeo de estados), tarjeta nueva de UPS en el dashboard, tabla `ups_samples`.\n- **MODIFY:** canal SSE existente (nueva tarjeta en vivo), `internal/metrics` (reutilizado para persistencia/purga), `internal/alerts` + `internal/notify` (nuevas reglas Telegram), motor de insights (nuevas señales), configuración del service (`ULTRON_UPS_ENABLED`, `ULTRON_NUT_USER`, `ULTRON_NUT_PASS`, más las claves de sondeo/umbrales/rango-batería/retención en `/etc/ultron-ap/ultron-ap.env`).\n\n## Must Not Break (Regression Boundary)\n- Si NUT no está instalado o el UPS no responde, Ultron AP arranca igual y la tarjeta se muestra deshabilitada (degradación limpia; el módulo se activa por config `ULTRON_UPS_ENABLED`).\n- El módulo no requiere root ni privilegios nuevos ni tocar `ultron-helper` (salvo RF-6 opcional); las demás tarjetas y el canal SSE existente siguen funcionando igual.\n- Todo valor que venga de NUT es entrada externa y debe escaparse antes de renderizar (no reintroducir el XSS de toasts vía `innerHTML`).\n- El apagado seguro sigue siendo exclusivo de `nut-monitor`; el módulo tiene prohibido cualquier comando `shutdown.*` / `load.off`.\n\n## Out of Scope\n- Ejecutar o reemplazar el apagado seguro (lo hace `nut-monitor`).\n- Mostrar autonomía restante en minutos (el hardware no la entrega).\n- Soportar varios UPS o UPS de red (hay uno solo, por USB).\n- Duplicar lo que ya muestra Home Assistant vía su integración NUT.\n- RF-6 (silenciar beeper / test de batería vía `upscmd`) queda como P2 opcional, no comprometido en este alcance.\n- **Editar** la configuración de apagado seguro desde el panel: cambiar los delays del UPS (`SET VAR` / usuario NUT de escritura) o el umbral de disparo de NUT (`upsmon.conf`). Se muestra en solo lectura; editarlo rompería RS-1 (solo lectura) y RS-2 (sin privilegios nuevos) y queda fuera de esta feature.\n"
+}

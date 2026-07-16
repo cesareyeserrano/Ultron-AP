@@ -31,6 +31,7 @@ func (s *Server) parseTemplates() {
 		"sparkMin":                sparkMin,
 		"sparkMax":                sparkMax,
 		"sparkMid":                sparkMid,
+		"sparkAvg":                sparkAvg,
 		"sparkCurrent":            sparkCurrent,
 		"cpuSeriesClass":          cpuSeriesClass,
 		"cpuSeriesStroke":         cpuSeriesStroke,
@@ -86,6 +87,7 @@ func (s *Server) parseTemplates() {
 
 	partials := []string{
 		"partials/sse-metrics.html",
+		"partials/sse-ups.html",
 		"partials/sse-docker.html",
 		"partials/sse-systemd.html",
 		"partials/sse-charts.html",

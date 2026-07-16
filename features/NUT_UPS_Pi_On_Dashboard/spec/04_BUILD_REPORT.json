@@ -1,0 +1,91 @@
+{
+  "files_created": [
+    "internal/ups/state.go",
+    "internal/ups/estimator.go",
+    "internal/ups/snapshot.go",
+    "internal/ups/snapshot_view.go",
+    "internal/ups/config.go",
+    "internal/ups/client.go",
+    "internal/ups/mock.go",
+    "internal/ups/poller.go",
+    "internal/ups/store.go",
+    "internal/ups/alerter.go",
+    "internal/ups/insights.go",
+    "internal/ups/state_test.go",
+    "internal/ups/estimator_test.go",
+    "internal/ups/config_test.go",
+    "internal/ups/client_test.go",
+    "internal/ups/poller_test.go",
+    "internal/ups/ci_test.go",
+    "internal/ups/store_test.go",
+    "internal/ups/alerter_test.go",
+    "internal/ups/nfr018_test.go",
+    "internal/ups/nfr019_secret_test.go",
+    "internal/ups/nfr020_test.go",
+    "internal/ups/insights_test.go",
+    "internal/server/handlers_ups_test.go",
+    "web/templates/partials/sse-ups.html"
+  ],
+  "files_modified": [
+    "internal/database/sqlite.go",
+    "internal/server/sse.go",
+    "internal/server/server.go",
+    "internal/server/templates.go",
+    "web/templates/dashboard.html",
+    "web/templates/partials/sse-metrics.html",
+    "web/css/input.css",
+    "web/static/css/app.css",
+    "cmd/ultron-ap/main.go",
+    ".env.example"
+  ],
+  "setup_commands": [],
+  "environment_variables": [
+    {"name": "ULTRON_UPS_ENABLED", "default": "false"},
+    {"name": "ULTRON_NUT_USER", "default": ""},
+    {"name": "ULTRON_NUT_PASS", "default": ""},
+    {"name": "ULTRON_UPS_ADDR", "default": "127.0.0.1:3493"},
+    {"name": "ULTRON_UPS_NAME", "default": "powest"},
+    {"name": "ULTRON_UPS_POLL_SECONDS", "default": "10"},
+    {"name": "ULTRON_UPS_UNREACHABLE_SECONDS", "default": "120"},
+    {"name": "ULTRON_UPS_BATT_LOW_V", "default": "21.0"},
+    {"name": "ULTRON_UPS_BATT_HIGH_V", "default": "27.4"},
+    {"name": "ULTRON_UPS_INPUT_LOW_V", "default": "100"},
+    {"name": "ULTRON_UPS_INPUT_HIGH_V", "default": "140"},
+    {"name": "ULTRON_UPS_DEBOUNCE_SECONDS", "default": "30"},
+    {"name": "ULTRON_UPS_RETENTION_DAYS", "default": "30"},
+    {"name": "ULTRON_UPS_MOCK", "default": ""}
+  ],
+  "technical_debt": [
+    {
+      "fr_id": "FR-022",
+      "substitution": "UPS insights are produced by a dedicated producer (internal/ups/insights.go) instead of being fed through the bundled insights rule engine via EvalWithVars as the design proposed.",
+      "reason": "The bundled rule set is locked at exactly 10 rules by the parent FR-047 (TestBundled_TenRulesLoadCleanly), and the engine emits STATIC verdict text — it cannot interpolate the outage count (adversarial finding #3). The dedicated producer avoids breaking the FR-047 contract and actually renders the REAL count ('3 cortes esta semana'), which the engine could not. FR-022 is NICE/P2.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-017",
+      "substitution": "The e2e-typed UX test cases (card render, escaping, shutdown block, mock render) are implemented as Go server-render tests (httptest + goquery-free string assertions on the rendered partial) rather than a real browser e2e run.",
+      "reason": "The repository has no browser e2e runner (no Playwright/Cypress); server-side template render tests are the established convention across the codebase (network/lan modules). The live app was additionally verified manually in a browser via ULTRON_UPS_MOCK. Viewport/console-level assertions are approximated via CSS-class and structural checks.",
+      "effort_to_fix": "low"
+    }
+  ],
+  "test_runner": "go test ../../internal/ups/... ../../internal/server/... -v",
+  "test_files": [
+    "internal/ups/state_test.go",
+    "internal/ups/estimator_test.go",
+    "internal/ups/config_test.go",
+    "internal/ups/client_test.go",
+    "internal/ups/poller_test.go",
+    "internal/ups/ci_test.go",
+    "internal/ups/store_test.go",
+    "internal/ups/alerter_test.go",
+    "internal/ups/nfr018_test.go",
+    "internal/ups/nfr019_secret_test.go",
+    "internal/ups/nfr020_test.go",
+    "internal/ups/insights_test.go",
+    "internal/server/handlers_ups_test.go"
+  ],
+  "quality_gates": [
+    {"name": "vet", "command": "go vet ../../internal/ups/... ../../internal/server/...", "required": true}
+  ]
+}

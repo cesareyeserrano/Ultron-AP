@@ -115,6 +115,31 @@ CREATE TABLE IF NOT EXISTS NetEvent (
 CREATE INDEX IF NOT EXISTS idx_net_event_ts ON NetEvent(ts);
 CREATE INDEX IF NOT EXISTS idx_net_event_kind_ts ON NetEvent(kind, ts);
 
+-- UPS monitoring (FR-019/FR-020). Modelled on NetSample/NetEvent. Additive.
+CREATE TABLE IF NOT EXISTS ups_samples (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	ts INTEGER NOT NULL,          -- unix millis
+	status TEXT NOT NULL,          -- raw ups.status, verbatim
+	state TEXT NOT NULL,           -- derived state enum
+	load_pct REAL,
+	input_v REAL,
+	input_freq REAL,               -- input.frequency (Hz) — grid-health chart
+	battery_v REAL,
+	batt_pct_est REAL              -- estimated %, always labelled "estimado" in UI
+);
+CREATE INDEX IF NOT EXISTS idx_ups_samples_ts ON ups_samples(ts);
+CREATE INDEX IF NOT EXISTS idx_ups_samples_state_ts ON ups_samples(state, ts);
+
+CREATE TABLE IF NOT EXISTS ups_events (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	start_ts INTEGER NOT NULL,     -- unix millis, transition into on-battery
+	end_ts INTEGER,                -- NULL while the outage is open
+	duration_s INTEGER,            -- computed on close
+	kind TEXT NOT NULL DEFAULT 'outage'
+);
+CREATE INDEX IF NOT EXISTS idx_ups_events_start ON ups_events(start_ts);
+CREATE INDEX IF NOT EXISTS idx_ups_events_open ON ups_events(end_ts);
+
 CREATE TABLE IF NOT EXISTS lan_devices (
 	mac TEXT PRIMARY KEY,
 	ip TEXT NOT NULL,
@@ -224,6 +249,19 @@ func New(dbPath string) (*DB, error) {
 	if _, err := db.Exec(schema); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("cannot initialize schema: %w", err)
+	}
+
+	// Migration (additive): ups_samples.input_freq — added after the table first
+	// shipped; CREATE TABLE IF NOT EXISTS does not retrofit columns.
+	var upsSQL string
+	if err := db.QueryRow("SELECT sql FROM sqlite_master WHERE type='table' AND name='ups_samples'").Scan(&upsSQL); err == nil {
+		if !strings.Contains(upsSQL, "input_freq") {
+			if _, err := db.Exec("ALTER TABLE ups_samples ADD COLUMN input_freq REAL"); err != nil {
+				db.Close()
+				return nil, fmt.Errorf("ups_samples input_freq migration failed: %w", err)
+			}
+			log.Println("database: ups_samples input_freq column added")
+		}
 	}
 
 	// Migration: Remove restricted CHECK constraint from NotificationConfig if present

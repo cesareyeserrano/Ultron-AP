@@ -125,6 +125,14 @@
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(227, 75, 106, 0.2);
   }
 
+  /* UPS "Sin datos" (unreachable) — muted dashed border so an unreachable UPS
+     reads as absent, not alarming (FR-017). */
+  .metric-ups-muted {
+    border-style: dashed;
+    border-color: var(--color-border);
+    opacity: 0.9;
+  }
+
   .timeline-chip {
     @apply text-xs px-2 py-1 rounded border transition-colors;
   }

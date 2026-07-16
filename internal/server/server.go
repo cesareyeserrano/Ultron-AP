@@ -33,6 +33,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
+	"github.com/cesareyeserrano/ultron-ap/internal/ups"
 	"github.com/cesareyeserrano/ultron-ap/web"
 )
 
@@ -86,6 +87,7 @@ type Server struct {
 	landevicesStore    *landevicesstore.Store
 	insights           *insights.Service
 	help               *help.Service
+	ups                *ups.Poller
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -651,6 +653,15 @@ func (s *Server) startRetentionJob() {
 			} else if deleted > 0 {
 				log.Printf("retention: deleted %d expired sessions", deleted)
 			}
+			// UPS history/outage retention (FR-019/FR-024) — no existing generic
+			// scheduler covers ups_samples/ups_events, so it is wired here.
+			if s.ups != nil {
+				if n, err := s.ups.Purge(); err != nil {
+					log.Printf("retention: ups prune failed: %v", err)
+				} else if n > 0 {
+					log.Printf("retention: pruned %d ups rows", n)
+				}
+			}
 			timer.Reset(24 * time.Hour)
 		}
 	}()
@@ -666,6 +677,13 @@ func (s *Server) SetGatewayProbe(p *gatewayprobe.Probe) {
 // as a status badge on the dashboard. Optional.
 func (s *Server) SetWANMonitor(m *wanmonitor.Monitor) {
 	s.wan = m
+}
+
+// SetUPSPoller attaches the UPS poller whose latest snapshot is rendered on the
+// dashboard (FR-017). Optional — when nil, no UPS card is rendered and no UPS
+// SSE event is emitted (the module is gated by ULTRON_UPS_ENABLED, NFR-016).
+func (s *Server) SetUPSPoller(p *ups.Poller) {
+	s.ups = p
 }
 
 // SetHelp attaches the help-page service. Required for /help to be reachable;

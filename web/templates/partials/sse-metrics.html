@@ -92,6 +92,13 @@
         {{else}}<p class="text-2xl font-mono font-bold text-text-muted">--</p>
         <p class="text-xs text-text-muted">--</p>{{end}}
     </div>
+    {{if .UPS}}{{$u := .UPS}}
+    <div id="ups-tile" class="metric-tile {{$u.SeverityClass}}" data-state="{{$u.State}}">
+        <p class="text-xs text-text-muted mb-1">UPS</p>
+        <p class="text-lg font-semibold truncate {{$u.HeadlineTextClass}}">{{$u.StateLabel}}</p>
+        <p class="text-xs text-text-muted truncate">{{$u.Summary}}</p>
+    </div>
+    {{end}}
 </div>
 {{/* FR-087: the standalone WAN chip that used to float here is gone — its state
      is the Network tile's verdict now, so the page has one source of WAN truth

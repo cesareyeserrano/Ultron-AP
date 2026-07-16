@@ -20,6 +20,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
 	"github.com/cesareyeserrano/ultron-ap/internal/tailscale"
+	"github.com/cesareyeserrano/ultron-ap/internal/ups"
 )
 
 // DashboardData holds all data for dashboard rendering.
@@ -48,6 +49,15 @@ type DashboardData struct {
 	Network        []*gatewayprobe.Snapshot
 	NetworkTargets []NetworkTargetView
 	WAN            *wanmonitor.Snapshot
+	UPS            *ups.Snapshot
+	UPSBatteryV    []float64     // battery-voltage series for the charts area (FR-019)
+	UPSInputV      []float64     // input-voltage series (FR-019)
+	UPSOutageSteps []float64     // 1=on battery, 0=on mains — the "cortes" timeline (FR-020 on the dashboard)
+	UPSOutageCount int           // outages touching the selected window
+	UPSOutageTotal string        // total time on battery within the window, human ("12 min"); "" when zero
+	UPSLastOutage  string        // "hace X · duró Y" | "en curso" | ""
+	UPSOnlineSince string        // human duration since mains was last restored ("3 d 4 h"); "" when n/a
+	UPSInsights    []ups.Insight // UPS-derived observations (FR-022)
 	Version        string
 }
 
@@ -354,6 +364,12 @@ func (s *Server) buildSharedSSEEvents(includeHeavy bool) []byte {
 	metricsHTML := s.renderPartial("partials/sse-metrics.html", dd)
 	writeSSEEvent(&buf, "metrics", metricsHTML)
 
+	// UPS event (FR-017) — only when the module is enabled (dd.UPS non-nil).
+	if dd.UPS != nil {
+		upsHTML := s.renderPartial("partials/sse-ups.html", dd)
+		writeSSEEvent(&buf, "ups", upsHTML)
+	}
+
 	if includeHeavy {
 		// Summary event includes VPN online users and service/container snapshots.
 		summaryHTML := s.renderPartial("partials/sse-summary.html", dd)
@@ -421,7 +437,126 @@ func (s *Server) gatherChartData(window string, points int) DashboardData {
 	if s.gateway != nil {
 		dd.NetworkTargets = s.gatherNetworkTargetViews(points)
 	}
+	if s.ups != nil {
+		// UPS series for the charts area (FR-019: battery.voltage, input.voltage,
+		// ups.load), sliced to the selected window from the poll-time cache — no
+		// DB access here.
+		snap := s.ups.Current()
+		dd.UPS = &snap
+		cutoff := time.Now().Add(-chartWindowDuration(window))
+		for _, sm := range s.ups.CachedSamples() {
+			if sm.TS.Before(cutoff) {
+				continue
+			}
+			if sm.BatteryV != nil {
+				dd.UPSBatteryV = append(dd.UPSBatteryV, *sm.BatteryV)
+			}
+			if sm.InputV != nil {
+				dd.UPSInputV = append(dd.UPSInputV, *sm.InputV)
+			}
+			step := 0.0
+			if sm.State.OnBattery() {
+				step = 1.0
+			}
+			dd.UPSOutageSteps = append(dd.UPSOutageSteps, step)
+		}
+		// Cap the series to the chart resolution like every other tile —
+		// otherwise a 24h window ships thousands of SVG points per SSE tick.
+		dd.UPSBatteryV = downsampleAvg(dd.UPSBatteryV, points)
+		dd.UPSInputV = downsampleAvg(dd.UPSInputV, points)
+		dd.UPSOutageSteps = downsampleMax(dd.UPSOutageSteps, points)
+		// Outage events touching the window: count, total on-battery time and
+		// the most recent one (events are cached newest-first).
+		var total time.Duration
+		for _, ev := range s.ups.CachedEvents() {
+			open := ev.End == nil
+			if !open && ev.End.Before(cutoff) {
+				continue // ended before the window
+			}
+			dd.UPSOutageCount++
+			if open {
+				total += time.Since(ev.Start)
+				if dd.UPSLastOutage == "" {
+					dd.UPSLastOutage = "en curso"
+				}
+			} else {
+				if ev.DurationS != nil {
+					total += time.Duration(*ev.DurationS) * time.Second
+				}
+				if dd.UPSLastOutage == "" {
+					last := "hace " + ups.FormatDur(time.Since(*ev.End))
+					if ev.DurationS != nil {
+						last += " · duró " + ups.FormatDur(time.Duration(*ev.DurationS)*time.Second)
+					}
+					dd.UPSLastOutage = last
+				}
+			}
+		}
+		if total > 0 {
+			dd.UPSOutageTotal = ups.FormatDur(total)
+		}
+	}
 	return dd
+}
+
+// downsampleAvg reduces vals to at most n points by averaging equal buckets.
+func downsampleAvg(vals []float64, n int) []float64 {
+	if n <= 0 || len(vals) <= n {
+		return vals
+	}
+	out := make([]float64, n)
+	for i := 0; i < n; i++ {
+		lo, hi := i*len(vals)/n, (i+1)*len(vals)/n
+		if hi <= lo {
+			hi = lo + 1
+		}
+		var sum float64
+		for _, v := range vals[lo:hi] {
+			sum += v
+		}
+		out[i] = sum / float64(hi-lo)
+	}
+	return out
+}
+
+// downsampleMax reduces vals to at most n points keeping each bucket's maximum
+// — used for the outage steps so a short outage inside a bucket stays visible
+// instead of being averaged away.
+func downsampleMax(vals []float64, n int) []float64 {
+	if n <= 0 || len(vals) <= n {
+		return vals
+	}
+	out := make([]float64, n)
+	for i := 0; i < n; i++ {
+		lo, hi := i*len(vals)/n, (i+1)*len(vals)/n
+		if hi <= lo {
+			hi = lo + 1
+		}
+		maxV := vals[lo]
+		for _, v := range vals[lo:hi] {
+			if v > maxV {
+				maxV = v
+			}
+		}
+		out[i] = maxV
+	}
+	return out
+}
+
+// chartWindowDuration maps the dashboard window selector value to a duration.
+func chartWindowDuration(window string) time.Duration {
+	switch window {
+	case "5m":
+		return 5 * time.Minute
+	case "2h":
+		return 2 * time.Hour
+	case "6h":
+		return 6 * time.Hour
+	case "12h":
+		return 12 * time.Hour
+	default: // "24h" and anything unrecognised
+		return 24 * time.Hour
+	}
 }
 
 // evalInsightsTick is the single integration point between the SSE broker
@@ -656,6 +791,14 @@ func (s *Server) gatherDashboardData(chartWindow string, chartPoints int) Dashbo
 	if s.wan != nil {
 		snap := s.wan.Snapshot()
 		dd.WAN = &snap
+	}
+
+	if s.ups != nil {
+		snap := s.ups.Current()
+		dd.UPS = &snap
+		// Cheap reads of the poll-time cache — no DB scan on the SSE render path.
+		dd.UPSInsights = s.ups.CachedInsights()
+		dd.UPSOnlineSince = s.ups.OnlineSinceLabel()
 	}
 
 	if s.systemd != nil {

@@ -108,5 +108,86 @@
     </div>
 </div>
 {{end}}
+
+{{if and .UPS .UPSBatteryV}}
+{{$u := .UPS}}
+<div class="space-y-2">
+    <p class="text-[11px] text-text-muted uppercase tracking-wider">UPS history</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="metric-tile">
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-xs text-text-muted">batería</p>
+                <p class="text-xs font-mono {{$u.BattSeriesClass}}">{{printf "%.1f V" (sparkCurrent .UPSBatteryV)}}</p>
+            </div>
+            <div class="text-[10px] text-text-muted mb-1 font-mono">
+                {{$u.BattPctStr}}% estimado · corte {{$u.CutoffStr}} · window {{.ChartWindow}}
+            </div>
+            <div class="grid grid-cols-[44px_1fr] items-stretch gap-2">
+                <div class="h-16 flex flex-col justify-between text-[10px] text-text-muted font-mono">
+                    <span>{{printf "%.1f" (sparkMax .UPSBatteryV)}}</span>
+                    <span>{{printf "%.1f" (sparkAvg .UPSBatteryV)}}</span>
+                    <span>{{printf "%.1f" (sparkMin .UPSBatteryV)}}</span>
+                </div>
+                <div>{{sparklineSVGColor .UPSBatteryV $u.BattSeriesStroke}}</div>
+            </div>
+            <div class="mt-2 flex items-center justify-between text-[10px] text-text-muted font-mono">
+                <span>min {{printf "%.1f V" (sparkMin .UPSBatteryV)}}</span>
+                <span>avg {{printf "%.1f V" (sparkAvg .UPSBatteryV)}}</span>
+                <span>max {{printf "%.1f V" (sparkMax .UPSBatteryV)}}</span>
+                <span>{{len .UPSBatteryV}} samples</span>
+            </div>
+        </div>
+        {{if .UPSInputV}}
+        <div class="metric-tile">
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-xs text-text-muted">entrada</p>
+                <p class="text-xs font-mono {{$u.InputSeriesClass}}">{{printf "%.0f V" (sparkCurrent .UPSInputV)}}</p>
+            </div>
+            <div class="text-[10px] text-text-muted mb-1 font-mono">
+                rango {{printf "%.0f–%.0f V" $u.InLowV $u.InHighV}} · window {{.ChartWindow}}
+            </div>
+            <div class="grid grid-cols-[44px_1fr] items-stretch gap-2">
+                <div class="h-16 flex flex-col justify-between text-[10px] text-text-muted font-mono">
+                    <span>{{printf "%.0f" (sparkMax .UPSInputV)}}</span>
+                    <span>{{printf "%.0f" (sparkAvg .UPSInputV)}}</span>
+                    <span>{{printf "%.0f" (sparkMin .UPSInputV)}}</span>
+                </div>
+                <div>{{sparklineSVGColor .UPSInputV $u.InputSeriesStroke}}</div>
+            </div>
+            <div class="mt-2 flex items-center justify-between text-[10px] text-text-muted font-mono">
+                <span>min {{printf "%.0f V" (sparkMin .UPSInputV)}}</span>
+                <span>avg {{printf "%.0f V" (sparkAvg .UPSInputV)}}</span>
+                <span>max {{printf "%.0f V" (sparkMax .UPSInputV)}}</span>
+                <span>{{len .UPSInputV}} samples</span>
+            </div>
+        </div>
+        {{end}}
+        {{if .UPSOutageSteps}}
+        <div class="metric-tile">
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-xs text-text-muted">cortes</p>
+                <p class="text-xs font-mono {{if $u.InOutage}}text-danger{{else if eq .UPSOutageCount 0}}text-green-400{{else}}text-yellow-400{{end}}">{{.UPSOutageCount}}</p>
+            </div>
+            <div class="text-[10px] text-text-muted mb-1 font-mono">
+                {{if .UPSLastOutage}}último {{.UPSLastOutage}}{{else}}sin cortes en la ventana{{end}} · window {{.ChartWindow}}
+            </div>
+            <div class="grid grid-cols-[44px_1fr] items-stretch gap-2">
+                <div class="h-16 flex flex-col justify-between text-[10px] text-text-muted font-mono">
+                    <span>bat</span>
+                    <span></span>
+                    <span>red</span>
+                </div>
+                <div>{{if $u.InOutage}}{{sparklineSVGColor .UPSOutageSteps "var(--color-danger)"}}{{else if eq .UPSOutageCount 0}}{{sparklineSVGColor .UPSOutageSteps "var(--color-green-400)"}}{{else}}{{sparklineSVGColor .UPSOutageSteps "var(--color-yellow-400)"}}{{end}}</div>
+            </div>
+            <div class="mt-2 flex items-center justify-between text-[10px] text-text-muted font-mono">
+                <span>{{.UPSOutageCount}} cortes</span>
+                <span>{{if .UPSOutageTotal}}{{.UPSOutageTotal}} en batería{{else}}0 en batería{{end}}</span>
+                <span>{{len .UPSOutageSteps}} samples</span>
+            </div>
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}
 </div>
 {{end}}
