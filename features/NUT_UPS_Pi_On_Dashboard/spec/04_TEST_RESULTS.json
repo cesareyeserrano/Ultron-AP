@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-07-16T00:42:51.313Z",
+  "executed_at": "2026-07-16T21:51:35.836Z",
   "test_runner": "go test ../../internal/ups/... ../../internal/server/... -v",
   "exit_code": 0,
   "results": [
@@ -66,7 +66,7 @@
     {
       "tc_id": "TC-UPS-013h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_013h_SampleSurvivesRestart (0.00s)"
+      "notes": "--- PASS: TestTC_UPS_013h_SampleSurvivesRestart (0.01s)"
     },
     {
       "tc_id": "TC-UPS-014e",
@@ -76,7 +76,7 @@
     {
       "tc_id": "TC-UPS-015f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_015f_PruneRetentionBoundary (0.00s)"
+      "notes": "--- PASS: TestTC_UPS_015f_PruneRetentionBoundary (0.01s)"
     },
     {
       "tc_id": "TC-UPS-016h",
@@ -91,7 +91,7 @@
     {
       "tc_id": "TC-UPS-018f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_018f_NoDoubleCountOnRestart (0.00s)"
+      "notes": "--- PASS: TestTC_UPS_018f_NoDoubleCountOnRestart (0.01s)"
     },
     {
       "tc_id": "TC-UPS-019h",
@@ -121,12 +121,12 @@
     {
       "tc_id": "TC-UPS-024h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_024h_WeeklyOutageInsight (0.00s)"
+      "notes": "--- PASS: TestTC_UPS_024h_WeeklyOutageInsight (0.01s)"
     },
     {
       "tc_id": "TC-UPS-025e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_025e_OutageInsightRealCount (0.00s)"
+      "notes": "--- PASS: TestTC_UPS_025e_OutageInsightRealCount (0.01s)"
     },
     {
       "tc_id": "TC-UPS-026f",
@@ -216,7 +216,7 @@
     {
       "tc_id": "TC-UPS-043h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_043h_BenignRender (0.00s)"
+      "notes": "--- PASS: TestTC_UPS_043h_BenignRender (0.01s)"
     },
     {
       "tc_id": "TC-UPS-044f",

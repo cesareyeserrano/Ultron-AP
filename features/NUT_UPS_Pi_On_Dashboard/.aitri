@@ -4,55 +4,24 @@
     1,
     "ux",
     2,
-    3
+    3,
+    4,
+    5
   ],
   "completedPhases": [
     1,
     "ux",
     2,
-    3
+    3,
+    4,
+    5
   ],
   "projectName": "NUT_UPS_Pi_On_Dashboard",
   "createdAt": "2026-07-15T02:47:48.424Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-16T01:11:45.850Z",
+  "updatedAt": "2026-07-16T21:51:35.955Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-07-15T14:51:58.935Z",
-      "event": "approved",
-      "phase": 2
-    },
-    {
-      "at": "2026-07-15T14:52:16.250Z",
-      "event": "started",
-      "phase": 3
-    },
-    {
-      "at": "2026-07-15T15:01:37.426Z",
-      "event": "completed",
-      "phase": 3
-    },
-    {
-      "at": "2026-07-15T15:01:56.889Z",
-      "event": "completed",
-      "phase": 3
-    },
-    {
-      "at": "2026-07-15T15:04:20.303Z",
-      "event": "approved",
-      "phase": 3
-    },
-    {
-      "at": "2026-07-15T15:07:22.808Z",
-      "event": "started",
-      "phase": 4
-    },
-    {
-      "at": "2026-07-15T22:32:03.248Z",
-      "event": "completed",
-      "phase": 4
-    },
     {
       "at": "2026-07-15T23:30:23.786Z",
       "event": "completed",
@@ -144,21 +113,61 @@
       "event": "approved",
       "phase": 3,
       "afterDrift": true
+    },
+    {
+      "at": "2026-07-16T21:50:24.961Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-07-16T21:51:08.871Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-16T21:51:09.015Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-07-16T21:51:09.114Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-07-16T21:51:09.215Z",
+      "event": "approved",
+      "phase": 5
+    },
+    {
+      "at": "2026-07-16T21:51:35.839Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 56,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-07-16T21:51:35.932Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 56,
+      "failed": 0
     }
   ],
-  "cascadedPhases": [
-    "4",
-    "5"
-  ],
+  "cascadedPhases": [],
   "artifactHashes": {
     "1": "766ccbe1fd5c3fed8e90eaea126c04af48e128055831798e72094403997fef00",
     "2": "7abb22fb468c1d64559acc68a1a4d002c5c5289ca178b12215ee79f1442ad87c",
     "3": "fd22b75ea1120ed57f126bcee046cd31088cd44cfa4edb7912d5eb71dced3f6c",
+    "4": "bc248cede25c75e3f6de62f0232ebd5195a825f7fe9bafb71d8c1e1660adf737",
+    "5": "abb391a238d28f85850b47a72424b7626486b9e67e69448e91f4a91a072a9988",
     "ux": "575687525b0cf46c3631a8685eb313921436fe86e290e7283b4bbb809c4a9868"
   },
   "coverageAuditLastAt": "2026-07-15T13:25:51.293Z",
   "coverageAuditReqHash": "e37296fa43a68674ef5d7a2e905a13860e509dfe0ef3b8d2708e06b191e530e4",
-  "verifyPassed": false,
+  "verifyPassed": true,
   "frSnapshots": {
     "2": [
       "FR-016",
@@ -215,5 +224,24 @@
       "FR-023",
       "FR-024"
     ]
+  },
+  "verifyResultsHash": "0b279a9c56a9e1950511e2db3235d9bf5af22930d3fc1f6fea155e831b069005",
+  "verifyRanAt": "2026-07-16T21:51:35.838Z",
+  "lastVerifyRun": {
+    "passed": 56,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-07-16T21:51:35.838Z"
+  },
+  "verifySummary": {
+    "total": 56,
+    "passed": 56,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
   }
 }
