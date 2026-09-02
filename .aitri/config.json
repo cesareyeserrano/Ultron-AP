@@ -20,9 +20,9 @@
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "2.0.1",
+  "aitriVersion": "2.2.0-rc.8",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-15T01:02:54.085Z",
+  "updatedAt": "2026-09-02T23:15:17.861Z",
   "artifactHashes": {
     "1": "1a10259aae8d677034a5d7d59745ed93c3f60567bbaa4ead2abd51c28e2b18e9",
     "2": "0426c3455ceb59555d78ef8f4014303632ebf1f2de1301433fd826e3a9d9fde9",
@@ -33,30 +33,6 @@
     "ux": "a807417b4408f5993f64156afb7042052fd2f3e875ba5b7f92415c087c3eab19"
   },
   "events": [
-    {
-      "at": "2026-07-14T18:31:32.763Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 86,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-14T18:31:32.829Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 86,
-      "failed": 0
-    },
-    {
-      "at": "2026-07-14T18:31:49.560Z",
-      "event": "reconcile-pending",
-      "phase": null,
-      "files": 2,
-      "method": "git",
-      "verifyPassedCleared": true
-    },
     {
       "at": "2026-07-14T18:31:59.205Z",
       "event": "verify-run",
@@ -190,6 +166,30 @@
       "at": "2026-07-15T00:12:43.583Z",
       "event": "approved",
       "phase": "ux"
+    },
+    {
+      "at": "2026-09-02T23:13:59.068Z",
+      "event": "reconcile-pending",
+      "phase": null,
+      "files": 6,
+      "method": "git",
+      "verifyPassedCleared": true
+    },
+    {
+      "at": "2026-09-02T23:15:15.279Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-02T23:15:17.830Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
@@ -204,7 +204,7 @@
       "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server/ — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
       "module": "0.1.65",
       "category": "validatorGap",
-      "recordedAt": "2026-07-14T14:20:40.837Z"
+      "recordedAt": "2026-09-02T23:13:41.234Z"
     },
     {
       "target": "features/insights-engine/spec/04_BUILD_REPORT.json",
@@ -212,7 +212,7 @@
       "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server/ — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
       "module": "0.1.65",
       "category": "validatorGap",
-      "recordedAt": "2026-07-14T14:20:40.837Z"
+      "recordedAt": "2026-09-02T23:13:41.235Z"
     },
     {
       "target": "features/lan-devices/spec/04_BUILD_REPORT.json",
@@ -220,7 +220,15 @@
       "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server/ — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
       "module": "0.1.65",
       "category": "validatorGap",
-      "recordedAt": "2026-07-14T14:20:40.837Z"
+      "recordedAt": "2026-09-02T23:13:41.235Z"
+    },
+    {
+      "target": "features/network-tile/spec/04_BUILD_REPORT.json",
+      "transform": "legacy venv-relative test_runner (\"go test -C ../.. ./internal/server -run TestTC_NT -v\")",
+      "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
+      "module": "0.1.65",
+      "category": "validatorGap",
+      "recordedAt": "2026-09-02T23:13:41.235Z"
     },
     {
       "target": "features/settings-revamp/spec/04_BUILD_REPORT.json",
@@ -228,7 +236,7 @@
       "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
       "module": "0.1.65",
       "category": "validatorGap",
-      "recordedAt": "2026-07-14T14:20:40.837Z"
+      "recordedAt": "2026-09-02T23:13:41.235Z"
     }
   ],
   "coverageAuditLastAt": "2026-06-15T22:00:30.312Z",
@@ -320,15 +328,18 @@
       "FR-015"
     ]
   },
-  "verifyResultsHash": "016112761d98b2fe70ee2c68bc8beac5a05c41826af8976d43664a387f0de07a",
-  "verifyRanAt": "2026-07-14T22:48:07.078Z",
+  "verifyResultsHash": "d4ce3b8cd6c27ab16010a3327999d5c011e7345d79419946a8d993a878cf9118",
+  "verifyRanAt": "2026-09-02T23:15:15.212Z",
   "lastVerifyRun": {
     "passed": 86,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-07-14T22:48:07.078Z"
+    "at": "2026-09-02T23:15:15.212Z"
   },
+  "securityAuditLastAt": "2026-07-15T01:02:54.083Z",
+  "verifyRanRef": "e22b4efd000bcda3a602a91b518274e1db6c2de0",
+  "verifyRanDirty": true,
   "verifySummary": {
     "total": 86,
     "passed": 86,
@@ -338,6 +349,5 @@
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
-  },
-  "securityAuditLastAt": "2026-07-15T01:02:54.083Z"
+  }
 }
