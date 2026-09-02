@@ -19,55 +19,9 @@
   "projectName": "NUT_UPS_Pi_On_Dashboard",
   "createdAt": "2026-07-15T02:47:48.424Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-07-16T21:51:35.955Z",
+  "updatedAt": "2026-09-02T23:17:18.522Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-07-15T23:30:23.786Z",
-      "event": "completed",
-      "phase": 4
-    },
-    {
-      "at": "2026-07-16T00:38:47.795Z",
-      "event": "approved",
-      "phase": 4
-    },
-    {
-      "at": "2026-07-16T00:38:52.014Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 0,
-      "failed": 0,
-      "skipped": 55,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-16T00:39:26.750Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 55,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-16T00:39:37.085Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 55,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-07-16T00:40:10.172Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 55,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
     {
       "at": "2026-07-16T00:41:44.536Z",
       "event": "verify-run",
@@ -154,6 +108,44 @@
       "phase": "verify",
       "passed": 56,
       "failed": 0
+    },
+    {
+      "at": "2026-07-16T21:53:12.318Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-02T23:16:42.941Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 56,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-02T23:16:45.881Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 56,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-02T23:16:51.328Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-02T23:17:15.355Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-02T23:17:18.485Z",
+      "event": "approved",
+      "phase": 5,
+      "version": "1.0.0",
+      "version_source": null
     }
   ],
   "cascadedPhases": [],
@@ -225,14 +217,16 @@
       "FR-024"
     ]
   },
-  "verifyResultsHash": "0b279a9c56a9e1950511e2db3235d9bf5af22930d3fc1f6fea155e831b069005",
-  "verifyRanAt": "2026-07-16T21:51:35.838Z",
+  "verifyResultsHash": "88a4e12971dd89d9ec437f4e3d65da0683fab0bb2752b31c06a480306ff46836",
+  "verifyRanAt": "2026-09-02T23:16:42.829Z",
+  "verifyRanRef": "333abac9bc91a44896e2fa0d6d3a528e8ffae82a",
+  "verifyRanDirty": false,
   "lastVerifyRun": {
     "passed": 56,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-07-16T21:51:35.838Z"
+    "at": "2026-09-02T23:16:42.829Z"
   },
   "verifySummary": {
     "total": 56,
@@ -243,5 +237,12 @@
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
-  }
+  },
+  "releaseHistory": [
+    {
+      "version": "1.0.0",
+      "version_source": null,
+      "at": "2026-09-02T23:17:18.484Z"
+    }
+  ]
 }

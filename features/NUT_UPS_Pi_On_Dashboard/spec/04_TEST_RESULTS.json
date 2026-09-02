@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-07-16T21:51:35.836Z",
+  "executed_at": "2026-09-02T23:16:42.517Z",
   "test_runner": "go test ../../internal/ups/... ../../internal/server/... -v",
   "exit_code": 0,
   "results": [
@@ -46,7 +46,7 @@
     {
       "tc_id": "TC-UPS-009h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_009h_BeeperDisplay (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_009h_BeeperDisplay (0.02s)"
     },
     {
       "tc_id": "TC-UPS-010h",
@@ -76,7 +76,7 @@
     {
       "tc_id": "TC-UPS-015f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_015f_PruneRetentionBoundary (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_015f_PruneRetentionBoundary (0.00s)"
     },
     {
       "tc_id": "TC-UPS-016h",
@@ -126,7 +126,7 @@
     {
       "tc_id": "TC-UPS-025e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_025e_OutageInsightRealCount (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_025e_OutageInsightRealCount (0.00s)"
     },
     {
       "tc_id": "TC-UPS-026f",
@@ -171,7 +171,7 @@
     {
       "tc_id": "TC-UPS-034h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_034h_CleanDegradation (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_034h_CleanDegradation (0.02s)"
     },
     {
       "tc_id": "TC-UPS-035e",
@@ -211,7 +211,7 @@
     {
       "tc_id": "TC-UPS-042f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_042f_RenderIssuesNoCommand (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_042f_RenderIssuesNoCommand (0.02s)"
     },
     {
       "tc_id": "TC-UPS-043h",
