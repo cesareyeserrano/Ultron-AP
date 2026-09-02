@@ -1810,6 +1810,33 @@
       "fix_at": "2026-07-14T22:48:04.319Z",
       "close_commit_sha": "3e147b3ba5e99129c156084b25a14d5b955acc75",
       "close_at": "2026-07-14T22:48:04.412Z"
+    },
+    {
+      "id": "BG-078",
+      "title": "UPS alerts share one storm key: a second kind within 60s is silently swallowed as an edit",
+      "description": "",
+      "steps_to_reproduce": [
+        "Trigger a mains outage on the Pi (UPS on battery)",
+        "Within the 60s storm FireWindow, let a second UPS alert of a DIFFERENT kind fire (input voltage out of range, or low battery)"
+      ],
+      "expected_result": "Each distinct UPS alert kind arrives as its own Telegram message",
+      "actual_result": "Only the first arrives. All UPS alerts carry Source 'ups' and no rule ConfigID, so ruleIDForEvent falls back to hashSource('ups') — one shared storm entry. The second is collapsed into an editMessageText of the first and Notify returns nil, so the dispatcher logs channels=1 failed=0 for a message that never appeared. Worst case: a low-battery CRITICAL raised during an outage is swallowed by the outage warning.",
+      "environment": "production Pi 192.168.1.29, commit 0285daef1f0b",
+      "severity": "high",
+      "status": "closed",
+      "fr": null,
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": "journalctl 2026-09-02 17:48:01 + 17:49:01 two notify.send kind=fire, one Telegram message",
+      "reported_by": "Cesar",
+      "created_at": "2026-09-02T23:14:45.641Z",
+      "updated_at": "2026-09-02T23:14:58.592Z",
+      "resolution": "Verified by 4 regression tests in internal/notify/telegram_dedupkey_test.go, validated by reintroducing the bug: TestUPS_DistinctKindsDoNotCollapse and TestRuleIDForEvent_Precedence fail without the DedupKey branch and pass with it. TestUPS_SameKindStillCollapses proves FR-024 storm protection is intact; the pre-existing FR-024 suite (TC-TMU-024hi/ei/di) still passes. Full suite green with vet enabled.",
+      "fix_commit_sha": "ac4ea4b1258373c249fe1706f7fc4375a0c4077d",
+      "fix_at": "2026-09-02T23:14:52.238Z",
+      "close_commit_sha": "ac4ea4b1258373c249fe1706f7fc4375a0c4077d",
+      "close_at": "2026-09-02T23:14:58.592Z"
     }
   ]
 }
