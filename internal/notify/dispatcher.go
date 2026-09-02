@@ -310,8 +310,12 @@ func (d *Dispatcher) logSend(evt *Event, out render.Output, renderMs int64, chan
 	if causeSource == "" {
 		causeSource = "none"
 	}
-	log.Printf("notify.send rule_id=%d severity=%s surface=%s kind=%s bytes_sent=%d render_ms=%d truncated_step=%s cause_source=%s channels=%d failed=%d",
-		ruleID, severity, evt.Surface, evt.Kind,
+	// dedup_key is the key the storm cache actually collapses on. It differs
+	// from rule_id whenever the alert has no rule ConfigID (rule_id then logs
+	// 0, which reads as "no dedup" but is not) — log both so a silent
+	// edit-instead-of-send is traceable from the journal alone.
+	log.Printf("notify.send rule_id=%d dedup_key=%d severity=%s surface=%s kind=%s bytes_sent=%d render_ms=%d truncated_step=%s cause_source=%s channels=%d failed=%d",
+		ruleID, ruleIDForEvent(evt), severity, evt.Surface, evt.Kind,
 		len(out.TelegramMD), renderMs,
 		out.TruncatedStep, causeSource,
 		channels, failed)

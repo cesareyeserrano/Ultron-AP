@@ -425,6 +425,12 @@ func ruleIDForEvent(evt *Event) int64 {
 	if evt.Alert.ConfigID != nil && *evt.Alert.ConfigID > 0 {
 		return *evt.Alert.ConfigID
 	}
+	// A source that emits several distinct alert kinds sets DedupKey so each
+	// kind gets its own storm entry (and its own chat row) instead of every
+	// alert from that source sharing one.
+	if evt.DedupKey != "" {
+		return int64(hashSource(evt.DedupKey))
+	}
 	// Fallback: hash the source to a stable int64 so docker/systemd
 	// transitions still collapse storms within a 60-second window.
 	return int64(hashSource(evt.Alert.Source))

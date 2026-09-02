@@ -54,6 +54,14 @@ type Event struct {
 	Hostname     string
 	PublicURL    string
 
+	// DedupKey, when non-empty, overrides the storm-collapse key that would
+	// otherwise be derived from Alert.Source. A source that emits several
+	// semantically distinct alerts (UPS: mains outage vs low battery vs
+	// input voltage) MUST set it, otherwise one kind silently collapses
+	// into another's chat row as an edit instead of arriving as its own
+	// notification. Ignored when the alert carries a real rule ConfigID.
+	DedupKey string
+
 	// Trend, when non-nil, is the FR-022 5-minute prior-vs-current sample
 	// for resource fires. The dispatcher populates this from the metrics
 	// ring buffer; resolves and non-resource surfaces leave it nil.

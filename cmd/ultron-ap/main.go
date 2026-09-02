@@ -276,11 +276,18 @@ func main() {
 		// engine's cooldown/mute/storm handling downstream.
 		upsPoller.SetAlerter(ups.NewAlerter(upsCfg, func(a ups.Alert) {
 			alert := &database.Alert{Severity: string(a.Severity), Source: "ups", Message: a.Message}
+			// Every UPS alert shares Source "ups", so without a per-kind
+			// DedupKey the storm cache treats a low-battery critical as a
+			// repeat of an in-flight outage warning and edits that message
+			// instead of sending a new one. Fire and resolve of the same
+			// kind share the key so the resolve clears the right entry.
+			dedupKey := "ups:" + a.Kind
 			if a.Resolve {
 				dispatcher.DispatchEvent(&notify.Event{
 					Alert:      alert,
 					Kind:       notify.EventResolve,
 					Surface:    notify.SurfaceFromSource("ups"),
+					DedupKey:   dedupKey,
 					ResolvedAt: time.Now(),
 				})
 				return
@@ -288,7 +295,12 @@ func main() {
 			if err := db.CreateAlert(alert); err != nil {
 				log.Printf("ups: persist alert failed: %v", err)
 			}
-			dispatcher.Dispatch(alert)
+			dispatcher.DispatchEvent(&notify.Event{
+				Alert:    alert,
+				Kind:     notify.EventFire,
+				Surface:  notify.SurfaceFromSource("ups"),
+				DedupKey: dedupKey,
+			})
 		}))
 		upsCtx, upsCancel := context.WithCancel(context.Background())
 		go upsPoller.Run(upsCtx)

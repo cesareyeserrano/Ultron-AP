@@ -24,8 +24,14 @@ const (
 type Alert struct {
 	Severity Severity
 	Source   string // always "ups"
-	Message  string
-	Resolve  bool // true => a recovery/resolve notification, not a new fire
+	// Kind is a stable per-rule discriminator ("outage", "lowbatt", ...).
+	// The notification layer keys its storm/dedup cache on it so that two
+	// semantically different UPS alerts cannot collapse into one another's
+	// chat row — a low-battery critical must never be swallowed by an
+	// in-flight mains-outage message.
+	Kind    string
+	Message string
+	Resolve bool // true => a recovery/resolve notification, not a new fire
 }
 
 // AlertSink delivers an Alert. Injected by main; nil in a bare poller.
@@ -61,13 +67,13 @@ func (a *Alerter) Observe(snap Snapshot) {
 	if !snap.Reachable {
 		if !a.inUnreachable {
 			a.inUnreachable = true
-			a.emit(SevWarning, "UPS sin comunicación", false)
+			a.emit(SevWarning, "comms", "UPS sin comunicación", false)
 		}
 		return
 	}
 	if a.inUnreachable {
 		a.inUnreachable = false
-		a.emit(SevInfo, "UPS: comunicación restablecida", true)
+		a.emit(SevInfo, "comms", "UPS: comunicación restablecida", true)
 	}
 
 	prevOut := isOutage(a.prevState)
@@ -79,19 +85,19 @@ func (a *Alerter) Observe(snap Snapshot) {
 		a.lbFired = false
 		if snap.State == StateLowBatt {
 			a.lbFired = true
-			a.emit(SevCritical, "Batería baja — UPS en batería crítica", false)
+			a.emit(SevCritical, "lowbatt", "Batería baja — UPS en batería crítica", false)
 		} else {
-			a.emit(SevWarning, "En batería — corte de red detectado", false)
+			a.emit(SevWarning, "outage", "En batería — corte de red detectado", false)
 		}
 	case curOut && prevOut && snap.State == StateLowBatt && !a.lbFired: // escalation OB→LB
 		a.lbFired = true
-		a.emit(SevCritical, "Batería baja — UPS en batería crítica", false)
+		a.emit(SevCritical, "lowbatt", "Batería baja — UPS en batería crítica", false)
 	case !curOut && prevOut: // mains restored
 		dur := snap.LastGood.Sub(a.outageStart)
 		if dur < 0 {
 			dur = 0
 		}
-		a.emit(SevInfo, fmt.Sprintf("Red eléctrica restablecida tras %s", formatDur(dur)), true)
+		a.emit(SevInfo, "outage", fmt.Sprintf("Red eléctrica restablecida tras %s", formatDur(dur)), true)
 		a.lbFired = false
 	}
 
@@ -101,7 +107,7 @@ func (a *Alerter) Observe(snap Snapshot) {
 		case *snap.BatteryV <= a.cfg.BattLowV+0.3:
 			if !a.battCritFired {
 				a.battCritFired = true
-				a.emit(SevCritical, fmt.Sprintf("Voltaje de batería crítico: %.1f V", *snap.BatteryV), false)
+				a.emit(SevCritical, "battvolt", fmt.Sprintf("Voltaje de batería crítico: %.1f V", *snap.BatteryV), false)
 			}
 		case *snap.BatteryV > a.cfg.BattLowV+0.5:
 			a.battCritFired = false // recovered — allow a future episode to alert
@@ -117,7 +123,7 @@ func (a *Alerter) Observe(snap Snapshot) {
 			}
 			if !a.voltFired && a.now().Sub(a.voltOutStart) >= a.cfg.Debounce {
 				a.voltFired = true
-				a.emit(SevWarning, fmt.Sprintf("Voltaje de entrada fuera de rango: %.0f V", *snap.InputV), false)
+				a.emit(SevWarning, "inputvolt", fmt.Sprintf("Voltaje de entrada fuera de rango: %.0f V", *snap.InputV), false)
 			}
 		} else {
 			a.voltOutStart = time.Time{}
@@ -129,16 +135,16 @@ func (a *Alerter) Observe(snap Snapshot) {
 	if snap.State == StateReplace {
 		if a.lastRB.IsZero() || a.now().Sub(a.lastRB) >= 24*time.Hour {
 			a.lastRB = a.now()
-			a.emit(SevWarning, "Reemplazar batería del UPS", false)
+			a.emit(SevWarning, "replace", "Reemplazar batería del UPS", false)
 		}
 	}
 
 	a.prevState = snap.State
 }
 
-func (a *Alerter) emit(sev Severity, msg string, resolve bool) {
+func (a *Alerter) emit(sev Severity, kind, msg string, resolve bool) {
 	if a.sink != nil {
-		a.sink(Alert{Severity: sev, Source: "ups", Message: msg, Resolve: resolve})
+		a.sink(Alert{Severity: sev, Source: "ups", Kind: kind, Message: msg, Resolve: resolve})
 	}
 }
 
