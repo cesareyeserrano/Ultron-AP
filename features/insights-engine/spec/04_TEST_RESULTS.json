@@ -1,17 +1,17 @@
 {
-  "executed_at": "2026-05-21T21:34:53.981Z",
+  "executed_at": "2026-09-03T03:20:51.933Z",
   "test_runner": "go test -C ../.. ./internal/insights/... ./internal/server/ -run TC_IE -v",
   "exit_code": 0,
   "results": [
     {
       "tc_id": "TC-IE-001h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_001h_EngineEvaluatesIdleTickProducesNoVerdicts (0.01s)"
+      "notes": "--- PASS: TestTC_IE_001h_EngineEvaluatesIdleTickProducesNoVerdicts (0.00s)"
     },
     {
       "tc_id": "TC-IE-001f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_001f_SnapshotMissingHoldsPreviousSetSingleLog (0.01s)"
+      "notes": "--- PASS: TestTC_IE_001f_SnapshotMissingHoldsPreviousSetSingleLog (0.00s)"
     },
     {
       "tc_id": "TC-IE-001e",
@@ -61,7 +61,7 @@
     {
       "tc_id": "TC-IE-004e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_004e_DisableMidflightDropsVerdictReEnableResetsFirstEmitted (0.01s)"
+      "notes": "--- PASS: TestTC_IE_004e_DisableMidflightDropsVerdictReEnableResetsFirstEmitted (0.00s)"
     },
     {
       "tc_id": "TC-IE-005h",
@@ -96,7 +96,7 @@
     {
       "tc_id": "TC-IE-007h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_007h_FreshDBSeedsTenEnabledRules (0.01s)"
+      "notes": "--- PASS: TestTC_IE_007h_FreshDBSeedsTenEnabledRules (0.00s)"
     },
     {
       "tc_id": "TC-IE-007f",
@@ -106,7 +106,7 @@
     {
       "tc_id": "TC-IE-007e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_007e_SchemaIdempotentOrphanStateTolerated (0.01s)"
+      "notes": "--- PASS: TestTC_IE_007e_SchemaIdempotentOrphanStateTolerated (0.00s)"
     },
     {
       "tc_id": "TC-IE-008h",
@@ -121,7 +121,7 @@
     {
       "tc_id": "TC-IE-008e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_008e_HysteresisSurvivesSnapshotMissingTick (0.01s)"
+      "notes": "--- PASS: TestTC_IE_008e_HysteresisSurvivesSnapshotMissingTick (0.00s)"
     },
     {
       "tc_id": "TC-IE-009h",
@@ -131,22 +131,22 @@
     {
       "tc_id": "TC-IE-009f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_009f_WANLANDisambigFiresOnlyOnGatewayOkCloudflareFail (0.01s)"
+      "notes": "--- PASS: TestTC_IE_009f_WANLANDisambigFiresOnlyOnGatewayOkCloudflareFail (0.00s)"
     },
     {
       "tc_id": "TC-IE-009e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_009e_OneHourIdleZeroFalsePositives (0.01s)"
+      "notes": "--- PASS: TestTC_IE_009e_OneHourIdleZeroFalsePositives (0.00s)"
     },
     {
       "tc_id": "TC-IE-010e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_010e_NFR021_NoNotifyOrAlertImports (0.05s)"
+      "notes": "--- PASS: TestTC_IE_010e_NFR021_NoNotifyOrAlertImports (0.03s)"
     },
     {
       "tc_id": "TC-IE-011e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_011e_NFR016_ZeroAllocationsPerTick (0.01s)"
+      "notes": "--- PASS: TestTC_IE_011e_NFR016_ZeroAllocationsPerTick (0.00s)"
     },
     {
       "tc_id": "TC-IE-012h",
@@ -157,6 +157,36 @@
       "tc_id": "TC-IE-012f",
       "status": "pass",
       "notes": "--- PASS: TestTC_IE_012f_VerdictsAPIUnauthenticatedReturns401 (0.01s)"
+    },
+    {
+      "tc_id": "TC-IE-013f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_013f_DuplicateRuleIDKeepsFirstAndLogsSecond (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-014f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_014f_MissingLanDeviceVarIsFalseAndLoggedOnce (0.01s)"
+    },
+    {
+      "tc_id": "TC-IE-015h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_015h_WithinSeverityVerdictsAreNewestFirst (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-016f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_016f_OrphanRuleStateDoesNotBreakStartupOrEvaluation (0.01s)"
+    },
+    {
+      "tc_id": "TC-IE-017f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_017f_FlappingLogCarriesRuleIDAndTransitionCount (0.00s)"
+    },
+    {
+      "tc_id": "TC-IE-018h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_IE_018h_WANLANDisambigIsWarnOverTwoConsecutiveTicks (0.00s)"
     }
   ],
   "fr_coverage": [
@@ -170,7 +200,7 @@
     },
     {
       "fr_id": "FR-040",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -178,7 +208,7 @@
     },
     {
       "fr_id": "FR-041",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -202,7 +232,7 @@
     },
     {
       "fr_id": "FR-044",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -210,7 +240,7 @@
     },
     {
       "fr_id": "FR-045",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -218,7 +248,7 @@
     },
     {
       "fr_id": "FR-046",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -226,7 +256,261 @@
     },
     {
       "fr_id": "FR-047",
-      "tests_passing": 3,
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "ac_coverage": [
+    {
+      "ac_id": "AC-039-001",
+      "fr_id": "FR-039",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-039-002",
+      "fr_id": "FR-039",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-039-003",
+      "fr_id": "FR-039",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-040-001",
+      "fr_id": "FR-040",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-040-002",
+      "fr_id": "FR-040",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-040-003",
+      "fr_id": "FR-040",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-041-001",
+      "fr_id": "FR-041",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-041-002",
+      "fr_id": "FR-041",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-041-003",
+      "fr_id": "FR-041",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-042-001",
+      "fr_id": "FR-042",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-042-002",
+      "fr_id": "FR-042",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-042-003",
+      "fr_id": "FR-042",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-043-001",
+      "fr_id": "FR-043",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-043-002",
+      "fr_id": "FR-043",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-043-003",
+      "fr_id": "FR-043",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-044-001",
+      "fr_id": "FR-044",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-044-002",
+      "fr_id": "FR-044",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-044-003",
+      "fr_id": "FR-044",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-045-001",
+      "fr_id": "FR-045",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-045-002",
+      "fr_id": "FR-045",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-045-003",
+      "fr_id": "FR-045",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-046-001",
+      "fr_id": "FR-046",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-046-002",
+      "fr_id": "FR-046",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-046-003",
+      "fr_id": "FR-046",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-047-001",
+      "fr_id": "FR-047",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-047-002",
+      "fr_id": "FR-047",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-047-003",
+      "fr_id": "FR-047",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-047-004",
+      "fr_id": "FR-047",
+      "tests_passing": 1,
       "tests_failing": 0,
       "tests_skipped": 0,
       "tests_manual": 0,
@@ -234,13 +518,45 @@
     }
   ],
   "summary": {
-    "total": 31,
-    "passed": 31,
+    "total": 37,
+    "passed": 37,
     "failed": 0,
     "skipped": 0,
     "skipped_e2e": 0,
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
-  }
+  },
+  "low_confidence_tcs": [
+    {
+      "tc_id": "TC-IE-010e",
+      "file": "../../internal/insights/insights_test.go",
+      "assertCount": 1
+    },
+    {
+      "tc_id": "TC-IE-010e",
+      "file": "../../internal/insights/insights_test.go",
+      "assertCount": 1
+    },
+    {
+      "tc_id": "TC-IE-011e",
+      "file": "../../internal/insights/insights_test.go",
+      "assertCount": 1
+    },
+    {
+      "tc_id": "TC-IE-011e",
+      "file": "../../internal/insights/insights_test.go",
+      "assertCount": 1
+    },
+    {
+      "tc_id": "TC-IE-003h",
+      "file": "../../internal/insights/lang/lang_test.go",
+      "assertCount": 1
+    },
+    {
+      "tc_id": "TC-IE-003h",
+      "file": "../../internal/insights/lang/lang_test.go",
+      "assertCount": 1
+    }
+  ]
 }

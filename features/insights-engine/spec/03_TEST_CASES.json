@@ -761,6 +761,161 @@
       ],
       "expected_result": "Status 401; no verdict fields leaked in body; matches parent FR-007 auth-error contract",
       "nfr_id": "NFR-019"
+    },
+    {
+      "id": "TC-IE-013f",
+      "requirement_id": "FR-040",
+      "user_story_id": "US-040",
+      "ac_id": "AC-040-003",
+      "title": "Two rules sharing an id: the first loads, the second is rejected as duplicate-rule-id",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "rules.LoadFromBytes reachable with a capturing LogFunc"
+      ],
+      "given": "A rule document with two well-formed entries that both declare id 'same_id', differing in title, condition and severity",
+      "when": "LoadFromBytes decodes the document",
+      "then": "Load succeeds; exactly one rule is returned; it is the FIRST occurrence (title 'First', severity critical); the log names 'same_id' with reason duplicate-rule-id",
+      "steps": [
+        "Build a two-entry document sharing one id",
+        "Call LoadFromBytes with a capturing logger",
+        "Assert one rule survives and it is the first occurrence",
+        "Assert the log carries duplicate-rule-id and the offending id"
+      ],
+      "expected_result": "len(rules)==1, rules[0].Title=='First', rules[0].Severity=='critical', log contains duplicate-rule-id and same_id",
+      "test_data": {},
+      "test_function": "TestTC_IE_013f_DuplicateRuleIDKeepsFirstAndLogsSecond"
+    },
+    {
+      "id": "TC-IE-014f",
+      "requirement_id": "FR-041",
+      "user_story_id": "US-041",
+      "ac_id": "AC-041-003",
+      "title": "A rule over an absent variable resolves false and logs skipped-missing-var once per process",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "Engine started with the bundled rule set and an injected clock"
+      ],
+      "given": "An otherwise idle snapshot with 'lan_device_offline_count' deleted from the variable map, as when the lan-devices feature is disabled (the AC calls this variable 'lan_device_count'; the shipped rule and buildEvalCtx name it lan_device_offline_count)",
+      "when": "Five consecutive ticks are evaluated",
+      "then": "lan_offline_burst never fires; the active set stays empty; exactly one 'skipped-missing-var' line naming the variable is emitted across all five ticks",
+      "steps": [
+        "Delete lan_device_offline_count from idleVars",
+        "Evaluate 5 ticks 5s apart",
+        "Assert lan_offline_burst never appears in any verdict slice",
+        "Assert Active() is empty",
+        "Assert exactly 1 skipped-missing-var line naming the variable"
+      ],
+      "expected_result": "No verdict from lan_offline_burst; Active() empty; exactly 1 skipped-missing-var log line",
+      "test_data": {},
+      "test_function": "TestTC_IE_014f_MissingLanDeviceVarIsFalseAndLoggedOnce"
+    },
+    {
+      "id": "TC-IE-015h",
+      "requirement_id": "FR-044",
+      "user_story_id": "US-044",
+      "ac_id": "AC-044-002",
+      "title": "Within one severity, verdicts are ordered by first_emitted_at descending (newest first)",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Engine started with the bundled rule set and an injected clock"
+      ],
+      "given": "wan_lan_disambig (warn) fires at T0; one minute later memory_pressure (warn) also fires, so two verdicts share a severity and differ only in first_emitted_at",
+      "when": "Active() is read repeatedly (20 times — Active() iterates a map, so a dropped tie-break would still order correctly about half the time on a single read)",
+      "then": "On every read the newer verdict (memory_pressure) is first and its FirstEmittedAt is strictly after the older one's",
+      "steps": [
+        "Fire wan_lan_disambig at T0",
+        "Advance 1 minute and fire memory_pressure",
+        "Read Active() 20 times",
+        "Assert memory_pressure is index 0 on every read",
+        "Assert FirstEmittedAt[0] is after FirstEmittedAt[1]"
+      ],
+      "expected_result": "memory_pressure sorts ahead of wan_lan_disambig on all 20 reads; ordering is FirstEmittedAt descending",
+      "test_data": {},
+      "test_function": "TestTC_IE_015h_WithinSeverityVerdictsAreNewestFirst"
+    },
+    {
+      "id": "TC-IE-016f",
+      "requirement_id": "FR-045",
+      "user_story_id": "US-045",
+      "ac_id": "AC-045-003",
+      "title": "An orphan RuleState row survives, does not fail startup, and is ignored at evaluation",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Engine bound to a fresh database with an injected clock"
+      ],
+      "given": "A RuleState row persisted for 'rule_removed_in_a_later_build', a rule id absent from bundled.json",
+      "when": "LoadBundled runs over that database and a tick is evaluated",
+      "then": "Startup succeeds; the orphan never yields a verdict nor enters the active set; a real rule (disk_critical) still fires normally; the orphan row remains on disk rather than being silently deleted",
+      "steps": [
+        "PersistState for a rule id not in bundled.json",
+        "Call LoadBundled and assert no error",
+        "Evaluate an idle tick and assert the orphan produces no verdict",
+        "Drive disk_root_pct to 99 and assert disk_critical still fires",
+        "Reload state and assert the orphan row is still present"
+      ],
+      "expected_result": "LoadBundled returns nil; no verdict carries the orphan id; disk_critical fires; the orphan row survives in the store",
+      "test_data": {},
+      "test_function": "TestTC_IE_016f_OrphanRuleStateDoesNotBreakStartupOrEvaluation"
+    },
+    {
+      "id": "TC-IE-017f",
+      "requirement_id": "FR-046",
+      "user_story_id": "US-046",
+      "ac_id": "AC-046-002",
+      "title": "The rule-flapping line is emitted once per window and carries rule_id and transition_count",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "Engine started with the bundled rule set, FlapThreshold at its default of 5"
+      ],
+      "given": "disk_root_pct flipped 98/20 once per second for six ticks, so disk_critical transitions repeatedly inside the hysteresis window",
+      "when": "The hold engages",
+      "then": "Exactly one rule-flapping line mentions disk_critical, and that line carries the rule_id field, the transition_count field, and the count 5 — the threshold crossing that engaged the hold",
+      "steps": [
+        "Evaluate one idle tick",
+        "Flip disk_root_pct between 98 and 20 across six 1s ticks",
+        "Assert exactly one rule-flapping line names disk_critical",
+        "Assert that line carries rule_id and transition_count",
+        "Assert the reported count is 5"
+      ],
+      "expected_result": "1 rule-flapping line for disk_critical, carrying rule_id, transition_count and the value 5",
+      "test_data": {},
+      "test_function": "TestTC_IE_017f_FlappingLogCarriesRuleIDAndTransitionCount"
+    },
+    {
+      "id": "TC-IE-018h",
+      "requirement_id": "FR-047",
+      "user_story_id": "US-047",
+      "ac_id": "AC-047-004",
+      "title": "wan_gateway_ok true with wan_cloudflare_ok false over two consecutive ticks yields the WAN/LAN verdict at warn",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "Engine started with the bundled rule set and an injected clock"
+      ],
+      "given": "An otherwise idle snapshot with wan_gateway_ok=1 and wan_cloudflare_ok=0 held constant",
+      "when": "Two consecutive ticks are evaluated five seconds apart",
+      "then": "The wan_lan_disambig verdict is present after each tick (it holds rather than flickers); its severity is warn; its text points at the public internet rather than the LAN",
+      "steps": [
+        "Set wan_gateway_ok=1 and wan_cloudflare_ok=0",
+        "Evaluate tick 1 and assert the verdict is active",
+        "Advance 5s, evaluate tick 2 and assert it is still active",
+        "Assert severity == warn",
+        "Assert the verdict text mentions the internet"
+      ],
+      "expected_result": "wan_lan_disambig active on both ticks with severity warn and internet-facing verdict text",
+      "test_data": {},
+      "test_function": "TestTC_IE_018h_WANLANDisambigIsWarnOverTwoConsecutiveTicks"
     }
   ]
 }
