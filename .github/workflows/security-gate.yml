@@ -16,6 +16,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache: true
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
@@ -23,5 +24,21 @@ jobs:
       - name: Run unit tests
         run: go test ./...
 
+      # govulncheck exits 3 whenever anything is reachable, so it cannot by
+      # itself distinguish "a new problem" from "the two Moby issues that have
+      # no fix in any release". We scan as JSON and compare the reachable set
+      # against .github/vuln-allowlist.txt instead.
       - name: Run govulncheck
-        run: govulncheck ./...
+        run: govulncheck -format json ./... > govulncheck.json
+        continue-on-error: true
+
+      - name: Enforce allowlist
+        run: .github/scripts/check-vulns.sh govulncheck.json .github/vuln-allowlist.txt
+
+      - name: Upload scan
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: govulncheck-scan
+          path: govulncheck.json
+          retention-days: 14
