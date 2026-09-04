@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-04T19:12:54.986Z",
+  "executed_at": "2026-09-04T20:34:50.797Z",
   "test_runner": "bash scripts/aitri-test.sh",
   "exit_code": 0,
   "results": [
@@ -1218,8 +1218,8 @@
   },
   "low_confidence_tcs": [],
   "timings": {
-    "runner_ms": 2728,
+    "runner_ms": 3761,
     "gates_ms": 0,
-    "total_ms": 2736
+    "total_ms": 3772
   }
 }

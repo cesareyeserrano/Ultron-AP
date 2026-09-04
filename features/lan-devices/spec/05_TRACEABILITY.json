@@ -1,7 +1,13 @@
 {
   "project": "Ultron-AP — LAN Devices (feature)",
   "version": "1.0.0",
-  "phases_completed": [1, 2, 3, 4, 5],
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
   "overall_status": "partial",
   "deployment_target": "Raspberry Pi via systemd (parent monolith). No Dockerfile or container artefacts — see DEPLOYMENT.md and the project-level rejection history (2026-03-18) for the deliberate decision against containerised deployment.",
   "requirement_compliance": [
@@ -15,7 +21,7 @@
       "id": "FR-031",
       "title": "Periodic ICMP sweep across local /24 with rate-limit",
       "level": "production_ready",
-      "evidence": "fr_coverage: 3 passing, 0 failing, 3 skipped (3 of the skipped are e2e-tier or no-marker — orchestrator-level integration is covered). Implemented in internal/network/landevices/sweep/sweep.go using a Transport seam (production: pro-bing via the same ping_group_range path as gatewayprobe). TC-LD-002h (≥250 packets, <3s wall-clock), TC-LD-013e (worst-case all-respond <3s), TC-LD-002f (overrun counter increments) all green. Zero declared technical debt for this FR."
+      "evidence": "fr_coverage: 3 passing, 0 failing, 3 skipped. Implemented in internal/network/landevices/sweep/sweep.go using a Transport seam (production: pro-bing via the same ping_group_range path as gatewayprobe). TC-LD-002h (≥250 packets, <3s wall-clock), TC-LD-013e (worst-case all-respond <3s), TC-LD-002f (overrun counter increments) all green. Zero declared technical debt for this FR."
     },
     {
       "id": "FR-032",

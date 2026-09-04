@@ -17,62 +17,9 @@
   "projectName": "insights-engine",
   "createdAt": "2026-05-05T22:07:04.650Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-04T19:12:44.579Z",
+  "updatedAt": "2026-09-04T20:34:29.238Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-05T23:03:14.903Z",
-      "event": "approved",
-      "phase": 4,
-      "afterDrift": true
-    },
-    {
-      "at": "2026-05-05T23:03:49.429Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 31,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-05T23:03:49.474Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 31,
-      "failed": 0
-    },
-    {
-      "at": "2026-05-05T23:03:53.967Z",
-      "event": "started",
-      "phase": 5
-    },
-    {
-      "at": "2026-05-05T23:03:53.999Z",
-      "event": "completed",
-      "phase": 5
-    },
-    {
-      "at": "2026-05-05T23:03:54.045Z",
-      "event": "approved",
-      "phase": 5
-    },
-    {
-      "at": "2026-05-21T21:34:53.983Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 31,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-21T21:35:02.133Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 31,
-      "failed": 0
-    },
     {
       "at": "2026-09-03T03:20:51.976Z",
       "event": "verify-run",
@@ -149,13 +96,65 @@
       "phase": 5,
       "version": "1.0.0",
       "version_source": null
+    },
+    {
+      "at": "2026-09-04T20:34:07.335Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-04T20:34:16.042Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-04T20:34:16.288Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-04T20:34:18.363Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-04T20:34:18.668Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-04T20:34:28.768Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-04T20:34:28.970Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-04T20:34:29.190Z",
+      "event": "approved",
+      "phase": 5,
+      "version": "1.0.0",
+      "version_source": null
     }
   ],
   "artifactHashes": {
     "1": "3b5131bd8c2c70cabc0712f852c0210749a52ca4250c148d9fa202ce87e5f0a2",
     "2": "4e93ef759201bac31572f222334532fcdc243f9f2141847bfd9fade6f53fd5c3",
     "3": "f0ede638bb48abb662d33d3ddcb485e80218969875607ae8390107f538bebb4c",
-    "4": "07a72be3a52feba7a14be0307ad52d5fbe925517e0bd0eec28d704bd1a1515d3",
+    "4": "46e8aa4dff204ed27ddfb006191bf65b62f62ca62c1a55f231d8bcdae9cff2ef",
     "5": "a4f95fab44af9db56f362e819401fdf8b376941fbe5289cc18b0a61203b98871"
   },
   "verifyPassed": true,
@@ -165,7 +164,7 @@
     "status": "resolved",
     "lastRun": "2026-05-05T23:03:14.902Z"
   },
-  "verifyRanRef": "b8547f43787a44721c256ff04cb743a7265d7e16",
+  "verifyRanRef": "151f1d7d6d4261b2722a3940427effab3817f382",
   "verifyRanDirty": false,
   "cascadedPhases": [],
   "frSnapshots": {
@@ -203,14 +202,26 @@
       "FR-047"
     ]
   },
-  "verifyResultsHash": "a798219621d3123a77953b01eb32071d6aa2f48071baf1ac80271e09e676f013",
-  "verifyRanAt": "2026-09-04T19:12:03.894Z",
+  "releaseHistory": [
+    {
+      "version": "1.0.0",
+      "version_source": null,
+      "at": "2026-09-04T19:12:44.549Z"
+    },
+    {
+      "version": "1.0.0",
+      "version_source": null,
+      "at": "2026-09-04T20:34:29.189Z"
+    }
+  ],
+  "verifyResultsHash": "7f4c0c3eb4ead6e23a5a0394d5c079bac25a80497629efab1681960303c77f47",
+  "verifyRanAt": "2026-09-04T20:34:18.218Z",
   "lastVerifyRun": {
     "passed": 37,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-04T19:12:03.894Z"
+    "at": "2026-09-04T20:34:18.218Z"
   },
   "verifySummary": {
     "total": 37,
@@ -221,12 +232,5 @@
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
-  },
-  "releaseHistory": [
-    {
-      "version": "1.0.0",
-      "version_source": null,
-      "at": "2026-09-04T19:12:44.549Z"
-    }
-  ]
+  }
 }

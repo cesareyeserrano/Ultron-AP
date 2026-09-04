@@ -71,7 +71,7 @@
       "reason": "The behaviour under test — a condition over an absent variable resolving false and logging skipped-missing-var once — is identical either way. Renaming the variable to match the AC would touch the shipped rule set for a wording difference; correcting the AC belongs in a requirements pass, not in a test-coverage change."
     }
   ],
-  "test_runner": "go test -C ../.. ./internal/insights/... ./internal/server/ -run TC_IE -v",
+  "test_runner": "go test ../../internal/insights/... ../../internal/server/ -run TC_IE -v",
   "test_files": [
     "../../internal/insights/insights_test.go",
     "../../internal/insights/lang/lang_test.go",

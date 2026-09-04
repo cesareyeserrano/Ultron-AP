@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-04T19:37:34.002Z",
+  "executed_at": "2026-09-04T20:34:46.184Z",
   "test_runner": "go test ../../internal/server -run TestTC_NT -v",
   "exit_code": 0,
   "results": [
@@ -202,8 +202,8 @@
   },
   "low_confidence_tcs": [],
   "timings": {
-    "runner_ms": 4056,
+    "runner_ms": 1048,
     "gates_ms": 0,
-    "total_ms": 4063
+    "total_ms": 1055
   }
 }
