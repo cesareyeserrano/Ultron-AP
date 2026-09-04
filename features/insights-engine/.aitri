@@ -3,82 +3,23 @@
   "approvedPhases": [
     1,
     2,
-    3
+    3,
+    4,
+    5
   ],
   "completedPhases": [
     1,
     2,
-    3
+    3,
+    4,
+    5
   ],
   "projectName": "insights-engine",
   "createdAt": "2026-05-05T22:07:04.650Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-03T03:21:57.829Z",
+  "updatedAt": "2026-09-04T19:12:44.579Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-05T22:55:11.698Z",
-      "event": "approved",
-      "phase": 4
-    },
-    {
-      "at": "2026-05-05T22:55:13.388Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 0,
-      "failed": 0,
-      "skipped": 31,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-05T22:55:42.703Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 0,
-      "failed": 0,
-      "skipped": 31,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-05T22:55:46.168Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 0,
-      "failed": 0,
-      "skipped": 31,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-05T22:56:08.678Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 31,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-05T22:56:11.791Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 31,
-      "failed": 0
-    },
-    {
-      "at": "2026-05-05T22:56:21.742Z",
-      "event": "started",
-      "phase": 5
-    },
-    {
-      "at": "2026-05-05T22:58:44.554Z",
-      "event": "completed",
-      "phase": 5
-    },
-    {
-      "at": "2026-05-05T22:58:44.602Z",
-      "event": "approved",
-      "phase": 5
-    },
     {
       "at": "2026-05-05T23:03:14.903Z",
       "event": "approved",
@@ -153,26 +94,80 @@
       "event": "approved",
       "phase": 3,
       "afterDrift": true
+    },
+    {
+      "at": "2026-09-03T03:22:58.845Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-03T03:23:15.465Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-03T03:23:19.664Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-04T19:12:03.983Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-04T19:12:04.197Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-04T19:12:07.328Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-04T19:12:07.440Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-04T19:12:41.368Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-04T19:12:44.550Z",
+      "event": "approved",
+      "phase": 5,
+      "version": "1.0.0",
+      "version_source": null
     }
   ],
   "artifactHashes": {
     "1": "3b5131bd8c2c70cabc0712f852c0210749a52ca4250c148d9fa202ce87e5f0a2",
     "2": "4e93ef759201bac31572f222334532fcdc243f9f2141847bfd9fade6f53fd5c3",
-    "3": "f0ede638bb48abb662d33d3ddcb485e80218969875607ae8390107f538bebb4c"
+    "3": "f0ede638bb48abb662d33d3ddcb485e80218969875607ae8390107f538bebb4c",
+    "4": "07a72be3a52feba7a14be0307ad52d5fbe925517e0bd0eec28d704bd1a1515d3",
+    "5": "a4f95fab44af9db56f362e819401fdf8b376941fbe5289cc18b0a61203b98871"
   },
-  "verifyPassed": false,
+  "verifyPassed": true,
   "normalizeState": {
     "baseRef": "f31786f72455e8475e6ed2e5ec64eae8aef1911f",
     "method": "git",
     "status": "resolved",
     "lastRun": "2026-05-05T23:03:14.902Z"
   },
-  "verifyRanRef": "73ed8865ee8c00b9b9baf32f6520338c721f9d90",
-  "verifyRanDirty": true,
-  "cascadedPhases": [
-    "4",
-    "5"
-  ],
+  "verifyRanRef": "b8547f43787a44721c256ff04cb743a7265d7e16",
+  "verifyRanDirty": false,
+  "cascadedPhases": [],
   "frSnapshots": {
     "3": [
       "FR-039",
@@ -184,6 +179,54 @@
       "FR-045",
       "FR-046",
       "FR-047"
+    ],
+    "4": [
+      "FR-039",
+      "FR-040",
+      "FR-041",
+      "FR-042",
+      "FR-043",
+      "FR-044",
+      "FR-045",
+      "FR-046",
+      "FR-047"
+    ],
+    "5": [
+      "FR-039",
+      "FR-040",
+      "FR-041",
+      "FR-042",
+      "FR-043",
+      "FR-044",
+      "FR-045",
+      "FR-046",
+      "FR-047"
     ]
-  }
+  },
+  "verifyResultsHash": "a798219621d3123a77953b01eb32071d6aa2f48071baf1ac80271e09e676f013",
+  "verifyRanAt": "2026-09-04T19:12:03.894Z",
+  "lastVerifyRun": {
+    "passed": 37,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-09-04T19:12:03.894Z"
+  },
+  "verifySummary": {
+    "total": 37,
+    "passed": 37,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "releaseHistory": [
+    {
+      "version": "1.0.0",
+      "version_source": null,
+      "at": "2026-09-04T19:12:44.549Z"
+    }
+  ]
 }

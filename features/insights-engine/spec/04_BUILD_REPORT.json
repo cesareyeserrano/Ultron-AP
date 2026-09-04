@@ -14,7 +14,9 @@
     "../../internal/insights/store/store_test.go",
     "../../internal/server/handlers_insights.go",
     "../../internal/server/handlers_insights_test.go",
-    "../../web/templates/partials/sse-verdicts.html"
+    "../../web/templates/partials/sse-verdicts.html",
+    "internal/insights/insights_ac_test.go",
+    "internal/insights/rules/rules_ac_test.go"
   ],
   "files_modified": [
     "../../internal/database/sqlite.go",
@@ -62,6 +64,11 @@
       "substitution": "swap_pct, lan_device_offline_count, and loss_pct telemetry variables are not yet projected from any existing collector — the SSE adapter (server/sse.go::evalInsightsTick) only populates cpu_pct, ram_pct, temp_c, disk_root_pct, services_failed, containers_failed, wan_gateway_ok, wan_cloudflare_ok. The memory_pressure / sustained_packet_loss / lan_offline_burst rules therefore stay quiet in production until those variables are wired. FR-041 AC-002 — 'missing var resolves to false, never error' — is preserved by the lang package; the rules degrade gracefully.",
       "reason": "Bringing in the WAN packet-loss and LAN-devices feeds is a separate integration step. The rule definitions ship now; the dashboard surface ships now; the data-source wiring is incremental and does not require a v2 binary.",
       "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-041",
+      "substitution": "AC-041-003 names the variable 'lan_device_count'; bundled.json and buildEvalCtx both call it 'lan_device_offline_count'. TC-IE-014f asserts against the name the code actually uses.",
+      "reason": "The behaviour under test — a condition over an absent variable resolving false and logging skipped-missing-var once — is identical either way. Renaming the variable to match the AC would touch the shipped rule set for a wording difference; correcting the AC belongs in a requirements pass, not in a test-coverage change."
     }
   ],
   "test_runner": "go test -C ../.. ./internal/insights/... ./internal/server/ -run TC_IE -v",
@@ -70,6 +77,8 @@
     "../../internal/insights/lang/lang_test.go",
     "../../internal/insights/rules/rules_test.go",
     "../../internal/insights/store/store_test.go",
-    "../../internal/server/handlers_insights_test.go"
+    "../../internal/server/handlers_insights_test.go",
+    "../../internal/insights/insights_ac_test.go",
+    "../../internal/insights/rules/rules_ac_test.go"
   ]
 }

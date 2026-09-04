@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-02T23:16:42.517Z",
+  "executed_at": "2026-09-04T19:13:11.427Z",
   "test_runner": "go test ../../internal/ups/... ../../internal/server/... -v",
   "exit_code": 0,
   "results": [
@@ -46,7 +46,7 @@
     {
       "tc_id": "TC-UPS-009h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_009h_BeeperDisplay (0.02s)"
+      "notes": "--- PASS: TestTC_UPS_009h_BeeperDisplay (0.01s)"
     },
     {
       "tc_id": "TC-UPS-010h",
@@ -91,7 +91,7 @@
     {
       "tc_id": "TC-UPS-018f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_018f_NoDoubleCountOnRestart (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_018f_NoDoubleCountOnRestart (0.00s)"
     },
     {
       "tc_id": "TC-UPS-019h",
@@ -171,7 +171,7 @@
     {
       "tc_id": "TC-UPS-034h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_034h_CleanDegradation (0.02s)"
+      "notes": "--- PASS: TestTC_UPS_034h_CleanDegradation (0.01s)"
     },
     {
       "tc_id": "TC-UPS-035e",
@@ -211,7 +211,7 @@
     {
       "tc_id": "TC-UPS-042f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_042f_RenderIssuesNoCommand (0.02s)"
+      "notes": "--- PASS: TestTC_UPS_042f_RenderIssuesNoCommand (0.01s)"
     },
     {
       "tc_id": "TC-UPS-043h",
@@ -674,7 +674,13 @@
       "command": "go vet ../../internal/ups/... ../../internal/server/...",
       "required": true,
       "status": "pass",
-      "exit_code": 0
+      "exit_code": 0,
+      "duration_ms": 483
     }
-  ]
+  ],
+  "timings": {
+    "runner_ms": 11531,
+    "gates_ms": 483,
+    "total_ms": 12023
+  }
 }

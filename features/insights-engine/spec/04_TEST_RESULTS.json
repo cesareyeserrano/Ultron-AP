@@ -1,22 +1,22 @@
 {
-  "executed_at": "2026-09-03T03:20:51.933Z",
+  "executed_at": "2026-09-04T19:12:03.887Z",
   "test_runner": "go test -C ../.. ./internal/insights/... ./internal/server/ -run TC_IE -v",
   "exit_code": 0,
   "results": [
     {
       "tc_id": "TC-IE-001h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_001h_EngineEvaluatesIdleTickProducesNoVerdicts (0.00s)"
+      "notes": "--- PASS: TestTC_IE_001h_EngineEvaluatesIdleTickProducesNoVerdicts (0.01s)"
     },
     {
       "tc_id": "TC-IE-001f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_001f_SnapshotMissingHoldsPreviousSetSingleLog (0.00s)"
+      "notes": "--- PASS: TestTC_IE_001f_SnapshotMissingHoldsPreviousSetSingleLog (0.01s)"
     },
     {
       "tc_id": "TC-IE-001e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_001e_HundredTicksUnderBudget (0.00s)"
+      "notes": "--- PASS: TestTC_IE_001e_HundredTicksUnderBudget (0.01s)"
     },
     {
       "tc_id": "TC-IE-002h",
@@ -51,17 +51,17 @@
     {
       "tc_id": "TC-IE-004h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_004h_VerdictAppearsOnTransitionTrue (0.00s)"
+      "notes": "--- PASS: TestTC_IE_004h_VerdictAppearsOnTransitionTrue (0.01s)"
     },
     {
       "tc_id": "TC-IE-004f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_004f_VerdictDisappearsOnTransitionFalse (0.00s)"
+      "notes": "--- PASS: TestTC_IE_004f_VerdictDisappearsOnTransitionFalse (0.01s)"
     },
     {
       "tc_id": "TC-IE-004e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_004e_DisableMidflightDropsVerdictReEnableResetsFirstEmitted (0.00s)"
+      "notes": "--- PASS: TestTC_IE_004e_DisableMidflightDropsVerdictReEnableResetsFirstEmitted (0.01s)"
     },
     {
       "tc_id": "TC-IE-005h",
@@ -111,42 +111,42 @@
     {
       "tc_id": "TC-IE-008h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_008h_FlappingRuleHeldOneLogEmitted (0.00s)"
+      "notes": "--- PASS: TestTC_IE_008h_FlappingRuleHeldOneLogEmitted (0.01s)"
     },
     {
       "tc_id": "TC-IE-008f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_008f_SingleTransitionDoesNotEngageHysteresis (0.00s)"
+      "notes": "--- PASS: TestTC_IE_008f_SingleTransitionDoesNotEngageHysteresis (0.01s)"
     },
     {
       "tc_id": "TC-IE-008e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_008e_HysteresisSurvivesSnapshotMissingTick (0.00s)"
+      "notes": "--- PASS: TestTC_IE_008e_HysteresisSurvivesSnapshotMissingTick (0.01s)"
     },
     {
       "tc_id": "TC-IE-009h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_009h_BootstrapThermalRuleFires (0.00s)"
+      "notes": "--- PASS: TestTC_IE_009h_BootstrapThermalRuleFires (0.01s)"
     },
     {
       "tc_id": "TC-IE-009f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_009f_WANLANDisambigFiresOnlyOnGatewayOkCloudflareFail (0.00s)"
+      "notes": "--- PASS: TestTC_IE_009f_WANLANDisambigFiresOnlyOnGatewayOkCloudflareFail (0.01s)"
     },
     {
       "tc_id": "TC-IE-009e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_009e_OneHourIdleZeroFalsePositives (0.00s)"
+      "notes": "--- PASS: TestTC_IE_009e_OneHourIdleZeroFalsePositives (0.01s)"
     },
     {
       "tc_id": "TC-IE-010e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_010e_NFR021_NoNotifyOrAlertImports (0.03s)"
+      "notes": "--- PASS: TestTC_IE_010e_NFR021_NoNotifyOrAlertImports (0.07s)"
     },
     {
       "tc_id": "TC-IE-011e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_011e_NFR016_ZeroAllocationsPerTick (0.00s)"
+      "notes": "--- PASS: TestTC_IE_011e_NFR016_ZeroAllocationsPerTick (0.01s)"
     },
     {
       "tc_id": "TC-IE-012h",
@@ -171,7 +171,7 @@
     {
       "tc_id": "TC-IE-015h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_015h_WithinSeverityVerdictsAreNewestFirst (0.00s)"
+      "notes": "--- PASS: TestTC_IE_015h_WithinSeverityVerdictsAreNewestFirst (0.01s)"
     },
     {
       "tc_id": "TC-IE-016f",
@@ -181,12 +181,12 @@
     {
       "tc_id": "TC-IE-017f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_017f_FlappingLogCarriesRuleIDAndTransitionCount (0.00s)"
+      "notes": "--- PASS: TestTC_IE_017f_FlappingLogCarriesRuleIDAndTransitionCount (0.01s)"
     },
     {
       "tc_id": "TC-IE-018h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_018h_WANLANDisambigIsWarnOverTwoConsecutiveTicks (0.00s)"
+      "notes": "--- PASS: TestTC_IE_018h_WANLANDisambigIsWarnOverTwoConsecutiveTicks (0.01s)"
     }
   ],
   "fr_coverage": [
@@ -558,5 +558,10 @@
       "file": "../../internal/insights/lang/lang_test.go",
       "assertCount": 1
     }
-  ]
+  ],
+  "timings": {
+    "runner_ms": 2583,
+    "gates_ms": 0,
+    "total_ms": 2594
+  }
 }
