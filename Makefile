@@ -40,6 +40,13 @@ fmt:
 vet:
 	$(GO) vet ./...
 
+# app.css is a committed build artifact; rebuild after editing web/css/input.css.
+# If the ./tailwindcss standalone binary is missing, the v4 CLI moved to npm:
+#   npm install --no-save --prefix /tmp/twbuild tailwindcss@4.1.18 @tailwindcss/cli@4.1.18
+#   ln -sfn /tmp/twbuild/node_modules ./node_modules   # resolver needs it near web/css
+#   /tmp/twbuild/node_modules/.bin/tailwindcss -i "$PWD/web/css/input.css" -o web/static/css/app.css --minify
+#   rm -f ./node_modules
+# A rebuild of an unchanged input.css is byte-identical to the committed artifact.
 css:
 	$(TAILWIND) -i web/css/input.css -o web/static/css/app.css --minify
 

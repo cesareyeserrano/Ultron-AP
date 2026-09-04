@@ -8,6 +8,7 @@
 package logfilter
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 )
@@ -43,24 +44,49 @@ func Filter(input []byte, policy Policy, maxBytes int) []byte {
 	}
 
 	out := input
+
+	// M7: bound the redaction work. Redaction makes several full regex passes,
+	// each allocating a copy, so running it over a multi-megabyte payload
+	// spikes memory before the cap ever applies. Pre-trim very large inputs to
+	// the tail on a line boundary first (we keep the tail anyway), so the regex
+	// passes only ever see ~maxBytes. Cutting on '\n' avoids splitting a secret
+	// mid-line at the trim point. preDropped remembers the bytes removed here so
+	// the truncation marker below still reflects them.
+	var preDropped int
+	if policy == PolicyJournal && len(out) > 2*maxBytes {
+		preDropped = len(out) - maxBytes
+		out = out[len(out)-maxBytes:]
+		if i := bytes.IndexByte(out, '\n'); i >= 0 && i+1 < len(out) {
+			preDropped += i + 1
+			out = out[i+1:]
+		}
+	}
 	if policy == PolicyJournal {
 		out = redactJournal(out)
 	}
 
-	if len(out) <= maxBytes {
+	// Fast path: nothing pre-trimmed and already under the cap.
+	if preDropped == 0 && len(out) <= maxBytes {
 		return out
 	}
 
-	// Keep the tail. Reserve a budget for the marker so the final
-	// length is <= maxBytes.
+	// Keep the tail within maxBytes and prepend a marker reporting the total
+	// bytes dropped from the start — both the pre-trim and any final overflow.
 	const markerTemplate = "... [truncated %d bytes from start]\n"
-	dropped := len(out) - maxBytes
-	marker := fmt.Sprintf(markerTemplate, dropped)
+	dropped := preDropped
+	tail := out
+	// Budget the marker with an upper-bound digit count so keep never has to
+	// grow after we format the real count.
+	marker := fmt.Sprintf(markerTemplate, dropped+len(out))
 	keep := maxBytes - len(marker)
 	if keep < 0 {
 		keep = 0
 	}
-	tail := out[len(out)-keep:]
+	if len(tail) > keep {
+		dropped += len(tail) - keep
+		tail = tail[len(tail)-keep:]
+	}
+	marker = fmt.Sprintf(markerTemplate, dropped)
 	result := make([]byte, 0, len(marker)+len(tail))
 	result = append(result, marker...)
 	result = append(result, tail...)
@@ -81,17 +107,24 @@ var (
 	// the Bearer keyword; the token is anything that isn't whitespace.
 	bearerRe = regexp.MustCompile(`(?i)\bbearer\s+\S+`)
 
-	// key=value or key: value where key smells like a secret. The
-	// trailing capture is a non-quoted, non-whitespace run; common
-	// log layouts use this form. We deliberately match neither
-	// surrounding quotes nor commas in the value to avoid eating
-	// structured-log delimiters.
-	envRe = regexp.MustCompile(`(?i)\b(token|secret|password|passwd|api[_\-]?key|apikey|access[_\-]?key|auth(?:orization)?)\b\s*[:=]\s*\S+`)
+	// key=value or key: value where key smells like a secret. The value
+	// capture accepts a double/single-quoted string (so a secret containing
+	// spaces is redacted whole — M6) or an unquoted non-whitespace run.
+	// The leading [\w.\-]* matters: \b(token) does NOT match "bot_token=" —
+	// there is no word boundary between "_" and "token", so a Telegram
+	// bot_token, an api_token or a service_password sailed through unredacted.
+	// Consuming any prefix run makes those cases match too (AC-081-003).
+	envRe = regexp.MustCompile(`(?i)\b[\w.\-]*(?:token|secret|password|passwd|passphrase|credentials?|api[_\-]?key|apikey|access[_\-]?key|auth(?:orization)?)[\w.\-]*\s*[:=]\s*("[^"]*"|'[^']*'|\S+)`)
+
+	// Password inside a URL/connection string: scheme://user:PASSWORD@host.
+	// Redacts the password segment while keeping scheme, user and host.
+	connStrRe = regexp.MustCompile(`(?i)([a-z][a-z0-9+.\-]*://[^:/@\s]*:)[^@/\s]+(@)`)
 )
 
 func redactJournal(input []byte) []byte {
 	out := jwtRe.ReplaceAll(input, []byte("[REDACTED-JWT]"))
 	out = bearerRe.ReplaceAll(out, []byte("Bearer [REDACTED]"))
+	out = connStrRe.ReplaceAll(out, []byte("${1}[REDACTED]${2}"))
 	out = envRe.ReplaceAllFunc(out, func(match []byte) []byte {
 		// Keep the key portion visible (first run up to ':' or '='),
 		// replace the value with [REDACTED] so logs remain useful for

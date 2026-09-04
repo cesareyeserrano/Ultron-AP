@@ -1,0 +1,842 @@
+{
+  "project_name": "Ultron-AP — ac-coverage-gaps",
+  "version": "1.0.0",
+  "test_runner": "go test -C ../.. ./... -run TestTC_ACG -v",
+  "source": "internal/**/*_test.go",
+  "test_plan": {
+    "strategy": "Three-Amigos coverage per FR (happy_path + edge_case + negative), one test case per acceptance criterion so Phase 5 traceability is 1:1. Unit tests drive the pure seams the design introduced for exactly this purpose — Dispatcher.send()'s mute filter and DigestScheduler.Tick(now), which takes the clock as a parameter so no test sleeps or races the wall clock. Integration tests drive real HTTP through the full server handler (auth + CSRF + render). Two e2e cases drive a complete flow end-to-end through the running server (login → page → action → re-render), covering the two critical flows: muting Telegram from Settings, and opening a service's log drawer. Regression is protected by two NFR cases plus the 80 existing test cases, which must keep passing.",
+    "coverage_goal": "100% of the feature's 25 acceptance criteria have a traced, passing test case; zero regressions in the existing suite.",
+    "test_types": [
+      "unit",
+      "integration",
+      "e2e"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "TC-ACG-079Ah",
+      "user_story_id": "US-079",
+      "ac_id": "AC-079-001",
+      "title": "No mute window — a fired alert reaches the Telegram notifier",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "NotificationMute table is empty; NotificationConfig('telegram') is enabled with bot_token='123:ABC', chat_id='789'",
+      "when": "Dispatcher.send() processes an EventFire for alert{severity:'critical', source:'cpu'}",
+      "then": "the telegram notifier's Notify is invoked exactly 1 time; the email notifier is unaffected",
+      "steps": [
+        "Dispatcher.send() processes an EventFire for alert{severity:'critical', source:'cpu'}"
+      ],
+      "expected_result": "telegramSendCount == 1",
+      "test_data": {},
+      "frs": [
+        "FR-079",
+        "NFR-085",
+        "NFR-090"
+      ]
+    },
+    {
+      "id": "TC-ACG-079Bh",
+      "requirement_id": "FR-079",
+      "user_story_id": "US-079",
+      "ac_id": "AC-079-002",
+      "title": "Open mute window — Telegram is skipped but the alert still persists",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "SetNotificationMute(1, now) was called 10 minutes ago (expires_at = now+50m); telegram enabled",
+      "when": "an alert fires and Dispatcher.send() processes it",
+      "then": "telegram Notify is invoked 0 times, AND db.ListAlerts(10) still contains the alert row",
+      "steps": [
+        "an alert fires and Dispatcher.send() processes it"
+      ],
+      "expected_result": "telegramSendCount == 0 and len(ListAlerts) == 1",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-079Ce",
+      "user_story_id": "US-079",
+      "ac_id": "AC-079-003",
+      "title": "Expired mute window — delivery resumes with no admin action",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a NotificationMute row with expires_at = now.Add(-1 * time.Second)",
+      "when": "an alert fires and Dispatcher.send() processes it",
+      "then": "telegram Notify is invoked exactly 1 time (the window expired on its own)",
+      "steps": [
+        "an alert fires and Dispatcher.send() processes it"
+      ],
+      "expected_result": "telegramSendCount == 1",
+      "test_data": {},
+      "frs": [
+        "FR-079",
+        "NFR-085"
+      ]
+    },
+    {
+      "id": "TC-ACG-079De",
+      "user_story_id": "US-079",
+      "ac_id": "AC-079-004",
+      "title": "A 4h mute persists its expiry and survives a reopen of the database",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an empty database at wall time T",
+      "when": "POST /api/notifications/telegram with mute_hours=4 and a valid CSRF token, then the DB handle is closed and reopened",
+      "then": "NotificationMuteUntil() reports muted=true with expires_at within 60s of T+4h",
+      "steps": [
+        "POST /api/notifications/telegram with mute_hours=4 and a valid CSRF token, then the DB handle is closed and reopened"
+      ],
+      "expected_result": "expires_at - T is within [4h-60s, 4h+60s] and muted == true",
+      "test_data": {},
+      "frs": [
+        "FR-079",
+        "NFR-090"
+      ]
+    },
+    {
+      "id": "TC-ACG-079Eh",
+      "requirement_id": "FR-079",
+      "user_story_id": "US-079",
+      "ac_id": "AC-079-005",
+      "title": "Cancelling an open mute restores Telegram delivery",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an open 24h mute window and an authenticated session",
+      "when": "POST /api/notifications/mute/clear with a valid CSRF token, then an alert fires",
+      "then": "status 200; NotificationMuteUntil() reports muted=false; telegram Notify is invoked 1 time for the next fire",
+      "steps": [
+        "POST /api/notifications/mute/clear with a valid CSRF token, then an alert fires"
+      ],
+      "expected_result": "status 200, muted == false, telegramSendCount == 1",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-079Ff",
+      "requirement_id": "FR-079",
+      "user_story_id": "US-079",
+      "ac_id": "AC-079-001",
+      "title": "An invalid mute duration is rejected and changes no state",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "no mute window is open; an authenticated session with a valid CSRF token",
+      "when": "POST /api/notifications/telegram with mute_hours=7 (not in {1,4,24})",
+      "then": "status 400; NotificationMuteUntil() still reports muted=false",
+      "steps": [
+        "POST /api/notifications/telegram with mute_hours=7 (not in {1,4,24})"
+      ],
+      "expected_result": "status 400 and muted == false",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-079Gf",
+      "user_story_id": "US-079",
+      "ac_id": "AC-079-002",
+      "title": "A corrupt mute row fails OPEN — the alert is still delivered",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "the NotificationMute row contains an unparseable expires_at value",
+      "when": "an alert fires and Dispatcher.send() processes it",
+      "then": "NotificationMuteUntil() returns muted=false with an error, and telegram Notify is invoked 1 time (never silently swallowed)",
+      "steps": [
+        "an alert fires and Dispatcher.send() processes it"
+      ],
+      "expected_result": "telegramSendCount == 1 and muted == false",
+      "test_data": {},
+      "frs": [
+        "FR-079",
+        "NFR-085",
+        "NFR-090"
+      ]
+    },
+    {
+      "id": "TC-ACG-079HE2E",
+      "requirement_id": "FR-079",
+      "user_story_id": "US-079",
+      "ac_id": "AC-079-006",
+      "title": "Full mute flow through the running server: login, mute 4h, section shows remaining time",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a running server with an admin user and a configured Telegram channel",
+      "when": "the client logs in at POST /login, GETs /settings, POSTs mute_hours=4 to /api/notifications/telegram with the page CSRF token, and GETs /settings again",
+      "then": "the re-rendered Telegram section contains 'Muted' and a remaining time of '3h 59m' (or '4h 0m'), and a data-mute-cancel control; no chip-preset mute row is rendered",
+      "steps": [
+        "the client logs in at POST /login, GETs /settings, POSTs mute_hours=4 to /api/notifications/telegram with the page CSRF token, and GETs /settings again"
+      ],
+      "expected_result": "settings body contains 'Muted' and 'data-mute-cancel'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-080Ah",
+      "user_story_id": "US-080",
+      "ac_id": "AC-080-001",
+      "title": "Digest hour reached — one email lists the last 24h of alerts",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "email config {enabled:true, digest_enabled:true, digest_hour:8}; 3 alerts created in the last 24h (critical/cpu, warning/ram, info/network)",
+      "when": "DigestScheduler.Tick(2026-07-13T08:00:00) runs",
+      "then": "exactly 1 email is sent whose body contains all 3 alerts with their severity, source and timestamp",
+      "steps": [
+        "DigestScheduler.Tick(2026-07-13T08:00:00) runs"
+      ],
+      "expected_result": "emailSendCount == 1 and body contains 'critical', 'cpu', 'warning', 'ram', 'info', 'network'",
+      "test_data": {},
+      "frs": [
+        "FR-080",
+        "NFR-091"
+      ]
+    },
+    {
+      "id": "TC-ACG-080Be",
+      "user_story_id": "US-080",
+      "ac_id": "AC-080-002",
+      "title": "At most one digest per calendar day",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "email config {digest_enabled:true, digest_hour:8}; DigestState.last_sent_date = '2026-07-13'",
+      "when": "DigestScheduler.Tick(2026-07-13T08:30:00) runs (same day, same hour)",
+      "then": "no email is sent",
+      "steps": [
+        "DigestScheduler.Tick(2026-07-13T08:30:00) runs (same day, same hour)"
+      ],
+      "expected_result": "emailSendCount == 0",
+      "test_data": {},
+      "frs": [
+        "FR-080",
+        "NFR-086"
+      ]
+    },
+    {
+      "id": "TC-ACG-080Ce",
+      "requirement_id": "FR-080",
+      "user_story_id": "US-080",
+      "ac_id": "AC-080-003",
+      "title": "Zero alerts in 24h still sends one digest saying so",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "email config {digest_enabled:true, digest_hour:8}; the Alert table is empty",
+      "when": "DigestScheduler.Tick(2026-07-13T08:00:00) runs",
+      "then": "exactly 1 email is sent whose body states that no alerts fired (contains 'No alerts')",
+      "steps": [
+        "DigestScheduler.Tick(2026-07-13T08:00:00) runs"
+      ],
+      "expected_result": "emailSendCount == 1 and body contains 'No alerts'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-080Df",
+      "user_story_id": "US-080",
+      "ac_id": "AC-080-004",
+      "title": "Digest disabled — the digest hour passes silently",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "email config {enabled:true, digest_enabled:false, digest_hour:8}; 2 alerts in the last 24h",
+      "when": "DigestScheduler.Tick(2026-07-13T08:00:00) runs",
+      "then": "no email is sent",
+      "steps": [
+        "DigestScheduler.Tick(2026-07-13T08:00:00) runs"
+      ],
+      "expected_result": "emailSendCount == 0",
+      "test_data": {},
+      "frs": [
+        "FR-080",
+        "NFR-086"
+      ]
+    },
+    {
+      "id": "TC-ACG-080Eh",
+      "user_story_id": "US-080",
+      "ac_id": "AC-080-005",
+      "title": "The digest never replaces per-event alert emails",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "email config {enabled:true, digest_enabled:true, digest_hour:8}",
+      "when": "an alert fires through Dispatcher.send() at 10:00 (not the digest hour)",
+      "then": "the per-event email notifier is invoked exactly 1 time for that fire, independent of digest configuration",
+      "steps": [
+        "an alert fires through Dispatcher.send() at 10:00 (not the digest hour)"
+      ],
+      "expected_result": "emailSendCount == 1 for the fire",
+      "test_data": {},
+      "frs": [
+        "FR-080",
+        "NFR-086"
+      ]
+    },
+    {
+      "id": "TC-ACG-080Ff",
+      "user_story_id": "US-080",
+      "ac_id": "AC-080-006",
+      "title": "A failing SMTP send is recorded and does not retry-storm",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "email config {digest_enabled:true, digest_hour:8}; the email notifier returns an error on every send",
+      "when": "DigestScheduler.Tick(08:00) runs, then Tick(08:01) runs the same day",
+      "then": "exactly 1 send attempt is made in total; an ActionLog row exists with action='digest' and result='failed'; the process does not panic",
+      "steps": [
+        "DigestScheduler.Tick(08:00) runs, then Tick(08:01) runs the same day"
+      ],
+      "expected_result": "emailSendCount == 1 and ActionLog contains action='digest' result='failed'",
+      "test_data": {},
+      "frs": [
+        "FR-080",
+        "NFR-090",
+        "NFR-091"
+      ]
+    },
+    {
+      "id": "TC-ACG-081Ah",
+      "user_story_id": "US-081",
+      "ac_id": "AC-081-001",
+      "title": "Opening a service's log drawer returns its last 100 journalctl lines",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an authenticated session; a fake privileged helper returning 100 journal lines for source 'service:nginx'",
+      "when": "GET /api/services/nginx/logs",
+      "then": "status 200; the fragment contains the journal lines inside a <pre> block; the helper was called with source='service:nginx' and lines=100",
+      "steps": [
+        "GET /api/services/nginx/logs"
+      ],
+      "expected_result": "status 200, body contains the journal content, helper called with ('service:nginx', 100)",
+      "test_data": {},
+      "frs": [
+        "FR-081",
+        "NFR-088"
+      ]
+    },
+    {
+      "id": "TC-ACG-081Bf",
+      "user_story_id": "US-081",
+      "ac_id": "AC-081-002",
+      "title": "An injection-shaped unit name is rejected before any journalctl runs",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an authenticated session",
+      "when": "GET /api/services/--version/logs and GET /api/services/foo;rm/logs",
+      "then": "status 400 for both; the privileged helper was never called",
+      "steps": [
+        "GET /api/services/--version/logs and GET /api/services/foo;rm/logs"
+      ],
+      "expected_result": "status 400 and helperCallCount == 0",
+      "test_data": {},
+      "frs": [
+        "FR-081",
+        "NFR-088"
+      ]
+    },
+    {
+      "id": "TC-ACG-081Ce",
+      "requirement_id": "FR-081",
+      "user_story_id": "US-081",
+      "ac_id": "AC-081-003",
+      "title": "Secrets in the journal are redacted and HTML is escaped in the drawer",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a fake helper returning a line containing bot_token=123456:AAHfake and a line containing '<script>alert(1)</script>'",
+      "when": "GET /api/services/nginx/logs",
+      "then": "status 200; the body does NOT contain the raw token '123456:AAHfake'; the body does NOT contain an executable '<script>' tag (it is escaped to &lt;script&gt;)",
+      "steps": [
+        "GET /api/services/nginx/logs"
+      ],
+      "expected_result": "body excludes the raw secret and contains '&lt;script&gt;' not '<script>'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-081Df",
+      "requirement_id": "FR-081",
+      "user_story_id": "US-081",
+      "ac_id": "AC-081-004",
+      "title": "Helper unavailable — the drawer renders an explicit error state, not an empty panel",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an authenticated session; the privileged helper returns ErrUnavailable",
+      "when": "GET /api/services/nginx/logs",
+      "then": "status 200 with a fragment containing 'Could not read logs' (an error state the admin can read), and the fragment is not empty",
+      "steps": [
+        "GET /api/services/nginx/logs"
+      ],
+      "expected_result": "status 200 and body contains 'Could not read logs'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-081Ef",
+      "requirement_id": "FR-081",
+      "user_story_id": "US-081",
+      "ac_id": "AC-081-005",
+      "title": "Unauthenticated log-drawer request is redirected to /login with no journal output",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "no session cookie",
+      "when": "GET /api/services/nginx/logs",
+      "then": "status 303 with Location: /login; the response body contains no journal content and the helper was never called",
+      "steps": [
+        "GET /api/services/nginx/logs"
+      ],
+      "expected_result": "status 303, Location '/login', helperCallCount == 0",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-081FE2E",
+      "requirement_id": "FR-081",
+      "user_story_id": "US-081",
+      "ac_id": "AC-081-001",
+      "title": "Full drawer flow through the running server: login, /services renders a closed drawer, opening it fetches the tail",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a running server with a mocked systemd runner listing nginx.service and a fake helper returning journal lines",
+      "when": "the client logs in, GETs /services, then GETs the drawer endpoint the row's button declares",
+      "then": "the /services body contains a Logs button with hx-get='/api/services/nginx/logs' and an empty drawer container (no journal content until it is opened); the subsequent drawer GET returns the journal lines",
+      "steps": [
+        "the client logs in, GETs /services, then GETs the drawer endpoint the row's button declares"
+      ],
+      "expected_result": "services body contains the hx-get logs attribute and no journal content; the drawer GET returns the lines",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-082Ah",
+      "requirement_id": "FR-082",
+      "user_story_id": "US-082",
+      "ac_id": "AC-082-001",
+      "title": "Settings renders a hardware section with the four fan modes",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an authenticated session",
+      "when": "GET /settings",
+      "then": "status 200; the body contains a hardware section (id='settings-hardware') with data-widget='segmented' data-field='fan_mode' offering exactly data-value='auto','quiet','performance','off'",
+      "steps": [
+        "GET /settings"
+      ],
+      "expected_result": "body contains settings-hardware and the four fan-mode values",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-082Bh",
+      "requirement_id": "FR-082",
+      "user_story_id": "US-082",
+      "ac_id": "AC-082-002",
+      "title": "Saving a fan mode persists it and it renders as selected",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "stored HardwareConfig{fan_mode:'auto'}; an authenticated session with a valid CSRF token",
+      "when": "POST /api/settings/hardware with fan_mode=quiet, then GET /settings",
+      "then": "status 200; GetHardwareConfig().FanMode == 'quiet'; the re-rendered page marks the quiet option data-active='true'",
+      "steps": [
+        "POST /api/settings/hardware with fan_mode=quiet, then GET /settings"
+      ],
+      "expected_result": "FanMode == 'quiet' and the rendered quiet button carries data-active=\"true\"",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-082Cf",
+      "requirement_id": "FR-082",
+      "user_story_id": "US-082",
+      "ac_id": "AC-082-003",
+      "title": "An invalid fan mode is rejected and the stored value is unchanged",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "stored HardwareConfig{fan_mode:'quiet'}; an authenticated session with a valid CSRF token",
+      "when": "POST /api/settings/hardware with fan_mode=turbo",
+      "then": "status 400; GetHardwareConfig().FanMode is still 'quiet'",
+      "steps": [
+        "POST /api/settings/hardware with fan_mode=turbo"
+      ],
+      "expected_result": "status 400 and FanMode == 'quiet'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-082Df",
+      "requirement_id": "FR-082",
+      "user_story_id": "US-082",
+      "ac_id": "AC-082-004",
+      "title": "A hardware save without a CSRF token is rejected and persists nothing",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "stored HardwareConfig{fan_mode:'auto'}; an authenticated session with NO csrf_token field",
+      "when": "POST /api/settings/hardware with fan_mode=off",
+      "then": "status 403; GetHardwareConfig().FanMode is still 'auto'",
+      "steps": [
+        "POST /api/settings/hardware with fan_mode=off"
+      ],
+      "expected_result": "status 403 and FanMode == 'auto'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-082Ee",
+      "requirement_id": "FR-082",
+      "user_story_id": "US-082",
+      "ac_id": "AC-082-002",
+      "title": "Reading the hardware config on a fresh database creates it with defaults and no hardware I/O",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "a database with no HardwareConfig row",
+      "when": "GetHardwareConfig() is called",
+      "then": "it returns FanMode='auto', OLEDEnabled=false, OLEDMetric='cpu' with no error, and the row now exists",
+      "steps": [
+        "GetHardwareConfig() is called"
+      ],
+      "expected_result": "HardwareConfig{auto,false,cpu} and a second call returns the same values",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-083Ah",
+      "requirement_id": "FR-083",
+      "user_story_id": "US-083",
+      "ac_id": "AC-083-001",
+      "title": "The hardware section renders the OLED toggle and its four metrics",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an authenticated session",
+      "when": "GET /settings",
+      "then": "status 200; the hardware section contains data-widget='toggle' data-field='oled_enabled' and data-widget='segmented' data-field='oled_metric' offering data-value='cpu','ram','temp','ip'",
+      "steps": [
+        "GET /settings"
+      ],
+      "expected_result": "body contains the oled_enabled toggle and the four oled_metric values",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-083Bh",
+      "requirement_id": "FR-083",
+      "user_story_id": "US-083",
+      "ac_id": "AC-083-002",
+      "title": "Saving the OLED configuration persists both the flag and the metric",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "stored HardwareConfig{oled_enabled:false, oled_metric:'cpu'}; an authenticated session with a valid CSRF token",
+      "when": "POST /api/settings/hardware with fan_mode=auto, oled_enabled=on, oled_metric=temp, then GET /settings",
+      "then": "status 200; GetHardwareConfig() reports OLEDEnabled=true and OLEDMetric='temp'; the re-rendered page shows the toggle on and temp active",
+      "steps": [
+        "POST /api/settings/hardware with fan_mode=auto, oled_enabled=on, oled_metric=temp, then GET /settings"
+      ],
+      "expected_result": "OLEDEnabled == true and OLEDMetric == 'temp'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-083Cf",
+      "requirement_id": "FR-083",
+      "user_story_id": "US-083",
+      "ac_id": "AC-083-003",
+      "title": "An invalid OLED metric is rejected and the stored metric is unchanged",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "stored HardwareConfig{oled_metric:'cpu'}; an authenticated session with a valid CSRF token",
+      "when": "POST /api/settings/hardware with fan_mode=auto and oled_metric=disk",
+      "then": "status 400; GetHardwareConfig().OLEDMetric is still 'cpu'",
+      "steps": [
+        "POST /api/settings/hardware with fan_mode=auto and oled_metric=disk"
+      ],
+      "expected_result": "status 400 and OLEDMetric == 'cpu'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-083Df",
+      "requirement_id": "FR-083",
+      "user_story_id": "US-083",
+      "ac_id": "AC-083-004",
+      "title": "An OLED save without a CSRF token is rejected and persists nothing",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "stored HardwareConfig{oled_enabled:false}; an authenticated session with NO csrf_token field",
+      "when": "POST /api/settings/hardware with oled_enabled=on",
+      "then": "status 403; GetHardwareConfig().OLEDEnabled is still false",
+      "steps": [
+        "POST /api/settings/hardware with oled_enabled=on"
+      ],
+      "expected_result": "status 403 and OLEDEnabled == false",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-083Ee",
+      "requirement_id": "FR-083",
+      "user_story_id": "US-083",
+      "ac_id": "AC-083-002",
+      "title": "Omitting the OLED toggle in the POST turns it off (standard HTML checkbox semantics)",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "stored HardwareConfig{oled_enabled:true, oled_metric:'ram'}; an authenticated session with a valid CSRF token",
+      "when": "POST /api/settings/hardware with fan_mode=auto and oled_metric=ram, omitting oled_enabled entirely",
+      "then": "status 200; GetHardwareConfig().OLEDEnabled == false and OLEDMetric is still 'ram'",
+      "steps": [
+        "POST /api/settings/hardware with fan_mode=auto and oled_metric=ram, omitting oled_enabled entirely"
+      ],
+      "expected_result": "status 200, OLEDEnabled == false, OLEDMetric == 'ram'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-087h",
+      "requirement_id": "NFR-087",
+      "user_story_id": "US-082",
+      "ac_id": "AC-082-001",
+      "title": "The hardware section adds no page-level inline script and keeps the settings controller external",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an authenticated session",
+      "when": "GET /settings",
+      "then": "status 200; the body contains <script src=\"/static/js/settings.js?v= and does NOT contain a page-level inline controller (no \"document.getElementById('settings-shell')\" in the body)",
+      "steps": [
+        "GET /settings"
+      ],
+      "expected_result": "settings.js is referenced and no inline controller is present",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-088f",
+      "user_story_id": "US-081",
+      "ac_id": "AC-081-002",
+      "title": "The drawer adds no new privileged action: it reuses the helper's existing allow-listed logs action",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a fake helper recording the actions it receives",
+      "when": "GET /api/services/nginx/logs",
+      "then": "the helper receives only the existing 'logs' action with source='service:nginx' and lines=100; no new action name is introduced",
+      "steps": [
+        "GET /api/services/nginx/logs"
+      ],
+      "expected_result": "helper actions received == ['logs']",
+      "test_data": {},
+      "frs": [
+        "FR-081",
+        "NFR-088"
+      ]
+    },
+    {
+      "id": "TC-ACG-087e",
+      "requirement_id": "NFR-087",
+      "user_story_id": "US-082",
+      "ac_id": "AC-082-001",
+      "title": "The hardware section joins the existing accordion vocabulary without new client code",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an authenticated session",
+      "when": "GET /settings",
+      "then": "the hardware section carries data-settings-section and data-settings-form='hardware' with a data-form-state-host='hardware', exactly like the six existing sections, and every interactive control declares min-h-[44px]",
+      "steps": [
+        "GET /settings"
+      ],
+      "expected_result": "body contains data-settings-section for settings-hardware, data-settings-form=\"hardware\", data-form-state-host=\"hardware\", and no min-h-[40px] marker",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-087f",
+      "requirement_id": "NFR-087",
+      "user_story_id": "US-082",
+      "ac_id": "AC-082-002",
+      "title": "Adding the hardware section breaks no existing settings form",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an authenticated session with a valid CSRF token and a stored HardwareConfig",
+      "when": "POST /api/performance with sse_interval_sec=5 and POST /api/notifications/telegram with bot_token='123:ABC', chat_id='789' (the pre-existing forms), after the hardware section shipped",
+      "then": "both return status 200 and persist their values; the performance and telegram configs read back unchanged by the hardware feature",
+      "steps": [
+        "POST /api/performance",
+        "POST /api/notifications/telegram"
+      ],
+      "expected_result": "both status 200; GetPerformanceConfig().SSEIntervalSec == 5 and GetNotificationConfig('telegram') still enabled with its token",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-091h",
+      "requirement_id": "NFR-091",
+      "user_story_id": "US-079",
+      "ac_id": "AC-079-005",
+      "title": "Mute activation and cancellation are recorded in action_history",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "an authenticated session with a valid CSRF token and no open mute window",
+      "when": "POST /api/notifications/telegram with mute_hours=4, then POST /api/notifications/mute/clear",
+      "then": "ActionLog contains one row with action='mute' target='telegram' result='success' details containing '4h', and one row with action='mute_clear' target='telegram' result='success'",
+      "steps": [
+        "POST /api/notifications/telegram with mute_hours=4",
+        "POST /api/notifications/mute/clear"
+      ],
+      "expected_result": "two ActionLog rows: action='mute' and action='mute_clear', both result='success'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-090e",
+      "requirement_id": "NFR-090",
+      "user_story_id": "US-080",
+      "ac_id": "AC-080-002",
+      "title": "An unparseable last_sent_date is treated as never-sent and never blocks the digest",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "email config {digest_enabled:true, digest_hour:8} and DigestState.last_sent_date = 'not-a-date'",
+      "when": "DigestScheduler.Tick(2026-07-13T08:00:00) runs",
+      "then": "exactly 1 email is sent (a corrupt marker never silently suppresses the digest) and last_sent_date is rewritten to '2026-07-13'; the process does not panic",
+      "steps": [
+        "Tick(2026-07-13T08:00:00)"
+      ],
+      "expected_result": "emailSendCount == 1 and DigestLastSentDate() == '2026-07-13'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-ACG-084Ah",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-001",
+      "title": "Prior backups are listed newest first with size, date and an encrypted label",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "two ultron-* artefacts on disk, one 48h old and one 1h old",
+      "when": "GET /settings renders the maintenance section",
+      "then": "both filenames appear, the newer one first, with size and creation time, and the .enc artefact is labelled 'encrypted'",
+      "steps": [
+        "GET /settings renders the maintenance section"
+      ],
+      "expected_result": "body lists both names; index(newer) < index(older); 'encrypted' label present",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Ah_SettingsListsPriorBackups"
+    },
+    {
+      "id": "TC-ACG-084Be",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-002",
+      "title": "No backups on disk renders an explicit empty state",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an empty backup directory",
+      "when": "GET /settings renders the maintenance section",
+      "then": "'No backups on disk yet.' is shown and no download link is rendered",
+      "steps": [
+        "GET /settings renders the maintenance section"
+      ],
+      "expected_result": "body contains data-backup-empty and no data-backup-download",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Be_EmptyBackupListRendersEmptyState"
+    },
+    {
+      "id": "TC-ACG-084Ch",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-003",
+      "title": "Downloading serves the stored encrypted bytes, not a fresh snapshot",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an encrypted backup on disk whose bytes begin with ULTRONENC2",
+      "when": "GET /api/settings/backups/ultron-20260713-030000.db.enc",
+      "then": "status 200 and the body is byte-identical to the stored file, begins with ULTRONENC2, and contains no 'SQLite format 3' header",
+      "steps": [
+        "GET /api/settings/backups/ultron-20260713-030000.db.enc"
+      ],
+      "expected_result": "response bytes == file bytes; ULTRONENC2 prefix; Content-Disposition names the file",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Ch_DownloadServesStoredEncryptedFile"
+    },
+    {
+      "id": "TC-ACG-084Df",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-004",
+      "title": "Path traversal and non-artefact names are rejected without serving bytes",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "a real backup on disk plus a secret file outside the backup directory",
+      "when": "GET the download route with '../../etc/passwd', an absolute path, and 'not-an-ultron-backup.db'",
+      "then": "none returns 200 and no bytes of the targeted file are served",
+      "steps": [
+        "GET the download route with '../../etc/passwd', an absolute path, and 'not-an-ultron-backup.db'"
+      ],
+      "expected_result": "status != 200 for each; response never contains the out-of-directory content",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Df_DownloadRejectsPathTraversal"
+    },
+    {
+      "id": "TC-ACG-084Ef",
+      "requirement_id": "FR-084",
+      "user_story_id": "US-084",
+      "ac_id": "AC-084-005",
+      "title": "An unauthenticated download returns no file bytes",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "an encrypted backup on disk and no session cookie",
+      "when": "GET /api/settings/backups/ultron-20260713-030000.db.enc",
+      "then": "status 401 and the body contains none of the stored bytes",
+      "steps": [
+        "GET /api/settings/backups/ultron-20260713-030000.db.enc"
+      ],
+      "expected_result": "status 401; body excludes ULTRONENC2 and the file content",
+      "test_data": {},
+      "test_function": "TestTC_ACG_084Ef_DownloadRequiresAuth"
+    }
+  ]
+}

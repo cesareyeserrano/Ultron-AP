@@ -482,3 +482,68 @@ type resolveCall struct {
 	firstFiredAt time.Time
 	resolvedAt   time.Time
 }
+
+// --- AC-004-002 / AC-004-003 — docker/systemd transition alerts fire end-to-end ---
+// The dockerContainerSource/systemdServiceSource seams let these tests inject
+// container/unit states without a live daemon.
+
+type fakeDockerSource struct{ containers []docker.ContainerInfo }
+
+func (f fakeDockerSource) Available() bool                    { return true }
+func (f fakeDockerSource) Containers() []docker.ContainerInfo { return f.containers }
+
+type fakeSystemdSource struct{ services []systemd.ServiceInfo }
+
+func (f fakeSystemdSource) Available() bool                  { return true }
+func (f fakeSystemdSource) Services() []systemd.ServiceInfo  { return f.services }
+
+// @aitri-tc TC-004a
+func TestEvaluateDockerChanges_FiresAlertOnExit(t *testing.T) {
+	db := setupTestDB(t)
+	eng := NewEngine(db, nil, nil, nil, time.Minute)
+
+	// Cycle 1 — baseline: nginx running.
+	eng.docker = fakeDockerSource{containers: []docker.ContainerInfo{
+		{Name: "nginx", State: "running"},
+	}}
+	eng.evaluateDockerChanges()
+
+	// Cycle 2 — nginx exits with an error state.
+	eng.docker = fakeDockerSource{containers: []docker.ContainerInfo{
+		{Name: "nginx", State: "exited", Health: docker.HealthError},
+	}}
+	eng.evaluateDockerChanges()
+
+	alerts, err := db.ListAlerts(10)
+	require.NoError(t, err)
+	require.Len(t, alerts, 1, "state transition to exited must fire exactly one alert")
+	assert.Equal(t, "warning", alerts[0].Severity)
+	assert.Equal(t, "docker:nginx", alerts[0].Source)
+	assert.Contains(t, alerts[0].Message, "nginx")
+	assert.Contains(t, alerts[0].Message, "exited")
+}
+
+// @aitri-tc TC-004b
+func TestEvaluateSystemdChanges_FiresCriticalOnFailed(t *testing.T) {
+	db := setupTestDB(t)
+	eng := NewEngine(db, nil, nil, nil, time.Minute)
+
+	// Cycle 1 — baseline: unit active.
+	eng.systemd = fakeSystemdSource{services: []systemd.ServiceInfo{
+		{Name: "nginx.service", ActiveState: "active"},
+	}}
+	eng.evaluateSystemdChanges()
+
+	// Cycle 2 — unit transitions to failed.
+	eng.systemd = fakeSystemdSource{services: []systemd.ServiceInfo{
+		{Name: "nginx.service", ActiveState: "failed"},
+	}}
+	eng.evaluateSystemdChanges()
+
+	alerts, err := db.ListAlerts(10)
+	require.NoError(t, err)
+	require.Len(t, alerts, 1, "transition to failed must fire exactly one alert")
+	assert.Equal(t, "critical", alerts[0].Severity)
+	assert.Equal(t, "systemd:nginx.service", alerts[0].Source)
+	assert.Contains(t, alerts[0].Message, "nginx.service")
+}

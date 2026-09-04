@@ -20,13 +20,13 @@
   ],
   "projectName": "Ultron",
   "createdAt": "2026-03-13T21:47:37.755Z",
-  "aitriVersion": "2.0.0-rc.84",
+  "aitriVersion": "2.2.0-rc.10",
   "artifactsDir": "spec",
-  "updatedAt": "2026-06-15T23:34:35.574Z",
+  "updatedAt": "2026-09-04T20:34:51.365Z",
   "artifactHashes": {
-    "1": "327bb745262b9da252371aa3eed1a6c8873a533d4667a6ea4fffe9fd69706a92",
-    "2": "de2eaa844d3edf4f5c531cea3bb43d19a49de2d1367e7a3b36aa10170e5c6f13",
-    "3": "01ef9973ed7d0d6b3f645d1aac8b8aeee4751ddd97fe7082810165716fc35da1",
+    "1": "1a10259aae8d677034a5d7d59745ed93c3f60567bbaa4ead2abd51c28e2b18e9",
+    "2": "0426c3455ceb59555d78ef8f4014303632ebf1f2de1301433fd826e3a9d9fde9",
+    "3": "2cf227b1908f98aa44cff690765892f3aa40e217917fa89f15af00ff39b14963",
     "4": "8dbfb0b1610624ffb323e1fbf36d0aa89d51330ae692c072bb387d0b221fed64",
     "5": "648618a873e11b8c446821b41c69340ec8aa24da4ba2585041a963cad0e7777a",
     "discovery": "9e4a8eb6269a20d20cf49f3b62f8520228e38901b9f29811073546f31ba34fda",
@@ -34,214 +34,295 @@
   },
   "events": [
     {
-      "at": "2026-05-12T18:18:17.076Z",
+      "at": "2026-07-14T19:42:16.022Z",
       "event": "verify-complete",
       "phase": "verify",
-      "passed": 45,
+      "passed": 86,
       "failed": 0
     },
     {
-      "at": "2026-05-12T18:18:40.763Z",
-      "event": "normalize-resolved",
-      "phase": null,
-      "files": 3,
-      "method": "git",
-      "baseRefFrom": "b05c30debad779249b70bca74da62e8d81570bfc",
-      "baseRefTo": "c343c58a43cc123a8e510e8dc7058ba3c628566b"
-    },
-    {
-      "at": "2026-05-22T17:37:11.710Z",
-      "event": "normalize-resolved",
-      "phase": null,
-      "files": 10,
-      "method": "git",
-      "baseRefFrom": "c343c58a43cc123a8e510e8dc7058ba3c628566b",
-      "baseRefTo": "7042db9ed99dba92b71395de03032ac1124e06e0",
-      "reason": "Aitri feature verification state refreshed and committed; root normalize did not advance feature metadata baseline automatically"
-    },
-    {
-      "at": "2026-05-29T21:47:07.499Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-05-29T21:47:10.102Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0
-    },
-    {
-      "at": "2026-06-14T20:47:45.059Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.84",
-      "category": "fieldRename",
-      "target": ".aitri#reconcileState",
-      "transform": "rename .aitri field normalizeState → reconcileState (preserve baseline)"
-    },
-    {
-      "at": "2026-06-14T20:47:45.060Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.84",
-      "category": "artifactRename",
-      "target": "04_BUILD_REPORT.json",
-      "transform": "rename artifact file 04_IMPLEMENTATION_MANIFEST.json → 04_BUILD_REPORT.json on disk (content unchanged)"
-    },
-    {
-      "at": "2026-06-14T20:47:45.060Z",
-      "event": "upgrade_migration",
-      "phase": "upgrade",
-      "from_version": "0.1.65",
-      "to_version": "2.0.0-rc.84",
-      "category": "artifactRename",
-      "target": "05_TRACEABILITY.json",
-      "transform": "rename artifact file 05_PROOF_OF_COMPLIANCE.json → 05_TRACEABILITY.json on disk (content unchanged)"
-    },
-    {
-      "at": "2026-06-15T21:05:39.156Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 45,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-06-15T21:06:32.895Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 2,
-      "method": "git",
-      "baseRefFrom": "d9e22ec46089ee8dfacbc06f0ef68244ae93510b",
-      "baseRefTo": "1c16d9e7150b42fb5c8b7b90ac8c2b7e8ce27459"
-    },
-    {
-      "at": "2026-06-15T21:12:49.931Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 2,
-      "method": "git",
-      "baseRefFrom": "1c16d9e7150b42fb5c8b7b90ac8c2b7e8ce27459",
-      "baseRefTo": "d30b5cafe34f5d27f831213c903d49f13cc0bb28"
-    },
-    {
-      "at": "2026-06-15T21:16:24.396Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 2,
-      "method": "git",
-      "baseRefFrom": "d30b5cafe34f5d27f831213c903d49f13cc0bb28",
-      "baseRefTo": "df1eee54094230556bd08eec9ee3b6f335fee8e9"
-    },
-    {
-      "at": "2026-06-15T21:29:37.194Z",
+      "at": "2026-07-14T19:45:16.226Z",
       "event": "reconcile-resolved",
       "phase": null,
       "files": 4,
       "method": "git",
-      "baseRefFrom": "df1eee54094230556bd08eec9ee3b6f335fee8e9",
-      "baseRefTo": "4f362a1a70089ec90aebf3ee27d565bb251545f7"
+      "baseRefFrom": "362fffc23e505a246456dbb86d50ce41549e6e92",
+      "baseRefTo": "7071acbf677e24f97a8d855b0bc396227ed542c2"
     },
     {
-      "at": "2026-06-15T21:55:49.667Z",
-      "event": "reconcile-resolved",
+      "at": "2026-07-14T21:05:23.062Z",
+      "event": "reconcile-pending",
       "phase": null,
-      "files": 8,
+      "files": 5,
       "method": "git",
-      "baseRefFrom": "4f362a1a70089ec90aebf3ee27d565bb251545f7",
-      "baseRefTo": "d00666db1c7b66370f6344cdb7b07c020b819cee"
+      "verifyPassedCleared": true
     },
     {
-      "at": "2026-06-15T22:28:27.007Z",
+      "at": "2026-07-14T21:05:25.355Z",
       "event": "verify-run",
       "phase": "verify",
-      "passed": 45,
+      "passed": 86,
       "failed": 0,
       "skipped": 0,
       "manual": 0
     },
     {
-      "at": "2026-06-15T22:32:10.101Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 2,
-      "method": "git",
-      "baseRefFrom": "d00666db1c7b66370f6344cdb7b07c020b819cee",
-      "baseRefTo": "19db57008954fe6ecc99818f2e8d86758ef16d7f"
+      "at": "2026-07-14T21:05:25.413Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
     },
     {
-      "at": "2026-06-15T23:14:33.283Z",
+      "at": "2026-07-14T21:08:25.618Z",
+      "event": "reconcile-resolved",
+      "phase": null,
+      "files": 5,
+      "method": "git",
+      "baseRefFrom": "7071acbf677e24f97a8d855b0bc396227ed542c2",
+      "baseRefTo": "cb55dab52e4a9a3815b70affe17cbe681d37944a"
+    },
+    {
+      "at": "2026-07-14T22:48:04.521Z",
+      "event": "reconcile-pending",
+      "phase": null,
+      "files": 3,
+      "method": "git",
+      "verifyPassedCleared": true
+    },
+    {
+      "at": "2026-07-14T22:48:07.078Z",
       "event": "verify-run",
       "phase": "verify",
-      "passed": 45,
+      "passed": 86,
       "failed": 0,
       "skipped": 0,
       "manual": 0
     },
     {
-      "at": "2026-06-15T23:16:32.651Z",
-      "event": "reconcile-resolved",
-      "phase": null,
-      "files": 14,
-      "method": "git",
-      "baseRefFrom": "19db57008954fe6ecc99818f2e8d86758ef16d7f",
-      "baseRefTo": "f76d7ef6213b989115a7b44d6355cb3f36bdc8ea"
+      "at": "2026-07-14T22:48:07.145Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
     },
     {
-      "at": "2026-06-15T23:32:19.737Z",
+      "at": "2026-07-14T22:51:07.340Z",
+      "event": "reconcile-resolved",
+      "phase": null,
+      "files": 3,
+      "method": "git",
+      "baseRefFrom": "cb55dab52e4a9a3815b70affe17cbe681d37944a",
+      "baseRefTo": "df49b1382b1f9082a9abbb1dbad40d93e235c65c"
+    },
+    {
+      "at": "2026-07-15T00:11:32.465Z",
+      "event": "completed",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-07-15T00:12:43.583Z",
+      "event": "approved",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-09-02T23:13:59.068Z",
+      "event": "reconcile-pending",
+      "phase": null,
+      "files": 6,
+      "method": "git",
+      "verifyPassedCleared": true
+    },
+    {
+      "at": "2026-09-02T23:15:15.279Z",
       "event": "verify-run",
       "phase": "verify",
-      "passed": 45,
+      "passed": 86,
       "failed": 0,
       "skipped": 0,
       "manual": 0
     },
     {
-      "at": "2026-06-15T23:34:35.541Z",
+      "at": "2026-09-02T23:15:17.830Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-02T23:16:16.270Z",
       "event": "reconcile-resolved",
       "phase": null,
-      "files": 12,
+      "files": 6,
       "method": "git",
-      "baseRefFrom": "f76d7ef6213b989115a7b44d6355cb3f36bdc8ea",
-      "baseRefTo": "9d69e1e52e76d2ca7aeeeab1199fcb15ba9fbcad"
+      "baseRefFrom": "0285daef1f0b15bbe668b8905150c164ffd19831",
+      "baseRefTo": "895877539a7954e8a1bb29c0a576ce6980e742c7"
+    },
+    {
+      "at": "2026-09-04T19:12:55.061Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-04T19:12:59.052Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-04T20:34:50.903Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-04T20:34:51.311Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 86,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
   "verifyTimestamp": "2026-03-18T22:32:14.166Z",
   "driftPhases": [],
-  "rejections": {
-    "5": {
-      "at": "2026-03-18T22:23:12.077Z",
-      "feedback": "Primary deployment target is Raspberry Pi via systemd — not Docker. Remove Dockerfile and docker-compose.yml. The compliance proof and DEPLOYMENT.md should focus exclusively on the systemd + binary deployment path already present in deploy/. The spec/05_DEPLOYMENT.md created earlier already covers this correctly."
+  "rejections": {},
+  "auditLastAt": "2026-07-15T01:01:44.733Z",
+  "upgradeFindings": [
+    {
+      "target": "features/help-page/spec/04_BUILD_REPORT.json",
+      "transform": "legacy venv-relative test_runner (\"go test -C ../.. ./internal/help/... ./internal/server/ -run TC_HP -v\")",
+      "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server/ — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
+      "module": "0.1.65",
+      "category": "validatorGap",
+      "recordedAt": "2026-09-04T20:34:34.280Z"
+    },
+    {
+      "target": "features/settings-revamp/spec/04_BUILD_REPORT.json",
+      "transform": "legacy venv-relative test_runner (\"go test -C ../.. ./internal/server -run TestTC_SR -v\")",
+      "reason": "Root-relative test target(s) that will NOT resolve from the feature directory: ./internal/server — make these relative to the feature dir or absolute. Pre-alpha.9 manifests stored runner paths relative to the project root. Since alpha.9, `aitri feature verify-run` runs from the feature directory, so a root-relative binary like `.venv/bin/pytest` is no longer reachable and fails with \"Command not found\" before any test executes. Preferred fix: set `test_runner` to a bare `pytest <args>` — verify-run auto-detects `.venv/` or `venv/` at the project root and rewrites the binary itself, which stays portable across machines and CI. Only when the virtualenv lives elsewhere (`env/`, poetry, pipenv, conda, ~/venvs) fall back to an absolute path, knowing a machine-specific path committed to the manifest will NOT resolve on another clone or in CI. Note: `test_runner` is the full command including the test target — if the target is also root-relative (e.g. `tests/foo.py`) it stays broken under the feature-dir cwd even after the binary is fixed, so run `aitri feature verify-run <name>` to confirm. This finding clearing only means the binary prefix no longer matches — not that the runner executes.",
+      "module": "0.1.65",
+      "category": "validatorGap",
+      "recordedAt": "2026-09-04T20:34:34.281Z"
     }
+  ],
+  "coverageAuditLastAt": "2026-06-15T22:00:30.312Z",
+  "cascadedPhases": [],
+  "frSnapshots": {
+    "2": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ],
+    "3": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ],
+    "4": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ],
+    "5": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ],
+    "ux": [
+      "FR-001",
+      "FR-002",
+      "FR-003",
+      "FR-004",
+      "FR-005",
+      "FR-006",
+      "FR-007",
+      "FR-008",
+      "FR-009",
+      "FR-010",
+      "FR-011",
+      "FR-012",
+      "FR-013",
+      "FR-014",
+      "FR-015"
+    ]
   },
-  "verifyRanAt": "2026-06-15T23:32:19.737Z",
-  "auditLastAt": "2026-06-15T22:09:31.177Z",
-  "upgradeFindings": [],
+  "verifyResultsHash": "7f32cc5d445139690c92cb7607d934fe3ab6351dd4dbc5c1b442fca164bca6fe",
+  "verifyRanAt": "2026-09-04T20:34:50.802Z",
+  "lastVerifyRun": {
+    "passed": 86,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-09-04T20:34:50.802Z"
+  },
+  "securityAuditLastAt": "2026-07-15T01:02:54.083Z",
+  "verifyRanRef": "151f1d7d6d4261b2722a3940427effab3817f382",
+  "verifyRanDirty": false,
   "verifySummary": {
-    "total": 45,
-    "passed": 45,
+    "total": 86,
+    "passed": 86,
     "failed": 0,
     "skipped": 0,
     "skipped_e2e": 0,
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
-  },
-  "lastVerifyRun": {
-    "passed": 45,
-    "failed": 0,
-    "skipped": 0,
-    "manual": 0,
-    "at": "2026-06-15T23:32:19.737Z"
-  },
-  "coverageAuditLastAt": "2026-06-15T22:00:30.312Z"
+  }
 }

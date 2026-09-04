@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -156,27 +157,37 @@ func (t *TelegramSender) SendFile(filePath string, caption string) error {
 	}
 	defer file.Close()
 
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("document", filepath.Base(filePath))
-	if err != nil {
-		return fmt.Errorf("failed to create form file: %w", err)
-	}
-	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("failed to copy file to part: %w", err)
-	}
-	if err := writer.WriteField("chat_id", t.chatID); err != nil {
-		return fmt.Errorf("failed to write chat_id: %w", err)
-	}
-	if err := writer.WriteField("caption", caption); err != nil {
-		return fmt.Errorf("failed to write caption: %w", err)
-	}
-	if err := writer.Close(); err != nil {
-		return fmt.Errorf("failed to close writer: %w", err)
-	}
+	// M4: stream the multipart body through an io.Pipe instead of buffering the
+	// whole file in a bytes.Buffer. Backups can approach the Pi's available RAM
+	// (the encryption path already streams to disk in 64 KiB chunks); buffering
+	// the entire artefact here would undo that OOM protection. Peak memory is
+	// now O(pipe buffer), not O(file size).
+	pr, pw := io.Pipe()
+	writer := multipart.NewWriter(pw)
+	go func() {
+		werr := func() error {
+			part, e := writer.CreateFormFile("document", filepath.Base(filePath))
+			if e != nil {
+				return e
+			}
+			if _, e := io.Copy(part, file); e != nil {
+				return e
+			}
+			if e := writer.WriteField("chat_id", t.chatID); e != nil {
+				return e
+			}
+			if e := writer.WriteField("caption", caption); e != nil {
+				return e
+			}
+			return writer.Close()
+		}()
+		// Propagate any producer error to the HTTP reader so the request fails
+		// instead of sending a truncated body.
+		_ = pw.CloseWithError(werr)
+	}()
 
 	endpoint := telegramAPIBase + t.botToken + "/sendDocument"
-	req, err := http.NewRequest("POST", endpoint, body)
+	req, err := http.NewRequest("POST", endpoint, pr)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -184,12 +195,12 @@ func (t *TelegramSender) SendFile(filePath string, caption string) error {
 
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("telegram request error: %w", err)
+		return fmt.Errorf("telegram request error: %w", t.redactToken(err))
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return fmt.Errorf("telegram API returned %d: %s", resp.StatusCode, string(respBody))
 	}
 	return nil
@@ -197,6 +208,22 @@ func (t *TelegramSender) SendFile(filePath string, caption string) error {
 
 // sendMessage is preserved for backwards compat with TestTelegramSender_*
 // tests. New code should call sendMessageReturningID.
+// redactToken scrubs the bot token from an error's text. The token is carried
+// in the request URL *path*, so a transport failure returns a *url.Error whose
+// string embeds the full token (url.Error only redacts userinfo, never the
+// path). Without this the token leaks into the "Test" HTTP response and the
+// logs, defeating the masking done everywhere else (A2).
+func (t *TelegramSender) redactToken(err error) error {
+	if err == nil || t.botToken == "" {
+		return err
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, t.botToken) {
+		return err
+	}
+	return errors.New(strings.ReplaceAll(msg, t.botToken, "<redacted-token>"))
+}
+
 func (t *TelegramSender) sendMessage(text string) error {
 	endpoint := telegramAPIBase + t.botToken + "/sendMessage"
 	return t.sendMessageTo(endpoint, text)
@@ -219,7 +246,7 @@ func (t *TelegramSender) sendMessageTo(endpoint string, text string) error {
 	}
 	resp, err := t.client.Post(endpoint, "application/json", bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("telegram: request error: %w", err)
+		return fmt.Errorf("telegram: request error: %w", t.redactToken(err))
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -251,7 +278,7 @@ func (t *TelegramSender) sendMessageReturningID(ctx context.Context, text string
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return 0, fmt.Errorf("telegram: request error: %w", err)
+		return 0, fmt.Errorf("telegram: request error: %w", t.redactToken(err))
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -297,7 +324,7 @@ func (t *TelegramSender) editMessage(ctx context.Context, messageID int64, text 
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := t.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("telegram: request error: %w", err)
+		return fmt.Errorf("telegram: request error: %w", t.redactToken(err))
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
@@ -397,6 +424,12 @@ func ruleIDForEvent(evt *Event) int64 {
 	}
 	if evt.Alert.ConfigID != nil && *evt.Alert.ConfigID > 0 {
 		return *evt.Alert.ConfigID
+	}
+	// A source that emits several distinct alert kinds sets DedupKey so each
+	// kind gets its own storm entry (and its own chat row) instead of every
+	// alert from that source sharing one.
+	if evt.DedupKey != "" {
+		return int64(hashSource(evt.DedupKey))
 	}
 	// Fallback: hash the source to a stable int64 so docker/systemd
 	// transitions still collapse storms within a 60-second window.

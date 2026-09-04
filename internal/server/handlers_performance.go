@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"html"
 	"log"
 	"net/http"
 	"os"
@@ -74,7 +73,7 @@ func (s *Server) handlePerformanceSave(w http.ResponseWriter, r *http.Request) {
 
 	s.ApplyPerformanceConfig(cfg)
 
-	w.Header().Set("HX-Trigger", `{"showToast": {"message": "Performance settings updated", "type": "success"}}`)
+	setToast(w, "Performance settings updated", "success")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
 		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>` +
@@ -86,7 +85,12 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	cfg := database.DefaultBackupConfig()
+	// F5: base the update on the STORED config, not on defaults, so a POST that
+	// omits a field preserves its saved value instead of silently resetting it.
+	cfg, err := s.db.GetBackupConfig()
+	if err != nil {
+		cfg = database.DefaultBackupConfig()
+	}
 	cfg.Enabled = r.FormValue("enabled") == "on"
 
 	// Numeric fields go through RangeFor() — out-of-range returns 400 with
@@ -156,16 +160,22 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 	if mode != "" {
 		cfg.DestinationMode = mode
 	}
-	rawLocalPath := strings.TrimSpace(r.FormValue("local_path"))
-	cleanedLocalPath, err := database.ValidateBackupPath(rawLocalPath, s.cfg.BackupRoot)
-	if err != nil {
-		log.Printf("settings: rejected backup local_path %q: %v", rawLocalPath, err)
-		http.Error(w, "Invalid backup path: "+err.Error(), http.StatusBadRequest)
-		return
+	// Only touch local_path / encryption_key_ref when the form actually carries
+	// them, so a partial POST cannot blank out a stored path or key ref (F5).
+	if r.Form.Has("local_path") {
+		rawLocalPath := strings.TrimSpace(r.FormValue("local_path"))
+		cleanedLocalPath, err := database.ValidateBackupPath(rawLocalPath, s.cfg.BackupRoot)
+		if err != nil {
+			log.Printf("settings: rejected backup local_path %q: %v", rawLocalPath, err)
+			http.Error(w, "Invalid backup path: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		cfg.LocalPath = cleanedLocalPath
 	}
-	cfg.LocalPath = cleanedLocalPath
 	cfg.EncryptEnabled = r.FormValue("encrypt_enabled") == "on"
-	cfg.EncryptionKeyRef = strings.TrimSpace(r.FormValue("encryption_key_ref"))
+	if r.Form.Has("encryption_key_ref") {
+		cfg.EncryptionKeyRef = strings.TrimSpace(r.FormValue("encryption_key_ref"))
+	}
 
 	if err := s.db.SaveBackupConfig(cfg); err != nil {
 		log.Printf("settings: failed to save backup config: %v", err)
@@ -174,7 +184,7 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 	}
 	s.ApplyBackupConfig(cfg)
 
-	w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup settings updated", "type": "success"}}`)
+	setToast(w, "Backup settings updated", "success")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
 		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>` +
@@ -182,8 +192,18 @@ func (s *Server) handleBackupConfigSave(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleSettingsBackup(w http.ResponseWriter, r *http.Request) {
-	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("ultron-backup-%d.db", time.Now().Unix()))
-	defer os.Remove(tmpFile)
+	// B11: write into a private (0700) temp directory with an unpredictable
+	// name instead of a guessable path in the world-shared temp dir. That
+	// closes the pre-create/symlink race on the os.Remove→VACUUM INTO window,
+	// since no other user can traverse into or plant a symlink inside the dir.
+	tmpDir, err := os.MkdirTemp("", "ultron-backup-")
+	if err != nil {
+		log.Printf("settings: backup temp dir failed: %v", err)
+		http.Error(w, "Backup failed", http.StatusInternalServerError)
+		return
+	}
+	defer os.RemoveAll(tmpDir)
+	tmpFile := filepath.Join(tmpDir, "ultron.db")
 
 	if err := s.db.Backup(tmpFile); err != nil {
 		log.Printf("settings: backup failed: %v", err)
@@ -203,11 +223,11 @@ func (s *Server) handleSettingsBackupRun(w http.ResponseWriter, r *http.Request)
 
 	if err := s.performAutomatedBackup(); err != nil {
 		log.Printf("settings: manual backup failed: %v", err)
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Backup failed: %s", "type": "error"}}`, html.EscapeString(err.Error())))
+		setToast(w, "Backup failed: "+err.Error(), "error")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("HX-Trigger", `{"showToast": {"message": "Backup created and sent to Telegram", "type": "success"}}`)
+	setToast(w, "Backup created and sent to Telegram", "success")
 	w.WriteHeader(http.StatusOK)
 }

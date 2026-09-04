@@ -1,0 +1,13 @@
+# Accepted govulncheck findings — Security Gate
+#
+# Format:  GO-ID  review-by=YYYY-MM-DD  # justification
+#
+# An entry here means: "we know, and there is nothing to install."
+# It does NOT mean "ignore forever" — the gate fails when an entry is past its
+# review-by date, and also fails when an entry is no longer reported at all
+# (stale allowlist), so this file cannot quietly rot.
+#
+# Anything NOT listed here fails the gate.
+
+GO-2026-4887  review-by=2026-12-01  # Moby/docker: no fixed version exists in ANY release (Fixed in: N/A). Verified 2026-09-03 that docker/docker v28.5.2 does NOT resolve it either, so the SDK bump buys no security. Reachable only through internal/docker, which talks to a local root-owned socket the operator already controls.
+GO-2026-4883  review-by=2026-12-01  # Moby: off-by-one in plugin privilege validation. Same story — Fixed in: N/A, still present in v28.5.2. Ultron-AP never installs docker plugins; it lists, inspects, starts and stops containers.

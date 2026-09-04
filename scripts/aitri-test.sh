@@ -99,4 +99,52 @@ emit "internal/server"    "TC-015h" "backup config save persists settings and ap
 emit "internal/server"    "TC-015e" "backup outcome is recorded in action_history"
 emit "internal/server"    "TC-015f" "backup config save without CSRF is rejected"
 
+
+# AC-coverage backfill (BL-033) — traces the remaining acceptance criteria.
+emit "internal/server" "TC-001a" "dashboard metrics tile renders RAM used/total and percentage"
+emit "internal/server" "TC-001b" "dashboard disk tile lists every mounted partition"
+emit "internal/server" "TC-001c" "dashboard network tile reports a link-state verdict"
+emit "internal/server" "TC-001d" "cPU temperature color thresholds green <60, yellow 60-75, red >75"
+emit "internal/server" "TC-001g" "sSE broadcast pushes metrics to connected clients on the 5s cadence"
+emit "internal/server" "TC-001i" "dashboard header shows system uptime"
+emit "internal/docker" "TC-002a" "container health classification green/grey/red by state"
+emit "internal/server" "TC-002b" "docker page polls its container list every 10 seconds"
+emit "internal/docker" "TC-002c" "container detail exposes ports, volumes and env var names"
+emit "internal/systemd" "TC-003a" "service state indicator green active / grey inactive / red failed"
+emit "internal/server" "TC-003b" "services page polls its list every 30 seconds"
+emit "internal/alerts" "TC-004a" "docker container exit transition fires a docker alert"
+emit "internal/alerts" "TC-004b" "systemd failed transition fires a critical service alert"
+emit "internal/database" "TC-004c" "fired alert persists to SQLite with timestamp and type"
+emit "internal/server" "TC-004d" "alerts panel severity filter shows only matching entries"
+emit "internal/server" "TC-004g" "rendered alerts carry severity colors red/yellow/accent"
+emit "internal/server" "TC-005a" "telegram channel configured from Bot Token and Chat ID"
+emit "internal/server" "TC-006a" "sMTP channel configured from host/port/user/password/from/to"
+emit "internal/server" "TC-007a" "login page shows username and password form"
+emit "internal/server" "TC-007b" "session cookie expires after the 24h default and is HttpOnly"
+emit "cmd/ultron-ap" "TC-007c" "bootstrapped admin password stored as bcrypt hash, never plaintext"
+emit "internal/server" "TC-007d" "logout button visible in the header on every authenticated page"
+emit "internal/server" "TC-007g" "unauthenticated non-exempt routes redirect to /login"
+emit "internal/server" "TC-008a" "service rows render Start, Stop and Restart controls"
+emit "internal/server" "TC-008b" "failed action renders an explicit error state with message"
+emit "internal/server" "TC-008c" "actions dispatch as HTMX swaps returning in-page fragments"
+emit "internal/server" "TC-009a" "body text tokens meet WCAG AA 4.5:1 on all panel backgrounds"
+emit "internal/server" "TC-009b" "status badges map states to semantic color tokens"
+emit "internal/server" "TC-009c" "interactive settings controls declare 44px touch targets"
+emit "internal/server" "TC-009d" "status text tokens meet WCAG AA on dark backgrounds"
+emit "internal/privileged" "TC-011a" "host actions route through the privileged helper Unix socket"
+emit "cmd/ultron-helper" "TC-011b" "helper validates unit names against the allow-list before executing"
+emit "internal/server" "TC-014a" "SSE summary event carries the Tailscale/VPN status block"
+
+emit "internal/systemd" "TC-003c" "service row shows name, state and active-since"
+emit "internal/server"  "TC-015a" "backup written to disk is encrypted at rest"
+
+# ac-coverage-gaps feature — realises the parent ACs the code never grew.
+emit "internal/notify" "TC-005b" "telegram mute window suppresses delivery until it expires"
+emit "internal/notify" "TC-006b" "daily digest sends one email summarising the last 24h"
+emit "internal/server" "TC-010a" "service log drawer shows the last 100 journalctl lines"
+emit "internal/server" "TC-013a" "settings hardware section renders a fan-mode selector"
+emit "internal/server" "TC-013b" "settings hardware section renders an OLED configuration"
+
+emit "internal/server" "TC-015b" "settings lists prior backups and downloads the stored encrypted file"
+
 exit $EXIT_CODE

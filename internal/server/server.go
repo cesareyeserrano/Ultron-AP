@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -10,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -30,6 +33,7 @@ import (
 	"github.com/cesareyeserrano/ultron-ap/internal/notify"
 	"github.com/cesareyeserrano/ultron-ap/internal/privileged"
 	"github.com/cesareyeserrano/ultron-ap/internal/systemd"
+	"github.com/cesareyeserrano/ultron-ap/internal/ups"
 	"github.com/cesareyeserrano/ultron-ap/web"
 )
 
@@ -61,6 +65,7 @@ type Server struct {
 	sseBroker         *sseBroker
 	templates         fs.FS
 	tmplCache         map[string]*template.Template // pre-parsed at startup
+	assetVersion      string                        // content hash of app.css for cache-busting (CSS1)
 	startedAt         time.Time
 
 	// sseIntervalNs holds the SSE broadcast interval as nanoseconds (atomic).
@@ -69,27 +74,20 @@ type Server struct {
 	// client carries its own selection (see sseClient) so one viewer's window
 	// choice does not leak into other clients' charts (BG-046).
 
-	// backupIntervalHours holds the automated backup interval in hours (atomic).
-	backupIntervalHours atomic.Int64
-	backupEnabled       atomic.Int64
-	backupRetention     atomic.Int64
-	backupDestination   atomic.Value // string
-	backupLocalPath     atomic.Value // string
-	backupScheduleMode  atomic.Value // string
-	backupScheduleHour  atomic.Int64
-	backupScheduleMin   atomic.Int64
-	backupEncrypt       atomic.Int64
-	backupKeyRef        atomic.Value // string
-	backupUploadTimeout atomic.Int64
-	backupMaxUploadMB   atomic.Int64
-	backupRescheduleCh  chan struct{}
-	privileged          *privileged.Client
-	gateway             *gatewayprobe.Probe
-	wan                 *wanmonitor.Monitor
-	landevices          *landevices.Orchestrator
-	landevicesStore     *landevicesstore.Store
-	insights            *insights.Service
-	help                *help.Service
+	// backupCfg holds the automated-backup settings as one immutable snapshot
+	// swapped atomically (D1). The previous 12 independent atomics could be read
+	// half-updated — e.g. a backup running with a new destination but the old
+	// key ref — because ApplyBackupConfig wrote them one at a time.
+	backupCfg          atomic.Pointer[backupSettings]
+	backupRescheduleCh chan struct{}
+	privileged         *privileged.Client
+	gateway            *gatewayprobe.Probe
+	wan                *wanmonitor.Monitor
+	landevices         *landevices.Orchestrator
+	landevicesStore    *landevicesstore.Store
+	insights           *insights.Service
+	help               *help.Service
+	ups                *ups.Poller
 
 	// Alert count TTL cache — avoids a DB query on every SSE tick.
 	alertCountMu     sync.Mutex
@@ -124,19 +122,22 @@ func New(cfg *config.Config, db *database.DB, reader *metrics.SystemReader, coll
 		backupRescheduleCh: make(chan struct{}, 1),
 	}
 	s.sseIntervalNs.Store(int64(5 * time.Second))
-	s.backupIntervalHours.Store(24) // Default 24h
-	s.backupEnabled.Store(1)
-	s.backupRetention.Store(7)
-	s.backupDestination.Store("local_only")
-	s.backupLocalPath.Store("")
-	s.backupScheduleMode.Store("interval")
-	s.backupScheduleHour.Store(3)
-	s.backupScheduleMin.Store(0)
-	s.backupEncrypt.Store(0)
-	s.backupKeyRef.Store("")
-	s.backupUploadTimeout.Store(30)
-	s.backupMaxUploadMB.Store(50)
+	s.backupCfg.Store(&backupSettings{
+		enabled:       true,
+		intervalHours: 24, // Default 24h
+		retention:     7,
+		destination:   "local_only",
+		localPath:     "",
+		scheduleMode:  "interval",
+		scheduleHour:  3,
+		scheduleMin:   0,
+		encrypt:       false,
+		keyRef:        "",
+		uploadTimeout: 30,
+		maxUploadMB:   50,
+	})
 
+	s.assetVersion = computeAssetVersion(web.Static, "static")
 	s.parseTemplates()
 	s.registerRoutes(mux)
 	s.httpServer.Handler = s.securityHeaders(mux)
@@ -170,32 +171,91 @@ func (s *Server) ApplyPerformanceConfig(cfg database.PerformanceConfig) {
 	}
 }
 
-func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
-	if cfg.Enabled {
-		s.backupEnabled.Store(1)
-	} else {
-		s.backupEnabled.Store(0)
+// backupSettings is the immutable automated-backup config snapshot held in
+// s.backupCfg. It is only ever replaced wholesale (never mutated in place) so
+// readers always observe a self-consistent set of values (D1).
+type backupSettings struct {
+	enabled       bool
+	intervalHours int
+	retention     int
+	destination   string
+	localPath     string
+	scheduleMode  string
+	scheduleHour  int
+	scheduleMin   int
+	encrypt       bool
+	keyRef        string
+	uploadTimeout int
+	maxUploadMB   int
+}
+
+// currentBackupSettings loads the active snapshot, returning safe defaults if
+// it has not been initialised yet.
+func (s *Server) currentBackupSettings() backupSettings {
+	if bs := s.backupCfg.Load(); bs != nil {
+		return *bs
 	}
+	return backupSettings{
+		enabled: true, intervalHours: 24, retention: 7,
+		destination: "local_only", scheduleMode: "interval",
+		scheduleHour: 3, uploadTimeout: 30, maxUploadMB: 50,
+	}
+}
+
+func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
+	// Start from the current snapshot so the two "keep old value on invalid
+	// input" cases below preserve what was there, then swap the whole struct in
+	// one atomic Store.
+	next := s.currentBackupSettings()
+	next.enabled = cfg.Enabled
 	if cfg.IntervalHours >= 1 {
-		s.backupIntervalHours.Store(int64(cfg.IntervalHours))
+		next.intervalHours = cfg.IntervalHours
 	}
 	if cfg.RetentionCount >= 1 {
-		s.backupRetention.Store(int64(cfg.RetentionCount))
+		next.retention = cfg.RetentionCount
 	}
-	s.backupDestination.Store(cfg.DestinationMode)
-	s.backupLocalPath.Store(cfg.LocalPath)
-	s.backupScheduleMode.Store(cfg.ScheduleMode)
-	s.backupScheduleHour.Store(int64(cfg.ScheduleHour))
-	s.backupScheduleMin.Store(int64(cfg.ScheduleMinute))
-	if cfg.EncryptEnabled {
-		s.backupEncrypt.Store(1)
-	} else {
-		s.backupEncrypt.Store(0)
-	}
-	s.backupKeyRef.Store(cfg.EncryptionKeyRef)
-	s.backupUploadTimeout.Store(int64(cfg.UploadTimeoutSec))
-	s.backupMaxUploadMB.Store(int64(cfg.MaxUploadSizeMB))
+	next.destination = cfg.DestinationMode
+	next.localPath = cfg.LocalPath
+	next.scheduleMode = cfg.ScheduleMode
+	next.scheduleHour = cfg.ScheduleHour
+	next.scheduleMin = cfg.ScheduleMinute
+	next.encrypt = cfg.EncryptEnabled
+	next.keyRef = cfg.EncryptionKeyRef
+	next.uploadTimeout = cfg.UploadTimeoutSec
+	next.maxUploadMB = cfg.MaxUploadSizeMB
+	s.backupCfg.Store(&next)
 	s.requestBackupReschedule()
+}
+
+// computeAssetVersion returns a short content hash of every bundled static
+// asset under root, used as the ?v= cache-busting token on the CSS/JS/icon
+// links. Deriving it from file content means editing any asset (`make css`, a
+// JS tweak) automatically invalidates the cache — no more hand-bumped version
+// strings drifting out of sync across templates (CSS1, and the JS links).
+// WalkDir visits in lexical order, so the hash is deterministic. Falls back to
+// the build commit if the tree can't be read.
+func computeAssetVersion(fsys fs.FS, root string) string {
+	h := sha256.New()
+	err := fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		data, err := fs.ReadFile(fsys, path)
+		if err != nil {
+			return err
+		}
+		h.Write([]byte(path)) // bind the path so a rename changes the hash
+		h.Write([]byte{0})
+		h.Write(data)
+		return nil
+	})
+	if err != nil {
+		return BuildCommit
+	}
+	return hex.EncodeToString(h.Sum(nil))[:12]
 }
 
 func (s *Server) requestBackupReschedule() {
@@ -257,14 +317,14 @@ func nextBackupDelay(now time.Time, enabled bool, mode string, intervalHours int
 }
 
 func (s *Server) currentBackupDelay(now time.Time) time.Duration {
-	mode, _ := s.backupScheduleMode.Load().(string)
+	bs := s.currentBackupSettings()
 	return nextBackupDelay(
 		now,
-		s.backupEnabled.Load() == 1,
-		mode,
-		int(s.backupIntervalHours.Load()),
-		int(s.backupScheduleHour.Load()),
-		int(s.backupScheduleMin.Load()),
+		bs.enabled,
+		bs.scheduleMode,
+		bs.intervalHours,
+		bs.scheduleHour,
+		bs.scheduleMin,
 	)
 }
 
@@ -283,7 +343,7 @@ func (s *Server) startBackupJob() {
 			case <-timer.C:
 			}
 
-			if s.backupEnabled.Load() == 0 {
+			if !s.currentBackupSettings().enabled {
 				log.Printf("backup: disabled, rechecking in 1h")
 				resetTimer(timer, 1*time.Hour)
 				continue
@@ -313,21 +373,34 @@ func (s *Server) recordBackupOutcome(err error) {
 func (s *Server) performAutomatedBackup() error {
 	log.Println("backup: starting automated backup job...")
 
-	retentionCount := int(s.backupRetention.Load())
+	// Load one consistent snapshot for the whole run (D1): destination, key ref
+	// and encrypt flag can no longer be observed half-updated relative to each
+	// other.
+	bs := s.currentBackupSettings()
+	retentionCount := bs.retention
 	if retentionCount < 1 {
 		retentionCount = 7
 	}
-	destinationMode, _ := s.backupDestination.Load().(string)
+	destinationMode := bs.destination
 	if destinationMode == "" {
 		destinationMode = "local_only"
 	}
-	backupPathOverride, _ := s.backupLocalPath.Load().(string)
-	keyRef, _ := s.backupKeyRef.Load().(string)
+	backupPathOverride := bs.localPath
+	keyRef := bs.keyRef
 
 	// 1. Create local backup file
 	backupDir := filepath.Join(filepath.Dir(s.cfg.DBPath), "backups")
 	if strings.TrimSpace(backupPathOverride) != "" {
-		backupDir = filepath.Clean(backupPathOverride)
+		// M2: re-validate the override at run time, not just at config-save
+		// time. A symlink component planted after save could otherwise redirect
+		// the plaintext VACUUM INTO outside BackupRoot. ValidateBackupPath
+		// re-checks containment and the symlink chain on every run.
+		validated, err := database.ValidateBackupPath(backupPathOverride, s.cfg.BackupRoot)
+		if err != nil {
+			log.Printf("backup: rejecting local path override %q: %v", backupPathOverride, err)
+			return fmt.Errorf("backup local path invalid: %w", err)
+		}
+		backupDir = validated
 	}
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
 		log.Printf("backup: failed to create backup dir: %v", err)
@@ -350,7 +423,7 @@ func (s *Server) performAutomatedBackup() error {
 	// streaming AEAD adds only ~22 B header + 21 B per 64 KiB chunk.
 	willUpload := destinationMode != "local_only"
 	if willUpload {
-		maxUploadMB := s.backupMaxUploadMB.Load()
+		maxUploadMB := int64(bs.maxUploadMB)
 		if maxUploadMB < 1 {
 			maxUploadMB = 50
 		}
@@ -361,7 +434,7 @@ func (s *Server) performAutomatedBackup() error {
 		}
 	}
 
-	if s.backupEncrypt.Load() == 1 {
+	if bs.encrypt {
 		key, err := backupKeyFromRef(keyRef)
 		if err != nil {
 			return fmt.Errorf("backup encryption key error: %w", err)
@@ -377,16 +450,38 @@ func (s *Server) performAutomatedBackup() error {
 
 	// Always enforce local retention after creating a backup, even if remote upload fails.
 	defer func() {
-		files, err := os.ReadDir(backupDir)
+		entries, err := os.ReadDir(backupDir)
 		if err != nil {
 			log.Printf("backup: retention read failed: %v", err)
 			return
 		}
-		if len(files) <= retentionCount {
+		// M11: only ever delete our own backup artefacts. The previous code
+		// deleted the lexicographically-first entries over *all* directory
+		// contents, which could remove unrelated files (or the wrong backup
+		// when .db and .db.enc names interleave) if LocalPath pointed at a
+		// shared directory. Filter to "ultron-*" regular files and delete the
+		// oldest by modtime.
+		type backupFile struct {
+			name    string
+			modTime time.Time
+		}
+		var backups []backupFile
+		for _, e := range entries {
+			if e.IsDir() || !strings.HasPrefix(e.Name(), "ultron-") {
+				continue
+			}
+			info, err := e.Info()
+			if err != nil {
+				continue
+			}
+			backups = append(backups, backupFile{name: e.Name(), modTime: info.ModTime()})
+		}
+		if len(backups) <= retentionCount {
 			return
 		}
-		for i := 0; i < len(files)-retentionCount; i++ {
-			path := filepath.Join(backupDir, files[i].Name())
+		sort.Slice(backups, func(i, j int) bool { return backups[i].modTime.Before(backups[j].modTime) })
+		for i := 0; i < len(backups)-retentionCount; i++ {
+			path := filepath.Join(backupDir, backups[i].name)
 			if err := os.Remove(path); err != nil {
 				log.Printf("backup: retention remove failed for %s: %v", path, err)
 			}
@@ -415,7 +510,7 @@ func (s *Server) performAutomatedBackup() error {
 		return fmt.Errorf("telegram bot token or chat ID is missing")
 	}
 
-	timeoutSec := s.backupUploadTimeout.Load()
+	timeoutSec := bs.uploadTimeout
 	if timeoutSec < 5 {
 		timeoutSec = 30
 	}
@@ -504,11 +599,17 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/alerts/clear", s.requireAuth(http.HandlerFunc(s.handleAlertsClear)))
 	mux.Handle("GET /api/settings/backup", s.requireAuth(http.HandlerFunc(s.handleSettingsBackup)))
 	mux.Handle("POST /api/settings/backup/run", s.requireAuth(http.HandlerFunc(s.handleSettingsBackupRun)))
+	mux.Handle("GET /api/settings/backups/{name}", s.requireAuth(http.HandlerFunc(s.handleBackupDownload)))
 	mux.Handle("GET /api/settings/encryption-key/probe", s.requireAuth(http.HandlerFunc(s.handleEncryptionKeyProbe)))
+	// FR-079: more specific than /api/notifications/{channel}, so Go's mux
+	// routes it here rather than treating "mute" as a channel name.
+	mux.Handle("POST /api/notifications/mute/clear", s.requireAuth(http.HandlerFunc(s.handleMuteClear)))
 	mux.Handle("POST /api/notifications/{channel}", s.requireAuth(http.HandlerFunc(s.handleNotificationSave)))
 	mux.Handle("POST /api/notifications/{channel}/test", s.requireAuth(http.HandlerFunc(s.handleNotificationTest)))
 	mux.Handle("POST /api/performance", s.requireAuth(http.HandlerFunc(s.handlePerformanceSave)))
 	mux.Handle("POST /api/backup/config", s.requireAuth(http.HandlerFunc(s.handleBackupConfigSave)))
+	mux.Handle("POST /api/settings/hardware", s.requireAuth(http.HandlerFunc(s.handleHardwareSave)))
+	mux.Handle("GET /api/services/{name}/logs", s.requireAuth(http.HandlerFunc(s.handleServiceLogs)))
 	mux.Handle("POST /api/services/{name}/start", s.requireAuth(http.HandlerFunc(s.handleServiceStart)))
 	mux.Handle("POST /api/services/{name}/stop", s.requireAuth(http.HandlerFunc(s.handleServiceStop)))
 	mux.Handle("POST /api/services/{name}/restart", s.requireAuth(http.HandlerFunc(s.handleServiceRestart)))
@@ -552,6 +653,15 @@ func (s *Server) startRetentionJob() {
 			} else if deleted > 0 {
 				log.Printf("retention: deleted %d expired sessions", deleted)
 			}
+			// UPS history/outage retention (FR-019/FR-024) — no existing generic
+			// scheduler covers ups_samples/ups_events, so it is wired here.
+			if s.ups != nil {
+				if n, err := s.ups.Purge(); err != nil {
+					log.Printf("retention: ups prune failed: %v", err)
+				} else if n > 0 {
+					log.Printf("retention: pruned %d ups rows", n)
+				}
+			}
 			timer.Reset(24 * time.Hour)
 		}
 	}()
@@ -567,6 +677,13 @@ func (s *Server) SetGatewayProbe(p *gatewayprobe.Probe) {
 // as a status badge on the dashboard. Optional.
 func (s *Server) SetWANMonitor(m *wanmonitor.Monitor) {
 	s.wan = m
+}
+
+// SetUPSPoller attaches the UPS poller whose latest snapshot is rendered on the
+// dashboard (FR-017). Optional — when nil, no UPS card is rendered and no UPS
+// SSE event is emitted (the module is gated by ULTRON_UPS_ENABLED, NFR-016).
+func (s *Server) SetUPSPoller(p *ups.Poller) {
+	s.ups = p
 }
 
 // SetHelp attaches the help-page service. Required for /help to be reachable;
@@ -588,5 +705,15 @@ func (s *Server) Start() error {
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	log.Println("Shutting down server...")
+
+	// Release the SSE streams FIRST. http.Server.Shutdown waits for active
+	// connections to finish, and an SSE stream only finishes when the browser
+	// disconnects — so with a dashboard tab open it always hit its deadline,
+	// the process exited 1, and systemd recorded a failed unit on every
+	// restart (BG-075).
+	if s.sseBroker != nil {
+		s.sseBroker.shutdown()
+	}
+
 	return s.httpServer.Shutdown(ctx)
 }

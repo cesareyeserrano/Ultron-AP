@@ -1,0 +1,206 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "network-tile",
+  "createdAt": "2026-07-14T16:36:57.812Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-09-04T20:34:46.883Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-09-04T19:36:49.998Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-04T19:36:53.144Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 1,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-04T19:36:53.349Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 16,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-04T19:37:27.571Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-09-04T19:37:27.823Z",
+      "event": "approved",
+      "phase": 1
+    },
+    {
+      "at": "2026-09-04T19:37:28.032Z",
+      "event": "completed",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-09-04T19:37:28.292Z",
+      "event": "approved",
+      "phase": "ux"
+    },
+    {
+      "at": "2026-09-04T19:37:28.494Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-09-04T19:37:28.699Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-09-04T19:37:28.963Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-09-04T19:37:29.199Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-09-04T19:37:29.388Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-04T19:37:29.732Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-04T19:37:34.204Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-04T19:37:34.555Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-04T19:37:47.697Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-04T19:37:47.971Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-04T19:37:51.840Z",
+      "event": "approved",
+      "phase": 5,
+      "version": "1.0.0",
+      "version_source": null
+    },
+    {
+      "at": "2026-09-04T20:34:46.504Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-04T20:34:46.841Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0
+    }
+  ],
+  "cascadedPhases": [],
+  "artifactHashes": {
+    "1": "94834497be22a5cbddd827b88505add26fccf2e5c3a6ef7e75bd2596da6233fb",
+    "2": "6eff61cc8e7779daa47066cfca6be29a3b9a30637ad4b187b8e09ee8d9702c8b",
+    "3": "20e2cf7a66a083484308671cdd233739dc37e49ba6c138c47e12b8edecb30427",
+    "4": "76b1f2750a2fb8ca1bd160cd9620a2280b60598a1ada0028c2c4622d2c5d2a67",
+    "5": "edc5e0ba4a235dd4638d6cf1eb3549c39e816ddb8d87468f69302729fc4fddf0",
+    "ux": "99c6a9942397fa45bf8469b848e665da5d356b1aa42cf26abf414527e74cfd5c"
+  },
+  "frSnapshots": {
+    "2": [
+      "FR-085",
+      "FR-087"
+    ],
+    "3": [
+      "FR-085",
+      "FR-087"
+    ],
+    "4": [
+      "FR-085",
+      "FR-087"
+    ],
+    "5": [
+      "FR-085",
+      "FR-087"
+    ],
+    "ux": [
+      "FR-085",
+      "FR-087"
+    ]
+  },
+  "verifyPassed": true,
+  "verifyRanRef": "151f1d7d6d4261b2722a3940427effab3817f382",
+  "verifyRanDirty": false,
+  "verifyResultsHash": "7135ce686684ed7edee832c318171d837cef1046799af435e2a8d9a6bf35894b",
+  "verifyRanAt": "2026-09-04T20:34:46.188Z",
+  "lastVerifyRun": {
+    "passed": 17,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-09-04T20:34:46.188Z"
+  },
+  "verifySummary": {
+    "total": 17,
+    "passed": 17,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "releaseHistory": [
+    {
+      "version": "1.0.0",
+      "version_source": null,
+      "at": "2026-09-04T19:37:51.839Z"
+    }
+  ]
+}

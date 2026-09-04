@@ -1,0 +1,104 @@
+{
+  "project": "Ultron-AP — network-tile",
+  "version": "1.0.0",
+  "generated_at": "2026-07-14",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "overall_status": "partial",
+  "overall_status_rationale": "Every FR is implemented and all 21 test cases pass, with zero regressions in the 86 pre-existing ones. The roll-up is 'partial' rather than 'compliant' because FR-085 ships with one DECLARED piece of debt: the gateway probe is identified by its label rather than structurally, so an operator who renames that target would get a less precise verdict ('Unstable' instead of 'Offline') on a broken LAN. That is contained and graceful, but it is the same class of weakness that caused BG-074, so it is named rather than hidden.",
+  "deployment_target": "Raspberry Pi (ARM64) — native binary + systemd. Unchanged.",
+  "deployment_artifacts": {
+    "model": "binary + systemd (unchanged)",
+    "binaries": [
+      "ultron-ap only — ultron-helper is NOT touched; no privilege change, no new host action"
+    ],
+    "schema_migration": "NONE. This feature touches no database. Rollback is trivially safe: the previous binary renders the previous tile from the same DashboardData.",
+    "static_assets": "make css added exactly one class (space-y-0.5) and removed none; the rebuilt app.css is committed. Skipping this would have shipped the disclosure's row spacing unstyled — the same trap the hardware section nearly fell into.",
+    "deploy_command": "make build-arm && scp bin/ultron-ap-linux-arm64 <pi>:/tmp && sudo /tmp/ultron-deploy2.sh"
+  },
+  "environment_variables": [
+    {
+      "name": "ULTRON_NET_TARGETS",
+      "type": "comma-separated target list",
+      "required": "optional (pre-existing) — defaults to gateway, 1.1.1.1, 8.8.8.8, dns",
+      "example": "gateway,1.1.1.1,8.8.8.8",
+      "notes": "The verdict consumes these probes. IMPORTANT: renaming the gateway target away from the label 'gateway' degrades the verdict (see technical debt) — a broken LAN would read 'Unstable' rather than 'Offline'."
+    }
+  ],
+  "requirement_compliance": [
+    {
+      "id": "FR-085",
+      "title": "Network tile shows a link-state verdict as its headline",
+      "level": "partial",
+      "evidence": "fr_coverage: 8 passing, 0 failing, 0 skipped. TC-NT-085h (all probes healthy => 'Stable' + 'WAN up · 0% loss'), TC-NT-085e (8.8.8.8 at 15% loss => 'Unstable', and the reason NAMES the failing target), TC-NT-085f (WAN monitor down => 'Offline'), TC-NT-085Bf (gateway timing out => 'Offline', not merely unstable — a broken LAN is a different problem), TC-NT-085Be (no probes => 'unknown'; the tile never claims a state it cannot know and falls back to throughput), TC-NT-085Bh (a SINGLE dropped ping = 5% loss must NOT flip the tile — a >0% rule would cry wolf on a healthy home link). Thresholds are the existing latencyCrit* constants, so the tile can never disagree with the sparklines below it. DECLARED DEBT: the gateway is identified by label, not structurally."
+    },
+    {
+      "id": "FR-087",
+      "title": "The tile absorbs the loose WAN chip",
+      "level": "complete",
+      "evidence": "fr_coverage: 5 passing, 0 failing, 0 skipped. TC-NT-087h (the tile carries 'WAN up' and the standalone chip markup is gone from the page), TC-NT-087f (WAN down => the tile reads 'Offline' with metric-critical, and there is still no second WAN element — one source of truth), TC-NT-087e (a nil WAN snapshot claims nothing and does not crash the template). Browser-verified: the page no longer contains the orphan chip."
+    },
+    {
+      "id": "NFR-088b",
+      "title": "Regression — the other tiles and the SSE refresh are untouched",
+      "level": "complete",
+      "evidence": "TC-NT-088h (CPU 22.2%, Memory 45.7%, Disk 8.2% and Temp 51°C all still render with their thresholds), TC-NT-088f (a nil probe entry does not panic — a panic here would kill the dashboard for every connected SSE client), TC-NT-085Be (an empty probe list still renders the partial). TC-NT-E2E-002h renders through the SSE FuncMap specifically, because templates.go carries TWO FuncMaps and registering the new funcs in only one fails silently in the other path. The full 86-case suite passes unchanged."
+    },
+    {
+      "id": "NFR-089b",
+      "title": "Regression — the BG-072 filter and BG-073 history fix survive",
+      "level": "complete",
+      "evidence": "TC-NT-089f (no virtual interface appears, expanded or not), TC-NT-089h (the real ones do), TC-NT-088e (a host whose only interface is docker0 still sees its traffic — the filter falls back rather than emptying the tile). The BG-073 fix (sparkline history read by label) is untouched by this feature and its test still passes."
+    },
+    {
+      "id": "NFR-090b",
+      "title": "Compactness and touch target",
+      "level": "complete",
+      "evidence": "TC-NT-090h (the <summary> carries the min-h-[44px] marker the project enforces everywhere), TC-NT-086e (closed by default), TC-NT-090f (no row leaks outside the disclosure). Measured in Chrome: the tile's content height is 124px collapsed — comparable to its neighbours — versus 432px expanded."
+    }
+  ],
+  "test_evidence": {
+    "runner": "go test -C ../.. ./internal/server -run TestTC_NT -v",
+    "result": "21/21 passing (19 unit + integration, 2 e2e) — verified by aitri feature verify-complete",
+    "full_suite": "go vet ./... clean; go test ./... green — the 86 pre-existing test cases pass unchanged",
+    "browser": "Chrome against the running app: details.open == false on load, 124px collapsed / 432px expanded, no orphan WAN chip, and the tile renders through both the page path and the SSE path."
+  },
+  "non_functional_compliance": {
+    "performance": "One pass over <=4 probe snapshots and <=5 filtered interfaces per rendered partial — the same tick that already renders CPU/RAM/Disk/Temp. No new query, no new goroutine, no new I/O, no database access. On a Pi this is microseconds.",
+    "security": "No new route, handler, parameter, privileged call or database access. Interface names (from the kernel) and probe labels (from operator config) render through html/template, which escapes them. The verdict word is a closed set chosen by the server, never client input. The whole page is already behind requireAuth.",
+    "ci_cd": "The existing GitHub Actions workflow covers it: the new tests are pure-function and rendered-HTML tests — no browser, no sleeps, no flake."
+  },
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-085",
+      "substitution": "dashboardLinkState identifies the gateway probe by matching the label 'gateway'. An operator who renames that target via ULTRON_NET_TARGETS would leave the verdict with no gateway clause: a broken LAN would then read 'Unstable' instead of 'Offline'.",
+      "reason": "gatewayprobe.Snapshot does not carry the probe's configured Host, so the gateway cannot currently be identified structurally (Host == \"\") from the snapshot alone. Name-matching is what caused BG-074; this is the same class of weakness, contained.",
+      "remediation": "Carry the configured Host (or an IsGateway flag) through to gatewayprobe.Snapshot and identify the gateway structurally. That belongs in gatewayprobe, not in the tile. The degradation until then is graceful: the tile still warns, just with a less precise word."
+    },
+    {
+      "fr_id": "FR-086",
+      "substitution": "FR-086 (throughput subtitle + collapsed per-interface disclosure) was retired on 2026-07-14, commit 1a298e6, and its 8 declared test cases removed from 03_TEST_CASES.json. None of those Go functions had ever been written — the spec declared tests for behaviour the owner had already deleted.",
+      "reason": "Writing them would have re-introduced a product behaviour the owner cut deliberately. NFR-089b was re-scoped at the same time: its BG-072 half guarded a virtual-interface filter that went with FR-086, leaving only the BG-073 label-keyed history to protect."
+    }
+  ],
+  "owner_feedback_closed": [
+    "'Es confuso para un elemento principal' — the tile now leads with one word (Stable/Unstable/Offline) like every other tile in the row, instead of three rows of byte counters.",
+    "'O cambiarlo por un indicador general, o un estable/no-estable' — delivered, reusing the probes and thresholds the panel already had rather than inventing new ones.",
+    "'Casi nunca lo miro' (the throughput) — it is now the subtitle, and the per-interface breakdown is one click away instead of occupying the tile."
+  ],
+  "retired_requirements": [
+    {
+      "id": "FR-086",
+      "title": "Throughput and reason as tile subtitle; per-interface detail one click away",
+      "retired_on": "2026-07-14",
+      "commit": "1a298e6",
+      "reason": "Cut on the owner's call after he used the tile in production — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar', consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were deleted. Its 8 declared test cases were removed rather than written: none had ever been implemented, and writing them would have re-introduced behaviour the product deliberately dropped.",
+      "collateral": "NFR-089b re-scoped to BG-073 only — its BG-072 half guarded a virtual-interface filter that existed solely to tidy the deleted list. TC-NT-E2E-002h re-pointed from AC-086-002 to AC-085-001; it has a real passing test and was the only one of the nine that did."
+    }
+  ]
+}

@@ -49,7 +49,7 @@ func setupTestServerWithSession(t *testing.T) (*Server, *database.Session) {
 }
 
 func addSessionContext(r *http.Request, session *database.Session) *http.Request {
-	ctx := context.WithValue(r.Context(), userContextKey, session.UserID)
+	ctx := context.WithValue(r.Context(), sessionContextKey, session)
 	r.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
 	return r.WithContext(ctx)
 }
@@ -269,4 +269,22 @@ func TestServerStartedAt_IsSet(t *testing.T) {
 	assert.False(t, srv.startedAt.IsZero())
 	assert.True(t, srv.startedAt.After(before) || srv.startedAt.Equal(before))
 	assert.True(t, srv.startedAt.Before(after) || srv.startedAt.Equal(after))
+}
+
+// D2 — sessionForRequest reuses the context session without a cookie or a DB
+// round-trip, and UserIDFromContext derives from it.
+func TestSessionForRequest_ReusesContextSession(t *testing.T) {
+	srv, session := setupTestServerWithSession(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	ctx := context.WithValue(req.Context(), sessionContextKey, session)
+	req = req.WithContext(ctx) // note: no session cookie set
+
+	got := srv.sessionForRequest(req)
+	require.NotNil(t, got)
+	assert.Equal(t, session.CSRFToken, got.CSRFToken)
+
+	uid, ok := UserIDFromContext(req.Context())
+	assert.True(t, ok)
+	assert.Equal(t, session.UserID, uid)
 }

@@ -52,12 +52,27 @@ type RichAlertCallback func(alert *database.Alert, rule *database.AlertConfig, f
 // @aitri-trace FR-018 BL-023
 type ResolveCallback func(rule *database.AlertConfig, sourceID string, severity string, firstFiredAt, resolvedAt time.Time)
 
+// dockerContainerSource is the slice of *docker.Monitor the engine consumes.
+// It exists so transition-detection tests can inject container states without
+// a live Docker daemon (AC-004-002).
+type dockerContainerSource interface {
+	Available() bool
+	Containers() []docker.ContainerInfo
+}
+
+// systemdServiceSource mirrors dockerContainerSource for *systemd.Monitor
+// (AC-004-003).
+type systemdServiceSource interface {
+	Available() bool
+	Services() []systemd.ServiceInfo
+}
+
 // Engine evaluates alert rules against current system state.
 type Engine struct {
 	db        *database.DB
 	collector *metrics.Collector
-	docker    *docker.Monitor
-	systemd   *systemd.Monitor
+	docker    dockerContainerSource
+	systemd   systemdServiceSource
 	interval  time.Duration
 	onAlert   AlertCallback
 	onRich    RichAlertCallback
@@ -142,11 +157,9 @@ func (w *sustainedWindow) add(ruleID int64, at time.Time, breaching bool) bool {
 
 // NewEngine creates an alert engine.
 func NewEngine(db *database.DB, collector *metrics.Collector, dockerMon *docker.Monitor, systemdMon *systemd.Monitor, interval time.Duration) *Engine {
-	return &Engine{
+	e := &Engine{
 		db:           db,
 		collector:    collector,
-		docker:       dockerMon,
-		systemd:      systemdMon,
 		interval:     interval,
 		cooldowns:    make(map[string]time.Time),
 		firingFirst:  make(map[string]time.Time),
@@ -155,6 +168,15 @@ func NewEngine(db *database.DB, collector *metrics.Collector, dockerMon *docker.
 		sustained:    make(map[int64]*sustainedWindow),
 		processedNet: make(map[string]struct{}),
 	}
+	// Assign through nil checks so a nil *Monitor never becomes a non-nil
+	// interface value (the evaluate loop guards on e.docker != nil).
+	if dockerMon != nil {
+		e.docker = dockerMon
+	}
+	if systemdMon != nil {
+		e.systemd = systemdMon
+	}
+	return e
 }
 
 // SetAlertCallback sets the legacy callback invoked when an alert is created.

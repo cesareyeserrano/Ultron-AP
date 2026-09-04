@@ -1,0 +1,230 @@
+{
+  "project_name": "Ultron-AP — network-tile",
+  "project_summary": {
+    "north_star_kpi": "The Network tile answers 'is my network OK?' in one glance, like the other four tiles: 1 headline + 1 subtitle, zero rows visible by default (down from 3–14 rows).",
+    "jtbd": "As the sole admin of a headless Pi, I open the dashboard to know within a second whether anything needs me. Network is the one tile that never told me that — it told me bytes.",
+    "guardrail_metric": "Zero regressions: the 86 existing test cases keep passing, the other four tiles are untouched, and the throughput readout — the only one in the whole app — is not lost.",
+    "context": "Owner feedback from production on 2026-07-14: the tile is confusing as a primary element. He chose state + throughput, and separately said he almost never reads the KB/s — so state is the headline and throughput the subtitle. All inputs (gatewayprobe RTT/jitter/loss/status, wanmonitor state, per-interface rates) already reach the template; no new data, no new thresholds."
+  },
+  "functional_requirements": [
+    {
+      "id": "FR-085",
+      "title": "Network tile shows a link-state verdict as its headline",
+      "description": "The dashboard's Network tile leads with one word — Stable, Unstable or Offline — derived from the probes the panel already runs, and carries the matching warning/critical styling the other tiles use. Throughput never influences the verdict: 54 KB/s is neither healthy nor sick.",
+      "priority": "MUST",
+      "type": "UX",
+      "acceptance_criteria": [
+        "With every probe ok, no loss and RTT below the warn threshold, the tile's headline reads exactly 'Stable' in the ok colour and the tile carries no warning/critical class.",
+        "With any probe reporting loss at or above the critical loss threshold (10%), or RTT at or above the critical RTT threshold (200 ms), the headline reads 'Unstable' and the tile carries the warning class.",
+        "With the WAN monitor reporting state 'down', or with the gateway probe in any status other than ok, the headline reads 'Offline' and the tile carries the critical class.",
+        "The verdict reuses the existing latencyWarn/latencyCrit constants — no second threshold set is introduced that could disagree with the sparkline colours below.",
+        "With no probes configured at all, the tile degrades to the throughput readout rather than claiming a state it cannot know."
+      ]
+    },
+    {
+      "id": "FR-087",
+      "title": "The tile absorbs the loose WAN chip",
+      "description": "The 'WAN up' chip currently floats on its own row under the metric grid, right-aligned and unattached to anything. Its state belongs to the Network tile's verdict; the standalone chip is removed so the dashboard has one fewer orphan element and one single source of WAN truth.",
+      "priority": "MUST",
+      "type": "UX",
+      "acceptance_criteria": [
+        "The rendered dashboard no longer contains the standalone WAN chip element below the metric grid.",
+        "WAN state is visible in the Network tile: 'WAN up' in the subtitle when stable, and 'WAN down' driving the Offline verdict when down.",
+        "The tile's WAN state comes from the same wanmonitor snapshot the chip used — there is never a second opinion on the page.",
+        "The dashboard's element count below the metric grid drops by exactly one (the chip's wrapper div is gone), and the tile's WAN text renders at the existing text-xs (12px) subtitle size with the project's >=4.5:1 contrast tokens — no new size or colour is introduced."
+      ]
+    }
+  ],
+  "user_personas": [
+    {
+      "role": "Pi Admin (sole operator)",
+      "tech_level": "high",
+      "goal": "Open the dashboard and know in one second whether anything on the box needs attention.",
+      "pain_point": "The Network tile lists bytes per interface — a number with no good or bad value — so it is the one tile he has to interpret instead of read. It got worse when it grew to 14 rows on a Docker host."
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-085",
+      "requirement_id": "FR-085",
+      "as_a": "Pi Admin",
+      "i_want": "the Network tile to tell me whether my link is healthy",
+      "so_that": "I can tell at a glance whether the network is the problem, without reading throughput numbers that mean nothing on their own",
+      "acceptance_criteria": [
+        {
+          "id": "AC-085-001",
+          "given": "probes to gateway, 1.1.1.1, 8.8.8.8 and dns all report status ok with 0% loss and RTT 1.4/12/14/11 ms, and the WAN monitor reports up",
+          "when": "the dashboard renders the Network tile",
+          "then": "the headline reads 'Stable', styled with the ok colour, and the tile carries no metric-warning or metric-critical class"
+        },
+        {
+          "id": "AC-085-002",
+          "given": "the 8.8.8.8 probe reports 15% loss (3 of its 20-sample window) while the gateway stays ok",
+          "when": "the dashboard renders",
+          "then": "the headline reads 'Unstable', the tile carries the metric-warning class, and the subtitle names 8.8.8.8 as the failing target"
+        },
+        {
+          "id": "AC-085-003",
+          "given": "the WAN monitor reports state 'down'",
+          "when": "the dashboard renders",
+          "then": "the headline reads 'Offline' and the tile carries the metric-critical class"
+        },
+        {
+          "id": "AC-085-004",
+          "given": "the gateway probe reports status 'timeout' (the LAN itself is broken)",
+          "when": "the dashboard renders",
+          "then": "the headline reads 'Offline' — a box that cannot reach its own gateway is not merely unstable"
+        },
+        {
+          "id": "AC-085-005",
+          "given": "a build with no probes configured (the probe list is empty)",
+          "when": "the dashboard renders",
+          "then": "no verdict word is claimed; the tile falls back to showing throughput only"
+        }
+      ]
+    },
+    {
+      "id": "US-087",
+      "requirement_id": "FR-087",
+      "as_a": "Pi Admin",
+      "i_want": "one place that tells me the WAN state",
+      "so_that": "I am not reading a chip floating under the grid that repeats what the tile above it should already say",
+      "acceptance_criteria": [
+        {
+          "id": "AC-087-001",
+          "given": "the WAN monitor reports up and the probes are healthy",
+          "when": "the dashboard renders",
+          "then": "the Network tile's subtitle contains 'WAN up' and the page contains no standalone WAN chip element"
+        },
+        {
+          "id": "AC-087-002",
+          "given": "the WAN monitor reports down",
+          "when": "the dashboard renders",
+          "then": "the tile reads Offline and the page still contains no standalone WAN chip — the tile is the single source of WAN truth"
+        },
+        {
+          "id": "AC-087-003",
+          "given": "no WAN snapshot at all (the monitor never ran)",
+          "when": "the dashboard renders",
+          "then": "the tile does not claim a WAN state and does not crash the template"
+        },
+        {
+          "id": "AC-087-004",
+          "given": "the chip has been absorbed and the tile renders with WAN up",
+          "when": "the rendered tile is inspected for type scale and colour",
+          "then": "the WAN phrase sits on the existing text-xs text-text-muted subtitle line, the chip's own wrapper markup is absent, and no other size, weight or colour token is introduced by the tile"
+        }
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-088b",
+      "category": "Regression",
+      "requirement": "The other four tiles (CPU, Memory, Disk, Temp) and their warning/critical thresholds render exactly as before, and the dashboard keeps refreshing over the existing SSE cadence with no new event or payload field.",
+      "acceptance_criteria": "The existing dashboard/SSE test suite passes unchanged, and the sse-metrics partial still renders CPU/RAM/Disk/Temp values from the same fields."
+    },
+    {
+      "id": "NFR-089b",
+      "category": "Regression",
+      "requirement": "The BG-073 sparkline-history fix keeps working. (The BG-072 virtual-interface filter was deleted with FR-086 on 2026-07-14 — it existed only to clean up a per-interface list the tile no longer renders, so there is nothing left for it to regress.)",
+      "acceptance_criteria": "The per-target sparklines still load their history by probe LABEL, not by resolved IP: samples stored as 'gateway' are readable as 'gateway' and the series is non-empty."
+    },
+    {
+      "id": "NFR-090b",
+      "category": "Usability",
+      "requirement": "The tile's collapsed height is comparable to its neighbours: one headline plus one subtitle plus one toggle, and the disclosure control meets the 44px touch target the project already enforces.",
+      "acceptance_criteria": "No per-interface row renders visible before interaction, and the disclosure summary carries a >=44px touch target."
+    }
+  ],
+  "no_go_zone": [
+    "Changing what gatewayprobe measures, its 5s cadence, or its default targets — the verdict consumes what already exists.",
+    "Inventing a second threshold set: the verdict reuses latencyWarnRTTMs/latencyCritRTTMs/latencyCritLossPct from helpers_sparkline.go, so the tile can never disagree with the sparkline colours below it.",
+    "A history or sparkline of the link state over time — this is a now-state indicator.",
+    "Alerting on the link state — the alert engine already supports latency/loss rules; this feature is display only and fires nothing.",
+    "A per-interface verdict: one state for the box's connectivity, not one per NIC.",
+    "Summing interface throughput into a single total — a VPN tunnel (tailscale0 over eth0) would double-count the same bytes.",
+    "Per-interface throughput anywhere in the product: no subtitle, no disclosure, no KB/s readout. Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp.",
+    "Re-deriving a 'busiest interface': the helpers that computed it (primaryNetwork, dashboardNetworks, isVirtualIface) were deleted with the feature. BG-072's virtual-interface filter existed only to clean up a list that no longer exists."
+  ],
+  "constraints": [
+    "Go + HTMX + Tailwind; the tile is server-rendered inside the existing SSE metrics partial — no client-side state, no new JS beyond the native <details> element.",
+    "Every input must already be present in DashboardData (Metrics.Networks, Network []*gatewayprobe.Snapshot, WAN) — this feature adds no plumbing.",
+    "internal/server/templates.go carries TWO FuncMaps; any new template function must be registered in both or the partial will fail to render in one of the two paths.",
+    "Runs on a Raspberry Pi: the verdict is a pure function over data already in memory — no extra query, no goroutine."
+  ],
+  "technology_preferences": [
+    "Reuse the native <details>/<summary> disclosure, as sse-summary.html already does — no new widget, no new JS file.",
+    "Reuse the metric-warning / metric-critical classes the other tiles use, so the Network tile inherits the same visual language."
+  ],
+  "idea_provenance": {
+    "problem": "confirmed",
+    "users": "confirmed",
+    "baseline": "confirmed",
+    "success_metric": "confirmed",
+    "no_go_zone": "confirmed"
+  },
+  "idea_provenance_sources": {
+    "problem": "Owner, from production, 2026-07-14: 'es confuso para un elemento principal; si requiere tanto detalle, no estaría bueno ponerlo allí. O cambiarlo por un indicador general, o un estable/no-estable.'",
+    "users": "Inherited from the parent's approved requirements — a single Pi admin.",
+    "baseline": "Measured: the tile renders 3 rows on this Pi (14 before the BG-072 filter) versus 1 headline + <=2 context lines on every other tile. The probe data (RTT/jitter/loss/status per target, 5s cadence) and the latencyState thresholds were confirmed to already exist by reading gatewayprobe.go and helpers_sparkline.go.",
+    "success_metric": "Owner's choice on 2026-07-14 between three mocked designs: 'Estado + caudal', plus his answer that he almost never reads the throughput — which set the hierarchy (state headline, throughput subtitle).",
+    "no_go_zone": "Owner constrained the scope in the same exchange: keep the throughput on the dashboard (he did not pick the 'move it to /network' option); the rest follows from reusing existing probes/thresholds rather than inventing new ones."
+  },
+  "idea_gaps": [],
+  "coverage_map": [
+    {
+      "need": "The Network tile must answer 'is the network OK?' at a glance, like the other tiles",
+      "disposition": "FR-085"
+    },
+    {
+      "need": "A stable / not-stable indicator, in the owner's words",
+      "disposition": "FR-085"
+    },
+    {
+      "need": "Keep the throughput available but not as the headline (he almost never reads it)",
+      "disposition": "out_of_scope",
+      "reason": "Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp."
+    },
+    {
+      "need": "Do not lose the per-interface breakdown — it is the app's only throughput readout",
+      "disposition": "out_of_scope",
+      "reason": "Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp."
+    },
+    {
+      "need": "Keep the tile compact: no rows visible by default",
+      "disposition": "out_of_scope",
+      "reason": "Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp."
+    },
+    {
+      "need": "Stop the virtual docker interfaces cluttering the tile (BG-072)",
+      "disposition": "out_of_scope",
+      "reason": "Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp."
+    },
+    {
+      "need": "Remove the orphan WAN chip floating under the grid",
+      "disposition": "FR-087"
+    },
+    {
+      "need": "The other tiles and the SSE refresh must not regress",
+      "disposition": "NFR-088b"
+    },
+    {
+      "need": "The BG-072 filter and BG-073 history fix must survive",
+      "disposition": "NFR-089b"
+    },
+    {
+      "need": "The tile must be as compact as its neighbours and touch-friendly",
+      "disposition": "NFR-090b"
+    },
+    {
+      "need": "Move throughput off the dashboard into /network",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Alert on link state / link-state history",
+      "disposition": "out_of_scope"
+    }
+  ],
+  "original_brief": "## Feature\nTurn the dashboard's Network tile into a link-state indicator — stable / unstable / offline — with the throughput as secondary context and the per-interface breakdown collapsed behind one click.\n\n## Problem / Why\nEvery other tile in that row answers a question at a glance: CPU 22.2%, Temp 51°C, Memory 45.7%. Network answers nothing — it lists rows:\n\n```\nNetwork\neth0        ↑ 7.2 KB/s  ↓ 54.7 KB/s\nwlan0       ↑ 0 B/s     ↓ 0 B/s\ntailscale0  ↑ 0 B/s     ↓ 0 B/s\n```\n\nThe owner's words on 2026-07-14, looking at production: *\"es confuso para un elemento principal; si requiere tanto detalle, no estaría bueno ponerlo allí. O cambiarlo por un indicador general, o un estable/no-estable.\"* Asked whether he ever reads the KB/s to decide something, he answered: **\"casi nunca lo miro\"**.\n\nTwo things make this worth fixing rather than papering over:\n\n1. **The tile shows throughput, which has no \"good\" or \"bad\" value.** 54 KB/s is neither healthy nor sick. The other four tiles all carry thresholds (CPU >90 red, temp >75 red) — that is why they read at a glance and this one does not.\n2. **The panel already measures what the owner actually wants.** `gatewayprobe` pings the gateway, 1.1.1.1, 8.8.8.8 and a DNS resolver every 5 seconds, recording RTT, jitter, packet loss and status. There is even an existing threshold function — `latencyState` in `internal/server/helpers_sparkline.go` (warn ≥80 ms or any loss; crit ≥200 ms or ≥10% loss) — used today only to colour the sparklines. A link-state verdict needs no new data and no new thresholds; it needs the tile to *ask the right question*.\n\n## Target Users\nThe single Pi admin (the parent's only persona). No new user type.\n\n## New Behavior\n- The Network tile must show a one-word link state — **Stable**, **Unstable** or **Offline** — as its headline, coloured and bordered like the other tiles' warning/critical states.\n- The state must be derived from the probes the panel already runs (gateway + off-box targets + the WAN monitor), never from throughput.\n- The tile must show the throughput of the busiest real interface as secondary context, plus the reason behind the state (e.g. \"eth0 · WAN up · 0% loss\", or \"eth0 · 15% loss · 8.8.8.8 timeout\").\n- The per-interface breakdown must remain reachable on the same tile, collapsed by default, expanding on one click.\n- The tile must absorb the \"WAN up\" chip that currently floats loose under the metric grid.\n\n## Success Criteria\n- GIVEN every probe answers with low latency and no loss, WHEN the dashboard renders, THEN the tile reads **Stable** in the ok colour.\n- GIVEN any probe reports ≥10% packet loss (2 of its 20-sample window), WHEN the dashboard renders, THEN the tile reads **Unstable** with the warning border and the subtitle names the failing target.\n- GIVEN the WAN monitor reports `down`, or the gateway probe is not `ok`, WHEN the dashboard renders, THEN the tile reads **Offline** with the critical border.\n- GIVEN a host with eth0 at 7.2/54.7 KB/s and two idle interfaces, WHEN the dashboard renders, THEN no per-interface row is visible until the toggle is clicked — the tile is one headline + one subtitle + one collapsed toggle.\n- GIVEN the toggle is clicked, THEN every non-virtual interface's send/receive rate is shown.\n\n## Touch Points\nMODIFIES:\n- `web/templates/partials/sse-metrics.html` — the Network tile, and the loose WAN chip below the grid (absorbed into it).\n- `internal/server/helpers.go` — new helpers: the link-state verdict and the busiest-interface pick.\n- `internal/server/templates.go` — register them in **both** FuncMaps (the file carries two).\n- `internal/server/ac_coverage_test.go` — TC-001c asserts the per-interface rows render; it must now assert they render inside the collapsed detail.\n- Parent AC-001-004 — its wording (\"bytes in/out per second are shown per interface\") must be updated to \"reachable in one interaction on the tile\", because the rows move behind a toggle.\n\nPURELY ADDS: the link-state verdict itself (no FR describes it today).\n\nDOES NOT TOUCH: `gatewayprobe`, `wanmonitor`, the metrics collector, the SSE payload shape, or `/network`. Every input already reaches the template.\n\n## Must Not Break (Regression Boundary)\n- The other four tiles (CPU, Memory, Disk, Temp) keep rendering their values and their warning/critical thresholds unchanged.\n- The dashboard keeps refreshing over SSE on its existing cadence; no new event, no new payload field.\n- The virtual-interface filter from BG-072 keeps working: docker0, br-*, veth* and lo stay hidden, and the filter still falls back to the unfiltered list rather than emptying the tile.\n- The per-target latency sparklines further down the dashboard (`sse-charts.html`) keep working, including the BG-073 fix that made gateway/dns history load at all.\n- The WAN state shown in the tile must agree with the chip it replaces — same source (`wanmonitor.Snapshot.State`), no second opinion.\n- All 86 existing test cases keep passing.\n\n## Out of Scope\n- Changing what `gatewayprobe` measures, its cadence, or its targets.\n- Inventing new thresholds: the verdict reuses the existing latency/loss constants rather than a second set that could disagree with the sparkline colours.\n- A history or sparkline of link state over time.\n- Moving throughput to `/network` or building a per-interface section there — the owner chose to keep throughput on the dashboard.\n- Alerting on the link state (the alert engine already supports latency/loss rules; this is a display, not a new alert source).\n- Per-interface state: this is one verdict for the box's connectivity, not one per NIC.\n"
+}

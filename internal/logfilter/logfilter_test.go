@@ -125,3 +125,102 @@ func TestFilter_NoFalsePositiveOnNonSecretDottedTokens(t *testing.T) {
 		t.Fatalf("non-secret content must not be redacted, got %q", got)
 	}
 }
+
+// M6 — a quoted secret value containing spaces must be redacted whole; the
+// old \S+ capture stopped at the first space and leaked the remainder.
+func TestFilter_PolicyJournal_RedactsQuotedSecretWithSpaces(t *testing.T) {
+	in := []byte(`app: PASSWORD="hunter2 correct horse" started` + "\n")
+	got := string(Filter(in, PolicyJournal, 0))
+	if strings.Contains(got, "correct horse") {
+		t.Fatalf("quoted secret leaked: %q", got)
+	}
+	if !strings.Contains(got, "[REDACTED]") {
+		t.Fatalf("expected redaction marker, got %q", got)
+	}
+}
+
+// M6 — password inside a connection string must be redacted while keeping the
+// non-secret scheme/user/host for debuggability.
+func TestFilter_PolicyJournal_RedactsConnectionStringPassword(t *testing.T) {
+	in := []byte("app: dsn=postgres://admin:s3cr3tpw@db.internal:5432/app\n")
+	got := string(Filter(in, PolicyJournal, 0))
+	if strings.Contains(got, "s3cr3tpw") {
+		t.Fatalf("connection-string password leaked: %q", got)
+	}
+	if !strings.Contains(got, "db.internal") {
+		t.Fatalf("non-secret host should be preserved, got %q", got)
+	}
+}
+
+// M6 — additional keyword coverage.
+func TestFilter_PolicyJournal_RedactsPassphrase(t *testing.T) {
+	in := []byte("app: passphrase=letmein credential: topsecret\n")
+	got := string(Filter(in, PolicyJournal, 0))
+	if strings.Contains(got, "letmein") || strings.Contains(got, "topsecret") {
+		t.Fatalf("passphrase/credential leaked: %q", got)
+	}
+}
+
+// M7 — a very large journal payload is capped and still redacted at the tail.
+func TestFilter_PolicyJournal_LargeInputCappedAndRedacted(t *testing.T) {
+	var b strings.Builder
+	for i := 0; i < 100000; i++ {
+		b.WriteString("filler line to grow the payload well beyond the cap\n")
+	}
+	b.WriteString("app: TOKEN=leakme\n")
+	got := Filter([]byte(b.String()), PolicyJournal, 64*1024)
+	if len(got) > 64*1024 {
+		t.Fatalf("output not capped: %d bytes", len(got))
+	}
+	if strings.Contains(string(got), "leakme") {
+		t.Fatalf("tail secret not redacted after cap: %q", string(got)[len(string(got))-80:])
+	}
+}
+
+// M7 regression — a pre-trimmed large payload must still carry the truncation
+// marker so callers know the log was cut (previously lost).
+func TestFilter_PolicyJournal_LargeInputKeepsTruncationMarker(t *testing.T) {
+	var b strings.Builder
+	for i := 0; i < 100000; i++ {
+		b.WriteString("filler line to grow the payload well beyond the cap\n")
+	}
+	got := Filter([]byte(b.String()), PolicyJournal, 64*1024)
+	if len(got) > 64*1024 {
+		t.Fatalf("output not capped: %d bytes", len(got))
+	}
+	if !strings.Contains(string(got), "truncated") {
+		t.Fatalf("truncation marker missing from pre-trimmed large input:\n%s", string(got)[:120])
+	}
+}
+
+// M6 — password-only connection string (empty user) must also be redacted.
+func TestFilter_PolicyJournal_RedactsCredentialOnlyURL(t *testing.T) {
+	got := string(Filter([]byte("app: url=redis://:s3cr3t@cache.internal:6379/0\n"), PolicyJournal, 0))
+	if strings.Contains(got, "s3cr3t") {
+		t.Fatalf("credential-only URL password leaked: %q", got)
+	}
+	if !strings.Contains(got, "cache.internal") {
+		t.Fatalf("host should be preserved: %q", got)
+	}
+}
+
+// A prefixed secret key (bot_token, api_token, smtp_password…) must redact too:
+// \b(token) alone never matches "bot_token=" because "_" is a word character,
+// so the Telegram bot token leaked through the journal filter (AC-081-003).
+func TestFilter_RedactsPrefixedSecretKeys(t *testing.T) {
+	cases := map[string]string{
+		"bot_token=123456:AAHfakefake":    "123456:AAHfakefake",
+		"smtp_password=hunter2":           "hunter2",
+		"ULTRON_SECRET_KEY: deadbeefcafe": "deadbeefcafe",
+		"service-api_key = abc123":        "abc123",
+	}
+	for line, secret := range cases {
+		got := string(Filter([]byte(line), PolicyJournal, 0))
+		if strings.Contains(got, secret) {
+			t.Errorf("secret leaked for %q: got %q", line, got)
+		}
+		if !strings.Contains(got, "[REDACTED]") {
+			t.Errorf("expected a redaction marker for %q, got %q", line, got)
+		}
+	}
+}

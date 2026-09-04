@@ -33,6 +33,7 @@
                         <span class="text-sm font-medium text-text truncate">{{.Name}}</span>
                         <span class="w-4 h-4 inline-flex items-center justify-center rounded-full border border-border/50 text-[10px] text-text-muted cursor-help" title="{{serviceInfo .Name .Description}}">i</span>
                         <span class="text-xs px-1.5 py-0.5 rounded {{if eq .ActiveState "active"}}bg-green-400/20 text-green-400{{else if eq .ActiveState "failed"}}bg-danger/20 text-danger{{else}}bg-surface text-text-muted{{end}}">{{.ActiveState}}</span>
+                        {{with activeSince .Since}}<span data-active-since class="text-xs px-1.5 py-0.5 rounded bg-card border border-border/50 text-text-muted" title="Active since">active {{.}}</span>{{end}}
                         {{if serviceHasRuntime .Name $.ProcessStats}}
                         <span class="text-xs px-1.5 py-0.5 rounded bg-card border border-border/50 text-text-muted">CPU {{printf "%.1f%%" (serviceCPU .Name $.ProcessStats)}}</span>
                         <span class="text-xs px-1.5 py-0.5 rounded bg-card border border-border/50 text-text-muted">RAM {{formatBytes (serviceRSS .Name $.ProcessStats)}}</span>
@@ -84,8 +85,27 @@
                         Restart
                     </button>
                     {{end}}
+
+                    <!-- FR-081: per-service log drawer. Closed by default — nothing is
+                         fetched until the admin clicks, so /services costs no journalctl. -->
+                    <button
+                        type="button"
+                        data-logs-toggle
+                        aria-expanded="false"
+                        hx-get="/api/services/{{.Name}}/logs"
+                        hx-target="#service-logs-{{.Name}}"
+                        hx-swap="innerHTML"
+                        hx-indicator="#service-logs-loading-{{.Name}}"
+                        hx-trigger="click once"
+                        data-logs-target="service-logs-{{.Name}}"
+                        class="min-h-[44px] min-w-[44px] text-xs px-2 py-1 rounded border border-border/50 text-text-muted hover:bg-card hover:text-text transition-colors">
+                        Logs
+                    </button>
                 </div>
             </div>
+
+            <div id="service-logs-{{.Name}}" data-service-logs class="hidden mt-2"></div>
+            <div id="service-logs-loading-{{.Name}}" class="htmx-indicator text-xs text-text-muted py-1">Loading logs…</div>
             {{end}}
         </div>
     </details>

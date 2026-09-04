@@ -31,6 +31,8 @@
   function bind() {
     var chips = document.querySelectorAll('[data-anchor]');
     for (var i = 0; i < chips.length; i++) {
+      if (chips[i].__anchorChipBound) continue;
+      chips[i].__anchorChipBound = true;
       chips[i].addEventListener('click', function (e) {
         var anchor = this.getAttribute('data-anchor');
         if (!anchor) return;
@@ -72,4 +74,9 @@
     bind();
     expandFromHash();
   }
+
+  // Re-bind on hx-boost swaps and history restores — the swapped-in chips are
+  // fresh nodes (BG-038 family; the per-chip guard keeps re-binding idempotent).
+  document.body.addEventListener('htmx:afterSwap', function () { bind(); });
+  document.body.addEventListener('htmx:historyRestore', function () { bind(); });
 })();

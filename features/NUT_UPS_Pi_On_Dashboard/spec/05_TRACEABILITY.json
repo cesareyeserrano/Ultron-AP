@@ -1,0 +1,118 @@
+{
+  "project": "Ultron-AP — NUT_UPS_Pi_On_Dashboard",
+  "version": "1.0.0",
+  "phases_completed": [1, 2, 3, 4, 5],
+  "overall_status": "partial",
+  "requirement_compliance": [
+    {
+      "id": "FR-016",
+      "title": "Native NUT client (internal/ups)",
+      "level": "production_ready",
+      "evidence": "4/4 tests passing (TC-UPS-001h/002e/003f/004e): LIST VAR parsing, backoff+unreachable, read-only (no SET/exec, verified by interface + import scan), production-scale parse. No technical debt."
+    },
+    {
+      "id": "FR-017",
+      "title": "Live UPS card on the dashboard",
+      "level": "partial",
+      "evidence": "5/5 tests passing (TC-UPS-005h/006e/007f/008e/009h): status map, 'Sin datos', escaping, SSE+375px, beeper. Declared debt: e2e-typed TCs implemented as Go server-render tests (repo has no browser runner); validated live in-browser via ULTRON_UPS_MOCK."
+    },
+    {
+      "id": "FR-018",
+      "title": "Estimated battery percentage from voltage",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-010h/011e/012f): midpoint ~50%, boundary clamps, always tagged 'estimado' never battery.charge. No technical debt."
+    },
+    {
+      "id": "FR-019",
+      "title": "UPS sample history and charts",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-013h/014e/015f): survives restart, empty-series returns no error, retention purge boundary. 24h battery sparkline rendered. Cached at poll time (post-review perf fix). No technical debt."
+    },
+    {
+      "id": "FR-020",
+      "title": "Mains-outage event log",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-016h/017e/018f): OB opens, OL closes with duration, restart-with-open-event does not double-count. Verified live: outage events opened+closed with duration, zero orphans. No technical debt."
+    },
+    {
+      "id": "FR-021",
+      "title": "UPS power alerts via existing alert + Telegram engine",
+      "level": "production_ready",
+      "evidence": "6/6 tests passing (TC-UPS-019h/020e/021f/022f/023f/056f): OB warning, OL resolve+duration, voltage debounce, LB critical, unreachable-once, RB once/day. Wired to notify dispatcher (Telegram) + CreateAlert history. Verified live: alerts persisted with correct severities. No technical debt."
+    },
+    {
+      "id": "FR-022",
+      "title": "UPS insights",
+      "level": "partial",
+      "evidence": "3/3 tests passing (TC-UPS-024h/025e/026f) + degradation-trend test: weekly outage count, real value=3, no claim from a single sample. Declared debt: delivered via a dedicated producer (renders the REAL count) instead of the bundled insights engine, which is locked at 10 rules by FR-047 and emits static verdict text."
+    },
+    {
+      "id": "FR-023",
+      "title": "Read-only safe-shutdown configuration display",
+      "level": "production_ready",
+      "evidence": "4/4 tests passing (TC-UPS-027h/028e/029f/030h): delays with 'gestionado por NUT', 'no disponible' for missing, no actionable control, 21.0 V cutoff from config (not upsmon.conf). No technical debt."
+    },
+    {
+      "id": "FR-024",
+      "title": "Configurable UPS module parameters",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-031h/032e/033f): env override, inert when disabled, invalid value rejected with default + no crash. 14 env vars documented in .env.example. No technical debt."
+    },
+    {
+      "id": "NFR-016",
+      "title": "Clean degradation when NUT absent / UPS unreachable (Regression)",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-034h/035e/036f): app boots + existing tiles render with NUT absent, module inert when disabled, poller panic contained. No technical debt."
+    },
+    {
+      "id": "NFR-017",
+      "title": "No new privileges / ultron-helper untouched (Regression)",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-037h/038e/039f): localhost-TCP only, no os/exec or privileged import (import-graph assertion), no helper call. No technical debt."
+    },
+    {
+      "id": "NFR-018",
+      "title": "No shutdown/load.off path (Regression)",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-040h/041e/042f): read-only Client interface, no write command across all states, render path issues no command. No technical debt."
+    },
+    {
+      "id": "NFR-019",
+      "title": "Escape NUT input + protect secret (Security)",
+      "level": "production_ready",
+      "evidence": "4/4 tests passing (TC-UPS-043h/044f/045f/046f): benign render, script-tag escaped, attribute-injection neutralized, secret not in logs/output (test hardened post-review to render args). Verified live: 0 secret occurrences in journal. No technical debt."
+    },
+    {
+      "id": "NFR-020",
+      "title": "Bounded, observable reconnect logging (Observability)",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-047h/048e/049f): bounded reconnect logging (<20 lines/100 down-polls), recovery once, timestamped lines. No technical debt."
+    },
+    {
+      "id": "NFR-021",
+      "title": "CI runs internal/ups tests (CI/CD)",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-050h/051e/052f). .github/workflows/ci.yml verified: triggers on push/PR to main, runs 'go test -race -count=1 ./...' (covers ./internal/ups/...) + 'go vet ./...' + linux/arm64 build. No new CI wiring needed."
+    },
+    {
+      "id": "NFR-022",
+      "title": "Local mock render without prod (Usability/DevEx)",
+      "level": "production_ready",
+      "evidence": "3/3 tests passing (TC-UPS-053h/054f/055e): mock renders the real card locally, mock off by default (real client when unset), mock cycles states. Verified live via ULTRON_UPS_MOCK. No technical debt."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-022",
+      "substitution": "UPS insights are produced by a dedicated producer (internal/ups/insights.go) instead of the bundled insights rule engine via EvalWithVars.",
+      "reason": "The bundled rule set is locked at exactly 10 rules by the parent FR-047, and the engine emits static verdict text (cannot interpolate the outage count). The producer avoids breaking FR-047 and renders the REAL count. FR-022 is NICE/P2.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-017",
+      "substitution": "The e2e-typed UX test cases are implemented as Go server-render tests (httptest + string assertions) rather than a real browser e2e run.",
+      "reason": "The repository has no browser e2e runner; server-side render tests are the established convention (network/lan modules). The live app was additionally verified in a browser via ULTRON_UPS_MOCK.",
+      "effort_to_fix": "low"
+    }
+  ]
+}

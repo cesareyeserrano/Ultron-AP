@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"net/smtp"
+	"strings"
 	"testing"
 	"time"
 
@@ -185,4 +186,30 @@ func TestDispatcher_BuildNotifiers_BothEnabled(t *testing.T) {
 	d := NewDispatcher(db)
 	notifiers := d.buildNotifiers()
 	assert.Len(t, notifiers, 2)
+}
+
+// B4 — header injection via CR/LF in From/To/Subject must be stripped so an
+// attacker-controlled value cannot smuggle extra headers.
+func TestBuildMIMEMessage_StripsHeaderInjection(t *testing.T) {
+	msg := string(buildMIMEMessage(
+		"alerts@ultron",
+		"admin@host\r\nBcc: victim@evil.com",
+		"Alert\r\nX-Injected: yes",
+		"body",
+		"",
+	))
+	// The dangerous property is a CR/LF that starts a NEW header line. The
+	// injected text may survive inline in the field value (a malformed
+	// recipient), but must never appear on its own header line.
+	if strings.Contains(msg, "\nBcc:") || strings.Contains(msg, "\nX-Injected:") {
+		t.Fatalf("header injection not stripped:\n%s", msg)
+	}
+	// And the header block itself must contain no bare LF beyond the CRLF pairs.
+	headerBlock := msg
+	if i := strings.Index(msg, "\r\n\r\n"); i >= 0 {
+		headerBlock = msg[:i]
+	}
+	if strings.Contains(strings.ReplaceAll(headerBlock, "\r\n", ""), "\n") {
+		t.Fatalf("stray LF left in header block:\n%q", headerBlock)
+	}
 }

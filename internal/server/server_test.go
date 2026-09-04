@@ -198,3 +198,62 @@ func TestRequestBackupReschedule_DoesNotBlockWhenChannelFull(t *testing.T) {
 		t.Fatal("requestBackupReschedule blocked with full channel")
 	}
 }
+
+// D1 — ApplyBackupConfig swaps a whole immutable snapshot; readers see a
+// consistent set, and the "keep old value on invalid input" cases preserve
+// prior values rather than resetting.
+func TestApplyBackupConfig_AtomicSnapshotAndPreserve(t *testing.T) {
+	srv := setupTestServer(t)
+
+	srv.ApplyBackupConfig(database.BackupConfig{
+		Enabled:          true,
+		IntervalHours:    12,
+		RetentionCount:   5,
+		DestinationMode:  "local_plus_telegram",
+		LocalPath:        "/srv/backups",
+		ScheduleMode:     "daily",
+		ScheduleHour:     2,
+		ScheduleMinute:   30,
+		EncryptEnabled:   true,
+		EncryptionKeyRef: "env:K",
+		UploadTimeoutSec: 45,
+		MaxUploadSizeMB:  80,
+	})
+
+	bs := srv.currentBackupSettings()
+	assert.True(t, bs.enabled)
+	assert.Equal(t, 12, bs.intervalHours)
+	assert.Equal(t, 5, bs.retention)
+	assert.Equal(t, "local_plus_telegram", bs.destination)
+	assert.Equal(t, "/srv/backups", bs.localPath)
+	assert.True(t, bs.encrypt)
+	assert.Equal(t, "env:K", bs.keyRef)
+	assert.Equal(t, 45, bs.uploadTimeout)
+	assert.Equal(t, 80, bs.maxUploadMB)
+
+	// Invalid interval/retention (< 1) must preserve the prior values.
+	srv.ApplyBackupConfig(database.BackupConfig{
+		Enabled:        true,
+		IntervalHours:  0,
+		RetentionCount: 0,
+		ScheduleMode:   "interval",
+	})
+	bs2 := srv.currentBackupSettings()
+	assert.Equal(t, 12, bs2.intervalHours, "invalid interval must preserve prior value")
+	assert.Equal(t, 5, bs2.retention, "invalid retention must preserve prior value")
+	assert.Equal(t, "interval", bs2.scheduleMode)
+}
+
+// D4 — setToast must JSON-escape the message so a value crafted to break out of
+// the HX-Trigger JSON is contained (this was the container-name / error-message
+// injection risk noted in the review).
+func TestSetToast_EscapesMaliciousMessage(t *testing.T) {
+	rec := httptest.NewRecorder()
+	evil := `pwned","type":"error"},"evil":{"x":"`
+	setToast(rec, evil, "success")
+
+	var parsed map[string]map[string]string
+	require.NoError(t, json.Unmarshal([]byte(rec.Header().Get("HX-Trigger")), &parsed))
+	assert.Equal(t, evil, parsed["showToast"]["message"], "message must round-trip intact, not break the JSON")
+	assert.Equal(t, "success", parsed["showToast"]["type"], "type must not be hijacked by the message")
+}

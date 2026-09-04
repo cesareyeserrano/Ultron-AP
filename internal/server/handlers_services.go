@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"net/http"
@@ -24,31 +25,25 @@ func (s *Server) handleServicesPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleServiceStart(w http.ResponseWriter, r *http.Request) {
-	if !s.validateCSRF(w, r) {
-		return
-	}
-	name := r.PathValue("name")
-	res := s.systemd.StartService(r.Context(), name)
-	s.auditLog(r, "systemd", res.Action, res.ServiceName, res.Message, res.Success)
-	s.renderServicesResult(w, r, res)
+	s.serviceAction(w, r, s.systemd.StartService)
 }
 
 func (s *Server) handleServiceStop(w http.ResponseWriter, r *http.Request) {
-	if !s.validateCSRF(w, r) {
-		return
-	}
-	name := r.PathValue("name")
-	res := s.systemd.StopService(r.Context(), name)
-	s.auditLog(r, "systemd", res.Action, res.ServiceName, res.Message, res.Success)
-	s.renderServicesResult(w, r, res)
+	s.serviceAction(w, r, s.systemd.StopService)
 }
 
 func (s *Server) handleServiceRestart(w http.ResponseWriter, r *http.Request) {
+	s.serviceAction(w, r, s.systemd.RestartService)
+}
+
+// serviceAction is the shared body for the service start/stop/restart endpoints
+// (D3), which differed only in the systemd method invoked.
+func (s *Server) serviceAction(w http.ResponseWriter, r *http.Request, action func(context.Context, string) systemd.ServiceAction) {
 	if !s.validateCSRF(w, r) {
 		return
 	}
 	name := r.PathValue("name")
-	res := s.systemd.RestartService(r.Context(), name)
+	res := action(r.Context(), name)
 	s.auditLog(r, "systemd", res.Action, res.ServiceName, res.Message, res.Success)
 	s.renderServicesResult(w, r, res)
 }
@@ -58,7 +53,7 @@ func (s *Server) handleServiceRestart(w http.ResponseWriter, r *http.Request) {
 func (s *Server) renderServicesResult(w http.ResponseWriter, r *http.Request, result systemd.ServiceAction) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if !result.Success {
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed: %s", "type": "error"}}`, html.EscapeString(result.Message)))
+		setToast(w, "Failed: "+result.Message, "error")
 		fmt.Fprintf(w,
 			`<div class="rounded-lg bg-danger/10 border border-danger/30 p-3 mb-3 text-sm text-danger flex items-center gap-2">`+
 				`<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">`+
@@ -73,7 +68,7 @@ func (s *Server) renderServicesResult(w http.ResponseWriter, r *http.Request, re
 		} else if result.Action == "restart" {
 			actionPast = "Restarted"
 		}
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "%s service: %s", "type": "success"}}`, actionPast, result.ServiceName))
+		setToast(w, actionPast+" service: "+result.ServiceName, "success")
 	}
 	listHTML := s.renderPartial("partials/services-list.html", servicesPageData{
 		Services:     s.systemd.Services(),

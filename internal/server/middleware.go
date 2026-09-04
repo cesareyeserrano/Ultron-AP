@@ -5,15 +5,45 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/cesareyeserrano/ultron-ap/internal/database"
 )
 
 type contextKey string
 
-const userContextKey contextKey = "user_id"
+const sessionContextKey contextKey = "session"
+
+// SessionFromContext returns the authenticated session that requireAuth stored
+// on the request context. Consumers behind requireAuth reuse it instead of
+// re-querying the DB for the same row (D2).
+func SessionFromContext(ctx context.Context) (*database.Session, bool) {
+	s, ok := ctx.Value(sessionContextKey).(*database.Session)
+	return s, ok && s != nil
+}
 
 func UserIDFromContext(ctx context.Context) (int64, bool) {
-	id, ok := ctx.Value(userContextKey).(int64)
-	return id, ok
+	if s, ok := SessionFromContext(ctx); ok {
+		return s.UserID, true
+	}
+	return 0, false
+}
+
+// sessionForRequest returns the session for this request, preferring the one
+// requireAuth already loaded onto the context (D2) and falling back to a cookie
+// lookup for any caller not behind requireAuth. Returns nil when there is none.
+func (s *Server) sessionForRequest(r *http.Request) *database.Session {
+	if sess, ok := SessionFromContext(r.Context()); ok {
+		return sess
+	}
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		return nil
+	}
+	sess, err := s.db.GetSession(cookie.Value)
+	if err != nil {
+		return nil
+	}
+	return sess
 }
 
 func (s *Server) requireAuth(next http.Handler) http.Handler {
@@ -39,7 +69,7 @@ func (s *Server) requireAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userContextKey, session.UserID)
+		ctx := context.WithValue(r.Context(), sessionContextKey, session)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

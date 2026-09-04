@@ -13,8 +13,20 @@ import (
 
 const controlTimeout = 30 * time.Second
 
-// validServiceName matches safe systemd service names.
-var validServiceName = regexp.MustCompile(`^[a-zA-Z0-9_.@\-]+$`)
+// validServiceName matches safe systemd service names. The first character
+// must be alphanumeric so a name can never be interpreted by systemctl as an
+// option token (argument-injection guard); the exec fallback also passes "--"
+// before the name.
+var validServiceName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.@-]*$`)
+
+// IsValidServiceName reports whether name is a well-formed systemd unit name.
+// It is the same check runControl applies before any privileged call, exported
+// so other callers (the FR-081 log drawer) validate against ONE authority
+// rather than growing a second, divergent regex. The root helper re-validates
+// independently — this is defence in depth, not the guarantee.
+func IsValidServiceName(name string) bool {
+	return validServiceName.MatchString(name)
+}
 
 // ServiceAction represents the result of a service control operation.
 type ServiceAction struct {
@@ -78,7 +90,7 @@ func (m *Monitor) runControl(ctx context.Context, action, name string) ServiceAc
 		result.Message = fmt.Sprintf("Permission denied: cannot %s %s (helper unavailable)", action, name)
 		return result
 	}
-	out, err := m.runner.Run(ctlCtx, "systemctl", action, name)
+	out, err := m.runner.Run(ctlCtx, "systemctl", action, "--", name)
 	if err != nil {
 		stderr := strings.TrimSpace(string(out))
 		if strings.Contains(stderr, "Permission denied") || strings.Contains(stderr, "Interactive authentication") ||

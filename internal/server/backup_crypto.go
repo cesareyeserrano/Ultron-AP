@@ -21,9 +21,9 @@ import (
 //
 // File layout:
 //
-//   header  := magic(10) || chunkSize(4 BE) || nonceBase(8)
-//   chunk   := isFinal(1) || ctLen(4 BE) || ciphertext+tag
-//   payload := chunk*  (loop until a chunk with isFinal=1 is read)
+//	header  := magic(10) || chunkSize(4 BE) || nonceBase(8)
+//	chunk   := isFinal(1) || ctLen(4 BE) || ciphertext+tag
+//	payload := chunk*  (loop until a chunk with isFinal=1 is read)
 //
 // AAD per chunk binds the chunk index and the final flag so neither
 // reordering nor truncation can be hidden — the GCM tag verification
@@ -32,18 +32,18 @@ import (
 // (with 64 KiB chunks that is 256 TiB — well beyond any practical DB
 // size).
 const (
-	backupMagicV2     = "ULTRONENC2"
-	backupChunkSize   = 64 * 1024 // bytes; matches age/secretstream defaults.
-	backupHeaderLen   = 10 + 4 + 8
-	backupNonceLen    = 12
+	backupMagicV2      = "ULTRONENC2"
+	backupChunkSize    = 64 * 1024 // bytes; matches age/secretstream defaults.
+	backupHeaderLen    = 10 + 4 + 8
+	backupNonceLen     = 12
 	backupNonceBaseLen = 8
 )
 
 var (
-	errBackupUnknownMagic   = errors.New("backup: unknown magic / not an ultron-encrypted file")
-	errBackupTruncated      = errors.New("backup: truncated stream (no final chunk seen)")
-	errBackupTrailingBytes  = errors.New("backup: trailing bytes after final chunk")
-	errBackupInvalidChunk   = errors.New("backup: invalid chunk length")
+	errBackupUnknownMagic  = errors.New("backup: unknown magic / not an ultron-encrypted file")
+	errBackupTruncated     = errors.New("backup: truncated stream (no final chunk seen)")
+	errBackupTrailingBytes = errors.New("backup: trailing bytes after final chunk")
+	errBackupInvalidChunk  = errors.New("backup: invalid chunk length")
 )
 
 func backupKeyFromRef(ref string) ([]byte, error) {

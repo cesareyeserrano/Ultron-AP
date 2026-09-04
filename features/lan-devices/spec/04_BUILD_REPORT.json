@@ -67,7 +67,7 @@
       "effort_to_fix": "low"
     }
   ],
-  "test_runner": "go test -C ../.. ./internal/network/landevices/... ./internal/server/ -run TC_LD -v",
+  "test_runner": "go test ../../internal/network/landevices/... ../../internal/server/ -run TC_LD -v",
   "test_files": [
     "../../internal/network/landevices/orchestrator_test.go",
     "../../internal/network/landevices/subnet/subnet_test.go",

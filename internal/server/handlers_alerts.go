@@ -70,20 +70,24 @@ func (s *Server) renderAlertsList(w http.ResponseWriter, r *http.Request) {
 		severity = r.FormValue("severity")
 	}
 	var alerts []database.Alert
+	var listErr error
 
 	if severity != "" && isValidSeverity(severity) {
-		alerts, _ = s.db.ListAlertsBySeverity(severity, 100)
+		alerts, listErr = s.db.ListAlertsBySeverity(severity, 100)
 	} else {
-		alerts, _ = s.db.ListAlerts(100)
+		alerts, listErr = s.db.ListAlerts(100)
+	}
+	// F6: don't silently render an empty list on a DB error — an empty result
+	// then looks identical to a healthy "no alerts" state. Log it and signal
+	// the client so it can show a retry banner instead of a false all-clear.
+	if listErr != nil {
+		log.Printf("alerts: list query failed (severity=%q): %v", severity, listErr)
+		setToast(w, "Could not load alerts, retry shortly", "error")
+		http.Error(w, "Failed to load alerts", http.StatusInternalServerError)
+		return
 	}
 
-	csrfToken := ""
-	if cookie, err := r.Cookie("session"); err == nil {
-		session, _ := s.db.GetSession(cookie.Value)
-		if session != nil {
-			csrfToken = session.CSRFToken
-		}
-	}
+	csrfToken := s.sessionCSRFToken(r)
 
 	data := map[string]interface{}{
 		"Alerts":    alerts,
@@ -135,7 +139,7 @@ func (s *Server) handleAlertsClear(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast":{"message":"Cleared %d alerts","type":"success"}}`, deleted))
+		setToast(w, fmt.Sprintf("Cleared %d alerts", deleted), "success")
 		s.renderAlertsList(w, r)
 		return
 	}

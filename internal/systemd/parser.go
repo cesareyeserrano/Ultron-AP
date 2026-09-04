@@ -1,7 +1,9 @@
 package systemd
 
 import (
+	"errors"
 	"strings"
+	"time"
 )
 
 // parseListUnits parses the output of `systemctl list-units --type=service --all --no-pager --plain`.
@@ -58,3 +60,77 @@ func parseListUnits(output string) []ServiceInfo {
 
 	return services
 }
+
+// parseShowTimestamps parses `systemctl show -p Id -p ActiveEnterTimestamp`
+// output for one or more units. Blocks are separated by a blank line:
+//
+//	Id=nginx.service
+//	ActiveEnterTimestamp=Mon 2026-07-13 10:04:11 UTC
+//
+// A unit that has never activated reports an empty timestamp; those are
+// skipped so the caller leaves ServiceInfo.Since as the zero value.
+func parseShowTimestamps(output string) map[string]time.Time {
+	result := make(map[string]time.Time)
+
+	var id string
+	var stamp time.Time
+	flush := func() {
+		if id != "" && !stamp.IsZero() {
+			result[strings.TrimSuffix(id, ".service")] = stamp
+		}
+		id, stamp = "", time.Time{}
+	}
+
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			flush()
+			continue
+		}
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		switch key {
+		case "Id":
+			// A new Id starts a new block even without a blank separator.
+			if id != "" {
+				flush()
+			}
+			id = value
+		case "ActiveEnterTimestamp":
+			if t, err := parseSystemdTimestamp(value); err == nil {
+				stamp = t
+			}
+		}
+	}
+	flush()
+
+	return result
+}
+
+// systemdTimestampLayouts covers the formats systemd emits depending on the
+// host locale/timezone setting (e.g. "Mon 2026-07-13 10:04:11 UTC").
+var systemdTimestampLayouts = []string{
+	"Mon 2006-01-02 15:04:05 MST",
+	"Mon 2006-01-02 15:04:05 -0700",
+	"2006-01-02 15:04:05 MST",
+}
+
+func parseSystemdTimestamp(v string) (time.Time, error) {
+	v = strings.TrimSpace(v)
+	if v == "" || v == "n/a" {
+		return time.Time{}, errNoTimestamp
+	}
+	var lastErr error
+	for _, layout := range systemdTimestampLayouts {
+		t, err := time.Parse(layout, v)
+		if err == nil {
+			return t, nil
+		}
+		lastErr = err
+	}
+	return time.Time{}, lastErr
+}
+
+var errNoTimestamp = errors.New("systemd: no activation timestamp")

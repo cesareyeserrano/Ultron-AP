@@ -1,0 +1,686 @@
+{
+  "executed_at": "2026-09-04T19:13:11.427Z",
+  "test_runner": "go test ../../internal/ups/... ../../internal/server/... -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-UPS-001h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_001h_ParseListVar (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-002e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_002e_UnreachableAfterTimeout (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-003f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_003f_ReadOnly (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-004e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_004e_ParserScale (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-005h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_005h_CardOnline (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-006e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_006e_CardUnreachable (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-007f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_007f_CardEscapesValue (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-008e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_008e_SSEAndResponsive (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-009h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_009h_BeeperDisplay (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-010h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_010h_EstimateMidpoint (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-011e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_011e_EstimateClamps (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-012f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_012f_EstimateAlwaysTagged (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-013h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_013h_SampleSurvivesRestart (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-014e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_014e_EmptySeriesNoError (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-015f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_015f_PruneRetentionBoundary (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-016h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_016h_OpenOutage (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-017e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_017e_CloseOutage (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-018f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_018f_NoDoubleCountOnRestart (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-019h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_019h_OBFiresWarning (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-020e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_020e_OLResolveWithDuration (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-021f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_021f_VoltageDebounce (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-022f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_022f_LBFiresCritical (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-023f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_023f_UnreachableSingleWarning (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-024h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_024h_WeeklyOutageInsight (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-025e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_025e_OutageInsightRealCount (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-026f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_026f_NoDegradationFromSingleSample (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-027h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_027h_ShutdownDelays (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-028e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_028e_ShutdownMissing (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-029f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_029f_NoControl (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-030h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_030h_CutoffDisplay (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-031h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_031h_EnvOverridePollInterval (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-032e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_032e_DisabledByDefault (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-033f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_033f_InvalidConfigRejected (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-034h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_034h_CleanDegradation (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-035e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_035e_InertWhenDisabled (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-036f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_036f_PanicContained (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-037h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_037h_LocalhostOnly (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-038e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_038e_NoPrivilegedImports (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-039f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_039f_NoHelperImport (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-040h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_040h_NoShutdownPath (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-041e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_041e_ReadOnlyAcrossStates (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-042f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_042f_RenderIssuesNoCommand (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-043h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_043h_BenignRender (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-044f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_044f_ScriptEscaped (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-045f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_045f_AttributeInjectionNeutralized (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-046f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_046f_SecretNotLeaked (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-047h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_047h_BoundedReconnectLogging (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-048e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_048e_RecoveryLoggedOnce (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-049f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_049f_TimestampedLines (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-050h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_050h_CIRunsTests (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-051e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_051e_StatusMapTable (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-052f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_052f_LBPrecedenceInvariant (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-053h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_053h_MockRendersCard (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-054f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_054f_MockOffByDefault (0.00s)"
+    },
+    {
+      "tc_id": "TC-UPS-055e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_055e_MockCyclesStates (0.01s)"
+    },
+    {
+      "tc_id": "TC-UPS-056f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_UPS_056f_RBOncePerDay (0.00s)"
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-016",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-017",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-018",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-019",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-020",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-021",
+      "tests_passing": 6,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-022",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-023",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-024",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "ac_coverage": [
+    {
+      "ac_id": "AC-016-001",
+      "fr_id": "FR-016",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-016-002",
+      "fr_id": "FR-016",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-016-003",
+      "fr_id": "FR-016",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-016-004",
+      "fr_id": "FR-016",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-017-001",
+      "fr_id": "FR-017",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-017-002",
+      "fr_id": "FR-017",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-017-003",
+      "fr_id": "FR-017",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-017-004",
+      "fr_id": "FR-017",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-017-005",
+      "fr_id": "FR-017",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-018-001",
+      "fr_id": "FR-018",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-018-002",
+      "fr_id": "FR-018",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-018-003",
+      "fr_id": "FR-018",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-019-001",
+      "fr_id": "FR-019",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-019-002",
+      "fr_id": "FR-019",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-019-003",
+      "fr_id": "FR-019",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-020-001",
+      "fr_id": "FR-020",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-020-002",
+      "fr_id": "FR-020",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-020-003",
+      "fr_id": "FR-020",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-021-001",
+      "fr_id": "FR-021",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-021-002",
+      "fr_id": "FR-021",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-021-003",
+      "fr_id": "FR-021",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-021-004",
+      "fr_id": "FR-021",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-021-005",
+      "fr_id": "FR-021",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-021-006",
+      "fr_id": "FR-021",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-022-001",
+      "fr_id": "FR-022",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-022-002",
+      "fr_id": "FR-022",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-023-001",
+      "fr_id": "FR-023",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-023-002",
+      "fr_id": "FR-023",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-023-003",
+      "fr_id": "FR-023",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-023-004",
+      "fr_id": "FR-023",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-024-001",
+      "fr_id": "FR-024",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-024-002",
+      "fr_id": "FR-024",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-024-003",
+      "fr_id": "FR-024",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 56,
+    "passed": 56,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "low_confidence_tcs": [],
+  "quality_gates": [
+    {
+      "name": "vet",
+      "command": "go vet ../../internal/ups/... ../../internal/server/...",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0,
+      "duration_ms": 483
+    }
+  ],
+  "timings": {
+    "runner_ms": 11531,
+    "gates_ms": 483,
+    "total_ms": 12023
+  }
+}

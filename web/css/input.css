@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 @source "../templates/**/*.html";
+/* CSS4: also scan the JS widgets/handlers — they toggle utility classes
+   (e.g. toast colours, translate/opacity states) that would otherwise be
+   purged if they ever stop appearing in a template. */
+@source "../static/js/**/*.js";
 
 @theme {
   /* Dark graphite palette */
@@ -10,7 +14,6 @@
   --color-text: #e5e7eb;
   --color-text-muted: #9ca3af;
   --color-accent: #c2c7d0;
-  --color-dashboard-icon: #c2c7d0;
   --color-danger: #e34b6a;
   --color-danger-hover: #c93f5c;
   --color-border: #2a2f37;
@@ -29,6 +32,22 @@
     background-image:
       radial-gradient(1200px 500px at 10% -10%, rgba(194, 199, 208, 0.07), transparent 65%),
       radial-gradient(900px 420px at 90% 0%, rgba(156, 163, 175, 0.06), transparent 65%);
+  }
+
+  /* A11y: Firefox ignores ::-webkit-scrollbar, so give it the standard
+     thin/coloured scrollbar too. */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-card) var(--color-base);
+  }
+
+  /* A11y: a single visible keyboard-focus ring for every interactive element.
+     Keyboard users otherwise had almost no focus indication (only two
+     focus-visible styles existed across the whole UI). */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 
   /* Scrollbar styling for dark theme */
@@ -52,6 +71,12 @@
 }
 
 @layer components {
+  /* CSS6: shared panel shadow, previously duplicated verbatim in .panel-soft
+     and .metric-tile. */
+  :root {
+    --shadow-panel: 0 16px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
   .ux-shell {
     @apply selection:bg-accent selection:text-base;
   }
@@ -62,7 +87,7 @@
 
   .panel-soft {
     @apply bg-surface border border-border rounded-lg;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    box-shadow: var(--shadow-panel);
   }
 
   .panel-glow {
@@ -81,7 +106,7 @@
 
   .metric-tile {
     @apply bg-surface border border-border rounded-lg p-4 transition-all duration-200;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    box-shadow: var(--shadow-panel);
   }
 
   .metric-tile:hover {
@@ -98,6 +123,14 @@
   .metric-critical {
     border-color: rgba(227, 75, 106, 0.55);
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(227, 75, 106, 0.2);
+  }
+
+  /* UPS "Sin datos" (unreachable) — muted dashed border so an unreachable UPS
+     reads as absent, not alarming (FR-017). */
+  .metric-ups-muted {
+    border-style: dashed;
+    border-color: var(--color-border);
+    opacity: 0.9;
   }
 
   .timeline-chip {
@@ -117,7 +150,7 @@
   }
 
   .nav-item-dashboard svg {
-    color: var(--color-dashboard-icon);
+    color: var(--color-accent);
   }
 
   .nav-item-dashboard:not(.active-link) svg {
@@ -148,19 +181,48 @@
     background: linear-gradient(180deg, rgba(194, 199, 208, 0.1), rgba(194, 199, 208, 0.03));
   }
 
-  #sidebar.sidebar-collapsed .sidebar-label {
-    display: none;
-  }
+}
 
-  #sidebar.sidebar-collapsed .sidebar-brand img {
-    width: 40px !important;
-    height: 40px !important;
-    margin-bottom: 0;
-  }
+/* BG-076 — these rules MUST live outside @layer.
+ *
+ * They used to sit in @layer components, with a comment claiming the ID-scoped
+ * selector already outranked the width/height utility classes on the logo. That
+ * is wrong under CSS cascade layers: a later layer (or no layer at all) wins
+ * over an earlier one REGARDLESS of specificity, and Tailwind v4 orders
+ * theme, base, components, utilities. So the h-[76px] utility silently beat the
+ * 40px height here: the height stayed at 76px while the flex container squeezed
+ * the width to ~39px, and the logo rendered stretched whenever the sidebar was
+ * collapsed.
+ *
+ * Unlayered styles outrank every layer — which is exactly what a state override
+ * like this one needs.
+ */
+#sidebar.sidebar-collapsed .sidebar-label {
+  display: none;
+}
 
-  #sidebar.sidebar-collapsed .sidebar-brand {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+#sidebar.sidebar-collapsed .sidebar-brand img {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0;
+}
+
+#sidebar.sidebar-collapsed .sidebar-brand {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* A11y: honour the OS "reduce motion" setting. The UI uses transitions and
+   transforms throughout (tile hover lift, toast slide/fade, chip swaps); this
+   neutralises them for users who are sensitive to motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

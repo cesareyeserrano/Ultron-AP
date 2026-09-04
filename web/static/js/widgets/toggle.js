@@ -54,4 +54,6 @@
     initAll();
   }
   document.body.addEventListener('htmx:afterSwap', function (e) { initAll(e.target); });
+  // History restores re-insert cached DOM without firing afterSwap (BG-038 family).
+  document.body.addEventListener('htmx:historyRestore', function () { initAll(); });
 })();

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UX Preview — NUT_UPS_Pi_On_Dashboard (transcription read-back)</title>
+<style>
+  :root{
+    --base:#0b0c0f; --surface:#121418; --card:#1a1d23; --text:#e5e7eb;
+    --muted:#9ca3af; --accent:#c2c7d0; --danger:#e34b6a; --border:#2a2f37; --warn:#facc15;
+    --shadow:0 16px 40px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.03);
+    --sans:"Space Grotesk","Manrope","Avenir Next","Segoe UI",sans-serif;
+    --mono:"JetBrains Mono","Fira Code",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--base);color:var(--text);font-family:var(--sans);
+    background-image:radial-gradient(1200px 500px at 10% -10%,rgba(194,199,208,.07),transparent 65%),
+      radial-gradient(900px 420px at 90% 0%,rgba(156,163,175,.06),transparent 65%);
+    padding:28px;line-height:1.5}
+  h1{font-size:20px;margin:0 0 4px} h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:32px 0 12px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 6px}
+  .banner{background:linear-gradient(180deg,rgba(250,204,21,.11),rgba(250,204,21,.03));border:1px solid rgba(250,204,21,.42);
+    color:var(--text);font-size:12px;padding:8px 12px;border-radius:8px;margin:18px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:var(--shadow)}
+  .swatch{height:44px;border-radius:6px;border:1px solid var(--border);margin-bottom:8px}
+  .role{font-size:12px} .hex{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .reason{font-size:11px;color:var(--muted);margin-top:4px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);margin-left:6px}
+  .aa{color:#7ee2a8;border-color:rgba(126,226,168,.4)} .aaa{color:#8fd0ff;border-color:rgba(143,208,255,.4)}
+  table{border-collapse:collapse;width:100%;font-size:12px} td,th{border:1px solid var(--border);padding:6px 8px;text-align:left}
+  th{color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.06em}
+  .mono{font-family:var(--mono)}
+  /* metric-tile transcription */
+  .metric-tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;box-shadow:var(--shadow)}
+  .metric-warning{border-color:rgba(250,204,21,.45);box-shadow:0 14px 34px rgba(0,0,0,.3),0 0 0 1px rgba(250,204,21,.16)}
+  .metric-critical{border-color:rgba(227,75,106,.55);box-shadow:0 14px 34px rgba(0,0,0,.32),0 0 0 1px rgba(227,75,106,.2)}
+  .metric-muted{border-style:dashed;border-color:var(--border);opacity:.85}
+  .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .status{font-size:26px;font-weight:600;margin:6px 0}
+  .status.warn{color:var(--warn)} .status.crit{color:var(--danger)} .status.muted{color:var(--muted)}
+  .row{display:flex;justify-content:space-between;font-size:13px;margin-top:6px}
+  .row .v{font-family:var(--mono)}
+  .tag{font-family:var(--mono);font-size:10px;padding:1px 5px;border:1px solid var(--border);border-radius:4px;color:var(--muted);margin-left:6px}
+  .bar{height:6px;background:var(--card);border-radius:3px;margin-top:4px;overflow:hidden}
+  .bar>span{display:block;height:100%;background:var(--accent)}
+  .cap{font-size:10px;color:var(--muted);margin-top:10px}
+  .shutdown{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px}
+  .chip{font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid var(--border);color:var(--muted);margin-right:6px;display:inline-block}
+  .chip.active{background:rgba(194,199,208,.2);color:var(--accent);border-color:rgba(194,199,208,.3)}
+  footer{margin-top:34px;color:var(--muted);font-size:11px;border-top:1px solid var(--border);padding-top:12px}
+</style>
+</head>
+<body>
+  <h1>UX Preview — Módulo UPS</h1>
+  <p class="sub"><strong>Transcription read-back</strong> del sistema de diseño existente de Ultron-AP (<code>web/css/input.css</code>). Compáralo contra el dashboard real: cualquier diferencia es un error de transcripción, no un diseño nuevo. Tema: dark-only (panel único).</p>
+
+  <h2>Color roles (grafito — verbatim de @theme)</h2>
+  <div class="grid">
+    <div class="tile"><div class="swatch" style="background:#0b0c0f"></div><span class="role">base</span> <span class="hex">#0b0c0f</span><div class="reason">app background</div></div>
+    <div class="tile"><div class="swatch" style="background:#121418"></div><span class="role">surface</span> <span class="hex">#121418</span><div class="reason">tile / panel (.metric-tile)</div></div>
+    <div class="tile"><div class="swatch" style="background:#1a1d23"></div><span class="role">card</span> <span class="hex">#1a1d23</span><div class="reason">nested card / verdict bg</div></div>
+    <div class="tile"><div class="swatch" style="background:#e5e7eb"></div><span class="role">text</span> <span class="hex">#e5e7eb</span> <span class="badge aaa">AAA ~15</span><div class="reason">body text on base</div></div>
+    <div class="tile"><div class="swatch" style="background:#9ca3af"></div><span class="role">text-muted</span> <span class="hex">#9ca3af</span> <span class="badge aa">AA ~7</span><div class="reason">captions/labels on surface</div></div>
+    <div class="tile"><div class="swatch" style="background:#c2c7d0"></div><span class="role">accent</span> <span class="hex">#c2c7d0</span> <span class="badge aaa">AAA ~9.7</span><div class="reason">info / focus ring / links</div></div>
+    <div class="tile"><div class="swatch" style="background:#facc15"></div><span class="role">warning</span> <span class="hex">#facc15</span> <span class="badge aa">AA ~11</span><div class="reason">OB / RB / BYPASS (.metric-warning)</div></div>
+    <div class="tile"><div class="swatch" style="background:#e34b6a"></div><span class="role">danger</span> <span class="hex">#e34b6a</span> <span class="badge aa">AA ~4.6</span><div class="reason">LB / OFF / ALARM (.metric-critical)</div></div>
+    <div class="tile"><div class="swatch" style="background:#2a2f37"></div><span class="role">border</span> <span class="hex">#2a2f37</span><div class="reason">default tile border</div></div>
+  </div>
+
+  <h2>ups.status → estado visual (mapeo nuevo, colores existentes)</h2>
+  <table>
+    <tr><th>ups.status</th><th>Etiqueta (es)</th><th>Borde</th><th>Acento</th></tr>
+    <tr><td class="mono">OL</td><td>En red</td><td>default</td><td>text</td></tr>
+    <tr><td class="mono">OL CHRG</td><td>Cargando</td><td>default</td><td>accent</td></tr>
+    <tr><td class="mono">OB</td><td>En batería</td><td>.metric-warning</td><td style="color:#facc15">#facc15</td></tr>
+    <tr><td class="mono">RB</td><td>Reemplazar batería</td><td>.metric-warning</td><td style="color:#facc15">#facc15</td></tr>
+    <tr><td class="mono">BYPASS</td><td>Bypass</td><td>.metric-warning</td><td style="color:#facc15">#facc15</td></tr>
+    <tr><td class="mono">LB</td><td>Batería baja</td><td>.metric-critical</td><td style="color:#e34b6a">#e34b6a</td></tr>
+    <tr><td class="mono">OFF</td><td>Apagado</td><td>.metric-critical</td><td style="color:#e34b6a">#e34b6a</td></tr>
+    <tr><td class="mono">ALARM</td><td>Alarma</td><td>.metric-critical</td><td style="color:#e34b6a">#e34b6a</td></tr>
+    <tr><td class="mono">(unreachable)</td><td>Sin datos</td><td>muted + dashed</td><td style="color:#9ca3af">muted</td></tr>
+  </table>
+
+  <h2>Type scale (rendered)</h2>
+  <div class="tile">
+    <div style="font-size:26px;font-weight:600">En red · headline text-2xl/3xl · Space Grotesk</div>
+    <div class="mono" style="font-size:13px;margin-top:6px">24.2 V · 50 % · valores text-sm · JetBrains Mono</div>
+    <div class="lbl" style="margin-top:6px">CARGA · label text-[11px] uppercase</div>
+    <div class="cap">hace 4 s · caption text-[10px] muted</div>
+  </div>
+
+  <div class="banner">ILLUSTRATIVE — non-binding; the spec is the contract. Una tira en contexto de las 3 superficies (tarjeta, bloque de apagado, chips de historial).</div>
+
+  <h2>Composición ilustrativa</h2>
+  <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">
+    <!-- OL -->
+    <div class="metric-tile">
+      <div class="lbl">UPS · POWEST</div>
+      <div class="status">En red</div>
+      <div class="row"><span>Carga</span><span class="v">2 %</span></div>
+      <div class="row"><span>Entrada</span><span class="v">122 V</span></div>
+      <div class="row"><span>Batería</span><span class="v">27.1 V · 96 %<span class="tag">estimado</span></span></div>
+      <div class="bar"><span style="width:96%"></span></div>
+      <div class="row"><span>Beeper</span><span class="v">activado</span></div>
+      <div class="cap">actualizado hace 4 s</div>
+      <div class="shutdown">
+        <div class="lbl">Apagado seguro <span class="tag">gestionado por NUT</span></div>
+        <div class="row"><span>Delay apagado</span><span class="v">30 s</span></div>
+        <div class="row"><span>Delay arranque</span><span class="v">no disponible</span></div>
+        <div class="row"><span>Punto de apagado</span><span class="v">21.0 V</span></div>
+      </div>
+    </div>
+    <!-- OB -->
+    <div class="metric-tile metric-warning">
+      <div class="lbl">UPS · POWEST</div>
+      <div class="status warn">En batería</div>
+      <div class="row"><span>Carga</span><span class="v">3 %</span></div>
+      <div class="row"><span>Entrada</span><span class="v">0 V</span></div>
+      <div class="row"><span>Batería</span><span class="v">25.4 V · 66 %<span class="tag">estimado</span></span></div>
+      <div class="bar"><span style="width:66%;background:#facc15"></span></div>
+      <div class="cap">corte iniciado hace 1 min</div>
+    </div>
+    <!-- LB -->
+    <div class="metric-tile metric-critical">
+      <div class="lbl">UPS · POWEST</div>
+      <div class="status crit">Batería baja</div>
+      <div class="row"><span>Carga</span><span class="v">3 %</span></div>
+      <div class="row"><span>Batería</span><span class="v">21.4 V · 6 %<span class="tag">estimado</span></span></div>
+      <div class="bar"><span style="width:6%;background:#e34b6a"></span></div>
+      <div class="cap">crítico</div>
+    </div>
+    <!-- Sin datos -->
+    <div class="metric-tile metric-muted">
+      <div class="lbl">UPS · POWEST</div>
+      <div class="status muted">Sin datos</div>
+      <div class="row"><span>Estado</span><span class="v" style="color:#9ca3af">UPS sin comunicación</span></div>
+      <div class="cap">sin datos hace 3 min</div>
+    </div>
+  </div>
+
+  <h2>Historial — window switcher (chips existentes)</h2>
+  <div class="tile">
+    <span class="chip active">24 h</span><span class="chip">7 d</span>
+    <div style="height:70px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;margin-top:10px">Recopilando datos…</div>
+  </div>
+
+  <h2>Honest-gaps</h2>
+  <p class="sub">Todos los tokens de la spec están renderizados. Los ratios de contraste son aproximados (calculados a mano) para verificación a golpe de vista; la fuente de verdad es la tabla Design Tokens de <code>01_UX_SPEC.md</code>. Superficies no-visuales (Telegram, panel de Alertas, Insights, .env) no se renderizan aquí porque reutilizan UIs ya existentes.</p>
+
+  <footer>Generated from 01_UX_SPEC.md — non-binding; the spec is the contract.</footer>
+</body>
+</html>

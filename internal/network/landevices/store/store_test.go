@@ -276,3 +276,28 @@ func (s *sql_NullString) Scan(v interface{}) error {
 	}
 	return nil
 }
+
+// M3 — offline devices older than the retention window are pruned so a
+// spoofed-MAC flood cannot grow the table without bound. A recently-seen
+// device must survive the same sweep.
+func TestApplySweep_PrunesStaleOfflineDevices(t *testing.T) {
+	s, _ := newTestStoreThreshold(t, 1) // flip offline after a single miss
+	t0 := time.Date(2026, 5, 5, 12, 0, 0, 0, time.UTC)
+
+	require.NoError(t, s.ApplySweep(t0, []Observation{{MAC: "aa:bb:cc:00:00:01", IP: "192.168.1.10"}}))
+	// One empty sweep flips it offline (threshold=1).
+	require.NoError(t, s.ApplySweep(t0.Add(time.Minute), nil))
+
+	// A fresh device seen just before the pruning sweep must be kept.
+	late := t0.Add(defaultPruneRetention + time.Hour)
+	require.NoError(t, s.ApplySweep(late, []Observation{{MAC: "aa:bb:cc:00:00:02", IP: "192.168.1.11"}}))
+
+	devices, err := s.List()
+	require.NoError(t, err)
+	macs := map[string]bool{}
+	for _, d := range devices {
+		macs[d.MAC] = true
+	}
+	assert.False(t, macs["aa:bb:cc:00:00:01"], "stale offline device should be pruned")
+	assert.True(t, macs["aa:bb:cc:00:00:02"], "recently-seen device must be kept")
+}

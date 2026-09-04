@@ -1,0 +1,36 @@
+{{define "settings-telegram"}}            <section id="settings-telegram" data-settings-section data-section="telegram" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm md:text-[1rem] font-semibold text-text">Telegram</h3>
+                    </div>
+                    <span data-form-state-host="telegram"></span>
+                </div>
+                <form hx-post="/api/notifications/telegram" hx-target="#telegram-status" hx-swap="innerHTML" data-status-target="#telegram-status" data-saving-label="Saving Telegram settings..." data-settings-form="telegram" class="space-y-3">
+                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                    {{template "settings-mute" .Content.Mute}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[11px] text-text-muted">Bot Token</label>
+                            <input type="password" name="bot_token" placeholder="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "bot_token"}}{{else}}Bot token{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-text-muted">Chat ID</label>
+                            <input type="text" name="chat_id" value="{{if .Content.Telegram}}{{index .Content.Telegram.Fields "chat_id"}}{{end}}" class="w-full mt-1 px-2 py-1.5 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- FR-061: toggle replaces checkbox -->
+                        <label data-widget="toggle" data-field="telegram_enabled" data-state="{{if and .Content.Telegram .Content.Telegram.Enabled}}on{{else}}off{{end}}" class="flex items-center gap-2 text-xs text-text cursor-pointer min-h-[44px]">
+                            <span data-toggle-track class="relative inline-block w-10 h-6 rounded-full bg-card border border-border transition-colors data-[state=on]:bg-accent/40 data-[state=on]:border-accent" data-state="{{if and .Content.Telegram .Content.Telegram.Enabled}}on{{else}}off{{end}}">
+                                <span data-toggle-thumb class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-text-muted transition-all data-[state=on]:bg-accent data-[state=on]:left-[18px]" data-state="{{if and .Content.Telegram .Content.Telegram.Enabled}}on{{else}}off{{end}}"></span>
+                            </span>
+                            <input type="checkbox" name="enabled" data-toggle-input {{if and .Content.Telegram .Content.Telegram.Enabled}}checked{{end}} class="sr-only" aria-label="Telegram enabled">
+                            <span data-toggle-label>{{if and .Content.Telegram .Content.Telegram.Enabled}}Enabled{{else}}Disabled{{end}}</span>
+                        </label>
+                        <button type="submit" data-primary-save class="px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save</button>
+                        <button type="button" data-form-reset class="hidden px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
+                        <button type="button" hx-post="/api/notifications/telegram/test" hx-target="#telegram-status" hx-include="[name='csrf_token']" data-settings-ignore-state="true" class="px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Test</button>
+                    </div>
+                    <div id="telegram-status" class="min-h-[2rem]" aria-live="polite"></div>
+                </form>
+            </section>{{end}}

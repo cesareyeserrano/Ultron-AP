@@ -12,7 +12,7 @@
     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
     <!-- Service List -->
-    <div id="services-list">
+    <div id="services-list" hx-get="/services" hx-trigger="every 30s" hx-select="#services-list" hx-swap="outerHTML">
         {{template "partials/services-list.html" .Content}}
     </div>
 </div>

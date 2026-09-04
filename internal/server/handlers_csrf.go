@@ -9,15 +9,11 @@ import (
 )
 
 func (s *Server) validateCSRF(w http.ResponseWriter, r *http.Request) bool {
-	cookie, err := r.Cookie("session")
-	if err != nil {
-		s.auditLog(r, "security", "csrf_reject", r.URL.Path, "missing session cookie", false)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return false
-	}
-	session, err := s.db.GetSession(cookie.Value)
-	if err != nil || session == nil {
-		s.auditLog(r, "security", "csrf_reject", r.URL.Path, "invalid session", false)
+	// Reuse the session requireAuth already loaded (D2); falls back to a cookie
+	// lookup for any caller not behind requireAuth.
+	session := s.sessionForRequest(r)
+	if session == nil {
+		s.auditLog(r, "security", "csrf_reject", r.URL.Path, "missing or invalid session", false)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return false
 	}

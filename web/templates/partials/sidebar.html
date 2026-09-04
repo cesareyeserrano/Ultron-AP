@@ -1,12 +1,19 @@
 {{define "sidebar"}}
-<aside id="sidebar" class="sidebar-hidden md:sidebar-expanded sidebar-surface flex flex-col border-r border-border w-64 min-h-screen fixed md:sticky top-0 z-40 transition-all duration-200 overflow-hidden
+{{/* BG-077: h-screen, not min-h-screen. The body is a flex row, so a
+     min-h-screen aside STRETCHES to the tallest child — on the dashboard that is
+     1486px. The aside then ran off the bottom of the window, taking the
+     collapse button with it (y=1450 on a 900px screen), and `sticky` did nothing
+     because the element already spanned the whole page. Pinning it to one
+     viewport keeps the nav scrolling inside (it is overflow-y-auto) and the
+     button reachable. */}}
+<aside id="sidebar" class="sidebar-hidden md:sidebar-expanded sidebar-surface flex flex-col border-r border-border w-64 h-screen fixed md:sticky top-0 z-40 transition-all duration-200 overflow-hidden
   [&.sidebar-collapsed]:w-16
   [&.sidebar-hidden]:-translate-x-full [&.sidebar-hidden]:absolute
   md:[&.sidebar-hidden]:translate-x-0 md:[&.sidebar-hidden]:relative md:[&.sidebar-hidden]:w-64">
 
     <!-- Logo -->
     <div class="sidebar-brand flex flex-col items-center justify-center px-3 py-4 border-b border-border shrink-0">
-        <img src="/static/ultron-192.png?v=20260226h" alt="Ultron" class="shrink-0 mb-2" style="width:76px;height:76px;">
+        <img src="/static/ultron-192.png?v={{.AssetVersion}}" alt="Ultron" class="shrink-0 mb-2 w-[76px] h-[76px]">
         <span class="sidebar-label text-sm font-semibold text-text text-center leading-tight tracking-wide">ULTRON</span>
     </div>
 

@@ -192,3 +192,12 @@ func TestRingBuffer_SingleEntry(t *testing.T) {
 	require.Len(t, all, 1)
 	assert.Equal(t, float64(42), all[0].CPU.TotalPercent)
 }
+
+// B13 — a zero/negative capacity must not panic (mod-by-zero) in Add/Latest.
+func TestNewRingBuffer_ZeroCapacityDoesNotPanic(t *testing.T) {
+	rb := NewRingBuffer(0)
+	rb.Add(Snapshot{})
+	if rb.Latest() == nil {
+		t.Fatal("expected a snapshot after Add on a clamped buffer")
+	}
+}

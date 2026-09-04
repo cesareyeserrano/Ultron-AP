@@ -1,0 +1,1305 @@
+{
+  "test_plan": {
+    "strategy": "Table-driven Go unit tests for the NUT parser, status→state mapping and battery estimator against an in-process simulated upsd (mock.go); integration tests against the real SQLite DB for ups_samples/ups_events persistence, purge and the alert-engine UPS evaluators; e2e tests (Playwright-style, driving the live dashboard with ULTRON_UPS_MOCK) for the UPS card and shutdown-config block across states and the 375px mobile viewport. Every regression NFR gets the full happy/edge/negative set; NFR-019 (security) gets ≥3 distinct failure modes. Mock-driven so no physical UPS or prod deploy is needed (NFR-022).",
+    "coverage_goal": "85% of new internal/ups statements; 100% of MUST FRs and regression NFRs with happy+edge+negative.",
+    "test_types": [
+      "unit",
+      "integration",
+      "e2e"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "TC-UPS-001h",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "NUT client parses LIST VAR into a variable map",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "mock upsd serving powest with a canned LIST VAR reply"
+      ],
+      "given": "a simulated upsd on 127.0.0.1:0 returns 'VAR powest ups.status \"OL\"', 'VAR powest ups.load \"2\"', 'VAR powest input.voltage \"122.0\"', 'VAR powest battery.voltage \"27.1\"', terminated by 'END LIST VAR powest'",
+      "when": "Poller performs one poll via Client.List(ctx)",
+      "then": "returned map contains ups.status=\"OL\", ups.load=\"2\", input.voltage=\"122.0\", battery.voltage=\"27.1\"; no error",
+      "steps": [
+        "Start mock upsd",
+        "Dial client",
+        "Call List(ctx)",
+        "Assert map keys/values"
+      ],
+      "expected_result": "map has 4 keys with exact values above; err == nil",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-002e",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-003",
+      "title": "Client marks UPS unreachable after timeout with backoff, no panic",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "mock upsd that accepts one poll then closes the listener"
+      ],
+      "given": "the poller has one successful poll, then upsd stops accepting connections; UnreachableTimeout=2m, PollInterval=10s (compressed to ms in test)",
+      "when": "the poller keeps polling past the unreachable timeout",
+      "then": "Poller.Current().Reachable==false and State==\"unreachable\"; reconnect attempts increase with backoff (delays non-decreasing); no panic and the goroutine is still alive",
+      "steps": [
+        "Start mock, one good poll",
+        "Stop mock",
+        "Advance polls past timeout",
+        "Assert state + no panic"
+      ],
+      "expected_result": "State transitions to \"unreachable\"; recover() catches nothing (no panic); at least 2 reconnect attempts recorded with backoff",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-003f",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-004",
+      "title": "Client exposes no write path and never execs upsc",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "recording mock upsd that logs every command line it receives"
+      ],
+      "given": "a full poll cycle runs against the recording mock",
+      "when": "all commands sent by the client during the cycle are inspected, and the Client interface is examined",
+      "then": "only LIST/GET/USERNAME/PASSWORD lines were sent — zero SET, INSTCMD, or shutdown/load.off commands; the Client interface declares no write/SET method; no os/exec of upsc occurred",
+      "steps": [
+        "Run poll against recording mock",
+        "Assert command log contains no SET/INSTCMD",
+        "Assert no exec invoked"
+      ],
+      "expected_result": "command log matches ^(USERNAME|PASSWORD|LIST|GET) only; exec counter == 0",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-004e",
+      "requirement_id": "FR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Parser stays stable over production-scale poll volume",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "the mock upsd replies to 8640 sequential polls (one day at 10s interval) with varying values",
+      "when": "the parser processes all 8640 replies",
+      "then": "all parse without error, allocations stay bounded (no leak of connections), and the last parsed map matches the last reply",
+      "steps": [
+        "Loop 8640 polls",
+        "Assert zero parse errors",
+        "Assert last map correct"
+      ],
+      "expected_result": "8640/8640 parsed, err==nil each; final map equals final canned reply",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-005h",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-001",
+      "title": "UPS card shows 'En red' with values when OL",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "app running locally with ULTRON_UPS_ENABLED=true and ULTRON_UPS_MOCK=OL",
+        "logged-in admin session"
+      ],
+      "given": "the dashboard is open and the mock UPS reports ups.status=OL, load=2, input=122.0, battery=27.1",
+      "when": "the UPS card renders (test 'TC-UPS-005h: card OL state')",
+      "then": "the card shows status text 'En red', a load value '2 %', input '122 V', battery '27.1 V' and an estimated % with a visible 'estimado' tag",
+      "steps": [
+        "Navigate to /",
+        "Wait for #ups-card",
+        "Assert status text and value fields"
+      ],
+      "expected_result": "#ups-card contains 'En red', '2 %', '122 V', '27.1 V', and an element with text 'estimado'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-006e",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-003",
+      "title": "UPS card shows 'Sin datos' when unreachable, not zeros",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "app running with ULTRON_UPS_MOCK=unreachable"
+      ],
+      "given": "the mock reports the UPS as unreachable",
+      "when": "the UPS card renders (test 'TC-UPS-006e: card unreachable')",
+      "then": "the card shows 'Sin datos' and the reason 'UPS sin comunicación'; no numeric field shows '0' — value fields show '—'; the tile has the muted/dashed style",
+      "steps": [
+        "Set mock unreachable",
+        "Reload dashboard",
+        "Assert 'Sin datos' and absence of zero values"
+      ],
+      "expected_result": "#ups-card text contains 'Sin datos'; no '.value' element equals '0'; dashed border class present",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-007f",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-004",
+      "title": "NUT value with HTML metacharacters is escaped in the card",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "app running with ULTRON_UPS_MOCK feeding a crafted ups.beeper.status"
+      ],
+      "given": "the mock reports ups.beeper.status=\"<img src=x onerror=alert(1)>\"",
+      "when": "the UPS card renders (test 'TC-UPS-007f: card escapes NUT value')",
+      "then": "the literal text is displayed escaped; no <img> element is created in the DOM and no alert/console error fires",
+      "steps": [
+        "Feed malicious beeper value",
+        "Render card",
+        "Query DOM for injected img",
+        "Assert none"
+      ],
+      "expected_result": "document.querySelectorAll('#ups-card img').length === 0; card shows the raw text as inert string; zero console errors",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-008e",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-002",
+      "title": "UPS card renders without horizontal scroll at 375px and updates via SSE",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "app running with ULTRON_UPS_MOCK=1 (state cycles OL→OB)"
+      ],
+      "given": "the viewport is 375px wide and the card shows 'En red'",
+      "when": "the mock transitions to OB and the SSE push arrives (test 'TC-UPS-008e: mobile + SSE update')",
+      "then": "the card updates to 'En batería' without a page reload and the page has no horizontal overflow at 375px",
+      "steps": [
+        "Set viewport 375x812",
+        "Assert scrollWidth<=clientWidth",
+        "Trigger OB",
+        "Assert card text changes without navigation"
+      ],
+      "expected_result": "document.documentElement.scrollWidth <= 375; #ups-card text becomes 'En batería'; no navigation event",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-009h",
+      "requirement_id": "FR-017",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-005",
+      "title": "Beeper state rendered from ups.beeper.status",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "app running with ULTRON_UPS_MOCK feeding ups.beeper.status=enabled"
+      ],
+      "given": "the mock reports ups.beeper.status=enabled",
+      "when": "the card renders (test 'TC-UPS-009h: beeper display')",
+      "then": "the card shows the beeper row as 'activado'",
+      "steps": [
+        "Feed beeper=enabled",
+        "Render",
+        "Assert beeper row text"
+      ],
+      "expected_result": "#ups-card beeper element text == 'activado'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-010h",
+      "requirement_id": "FR-018",
+      "user_story_id": "US-018",
+      "ac_id": "AC-018-001",
+      "title": "Battery estimate midpoint ~50%",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "bounds low=21.0, high=27.4",
+      "when": "EstimateBatteryPct(24.2, 21.0, 27.4) is called",
+      "then": "the result is within [48,52]",
+      "steps": [
+        "Call estimator",
+        "Assert range"
+      ],
+      "expected_result": "returns 50.0 ±2 (exactly 50.0 for 24.2 midpoint)",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-011e",
+      "requirement_id": "FR-018",
+      "user_story_id": "US-018",
+      "ac_id": "AC-018-002",
+      "title": "Battery estimate clamps at boundaries",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "bounds low=21.0, high=27.4",
+      "when": "EstimateBatteryPct is called with 20.5 and 28.0",
+      "then": "20.5 → 0.0 and 28.0 → 100.0 (clamped, not negative or >100)",
+      "steps": [
+        "Call estimator with below-low and above-high",
+        "Assert clamp"
+      ],
+      "expected_result": "EstimateBatteryPct(20.5,...)==0.0 and EstimateBatteryPct(28.0,...)==100.0",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-012f",
+      "requirement_id": "FR-018",
+      "user_story_id": "US-018",
+      "ac_id": "AC-018-003",
+      "title": "Estimate is always tagged 'estimado', never emitted as battery.charge",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "snapshot builder"
+      ],
+      "given": "a snapshot is built from a poll with battery.voltage=24.2 and no battery.charge variable present",
+      "when": "the snapshot is serialized for the UI/history",
+      "then": "the battery percentage carries the estimated marker and no field named battery.charge or 'charge' is populated from the estimate",
+      "steps": [
+        "Build snapshot",
+        "Assert BattPctEst set + estimated flag",
+        "Assert no charge field"
+      ],
+      "expected_result": "Snapshot.BattPctEst != nil with estimated=true; snapshot has no battery.charge key derived from the estimate",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-013h",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-001",
+      "title": "ups_samples row survives process restart",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "temp SQLite DB via os.tmpdir()"
+      ],
+      "given": "a Store writes a sample {ts=1000, state='online', load=2, input=122.0, battery=27.1, est=96} and the DB handle is closed",
+      "when": "the DB is reopened and Series(0, 2000) is queried",
+      "then": "the sample is returned with identical field values",
+      "steps": [
+        "Open temp DB",
+        "WriteSample",
+        "Close",
+        "Reopen",
+        "Query Series"
+      ],
+      "expected_result": "1 row returned equal to the written sample (ts=1000, state='online', battery=27.1, est=96)",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-014e",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-003",
+      "title": "Chart series empty state returns no error",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "fresh temp DB with no ups_samples"
+      ],
+      "given": "no ups_samples rows exist",
+      "when": "Series(now-24h, now) is queried",
+      "then": "an empty slice and nil error are returned (UI shows 'Recopilando datos…', not an error)",
+      "steps": [
+        "Open empty DB",
+        "Query Series",
+        "Assert empty + nil err"
+      ],
+      "expected_result": "len(series)==0 and err==nil",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-015f",
+      "requirement_id": "FR-019",
+      "user_story_id": "US-019",
+      "ac_id": "AC-019-002",
+      "title": "Purge removes samples older than retention only",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "temp DB with samples at now-31d and now-1d"
+      ],
+      "given": "ups_samples has one row at now-31d and one at now-1d, retention=30d",
+      "when": "PruneUPSSamples(30) runs",
+      "then": "the now-31d row is deleted and the now-1d row remains",
+      "steps": [
+        "Seed two rows",
+        "Run purge",
+        "Assert only recent remains"
+      ],
+      "expected_result": "row count==1, remaining row ts==now-1d; the now-31d row is gone",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-016h",
+      "requirement_id": "FR-020",
+      "user_story_id": "US-020",
+      "ac_id": "AC-020-001",
+      "title": "OL→OB opens an outage event",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "temp DB, no open event"
+      ],
+      "given": "the last state was online and no open ups_events row exists",
+      "when": "the store processes a transition to onbattery at ts=5000",
+      "then": "one ups_events row exists with start_ts=5000 and end_ts NULL",
+      "steps": [
+        "Process OL→OB",
+        "Query ups_events",
+        "Assert open row"
+      ],
+      "expected_result": "1 row: start_ts=5000, end_ts IS NULL, kind='outage'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-017e",
+      "requirement_id": "FR-020",
+      "user_story_id": "US-020",
+      "ac_id": "AC-020-002",
+      "title": "OB→OL closes event with duration",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "temp DB with an open event start_ts=5000"
+      ],
+      "given": "an open outage event started at ts=5000",
+      "when": "the store processes a return to online at ts=5300",
+      "then": "the event is closed with end_ts=5300 and duration_s=300",
+      "steps": [
+        "Seed open event",
+        "Process OB→OL at 5300",
+        "Assert closed"
+      ],
+      "expected_result": "event row end_ts=5300, duration_s=300; zero open events remain",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-018f",
+      "requirement_id": "FR-020",
+      "user_story_id": "US-020",
+      "ac_id": "AC-020-003",
+      "title": "Restart with open event does not double-count on recovery",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "temp DB with one open event start_ts=5000"
+      ],
+      "given": "the process restarts while an outage event (start_ts=5000) is still open",
+      "when": "ReconcileOpenOnBoot runs and then power returns to online at ts=5300",
+      "then": "exactly one closed event exists (start_ts=5000,end_ts=5300); no second/orphaned outage row was created",
+      "steps": [
+        "Seed open event",
+        "ReconcileOpenOnBoot",
+        "Process OB→OL",
+        "Count events"
+      ],
+      "expected_result": "total ups_events count==1, that row closed with duration_s=300; no duplicate open row",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-019h",
+      "requirement_id": "FR-021",
+      "user_story_id": "US-021",
+      "ac_id": "AC-021-001",
+      "title": "OB transition fires Warning + Telegram",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "alert engine wired with a fake notify dispatcher; Telegram configured"
+      ],
+      "given": "the UPS is online and Telegram is configured",
+      "when": "evaluateUPSRule processes a transition to onbattery",
+      "then": "a Warning alert is created and exactly one Telegram message is dispatched within the poll cycle",
+      "steps": [
+        "Feed OB transition",
+        "Run engine evaluate",
+        "Assert alert + dispatch"
+      ],
+      "expected_result": "1 Alert row severity='warning' metric='ups_state'; fake dispatcher received 1 Telegram send",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-020e",
+      "requirement_id": "FR-021",
+      "user_story_id": "US-021",
+      "ac_id": "AC-021-002",
+      "title": "OL return emits resolve with outage duration",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "engine with a recorded open outage of 300s"
+      ],
+      "given": "an outage event of duration 300s is open",
+      "when": "the engine processes the return to online",
+      "then": "an Info resolve notification is emitted whose text includes the duration '5 min' (or '300 s'); no duplicate Warning is created",
+      "steps": [
+        "Seed open outage",
+        "Process OL",
+        "Assert resolve text contains duration"
+      ],
+      "expected_result": "resolve notification dispatched containing the outage duration; no new warning Alert row",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-021f",
+      "requirement_id": "FR-021",
+      "user_story_id": "US-021",
+      "ac_id": "AC-021-003",
+      "title": "Single out-of-range voltage sample within debounce does not alert",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "engine with input-voltage rule, debounce window > poll interval"
+      ],
+      "given": "input.voltage is in range, then one sample reads 145 V (out of ~100–140) and the next reads 121 V",
+      "when": "the engine evaluates both samples inside the debounce window",
+      "then": "no alert is fired and no Telegram message is sent",
+      "steps": [
+        "Feed in-range",
+        "Feed one 145V",
+        "Feed 121V within window",
+        "Assert no alert"
+      ],
+      "expected_result": "0 Alert rows created; fake dispatcher received 0 sends",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-022f",
+      "requirement_id": "FR-021",
+      "user_story_id": "US-021",
+      "ac_id": "AC-021-005",
+      "title": "LB status fires a Critical alert",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "engine wired"
+      ],
+      "given": "the UPS status carries the LB flag (e.g. 'OB LB')",
+      "when": "evaluateUPSRule processes the status",
+      "then": "a Critical alert is created and an immediate Telegram message is dispatched",
+      "steps": [
+        "Feed 'OB LB'",
+        "Evaluate",
+        "Assert critical alert"
+      ],
+      "expected_result": "1 Alert row severity='critical'; fake dispatcher received 1 send",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-023f",
+      "requirement_id": "FR-021",
+      "user_story_id": "US-021",
+      "ac_id": "AC-021-006",
+      "title": "Unreachable > timeout fires exactly one 'UPS sin comunicación'",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "engine wired, unreachable timeout=2m"
+      ],
+      "given": "the UPS becomes unreachable and stays unreachable across many polls past the 2 min timeout",
+      "when": "the engine evaluates the sustained unreachable state",
+      "then": "exactly one Warning 'UPS sin comunicación' is fired (not one per poll); a recovery signal fires once when it becomes reachable again",
+      "steps": [
+        "Sustain unreachable",
+        "Evaluate repeatedly",
+        "Assert single warning",
+        "Recover",
+        "Assert single recovery"
+      ],
+      "expected_result": "exactly 1 Warning while down; exactly 1 recovery notification on return",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-024h",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Weekly outage insight fires with ≥1 closed event",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "low",
+      "preconditions": [
+        "insights engine with UPS vars; 1 closed outage in last 7d"
+      ],
+      "given": "ups_events has 1 closed outage within the last 7 days and the derived var ups_outages_7d=1",
+      "when": "insights EvalWithVars runs",
+      "then": "an outage insight verdict is emitted (static text about recent outages)",
+      "steps": [
+        "Seed 1 closed outage",
+        "Compute vars",
+        "EvalWithVars",
+        "Assert verdict present"
+      ],
+      "expected_result": "insights output contains a UPS outage verdict (non-empty VerdictText) for the week",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-025e",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-001",
+      "title": "Outage insight renders with real data, not empty state",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "low",
+      "preconditions": [
+        "insights engine, 3 closed outages in last 7d"
+      ],
+      "given": "ups_outages_7d=3",
+      "when": "insights EvalWithVars runs",
+      "then": "the UPS outage verdict is present and marked with a real (non-placeholder) trigger value 3",
+      "steps": [
+        "Seed 3 outages",
+        "Eval",
+        "Assert verdict + trigger value"
+      ],
+      "expected_result": "verdict fired; the evaluated trigger var ups_outages_7d==3 (real data path, not empty state)",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-026f",
+      "requirement_id": "FR-022",
+      "user_story_id": "US-022",
+      "ac_id": "AC-022-002",
+      "title": "No degradation insight from a single sample",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [
+        "insights engine, only 1 battery sample"
+      ],
+      "given": "only a single battery.voltage sample exists (insufficient history)",
+      "when": "insights EvalWithVars runs",
+      "then": "no battery-degradation verdict is emitted",
+      "steps": [
+        "Seed 1 sample",
+        "Eval",
+        "Assert no degradation verdict"
+      ],
+      "expected_result": "insights output contains no battery-degradation verdict",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-027h",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-001",
+      "title": "Shutdown block shows delays with 'gestionado por NUT'",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "app running with mock feeding ups.delay.shutdown=30, ups.delay.start=60"
+      ],
+      "given": "the mock publishes ups.delay.shutdown=30 and ups.delay.start=60",
+      "when": "the shutdown-config block renders (test 'TC-UPS-027h: shutdown display')",
+      "then": "the block shows '30' and '60' with a 'gestionado por NUT' label",
+      "steps": [
+        "Render card",
+        "Locate shutdown block",
+        "Assert values + label"
+      ],
+      "expected_result": "#ups-shutdown contains '30', '60' and text 'gestionado por NUT'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-028e",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-003",
+      "title": "Missing shutdown variable shows 'no disponible'",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "app running with mock omitting ups.delay.start"
+      ],
+      "given": "the mock publishes ups.delay.shutdown=30 but no ups.delay.start",
+      "when": "the shutdown-config block renders (test 'TC-UPS-028e: missing delay')",
+      "then": "the start-delay field shows 'no disponible', not blank or '0'",
+      "steps": [
+        "Omit delay.start",
+        "Render",
+        "Assert 'no disponible'"
+      ],
+      "expected_result": "#ups-shutdown start-delay field text == 'no disponible'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-029f",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-002",
+      "title": "Shutdown block exposes no actionable control",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "app running with UPS card visible"
+      ],
+      "given": "the shutdown-config block is rendered",
+      "when": "the block is inspected for interactive controls (test 'TC-UPS-029f: no shutdown control')",
+      "then": "it contains no <form>, <button>, <input>, or hx-post/hx-put/hx-delete attributes that could issue SET/INSTCMD/shutdown/load.off",
+      "steps": [
+        "Render block",
+        "querySelectorAll form,button,input,[hx-post]",
+        "Assert none"
+      ],
+      "expected_result": "#ups-shutdown has 0 form/button/input elements and 0 hx-post/hx-put/hx-delete attributes",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-030h",
+      "requirement_id": "FR-023",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-004",
+      "title": "Low-battery cutoff shown as 'punto de apagado' from config, not upsmon.conf",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "app running with ULTRON_UPS_BATT_LOW_V=21.0; /etc/nut not readable by the process"
+      ],
+      "given": "the configured low-battery bound is 21.0 V",
+      "when": "the shutdown-config block renders (test 'TC-UPS-030h: cutoff display')",
+      "then": "it shows '21.0 V' labelled 'punto de apagado — gestionado por NUT' and the process performed no read of /etc/nut/upsmon.conf",
+      "steps": [
+        "Render",
+        "Assert cutoff value+label",
+        "Assert no upsmon.conf file read"
+      ],
+      "expected_result": "#ups-shutdown shows '21.0 V' with label 'punto de apagado — gestionado por NUT'; no open() of upsmon.conf recorded",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-031h",
+      "requirement_id": "FR-024",
+      "user_story_id": "US-024",
+      "ac_id": "AC-024-001",
+      "title": "Env override replaces default poll interval",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "config loader"
+      ],
+      "given": "ULTRON_UPS_POLL_SECONDS=30 is set",
+      "when": "the UPS config is loaded at startup",
+      "then": "cfg.PollInterval == 30s (overriding the 10s default)",
+      "steps": [
+        "Set env",
+        "Load config",
+        "Assert value"
+      ],
+      "expected_result": "PollInterval == 30 seconds",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-032e",
+      "requirement_id": "FR-024",
+      "user_story_id": "US-024",
+      "ac_id": "AC-024-003",
+      "title": "Module inert when ULTRON_UPS_ENABLED unset",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "app boot harness"
+      ],
+      "given": "ULTRON_UPS_ENABLED is unset",
+      "when": "the app boots",
+      "then": "no NUT connection is attempted, no poller goroutine starts, and the dashboard renders no UPS card",
+      "steps": [
+        "Unset flag",
+        "Boot",
+        "Assert no dial + no card"
+      ],
+      "expected_result": "0 TCP dials to :3493; DashboardData.UPS==nil; no #ups-card in rendered HTML",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-033f",
+      "requirement_id": "FR-024",
+      "user_story_id": "US-024",
+      "ac_id": "AC-024-002",
+      "title": "Invalid config value is rejected, default used, no crash",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "config loader"
+      ],
+      "given": "ULTRON_UPS_BATT_LOW_V=30 and ULTRON_UPS_BATT_HIGH_V=27.4 (low ≥ high) — plus ULTRON_UPS_POLL_SECONDS='abc'",
+      "when": "the UPS config is loaded",
+      "then": "both invalid values are rejected with a logged message, defaults (21.0/27.4, 10s) are used, and loading does not panic or return a fatal error",
+      "steps": [
+        "Set invalid env",
+        "Load config",
+        "Assert defaults + log + no panic"
+      ],
+      "expected_result": "BattLowV==21.0, BattHighV==27.4, PollInterval==10s; a warning was logged for each; no panic",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-034h",
+      "requirement_id": "NFR-016",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-003",
+      "title": "App boots and existing tiles render when NUT absent",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "app boot harness with no upsd reachable, ULTRON_UPS_ENABLED=true"
+      ],
+      "given": "NUT is not installed / no upsd on :3493 and ULTRON_UPS_ENABLED=true",
+      "when": "the app boots and the dashboard renders",
+      "then": "the process starts successfully, existing tiles (CPU/RAM/Docker/systemd/network) render, and the UPS card shows 'Sin datos'",
+      "steps": [
+        "Boot with no upsd",
+        "Render dashboard",
+        "Assert existing tiles + UPS 'Sin datos'"
+      ],
+      "expected_result": "boot exit code 0; CPU/RAM tiles present; #ups-card shows 'Sin datos'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-035e",
+      "requirement_id": "NFR-016",
+      "user_story_id": "US-024",
+      "ac_id": "AC-024-003",
+      "title": "Module fully inert when disabled",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "app boot harness"
+      ],
+      "given": "ULTRON_UPS_ENABLED is unset",
+      "when": "the app boots",
+      "then": "no UPS goroutine, no dial, no card — and every existing tile still works",
+      "steps": [
+        "Boot disabled",
+        "Assert no UPS activity",
+        "Assert existing tiles OK"
+      ],
+      "expected_result": "no :3493 dial; no #ups-card; existing dashboard endpoints return 200",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-036f",
+      "requirement_id": "NFR-016",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-003",
+      "title": "Poller panic is contained and does not crash the app",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "poller with an injected fault that would panic on a malformed reply"
+      ],
+      "given": "the mock upsd returns a malformed reply that triggers a panic in the poll path",
+      "when": "the poller processes it",
+      "then": "the panic is recovered inside the UPS goroutine, the app process stays alive, and the card falls to 'Sin datos'",
+      "steps": [
+        "Inject malformed reply",
+        "Run poller",
+        "Assert process alive + card 'Sin datos'"
+      ],
+      "expected_result": "main process still serving requests (health 200); UPS card 'Sin datos'; panic recovered and logged once",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-037h",
+      "requirement_id": "NFR-017",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-002",
+      "title": "UPS module reaches NUT only via localhost TCP",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "boot with syscall/exec recorder"
+      ],
+      "given": "the UPS module is enabled and polling",
+      "when": "a poll cycle runs",
+      "then": "the only external interaction is a TCP dial to 127.0.0.1:3493; no privileged helper socket call and no new process are made",
+      "steps": [
+        "Enable module",
+        "Poll",
+        "Assert only localhost TCP",
+        "Assert no helper call"
+      ],
+      "expected_result": "exactly 1 dial target 127.0.0.1:3493; 0 calls to internal/privileged; 0 child processes",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-038e",
+      "requirement_id": "NFR-017",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-002",
+      "title": "NoNewPrivileges unchanged with UPS enabled",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "deployment unit assertion / process attr check"
+      ],
+      "given": "the UPS module is enabled",
+      "when": "the process security attributes are inspected (systemd unit / prctl)",
+      "then": "NoNewPrivileges is still true and no new capability is requested by the UPS code",
+      "steps": [
+        "Enable module",
+        "Inspect unit/attrs",
+        "Assert NoNewPrivileges true"
+      ],
+      "expected_result": "NoNewPrivileges=true retained; UPS package requests no capabilities",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-039f",
+      "requirement_id": "NFR-017",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-004",
+      "title": "UPS module makes no privileged-helper call",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "fake privileged helper that records any invocation"
+      ],
+      "given": "a recording stub replaces the privileged helper",
+      "when": "the UPS module runs a full poll+render cycle",
+      "then": "the helper records zero invocations from the UPS code path",
+      "steps": [
+        "Install recording helper",
+        "Run cycle",
+        "Assert 0 calls"
+      ],
+      "expected_result": "privileged helper invocation count from UPS path == 0",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-040h",
+      "requirement_id": "NFR-018",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-002",
+      "title": "UPS package references no shutdown/load.off command",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "static assertion test over the compiled Client interface + package"
+      ],
+      "given": "the internal/ups package and its Client interface",
+      "when": "the Client interface method set is inspected and the package command constants are enumerated",
+      "then": "there is no write/SET/INSTCMD method and no 'shutdown', 'load.off' or 'INSTCMD' command constant anywhere in the package",
+      "steps": [
+        "Reflect Client methods",
+        "Enumerate command constants",
+        "Assert none forbidden"
+      ],
+      "expected_result": "Client has only read methods (List/Close); zero occurrences of shutdown/load.off/INSTCMD/SET commands",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-041e",
+      "requirement_id": "NFR-018",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-004",
+      "title": "Even under mock, no write command is emitted across all states",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "recording mock upsd, driven through every state"
+      ],
+      "given": "the mock is cycled through OL, OB, LB, RB, BYPASS, OFF, ALARM, unreachable",
+      "when": "the poller runs against each state",
+      "then": "the recorded command log across all states contains only read commands",
+      "steps": [
+        "Cycle all states",
+        "Inspect command log",
+        "Assert read-only"
+      ],
+      "expected_result": "command log across 8 states has 0 SET/INSTCMD/shutdown/load.off lines",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-042f",
+      "requirement_id": "NFR-018",
+      "user_story_id": "US-023",
+      "ac_id": "AC-023-002",
+      "title": "Shutdown-config render path issues no command",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "recording mock; render the shutdown block"
+      ],
+      "given": "the shutdown-config block is rendered from a snapshot",
+      "when": "the render path executes",
+      "then": "no NUT command is sent during render (render reads snapshot fields only) — zero SET/INSTCMD",
+      "steps": [
+        "Render shutdown block",
+        "Assert no NUT command sent"
+      ],
+      "expected_result": "0 NUT commands issued during shutdown-block render",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-043h",
+      "requirement_id": "NFR-019",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-004",
+      "title": "Benign NUT values render correctly (escaping baseline)",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "template render harness"
+      ],
+      "given": "ups.beeper.status='enabled' and status='OL'",
+      "when": "the UPS partial is rendered",
+      "then": "output contains the plain text with no altered characters and no injected markup",
+      "steps": [
+        "Render partial with benign values",
+        "Assert text present"
+      ],
+      "expected_result": "rendered HTML contains 'activado' and 'En red' as text; well-formed",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-044f",
+      "requirement_id": "NFR-019",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-004",
+      "title": "Script-tag NUT value is escaped (XSS vector 1)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "template render harness"
+      ],
+      "given": "a NUT value = \"<script>alert(1)</script>\"",
+      "when": "the partial renders that value",
+      "then": "output contains the escaped form '&lt;script&gt;' and no executable <script> element",
+      "steps": [
+        "Render with script payload",
+        "Assert escaped, no live script"
+      ],
+      "expected_result": "rendered HTML contains '&lt;script&gt;'; contains no '<script>alert(1)</script>' literal",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-045f",
+      "requirement_id": "NFR-019",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-004",
+      "title": "Event-handler attribute injection is neutralized (XSS vector 2)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "template render harness + DOM parse"
+      ],
+      "given": "a NUT value = '\" onmouseover=\"alert(1)'",
+      "when": "the partial renders that value into a text node",
+      "then": "no onmouseover attribute is created on any element",
+      "steps": [
+        "Render with attribute payload",
+        "Parse DOM",
+        "Assert no onmouseover"
+      ],
+      "expected_result": "parsed DOM has 0 elements with an onmouseover attribute",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-046f",
+      "requirement_id": "NFR-019",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-004",
+      "title": "NUT credential never appears in logs or rendered output (secret handling, vector 3)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "capture stdout/stderr and rendered HTML during a poll+render cycle"
+      ],
+      "given": "ULTRON_NUT_PASS='s3cr3t-nut-pass' is configured",
+      "when": "a poll + card render cycle runs and logs are captured",
+      "then": "the string 's3cr3t-nut-pass' appears in neither the logs nor the rendered HTML",
+      "steps": [
+        "Set password",
+        "Run cycle capturing logs+html",
+        "grep for secret"
+      ],
+      "expected_result": "occurrences of 's3cr3t-nut-pass' in logs==0 and in rendered HTML==0",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-047h",
+      "requirement_id": "NFR-020",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-003",
+      "title": "Reconnect logging is bounded while UPS stays down",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "log capture; upsd down for many poll cycles"
+      ],
+      "given": "upsd is down for 100 poll cycles",
+      "when": "the poller keeps trying and logs are captured",
+      "then": "the number of reconnect/unreachable log lines is bounded (logged on transition/backoff, not one per poll) — far fewer than 100",
+      "steps": [
+        "Down for 100 polls",
+        "Capture logs",
+        "Assert bounded count"
+      ],
+      "expected_result": "reconnect-related log lines < 20 for 100 down-polls (no per-poll flood)",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-048e",
+      "requirement_id": "NFR-020",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-003",
+      "title": "Recovery is logged exactly once",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "log capture; upsd down then back up"
+      ],
+      "given": "upsd is down for several cycles then becomes reachable",
+      "when": "the poller reconnects successfully",
+      "then": "exactly one 'recovered/reachable' log line is emitted",
+      "steps": [
+        "Down then up",
+        "Capture logs",
+        "Assert single recovery line"
+      ],
+      "expected_result": "recovery log line count == 1",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-049f",
+      "requirement_id": "NFR-020",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-003",
+      "title": "Log lines carry a timestamp (no bare messages)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "low",
+      "preconditions": [
+        "log capture during an unreachable transition"
+      ],
+      "given": "the UPS transitions to unreachable",
+      "when": "the transition log line is captured",
+      "then": "the line includes a timestamp and the ups context; it is not a bare 'error' with no context",
+      "steps": [
+        "Trigger transition",
+        "Capture line",
+        "Assert timestamp + context"
+      ],
+      "expected_result": "log line matches a timestamped format and contains 'ups'; not equal to a bare 'error'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-050h",
+      "requirement_id": "NFR-021",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "CI workflow runs internal/ups tests",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [
+        "read the CI workflow file"
+      ],
+      "given": "the CI workflow YAML for the repo",
+      "when": "the test step command is inspected",
+      "then": "it invokes the Go test suite covering ./internal/ups/... (e.g. 'go test ./...' or an explicit ./internal/ups/...)",
+      "steps": [
+        "Open workflow",
+        "Assert test command includes internal/ups coverage"
+      ],
+      "expected_result": "workflow test step runs 'go test ./...' (or ./internal/ups/...) on push to main",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-051e",
+      "requirement_id": "NFR-021",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Parser+state map suite is table-driven over all documented flags",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [
+        "ParseStatus test table"
+      ],
+      "given": "the documented ups.status tokens OL, OB, LB, 'OL CHRG', RB, OFF, BYPASS, ALARM and compound 'OB LB'",
+      "when": "ParseStatus is run over the full table",
+      "then": "each maps to the expected State with LB dominating in the compound case",
+      "steps": [
+        "Run table",
+        "Assert each mapping",
+        "Assert 'OB LB'→lowbatt"
+      ],
+      "expected_result": "all 9 rows map to expected State; ParseStatus('OB LB')==StateLowBatt",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-052f",
+      "requirement_id": "NFR-021",
+      "user_story_id": "US-016",
+      "ac_id": "AC-016-001",
+      "title": "Failing internal/ups test fails the pipeline",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "mutation: invert ParseStatus LB precedence"
+      ],
+      "given": "a deliberately broken ParseStatus (LB precedence removed)",
+      "when": "go test ./internal/ups/... runs",
+      "then": "the suite fails with a non-zero exit code (the gate would block)",
+      "steps": [
+        "Apply mutation locally",
+        "Run go test",
+        "Assert non-zero exit",
+        "Revert"
+      ],
+      "expected_result": "go test exits non-zero; TC-UPS-NFR021-2e assertion fails under the mutation",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-053h",
+      "requirement_id": "NFR-022",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-001",
+      "title": "Mock mode renders the real card locally with dummy data",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "app run locally with ULTRON_UPS_MOCK=OL and no physical UPS"
+      ],
+      "given": "the app runs with ULTRON_UPS_MOCK=OL and no real upsd",
+      "when": "the dashboard is opened (test 'TC-UPS-NFR022-1h: local mock render')",
+      "then": "the real UPS card renders 'En red' driven by mock data, with no real UPS present and no deploy",
+      "steps": [
+        "make run with mock=OL",
+        "Open dashboard",
+        "Assert card renders from mock"
+      ],
+      "expected_result": "#ups-card shows 'En red' with mock values; no connection to a real UPS was made",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-054f",
+      "requirement_id": "NFR-022",
+      "user_story_id": "US-024",
+      "ac_id": "AC-024-003",
+      "title": "Mock is off by default (never in prod)",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [
+        "boot without ULTRON_UPS_MOCK set, ULTRON_UPS_ENABLED=true"
+      ],
+      "given": "ULTRON_UPS_MOCK is unset (production default) and the module is enabled",
+      "when": "the app boots",
+      "then": "the poller connects only to the real read-only NUT endpoint and no mock data source is instantiated",
+      "steps": [
+        "Boot without mock",
+        "Assert real client used",
+        "Assert no mock instance"
+      ],
+      "expected_result": "client type is the real TCP client; mock instantiation count == 0",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-055e",
+      "requirement_id": "NFR-022",
+      "user_story_id": "US-017",
+      "ac_id": "AC-017-002",
+      "title": "Mock mode drives the card through each state on demand",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "app run locally with ULTRON_UPS_MOCK cycling states, no physical UPS"
+      ],
+      "given": "the app runs with ULTRON_UPS_MOCK=1 (cycles OL→OB→LB→unreachable) and no real upsd",
+      "when": "the mock advances through each state and the card re-renders (test 'TC-UPS-055e: mock state cycle')",
+      "then": "the card shows in turn 'En red', 'En batería', 'Batería baja' and 'Sin datos' — every state is reachable locally without a real UPS or a deploy",
+      "steps": [
+        "Start app with mock cycle",
+        "Observe card across the cycle",
+        "Assert each of the 4 state labels appears"
+      ],
+      "expected_result": "#ups-card text passes through 'En red' → 'En batería' → 'Batería baja' → 'Sin datos' across the mock cycle",
+      "test_data": {}
+    },
+    {
+      "id": "TC-UPS-056f",
+      "requirement_id": "FR-021",
+      "user_story_id": "US-021",
+      "ac_id": "AC-021-004",
+      "title": "Persistent RB condition warns at most once per day",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [
+        "alerter with an injected clock"
+      ],
+      "given": "the UPS reports RB (replace battery) continuously across many polls within one day",
+      "when": "the alerter observes the RB state repeatedly",
+      "then": "exactly one 'Reemplazar batería' Warning is emitted within the 24h window; a second is allowed only after 24h",
+      "steps": [
+        "Observe RB",
+        "Observe RB again same day",
+        "Assert exactly 1 warning",
+        "Advance 25h and observe RB",
+        "Assert a 2nd warning"
+      ],
+      "expected_result": "1 RB warning per 24h window; a 2nd only after 24h elapse",
+      "test_data": {}
+    }
+  ]
+}

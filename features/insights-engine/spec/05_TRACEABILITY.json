@@ -1,7 +1,13 @@
 {
   "project": "Ultron-AP — Insights Engine (feature)",
   "version": "1.0.0",
-  "phases_completed": [1, 2, 3, 4, 5],
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
   "overall_status": "partial",
   "deployment_target": "Raspberry Pi via systemd (parent monolith). No Dockerfile or container artefacts — see DEPLOYMENT.md and the project-level rejection history (2026-03-18) for the deliberate decision against containerised deployment.",
   "requirement_compliance": [
@@ -15,13 +21,13 @@
       "id": "FR-040",
       "title": "Rule schema (id, title, condition, severity, verdict, recommendation, links)",
       "level": "production_ready",
-      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. Strict JSON-schema decoder at internal/insights/rules/rules.go enforces every required field; severity bound to {info,warn,critical} via SQLite CHECK constraint and Go validator. TC-IE-002h (well-formed loads), TC-IE-002f (missing required field rejected), TC-IE-002e (invalid severity rejected) all green. Zero declared technical debt for this FR."
+      "evidence": "fr_coverage: 4 passing, 0 failing, 0 skipped. Strict JSON-schema decoder at internal/insights/rules/rules.go enforces every required field; severity bound to {info,warn,critical} via SQLite CHECK constraint and Go validator. TC-IE-002h (well-formed loads), TC-IE-002f (missing required field rejected), TC-IE-002e (invalid severity rejected) all green. Zero declared technical debt for this FR. TC-IE-013f added for AC-040-003: duplicate rule ids: the first occurrence loads and the second is logged as duplicate-rule-id, isolated from the unrelated rejections TC-IE-002e bundles. No production code changed — the behaviour already existed and was untested."
     },
     {
       "id": "FR-041",
       "title": "Boolean condition language with sustained-window operators",
       "level": "partial",
-      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. internal/insights/lang implements the JSON expression grammar (var/const/eq/ne/gt/gte/lt/lte/and/or/not/sustained). Missing var → false + log-once is enforced at AST-eval time. TC-IE-003h/f/e all green. Technical debt: swap_pct, lan_device_offline_count, and loss_pct telemetry variables are not yet projected from any existing collector — the SSE adapter only populates cpu_pct, ram_pct, temp_c, disk_root_pct, services_failed, containers_failed, wan_gateway_ok, wan_cloudflare_ok. Memory-pressure / sustained-packet-loss / lan-empty rules degrade gracefully (never fire) per AC-002 until those vars are wired."
+      "evidence": "fr_coverage: 4 passing, 0 failing, 0 skipped. internal/insights/lang implements the JSON expression grammar (var/const/eq/ne/gt/gte/lt/lte/and/or/not/sustained). Missing var → false + log-once is enforced at AST-eval time. TC-IE-003h/f/e all green. Technical debt: swap_pct, lan_device_offline_count, and loss_pct telemetry variables are not yet projected from any existing collector — the SSE adapter only populates cpu_pct, ram_pct, temp_c, disk_root_pct, services_failed, containers_failed, wan_gateway_ok, wan_cloudflare_ok. Memory-pressure / sustained-packet-loss / lan-empty rules degrade gracefully (never fire) per AC-002 until those vars are wired. TC-IE-014f added for AC-041-003: a condition over an absent variable resolves false rather than erroring, emitting one skipped-missing-var line per process. No production code changed — the behaviour already existed and was untested."
     },
     {
       "id": "FR-042",
@@ -39,25 +45,25 @@
       "id": "FR-044",
       "title": "Dashboard 'Operational indicators' section rendering",
       "level": "partial",
-      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. web/templates/partials/sse-verdicts.html renders the live fragment with severity-ordered cards and an empty-state line ('All operational indicators clear'). TC-IE-006h/f/e all green via HTTP-fragment integration tests. Technical debt declared: no headless-browser DOM tests (project has no chromedp/Playwright); axe-core contrast scan deferred (NFR-020) — same reason."
+      "evidence": "fr_coverage: 4 passing, 0 failing, 0 skipped. web/templates/partials/sse-verdicts.html renders the live fragment with severity-ordered cards and an empty-state line ('All operational indicators clear'). TC-IE-006h/f/e all green via HTTP-fragment integration tests. Technical debt declared: no headless-browser DOM tests (project has no chromedp/Playwright); axe-core contrast scan deferred (NFR-020) — same reason. TC-IE-015h added for AC-044-002: within a severity, verdicts order by first_emitted_at descending — asserted over 20 reads because Active() ranges a map, so a dropped tie-break would still order correctly on roughly half of single reads. No production code changed — the behaviour already existed and was untested."
     },
     {
       "id": "FR-045",
       "title": "Rule enable/disable persistence in SQLite",
       "level": "production_ready",
-      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. internal/insights/store/store.go owns reads/writes for the rules table; LoadBundled upserts on first boot and preserves user-modified enabled flags on subsequent boots. No delete API for bundled rules in v1 (only disable). TC-IE-007h (fresh DB seeds 10), TC-IE-007f (disable survives re-open), TC-IE-007e (schema idempotent). Zero declared technical debt for this FR."
+      "evidence": "fr_coverage: 4 passing, 0 failing, 0 skipped. internal/insights/store/store.go owns reads/writes for the rules table; LoadBundled upserts on first boot and preserves user-modified enabled flags on subsequent boots. No delete API for bundled rules in v1 (only disable). TC-IE-007h (fresh DB seeds 10), TC-IE-007f (disable survives re-open), TC-IE-007e (schema idempotent). Zero declared technical debt for this FR. TC-IE-016f added for AC-045-003: an orphan RuleState row survives, does not fail startup, and never reaches evaluation, while a real rule still fires alongside it. No production code changed — the behaviour already existed and was untested."
     },
     {
       "id": "FR-046",
       "title": "Verdict de-duplication / hysteresis (SHOULD)",
       "level": "production_ready",
-      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. Hysteresis algorithm: rule_state.transitions_in_window counts state changes inside a sliding 10 s window; if ≥5, the engine holds the last stable value until the window clears. TC-IE-008h (5+ transitions in 10 s → hold), TC-IE-008f (clean run → no hold), TC-IE-008e (state survives one tick miss). Zero declared technical debt."
+      "evidence": "fr_coverage: 4 passing, 0 failing, 0 skipped. Hysteresis algorithm: rule_state.transitions_in_window counts state changes inside a sliding 10 s window; if ≥5, the engine holds the last stable value until the window clears. TC-IE-008h (5+ transitions in 10 s → hold), TC-IE-008f (clean run → no hold), TC-IE-008e (state survives one tick miss). Zero declared technical debt. TC-IE-017f added for AC-046-002: the rule-flapping line is emitted once per window carrying rule_id and transition_count, with the count matching the FlapThreshold crossing that engaged the hold. No production code changed — the behaviour already existed and was untested."
     },
     {
       "id": "FR-047",
       "title": "Bootstrap rule set v1 — 10 hand-curated rules",
       "level": "partial",
-      "evidence": "fr_coverage: 3 passing, 0 failing, 0 skipped. internal/insights/rules/bundled.json ships exactly 10 rules covering thermal, memory pressure, WAN/LAN disambiguation, disk near-full, disk critical, container/service failed, sustained packet loss, temp warning, LAN empty. TC-IE-009h (thermal-throttling AC), TC-IE-009f (WAN-down-isp AC), TC-IE-009e (1-hour idle Pi → zero verdicts). Technical debt: severity distribution differs from spec example (3 critical / 5 warn / 2 info vs example 5/4/1) — operationally appropriate; FR-047 AC-006 only requires each rule to have an assigned severity, not a specific count."
+      "evidence": "fr_coverage: 4 passing, 0 failing, 0 skipped. internal/insights/rules/bundled.json ships exactly 10 rules covering thermal, memory pressure, WAN/LAN disambiguation, disk near-full, disk critical, container/service failed, sustained packet loss, temp warning, LAN empty. TC-IE-009h (thermal-throttling AC), TC-IE-009f (WAN-down-isp AC), TC-IE-009e (1-hour idle Pi → zero verdicts). Technical debt: severity distribution differs from spec example (3 critical / 5 warn / 2 info vs example 5/4/1) — operationally appropriate; FR-047 AC-006 only requires each rule to have an assigned severity, not a specific count. TC-IE-018h added for AC-047-004: wan_gateway_ok true with wan_cloudflare_ok false held over two consecutive ticks yields the WAN/LAN verdict at severity warn. No production code changed — the behaviour already existed and was untested."
     },
     {
       "id": "NFR-016",
@@ -132,6 +138,11 @@
       "substitution": "swap_pct, lan_device_offline_count, and loss_pct telemetry variables are not yet projected from any existing collector — the SSE adapter (server/sse.go::evalInsightsTick) only populates cpu_pct, ram_pct, temp_c, disk_root_pct, services_failed, containers_failed, wan_gateway_ok, wan_cloudflare_ok. The memory_pressure / sustained_packet_loss / lan_offline_burst rules therefore stay quiet in production until those variables are wired. FR-041 AC-002 — 'missing var resolves to false, never error' — is preserved by the lang package; the rules degrade gracefully.",
       "reason": "Bringing in the WAN packet-loss and LAN-devices feeds is a separate integration step. The rule definitions ship now; the dashboard surface ships now; the data-source wiring is incremental and does not require a v2 binary.",
       "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-041",
+      "substitution": "AC-041-003 names the variable 'lan_device_count'; bundled.json and buildEvalCtx both call it 'lan_device_offline_count'. TC-IE-014f asserts against the name the code actually uses.",
+      "reason": "The behaviour under test — a condition over an absent variable resolving false and logging skipped-missing-var once — is identical either way. Renaming the variable to match the AC would touch the shipped rule set for a wording difference; correcting the AC belongs in a requirements pass, not in a test-coverage change."
     }
   ]
 }

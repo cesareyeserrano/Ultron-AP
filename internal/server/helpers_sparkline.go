@@ -76,6 +76,19 @@ func sparkCurrent(values []float64) float64 {
 	return values[len(values)-1]
 }
 
+// sparkAvg returns the arithmetic mean of the series (0 when empty) — the
+// "avg" figure the latency-style history tiles show.
+func sparkAvg(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range values {
+		sum += v
+	}
+	return sum / float64(len(values))
+}
+
 func sparkMid(values []float64) float64 {
 	if len(values) == 0 {
 		return 0

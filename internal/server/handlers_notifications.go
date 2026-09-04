@@ -6,6 +6,7 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -86,6 +87,10 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 		if v := r.FormValue("chat_id"); v != "" {
 			config["chat_id"] = v
 		}
+		// FR-079: the mute chip-preset submits with this form.
+		if !s.applyMuteFromForm(w, r) {
+			return
+		}
 	case "email":
 		config["smtp_host"] = r.FormValue("smtp_host")
 		config["smtp_port"] = r.FormValue("smtp_port")
@@ -95,6 +100,18 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 		}
 		config["from"] = r.FormValue("from")
 		config["to"] = r.FormValue("to")
+
+		// FR-080: the digest is an email-channel setting, saved by this form.
+		// Standard HTML checkbox semantics — an omitted toggle means off.
+		config["digest_enabled"] = strconv.FormatBool(r.FormValue("digest_enabled") == "on")
+		if v := r.FormValue("digest_hour"); v != "" {
+			hour, err := strconv.Atoi(v)
+			if err != nil || hour < 0 || hour > 23 {
+				http.Error(w, "digest hour must be between 0 and 23", http.StatusBadRequest)
+				return
+			}
+			config["digest_hour"] = strconv.Itoa(hour)
+		}
 	}
 
 	configJSON, _ := json.Marshal(config)
@@ -107,12 +124,12 @@ func (s *Server) handleNotificationSave(w http.ResponseWriter, r *http.Request) 
 
 	if err := s.db.UpsertNotificationConfig(nc); err != nil {
 		log.Printf("settings: failed to save %s config: %v", channel, err)
-		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "Failed to save %s config", "type": "error"}}`, channel))
+		setToast(w, "Failed to save "+channel+" config", "error")
 		http.Error(w, "Failed to save config", http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast": {"message": "%s notifications updated", "type": "success"}}`, strings.Title(channel)))
+	setToast(w, strings.Title(channel)+" notifications updated", "success")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(`<div class="text-sm text-green-400 py-2 flex items-center gap-2">` +
 		`<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>` +

@@ -14,6 +14,7 @@ import (
 
 	"github.com/cesareyeserrano/ultron-ap/internal/config"
 	"github.com/cesareyeserrano/ultron-ap/internal/database"
+	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
 )
 
 func setupSSETestServer(t *testing.T) (*Server, *database.Session) {
@@ -298,4 +299,83 @@ func TestChartWindowIsPerClient(t *testing.T) {
 	w, p = empty.chart()
 	assert.Equal(t, "5m", w)
 	assert.Equal(t, 60, p)
+}
+
+// BG-074 — the insights tick used to key on a probe label ("cloudflare") that no
+// default target carries, so wan_cloudflare_ok was never set and loss_pct was
+// never published: two bundled rules could never fire. The flags are now derived
+// structurally from the probe list.
+func TestInsightsVars_WANFlagsAndLossFromDefaultProbeLabels(t *testing.T) {
+	dd := DashboardData{Network: []*gatewayprobe.Snapshot{
+		{Label: "gateway", Status: "ok", LossPct: 0},
+		{Label: "1.1.1.1", Status: "timeout", LossPct: 25},
+		{Label: "8.8.8.8", Status: "ok", LossPct: 5},
+		{Label: "dns", Status: "ok", LossPct: 0},
+	}}
+
+	vars := insightsNetworkVars(dd)
+
+	require.Contains(t, vars, "wan_gateway_ok")
+	assert.Equal(t, 1.0, vars["wan_gateway_ok"], "the gateway answered")
+
+	require.Contains(t, vars, "wan_cloudflare_ok",
+		"the internet-reachable flag must be set with the DEFAULT labels — no target is named 'cloudflare'")
+	assert.Equal(t, 1.0, vars["wan_cloudflare_ok"], "8.8.8.8 answered, so the internet is reachable")
+
+	require.Contains(t, vars, "loss_pct")
+	assert.Equal(t, 25.0, vars["loss_pct"], "loss_pct is the worst loss across the probes")
+}
+
+// The internet flag must go to 0 when EVERY off-box probe fails, while the
+// gateway still answers — that is exactly the "LAN fine, WAN dead" case the
+// wan_lan_disambig rule exists to catch.
+func TestInsightsVars_InternetDownButGatewayUp(t *testing.T) {
+	dd := DashboardData{Network: []*gatewayprobe.Snapshot{
+		{Label: "gateway", Status: "ok"},
+		{Label: "1.1.1.1", Status: "timeout", LossPct: 100},
+		{Label: "8.8.8.8", Status: "timeout", LossPct: 100},
+	}}
+
+	vars := insightsNetworkVars(dd)
+
+	assert.Equal(t, 1.0, vars["wan_gateway_ok"])
+	assert.Equal(t, 0.0, vars["wan_cloudflare_ok"], "no off-box target answered")
+	assert.Equal(t, 100.0, vars["loss_pct"])
+}
+
+// BG-075 — an SSE stream only ends when the browser disconnects, so
+// http.Server.Shutdown used to wait out its full 10s deadline with a dashboard
+// tab open, exit 1, and leave systemd recording a failed unit on every restart.
+// Shutdown now releases the streams first.
+func TestShutdown_ReleasesSSEStreamsInsteadOfTimingOut(t *testing.T) {
+	srv, session := setupSSETestServer(t)
+
+	// A live SSE client, exactly as a dashboard tab would be.
+	req := httptest.NewRequest(http.MethodGet, "/api/sse/dashboard", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})
+	rec := httptest.NewRecorder()
+
+	handlerDone := make(chan struct{})
+	go func() {
+		srv.httpServer.Handler.ServeHTTP(rec, req)
+		close(handlerDone)
+	}()
+
+	// Let the handler register and write its initial payload.
+	require.Eventually(t, func() bool {
+		srv.sseBroker.mu.RLock()
+		defer srv.sseBroker.mu.RUnlock()
+		return len(srv.sseBroker.clients) > 0
+	}, 2*time.Second, 20*time.Millisecond, "the SSE client must register")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	require.NoError(t, srv.Shutdown(ctx), "shutdown must not hit its deadline")
+
+	select {
+	case <-handlerDone:
+		// The stream let go — this is the whole fix.
+	case <-time.After(3 * time.Second):
+		t.Fatal("the SSE handler never returned: Shutdown would hang until its deadline, exit 1, and systemd would mark the unit failed")
+	}
 }

@@ -203,7 +203,26 @@ func formatEmailBody(alert *database.Alert) string {
 // text/plain message identical to the old format.
 //
 // @aitri-trace FR-027 AC-027-002
+// sanitizeHeader strips CR/LF and other control characters (except tab) from an
+// email header value to prevent header injection (B4). From/To/Subject come
+// from operator settings and alert content; a value containing "\r\n" could
+// otherwise smuggle extra headers such as Bcc: into the message.
+func sanitizeHeader(v string) string {
+	return strings.Map(func(r rune) rune {
+		if r == '\r' || r == '\n' {
+			return -1
+		}
+		if r < 0x20 && r != '\t' {
+			return -1
+		}
+		return r
+	}, v)
+}
+
 func buildMIMEMessage(from, to, subject, plain, html string) []byte {
+	from = sanitizeHeader(from)
+	to = sanitizeHeader(to)
+	subject = sanitizeHeader(subject)
 	if html == "" {
 		// Backwards-compat: plain-only message.
 		var b strings.Builder
@@ -241,4 +260,21 @@ func buildMIMEMessage(from, to, subject, plain, html string) []byte {
 	b.WriteString("\r\n")
 	b.WriteString(fmt.Sprintf("--%s--\r\n", boundary))
 	return []byte(b.String())
+}
+
+// SendDigest sends the FR-080 daily digest. It reuses the same MIME builder,
+// header sanitisation and context-aware SMTP path as an alert email — the
+// digest is the same channel with a different body, not a second mail stack.
+func (e *EmailSender) SendDigest(ctx context.Context, subject, plain, htmlBody string) error {
+	if e.host == "" || e.from == "" || e.to == "" {
+		return fmt.Errorf("email not configured")
+	}
+
+	msg := buildMIMEMessage(e.from, e.to, subject, plain, htmlBody)
+	addr := net.JoinHostPort(e.host, e.port)
+	var auth smtp.Auth
+	if e.user != "" && e.password != "" {
+		auth = smtp.PlainAuth("", e.user, e.password, e.host)
+	}
+	return e.sendMail(ctx, addr, auth, e.from, []string{e.to}, msg)
 }

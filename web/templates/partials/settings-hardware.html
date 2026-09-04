@@ -1,0 +1,52 @@
+{{define "settings-hardware"}}            <section id="settings-hardware" data-settings-section data-section="hardware" class="panel-soft panel-glow p-4 md:p-5 space-y-3 border border-border/40">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm md:text-[1rem] font-semibold text-text">Hardware</h3>
+                    </div>
+                    <span data-form-state-host="hardware"></span>
+                </div>
+                <p class="text-xs text-text-muted">Ultron stores these settings; it does not drive the fan or OLED panel yet.</p>
+
+                <form hx-post="/api/settings/hardware" hx-target="#hardware-status" hx-swap="innerHTML" data-status-target="#hardware-status" data-saving-label="Saving hardware settings..." data-settings-form="hardware" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+                    <div>
+                        <label class="text-[11px] text-text-muted">Fan mode</label>
+                        <div data-widget="segmented" data-field="fan_mode" role="radiogroup" aria-label="Fan mode" class="mt-1 grid grid-cols-2 sm:grid-cols-4 gap-0 rounded-lg overflow-hidden border border-border">
+                            <button type="button" role="radio" data-value="auto" data-active="{{if eq .Content.Hardware.FanMode "auto"}}true{{else}}false{{end}}" aria-checked="{{if eq .Content.Hardware.FanMode "auto"}}true{{else}}false{{end}}" class="px-2 py-2 min-h-[44px] text-xs font-medium text-text-muted border-r border-border data-[active=true]:bg-accent/30 data-[active=true]:text-accent">Auto</button>
+                            <button type="button" role="radio" data-value="quiet" data-active="{{if eq .Content.Hardware.FanMode "quiet"}}true{{else}}false{{end}}" aria-checked="{{if eq .Content.Hardware.FanMode "quiet"}}true{{else}}false{{end}}" class="px-2 py-2 min-h-[44px] text-xs font-medium text-text-muted border-r border-border data-[active=true]:bg-accent/30 data-[active=true]:text-accent">Quiet</button>
+                            <button type="button" role="radio" data-value="performance" data-active="{{if eq .Content.Hardware.FanMode "performance"}}true{{else}}false{{end}}" aria-checked="{{if eq .Content.Hardware.FanMode "performance"}}true{{else}}false{{end}}" class="px-2 py-2 min-h-[44px] text-xs font-medium text-text-muted border-r border-border data-[active=true]:bg-accent/30 data-[active=true]:text-accent">Performance</button>
+                            <button type="button" role="radio" data-value="off" data-active="{{if eq .Content.Hardware.FanMode "off"}}true{{else}}false{{end}}" aria-checked="{{if eq .Content.Hardware.FanMode "off"}}true{{else}}false{{end}}" class="px-2 py-2 min-h-[44px] text-xs font-medium text-text-muted data-[active=true]:bg-accent/30 data-[active=true]:text-accent">Off</button>
+                            <input type="hidden" name="fan_mode" value="{{.Content.Hardware.FanMode}}">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label data-widget="toggle" data-field="oled_enabled" data-state="{{if .Content.Hardware.OLEDEnabled}}on{{else}}off{{end}}" class="flex items-center gap-2 text-xs text-text cursor-pointer min-h-[44px]">
+                            <span data-toggle-track class="relative inline-block w-10 h-6 rounded-full bg-card border border-border transition-colors data-[state=on]:bg-accent/40 data-[state=on]:border-accent" data-state="{{if .Content.Hardware.OLEDEnabled}}on{{else}}off{{end}}">
+                                <span data-toggle-thumb class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-text-muted transition-all data-[state=on]:bg-accent data-[state=on]:left-[18px]" data-state="{{if .Content.Hardware.OLEDEnabled}}on{{else}}off{{end}}"></span>
+                            </span>
+                            <input type="checkbox" name="oled_enabled" data-toggle-input {{if .Content.Hardware.OLEDEnabled}}checked{{end}} class="sr-only" aria-label="OLED display enabled">
+                            <span data-toggle-label>OLED display</span>
+                        </label>
+
+                        <div>
+                            <label class="text-[11px] text-text-muted">OLED metric</label>
+                            <div data-widget="segmented" data-field="oled_metric" role="radiogroup" aria-label="OLED metric" class="mt-1 grid grid-cols-4 gap-0 rounded-lg overflow-hidden border border-border">
+                                <button type="button" role="radio" data-value="cpu" data-active="{{if eq .Content.Hardware.OLEDMetric "cpu"}}true{{else}}false{{end}}" aria-checked="{{if eq .Content.Hardware.OLEDMetric "cpu"}}true{{else}}false{{end}}" class="px-2 py-2 min-h-[44px] text-xs font-medium text-text-muted border-r border-border data-[active=true]:bg-accent/30 data-[active=true]:text-accent">CPU</button>
+                                <button type="button" role="radio" data-value="ram" data-active="{{if eq .Content.Hardware.OLEDMetric "ram"}}true{{else}}false{{end}}" aria-checked="{{if eq .Content.Hardware.OLEDMetric "ram"}}true{{else}}false{{end}}" class="px-2 py-2 min-h-[44px] text-xs font-medium text-text-muted border-r border-border data-[active=true]:bg-accent/30 data-[active=true]:text-accent">RAM</button>
+                                <button type="button" role="radio" data-value="temp" data-active="{{if eq .Content.Hardware.OLEDMetric "temp"}}true{{else}}false{{end}}" aria-checked="{{if eq .Content.Hardware.OLEDMetric "temp"}}true{{else}}false{{end}}" class="px-2 py-2 min-h-[44px] text-xs font-medium text-text-muted border-r border-border data-[active=true]:bg-accent/30 data-[active=true]:text-accent">Temp</button>
+                                <button type="button" role="radio" data-value="ip" data-active="{{if eq .Content.Hardware.OLEDMetric "ip"}}true{{else}}false{{end}}" aria-checked="{{if eq .Content.Hardware.OLEDMetric "ip"}}true{{else}}false{{end}}" class="px-2 py-2 min-h-[44px] text-xs font-medium text-text-muted data-[active=true]:bg-accent/30 data-[active=true]:text-accent">IP</button>
+                                <input type="hidden" name="oled_metric" value="{{.Content.Hardware.OLEDMetric}}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-end gap-2">
+                        <button type="submit" data-primary-save class="min-h-[44px] px-3 py-1.5 text-xs bg-accent text-base rounded hover:opacity-90 transition-opacity">Save Hardware</button>
+                        <button type="button" data-form-reset class="hidden min-h-[44px] px-3 py-1.5 text-xs border border-border text-text-muted rounded hover:bg-card transition-colors">Revert</button>
+                    </div>
+                </form>
+                <div id="hardware-status" class="min-h-[2rem]" aria-live="polite"></div>
+            </section>
+{{end}}

@@ -11,8 +11,12 @@ type RingBuffer struct {
 	count    int
 }
 
-// NewRingBuffer creates a ring buffer with the given capacity.
+// NewRingBuffer creates a ring buffer with the given capacity. Capacity is
+// clamped to a minimum of 1 so Add/Latest can never divide by zero (B13).
 func NewRingBuffer(capacity int) *RingBuffer {
+	if capacity < 1 {
+		capacity = 1
+	}
 	return &RingBuffer{
 		data:     make([]Snapshot, capacity),
 		capacity: capacity,

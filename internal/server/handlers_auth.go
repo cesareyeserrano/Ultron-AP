@@ -15,8 +15,9 @@ import (
 )
 
 type loginPageData struct {
-	Error     string
-	CSRFToken string
+	Error        string
+	CSRFToken    string
+	AssetVersion string
 }
 
 // dummyBcryptHash is a well-formed cost-10 bcrypt hash used for the
@@ -162,6 +163,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) renderLogin(w http.ResponseWriter, data loginPageData) {
+	data.AssetVersion = s.assetVersion
 	tmpl, ok := s.tmplCache["login.html"]
 	if !ok {
 		log.Printf("render: login.html not in cache")

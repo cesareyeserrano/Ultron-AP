@@ -12,7 +12,7 @@
     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
     <!-- Container List -->
-    <div id="docker-list">
+    <div id="docker-list" hx-get="/docker" hx-trigger="every 10s" hx-select="#docker-list" hx-swap="outerHTML">
         {{template "partials/docker-list.html" .Content.Containers}}
     </div>
 </div>

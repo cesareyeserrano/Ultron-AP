@@ -288,6 +288,97 @@
       "status": "closed",
       "createdAt": "2026-06-15T22:20:48.652Z",
       "closedAt": "2026-06-15T23:31:47.571Z"
+    },
+    {
+      "id": "BL-033",
+      "title": "Cover 41 untested ACs from main pipeline (verify-complete gate, blocks reconcile --resolve since rc.173+)",
+      "priority": "P2",
+      "problem": "aitri verify-complete now hard-gates on AC coverage: 41 acceptance criteria in user_stories have no TC tracing via ac_id (pre-existing debt from the original pipeline; suite itself passes 45/45 TCs). Until covered, the maintenance-path reconcile --resolve cannot advance the baseline.",
+      "status": "closed",
+      "createdAt": "2026-07-12T19:02:53.615Z",
+      "closedAt": "2026-07-15T00:01:41.144Z"
+    },
+    {
+      "id": "BL-034",
+      "title": "AC-015-004: list prior backups in Settings and download the stored encrypted file",
+      "priority": "P2",
+      "problem": "The only download route (GET /api/settings/backup) generates a FRESH plaintext SQLite snapshot; prior encrypted backups on disk are neither listed nor downloadable. Deferred by the owner on 2026-07-13 ('omite este por ahora') and excluded from the ac-coverage-gaps feature. It is the single remaining untested acceptance criterion — aitri verify-complete will report 1 untested AC until it ships.",
+      "status": "closed",
+      "createdAt": "2026-07-13T17:22:17.035Z",
+      "closedAt": "2026-07-14T14:13:47.541Z"
+    },
+    {
+      "id": "BL-035",
+      "title": "SEC: default deployment ships CSP as Report-Only with script-src 'unsafe-inline' (enforces no XSS protection)",
+      "priority": "P2",
+      "problem": "middleware.go:96-101 sets Content-Security-Policy-Report-Only unless ULTRON_CSP_ENFORCE=1 (default off); script-src also allows 'unsafe-inline'. Even once enforced the CSP would not stop inline-script XSS. Flip to enforcing after the soak and drop 'unsafe-inline' (nonce/hash the inline scripts in base.html). MEDIUM. Found by aitri audit security 2026-07-14 (RQ-SEC-001).",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.135Z"
+    },
+    {
+      "id": "BL-036",
+      "title": "SEC: deploy/ultron-ap.sudoers is a parallel root path that bypasses the helper; pironman5 * grants arbitrary root args",
+      "priority": "P2",
+      "problem": "The sudoers profile grants user ultron NOPASSWD for 'pironman5 *' (trailing wildcard = any args to a root binary the panel never even calls) plus systemctl/shutdown. The Go code never uses sudo — all privilege goes through the validated helper — so if the web process were RCE'd and this file is installed, the attacker sidesteps every cmd/ultron-helper guard. Delete the sudoers file (helper is the sole privilege channel), or replace the pironman5 wildcard with argument-pinned entries. Mitigated: install is a manual step, currently dormant. MEDIUM. RQ-SEC-002.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.210Z"
+    },
+    {
+      "id": "BL-037",
+      "title": "SEC: backup encryption key has no length/entropy floor and uses bare unsalted SHA-256 as KDF",
+      "priority": "P2",
+      "problem": "backup_crypto.go:49-63 backupKeyFromRef does sha256.Sum256(raw) with no salt and no min-length check, while ULTRON_SECRET_KEY (secrets.go:33-46) warns below 16 chars. A weak operator-chosen ULTRON_BACKUP_KEY + a leaked .db.enc (backups upload to Telegram) is offline-brute-forceable. Emit the same <16 warning; ideally a salted KDF (scrypt/argon2, salt in the header). LOW. RQ-SEC-003.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.283Z"
+    },
+    {
+      "id": "BL-038",
+      "title": "SEC: /static/ serves a Go autoindex directory listing (unauth), and a .DS_Store is embedded in the binary",
+      "priority": "P2",
+      "problem": "server.go:572-573 mounts a bare http.FileServer; a dir without index.html gets Go's default autoindex, so GET /static/ and /static/js/ enumerate every file to unauthenticated callers, including a committed .DS_Store (in .gitignore, but go:embed reads the filesystem not git). Wrap the FileServer to 404 on directory paths; delete web/static/.DS_Store before build. LOW. RQ-SEC-004.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.355Z"
+    },
+    {
+      "id": "BL-039",
+      "title": "SEC: internal Aitri traceability IDs (FR-/BG-/AC-) ship in client-facing HTML/JS comments",
+      "priority": "P2",
+      "problem": "base.html:14 (BG-038), settings-backup.html:94 (FR-068), sidebar.js:3 (BG-076), settings.js:2 (FR-065), service-logs.js:1 (FR-081) etc. reach the browser (even /login, unauth). No secrets — only requirement/bug IDs, a minor recon aid. Strip FR-/BG-/AC-/TC- from shipped comments at build time or add a CI grep gate. LOW. RQ-SEC-005.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.429Z"
+    },
+    {
+      "id": "BL-040",
+      "title": "SEC: unauthenticated /version discloses build commit and Go toolchain version",
+      "priority": "P2",
+      "problem": "handlers.go:21 handleVersion (public, server.go:563) returns {version,commit,go:runtime.Version()} with no auth — lets an unauthenticated LAN/Tailscale peer fingerprint the exact build+toolchain for CVE targeting. Move /version behind requireAuth or drop commit/go for anonymous callers; /health stays public+minimal. LOW. RQ-SEC-006.",
+      "status": "open",
+      "createdAt": "2026-07-15T01:39:27.503Z"
+    },
+    {
+      "id": "BL-041",
+      "title": "UPS: cortes cortos invisibles — sondeo de 10 s y debounce de 30 s",
+      "priority": "P2",
+      "problem": "Los cortes de red breves no se detectan. Dos causas independientes: (1) el poller pregunta a upsd cada 10 s (ULTRON_UPS_POLL_SECONDS, config.go:16), asi que un corte de <10 s cae entre dos ticks y no genera alerta, ni evento en el historial de cortes, ni punto en la grafica — persist() abre/cierra eventos solo en transiciones vistas al sondear (poller.go persist). (2) Si el UPS absorbe el bajon con su AVR y nunca pasa a OB, ups.status sigue en OL y la unica senal seria input.voltage, cuya alerta exige 30 s continuos fuera de rango (ULTRON_UPS_DEBOUNCE_SECONDS, alerter.go:124) — un bajon de 3 s nunca alerta. El caso 2 es por diseno (AC-021-003, evitar spam en parpadeos), pero el efecto combinado es que el usuario ve cortes reales en casa y Ultron no los reporta ni los registra. Reportado por el owner 2026-09-04. La alerta de corte en si NO tiene debounce: cuando el corte dura mas de un tick, la latencia es ~10 s + ~2 s del driver NUT, lo cual esta bien.",
+      "status": "open",
+      "createdAt": "2026-09-04T19:20:12.614Z",
+      "fr_id": "FR-016",
+      "files": "internal/ups/poller.go, internal/ups/alerter.go, internal/ups/config.go",
+      "behavior": "Un corte de red de cualquier duracion que el UPS reconozca debe quedar registrado en el historial de cortes y en la grafica, y disparar notificacion segun las reglas de storm/dedup existentes.",
+      "decisions": "Opcion A (parche de config, sin pipeline): bajar ULTRON_UPS_POLL_SECONDS a 2-3 en /etc/ultron-ap/ultron-ap.env. Detecta cortes de >=3 s pero multiplica las muestras: a 2 s son ~1.3M filas/mes vs ~260k hoy, con retencion de 30 dias. No cubre el caso 2. Opcion B (correcta, cambio funcional -> aitri feature init): NUT ya conoce el evento al instante; que upsmon/upssched empuje ONBATT/ONLINE a Ultron en vez de que Ultron sondee. Requiere endpoint de ingesta autenticado y config de NUT en el Pi. Pendiente decision del owner.",
+      "acceptance": "Un corte simulado de 3 s aparece en el historial de cortes y dispara la notificacion correspondiente; el sondeo periodico sigue siendo el fallback si el canal de eventos falla."
+    },
+    {
+      "id": "BL-042",
+      "title": "E2E de navegador: decidir harness o aceptar los ACs como deuda permanente",
+      "priority": "P3",
+      "problem": "79 TCs declarados como type=e2e en todo el proyecto y cero runner de navegador — no hay package.json, ni Playwright, ni chromedp. La mayoria no lo necesita: NUT_UPS (11 e2e), insights-engine (2) y network-tile (2) los resolvieron como tests HTTP en Go con httptest y pasan. Los que si lo necesitan son 7 ACs de help-page (AC-050-002/003, AC-051-002/003, AC-054-002/003, AC-056-002) y ~13 de settings-revamp, porque piden geometria real (boxPlain.y < boxTech.y, solape horizontal >=80%), javaScriptEnabled=false, y la trayectoria del alfa de una animacion :target a los 1500ms. Eso exige un motor de layout, no se simula con httptest. Consecuencia hoy: ambos features estan en 5/5 verde, pero si se re-camina su pipeline por cualquier motivo quedan atascados en 4/5 contra esos ACs. Por eso sus 2 upgrade findings (runner con 'go test -C ../..') se dejaron sin arreglar el 2026-09-04.",
+      "status": "open",
+      "createdAt": "2026-09-04T21:23:25.742Z",
+      "files": ".github/workflows/ci.yml, features/help-page/spec/03_TEST_CASES.json, features/settings-revamp/spec/03_TEST_CASES.json, features/*/spec/04_BUILD_REPORT.json",
+      "behavior": "Cada AC declarado tiene un test que lo ejecuta de verdad, o una decision explicita y fechada de que no se verifica y por que.",
+      "decisions": "Opcion A (aceptar deuda, coste cero): registrar en el 04_BUILD_REPORT.json de help-page y settings-revamp una entrada technical_debt que declare esos ACs como no verificables sin harness, siguiendo el precedente que insights-engine ya tiene documentado para TC-IE-006h/006f/006e. Los 2 upgrade findings se quedan; son falsos positivos verificados del checker, que no modela el flag -C de go test. Opcion B (chromedp): se queda en Go, sin stack JS, sin package.json; anade una dependencia de chromium en CI. Es la mas coherente con este repo. Opcion C (Playwright): mejor API para asertar geometria y alfa computado, pero mete Node y node_modules en un proyecto que hoy no tiene ninguno. Nota: SSH al Pi no es una via — los tests levantan el servidor en proceso, asi que la app bajo prueba es local; apuntar los e2e al binario desplegado probaria el commit equivocado y CI no lo alcanzaria. Por CLAUDE.md, B y C son cambio funcional y van por aitri feature init.",
+      "acceptance": "O bien existe un runner e2e que cubre los ~20 ACs de help-page y settings-revamp y ambos features vuelven a 5/5 tras re-caminar el pipeline; o bien esos ACs estan marcados como deuda aceptada en sus build reports y esta decision queda cerrada por escrito."
     }
   ]
 }
