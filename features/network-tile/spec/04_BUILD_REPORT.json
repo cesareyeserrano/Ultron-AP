@@ -37,9 +37,14 @@
       "substitution": "dashboardLinkState identifies the gateway probe by matching the label 'gateway'. An operator who renames that target via ULTRON_NET_TARGETS would leave the verdict with no gateway clause: a broken LAN would then read 'Unstable' instead of 'Offline'.",
       "reason": "gatewayprobe.Snapshot does not carry the probe's configured Host, so the gateway cannot currently be identified structurally (Host == \"\") from the snapshot alone. Name-matching is what caused BG-074; this is the same class of weakness, contained.",
       "remediation": "Carry the configured Host (or an IsGateway flag) through to gatewayprobe.Snapshot and identify the gateway structurally. That belongs in gatewayprobe, not in the tile. The degradation until then is graceful: the tile still warns, just with a less precise word."
+    },
+    {
+      "fr_id": "FR-086",
+      "substitution": "FR-086 (throughput subtitle + collapsed per-interface disclosure) was retired on 2026-07-14, commit 1a298e6, and its 8 declared test cases removed from 03_TEST_CASES.json. None of those Go functions had ever been written — the spec declared tests for behaviour the owner had already deleted.",
+      "reason": "Writing them would have re-introduced a product behaviour the owner cut deliberately. NFR-089b was re-scoped at the same time: its BG-072 half guarded a virtual-interface filter that went with FR-086, leaving only the BG-073 label-keyed history to protect."
     }
   ],
-  "test_runner": "go test -C ../.. ./internal/server -run TestTC_NT -v",
+  "test_runner": "go test ../../internal/server -run TestTC_NT -v",
   "test_files": [
     "../../internal/server/network_tile_test.go"
   ]

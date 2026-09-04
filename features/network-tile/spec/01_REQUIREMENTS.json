@@ -22,20 +22,6 @@
       ]
     },
     {
-      "id": "FR-086",
-      "title": "Throughput and reason as tile subtitle; per-interface detail one click away",
-      "description": "Below the verdict, the tile shows the busiest real interface's send/receive rate and the reason behind the verdict. The full per-interface breakdown stays on the tile but collapsed, expanding on one click. The interface rates are NOT summed: tailscale0 tunnels over eth0, so adding them would double-count the same bytes the moment the VPN carries traffic.",
-      "priority": "MUST",
-      "type": "UX",
-      "acceptance_criteria": [
-        "The subtitle names the busiest non-virtual interface and its up/down rates (e.g. 'eth0 ↑7.2 KB/s ↓54.7 KB/s').",
-        "The subtitle states the reason behind the verdict: the WAN state and worst loss when stable, or the failing target when not.",
-        "With three interfaces present, no per-interface row is rendered visible before interaction: the breakdown lives inside a collapsed disclosure.",
-        "Expanding the disclosure shows every non-virtual interface with its send and receive rate.",
-        "The busiest interface is picked by max(sent+received), never by summing interfaces (a VPN tunnel would double-count the underlying link's bytes)."
-      ]
-    },
-    {
       "id": "FR-087",
       "title": "The tile absorbs the loose WAN chip",
       "description": "The 'WAN up' chip currently floats on its own row under the metric grid, right-aligned and unattached to anything. Its state belongs to the Network tile's verdict; the standalone chip is removed so the dashboard has one fewer orphan element and one single source of WAN truth.",
@@ -98,45 +84,6 @@
       ]
     },
     {
-      "id": "US-086",
-      "requirement_id": "FR-086",
-      "as_a": "Pi Admin",
-      "i_want": "the throughput available but not shouting",
-      "so_that": "the tile stays as compact as CPU and Memory, while I can still open the per-interface detail on the rare occasion I want it",
-      "acceptance_criteria": [
-        {
-          "id": "AC-086-001",
-          "given": "eth0 at 7.2 KB/s up and 54.7 KB/s down, with wlan0 and tailscale0 idle",
-          "when": "the dashboard renders",
-          "then": "the subtitle names eth0 with both rates, and neither wlan0 nor tailscale0 appears outside the collapsed disclosure"
-        },
-        {
-          "id": "AC-086-002",
-          "given": "the same three interfaces",
-          "when": "the dashboard renders",
-          "then": "the per-interface rows are inside a disclosure that is closed by default — the tile's visible body is the verdict plus one subtitle line plus the toggle"
-        },
-        {
-          "id": "AC-086-003",
-          "given": "the disclosure is expanded",
-          "when": "the tile renders",
-          "then": "every non-virtual interface appears with its send and receive rate"
-        },
-        {
-          "id": "AC-086-004",
-          "given": "eth0 carrying 60 KB/s and tailscale0 carrying 50 KB/s of the SAME tunnelled traffic",
-          "when": "the busiest interface is picked",
-          "then": "eth0 (the larger single interface) is named — the rates are never summed, which would double-count the tunnel"
-        },
-        {
-          "id": "AC-086-005",
-          "given": "a host running Docker with docker0, five br-* bridges and four veth pairs",
-          "when": "the disclosure is expanded",
-          "then": "none of the virtual interfaces appears (the BG-072 filter still applies)"
-        }
-      ]
-    },
-    {
       "id": "US-087",
       "requirement_id": "FR-087",
       "as_a": "Pi Admin",
@@ -160,6 +107,12 @@
           "given": "no WAN snapshot at all (the monitor never ran)",
           "when": "the dashboard renders",
           "then": "the tile does not claim a WAN state and does not crash the template"
+        },
+        {
+          "id": "AC-087-004",
+          "given": "the chip has been absorbed and the tile renders with WAN up",
+          "when": "the rendered tile is inspected for type scale and colour",
+          "then": "the WAN phrase sits on the existing text-xs text-text-muted subtitle line, the chip's own wrapper markup is absent, and no other size, weight or colour token is introduced by the tile"
         }
       ]
     }
@@ -174,8 +127,8 @@
     {
       "id": "NFR-089b",
       "category": "Regression",
-      "requirement": "The BG-072 virtual-interface filter and the BG-073 sparkline-history fix keep working.",
-      "acceptance_criteria": "docker0/br-*/veth*/lo never appear in the tile (even expanded); the filter still falls back to the unfiltered list rather than emptying the tile; the per-target sparklines still load their history by label."
+      "requirement": "The BG-073 sparkline-history fix keeps working. (The BG-072 virtual-interface filter was deleted with FR-086 on 2026-07-14 — it existed only to clean up a per-interface list the tile no longer renders, so there is nothing left for it to regress.)",
+      "acceptance_criteria": "The per-target sparklines still load their history by probe LABEL, not by resolved IP: samples stored as 'gateway' are readable as 'gateway' and the series is non-empty."
     },
     {
       "id": "NFR-090b",
@@ -188,10 +141,11 @@
     "Changing what gatewayprobe measures, its 5s cadence, or its default targets — the verdict consumes what already exists.",
     "Inventing a second threshold set: the verdict reuses latencyWarnRTTMs/latencyCritRTTMs/latencyCritLossPct from helpers_sparkline.go, so the tile can never disagree with the sparkline colours below it.",
     "A history or sparkline of the link state over time — this is a now-state indicator.",
-    "Moving throughput to /network or building a per-interface section there: the owner explicitly kept throughput on the dashboard when he chose 'estado + caudal'.",
     "Alerting on the link state — the alert engine already supports latency/loss rules; this feature is display only and fires nothing.",
     "A per-interface verdict: one state for the box's connectivity, not one per NIC.",
-    "Summing interface throughput into a single total — a VPN tunnel (tailscale0 over eth0) would double-count the same bytes."
+    "Summing interface throughput into a single total — a VPN tunnel (tailscale0 over eth0) would double-count the same bytes.",
+    "Per-interface throughput anywhere in the product: no subtitle, no disclosure, no KB/s readout. Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp.",
+    "Re-deriving a 'busiest interface': the helpers that computed it (primaryNetwork, dashboardNetworks, isVirtualIface) were deleted with the feature. BG-072's virtual-interface filter existed only to clean up a list that no longer exists."
   ],
   "constraints": [
     "Go + HTMX + Tailwind; the tile is server-rendered inside the existing SSE metrics partial — no client-side state, no new JS beyond the native <details> element.",
@@ -229,19 +183,23 @@
     },
     {
       "need": "Keep the throughput available but not as the headline (he almost never reads it)",
-      "disposition": "FR-086"
+      "disposition": "out_of_scope",
+      "reason": "Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp."
     },
     {
       "need": "Do not lose the per-interface breakdown — it is the app's only throughput readout",
-      "disposition": "FR-086"
+      "disposition": "out_of_scope",
+      "reason": "Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp."
     },
     {
       "need": "Keep the tile compact: no rows visible by default",
-      "disposition": "FR-086"
+      "disposition": "out_of_scope",
+      "reason": "Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp."
     },
     {
       "need": "Stop the virtual docker interfaces cluttering the tile (BG-072)",
-      "disposition": "FR-086"
+      "disposition": "out_of_scope",
+      "reason": "Retired 2026-07-14 on the owner's call (commit 1a298e6). Seeing the tile in production he cut further — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar' — and chose to delete the per-interface throughput outright, consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were removed with it. The tile is now Network / verdict / reason — three lines, like CPU and Temp."
     },
     {
       "need": "Remove the orphan WAN chip floating under the grid",

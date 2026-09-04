@@ -35,19 +35,13 @@
       "id": "FR-085",
       "title": "Network tile shows a link-state verdict as its headline",
       "level": "partial",
-      "evidence": "6 test cases, all passing. TC-NT-085h (all probes healthy => 'Stable' + 'WAN up · 0% loss'), TC-NT-085e (8.8.8.8 at 15% loss => 'Unstable', and the reason NAMES the failing target), TC-NT-085f (WAN monitor down => 'Offline'), TC-NT-085Bf (gateway timing out => 'Offline', not merely unstable — a broken LAN is a different problem), TC-NT-085Be (no probes => 'unknown'; the tile never claims a state it cannot know and falls back to throughput), TC-NT-085Bh (a SINGLE dropped ping = 5% loss must NOT flip the tile — a >0% rule would cry wolf on a healthy home link). Thresholds are the existing latencyCrit* constants, so the tile can never disagree with the sparklines below it. DECLARED DEBT: the gateway is identified by label, not structurally."
-    },
-    {
-      "id": "FR-086",
-      "title": "Throughput subtitle; per-interface detail one click away",
-      "level": "complete",
-      "evidence": "6 test cases, all passing. TC-NT-086h (the subtitle names eth0 with both rates; idle interfaces appear only inside the disclosure), TC-NT-086e (the <details> carries no 'open' attribute — closed by default), TC-NT-089h (expanded, every non-virtual interface is listed), TC-NT-086f (the busiest interface is max(sent+recv), NEVER a sum: tailscale0 tunnels over eth0, and summing would report 110 KB/s for 60 KB/s of real traffic — the test asserts no summed total appears anywhere), TC-NT-089f (docker0/br-*/veth*/lo never reappear — the BG-072 filter holds), TC-NT-090f (stripping the disclosure from the HTML leaves no interface row behind). Browser-verified: 124px collapsed vs 432px expanded."
+      "evidence": "fr_coverage: 8 passing, 0 failing, 0 skipped. TC-NT-085h (all probes healthy => 'Stable' + 'WAN up · 0% loss'), TC-NT-085e (8.8.8.8 at 15% loss => 'Unstable', and the reason NAMES the failing target), TC-NT-085f (WAN monitor down => 'Offline'), TC-NT-085Bf (gateway timing out => 'Offline', not merely unstable — a broken LAN is a different problem), TC-NT-085Be (no probes => 'unknown'; the tile never claims a state it cannot know and falls back to throughput), TC-NT-085Bh (a SINGLE dropped ping = 5% loss must NOT flip the tile — a >0% rule would cry wolf on a healthy home link). Thresholds are the existing latencyCrit* constants, so the tile can never disagree with the sparklines below it. DECLARED DEBT: the gateway is identified by label, not structurally."
     },
     {
       "id": "FR-087",
       "title": "The tile absorbs the loose WAN chip",
       "level": "complete",
-      "evidence": "3 test cases, all passing. TC-NT-087h (the tile carries 'WAN up' and the standalone chip markup is gone from the page), TC-NT-087f (WAN down => the tile reads 'Offline' with metric-critical, and there is still no second WAN element — one source of truth), TC-NT-087e (a nil WAN snapshot claims nothing and does not crash the template). Browser-verified: the page no longer contains the orphan chip."
+      "evidence": "fr_coverage: 5 passing, 0 failing, 0 skipped. TC-NT-087h (the tile carries 'WAN up' and the standalone chip markup is gone from the page), TC-NT-087f (WAN down => the tile reads 'Offline' with metric-critical, and there is still no second WAN element — one source of truth), TC-NT-087e (a nil WAN snapshot claims nothing and does not crash the template). Browser-verified: the page no longer contains the orphan chip."
     },
     {
       "id": "NFR-088b",
@@ -82,14 +76,29 @@
   "technical_debt_inherited": [
     {
       "fr_id": "FR-085",
-      "substitution": "The gateway probe is identified by matching the label 'gateway'. Renaming that target via ULTRON_NET_TARGETS leaves the verdict with no gateway clause, so a broken LAN would read 'Unstable' instead of 'Offline'.",
-      "reason": "gatewayprobe.Snapshot does not carry the probe's configured Host, so the gateway cannot be identified structurally from the snapshot. This is the same class of weakness that produced BG-074 (a rule keyed on a label no target carried) — named here rather than hidden.",
-      "remediation": "Carry the configured Host (or an IsGateway flag) into gatewayprobe.Snapshot and identify the gateway structurally. It belongs in gatewayprobe, not the tile. Until then the degradation is graceful: the tile still warns, with a less precise word."
+      "substitution": "dashboardLinkState identifies the gateway probe by matching the label 'gateway'. An operator who renames that target via ULTRON_NET_TARGETS would leave the verdict with no gateway clause: a broken LAN would then read 'Unstable' instead of 'Offline'.",
+      "reason": "gatewayprobe.Snapshot does not carry the probe's configured Host, so the gateway cannot currently be identified structurally (Host == \"\") from the snapshot alone. Name-matching is what caused BG-074; this is the same class of weakness, contained.",
+      "remediation": "Carry the configured Host (or an IsGateway flag) through to gatewayprobe.Snapshot and identify the gateway structurally. That belongs in gatewayprobe, not in the tile. The degradation until then is graceful: the tile still warns, just with a less precise word."
+    },
+    {
+      "fr_id": "FR-086",
+      "substitution": "FR-086 (throughput subtitle + collapsed per-interface disclosure) was retired on 2026-07-14, commit 1a298e6, and its 8 declared test cases removed from 03_TEST_CASES.json. None of those Go functions had ever been written — the spec declared tests for behaviour the owner had already deleted.",
+      "reason": "Writing them would have re-introduced a product behaviour the owner cut deliberately. NFR-089b was re-scoped at the same time: its BG-072 half guarded a virtual-interface filter that went with FR-086, leaving only the BG-073 label-keyed history to protect."
     }
   ],
   "owner_feedback_closed": [
     "'Es confuso para un elemento principal' — the tile now leads with one word (Stable/Unstable/Offline) like every other tile in the row, instead of three rows of byte counters.",
     "'O cambiarlo por un indicador general, o un estable/no-estable' — delivered, reusing the probes and thresholds the panel already had rather than inventing new ones.",
     "'Casi nunca lo miro' (the throughput) — it is now the subtitle, and the per-interface breakdown is one click away instead of occupying the tile."
+  ],
+  "retired_requirements": [
+    {
+      "id": "FR-086",
+      "title": "Throughput and reason as tile subtitle; per-interface detail one click away",
+      "retired_on": "2026-07-14",
+      "commit": "1a298e6",
+      "reason": "Cut on the owner's call after he used the tile in production — 'una sola linea o quitar alguno… esto [el desplegable] se puede eliminar', consistent with his earlier 'casi nunca lo miro'. The subtitle, the <details> disclosure and the helpers primaryNetwork / dashboardNetworks / isVirtualIface were deleted. Its 8 declared test cases were removed rather than written: none had ever been implemented, and writing them would have re-introduced behaviour the product deliberately dropped.",
+      "collateral": "NFR-089b re-scoped to BG-073 only — its BG-072 half guarded a virtual-interface filter that existed solely to tidy the deleted list. TC-NT-E2E-002h re-pointed from AC-086-002 to AC-085-001; it has a real passing test and was the only one of the nine that did."
+    }
   ]
 }

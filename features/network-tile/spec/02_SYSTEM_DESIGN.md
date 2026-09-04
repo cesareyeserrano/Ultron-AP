@@ -1,6 +1,12 @@
 # System Design — network-tile
 
-Realises FR-085 (link-state verdict), FR-086 (throughput subtitle + collapsed detail), FR-087 (absorb the WAN chip).
+Realises FR-085 (link-state verdict), FR-087 (absorb the WAN chip).
+
+> **FR-086 retired 2026-07-14** (commit `1a298e6`) on the owner's call. The throughput subtitle,
+> the `<details>` disclosure and the helpers that fed them — `primaryNetwork`, `dashboardNetworks`,
+> `isVirtualIface` — were deleted, not deprecated. The BG-072 virtual-interface filter went with
+> them: it existed only to clean up a list that no longer exists. This document describes the
+> shipped design.
 
 ## Executive Summary
 
@@ -12,7 +18,6 @@ This feature adds **two pure functions and one template rewrite**. Nothing else.
 | Where the thresholds come from | The existing `latencyWarnRTTMs` / `latencyCritRTTMs` / `latencyCritLossPct` constants in `helpers_sparkline.go` | A second threshold set is a bug waiting to happen: the tile would say "Stable" while the sparkline three inches below it rendered red. One source, two consumers. |
 | How "the internet is reachable" is decided | Structurally: the gateway is the probe with the routing-table-resolved host; **any** other probe answering means the internet is up | The name-matching approach is what caused BG-074 (a `case "cloudflare"` that no default target carries, so the flag was never set). Structure survives an operator renaming their targets; names do not. |
 | Throughput headline | `max(sent+recv)` over the non-virtual interfaces — **never the sum** | `tailscale0` tunnels over `eth0`. Summing them double-counts the same bytes the moment the VPN carries traffic — silently inflating the number precisely when the admin would be looking at it. |
-| Per-interface disclosure | Native `<details>`/`<summary>` | The pattern `sse-summary.html` already uses. No JS file, no widget, no client state, nothing to re-bind after an hx-boost swap. |
 | Loss threshold for "Unstable" | `>= 10%` (the existing crit constant), **not** "> 0%" | The probe's loss window is 20 samples (`historyWindow`, gatewayprobe.go:58), so **one dropped ping = 5%**. A `>0%` rule would flap between Stable and Unstable on a single lost packet — the tile would cry wolf on a healthy home network. |
 
 ## System Architecture
@@ -37,8 +42,6 @@ This feature adds **two pure functions and one template rewrite**. Nothing else.
    │        Reason:  "WAN up · 0% loss" | "15% loss · 8.8.8.8 ✕"│
    │        WorstLoss float64 }                                 │
    │                                                            │
-   │  primaryNetwork(ifaces) → *metrics.NetworkIface            │
-   │      max(sent+recv) over dashboardNetworks(ifaces)         │
    └───────────────────────────────────────────────────────────┘
                        │  registered in BOTH FuncMaps (templates.go)
                        ▼
@@ -46,8 +49,7 @@ This feature adds **two pure functions and one template rewrite**. Nothing else.
         ┌──────────────────────────────┐
         │ Network                      │
         │ Stable            ← verdict  │  metric-warning / metric-critical
-        │ eth0 · WAN up · 0% loss      │  ← primaryNetwork + reason
-        │ ▸ per-interface   ← <details>│  ← collapsed; rows inside
+        │ WAN up · 0% loss  ← reason   │
         └──────────────────────────────┘
         (the standalone WAN chip below the grid is DELETED — FR-087)
 ```
@@ -102,10 +104,9 @@ Verdict rules (in order — first match wins):
 ```go
 // internal/server/helpers.go
 func dashboardLinkState(probes []*gatewayprobe.Snapshot, wan *wanmonitor.Snapshot) LinkState
-func primaryNetwork(ifaces []metrics.NetworkIface) *metrics.NetworkIface  // nil when none
 ```
 
-Both registered as template funcs in **both** FuncMaps in `templates.go` (the file carries two — the SSE partial cache and the page cache; registering in one silently breaks the other path).
+Registered as a template func in **both** FuncMaps in `templates.go` (the file carries two — the SSE partial cache and the page cache; registering in one silently breaks the other path).
 
 ## Implementation Approach
 
@@ -113,14 +114,7 @@ Both registered as template funcs in **both** FuncMaps in `templates.go` (the fi
 
 - **Method.** `dashboardLinkState` walks the probe list once. It identifies the gateway probe by label (`gatewayProbeLabel`, the constant introduced by the BG-074 fix), tracks the worst loss and the worst offender, and applies the five rules in order. It reads `latencyCritLossPct` / `latencyCritRTTMs` from `helpers_sparkline.go` — no new constants.
 - **I/O contract.** In: the probe snapshots and the WAN snapshot (both nil-safe). Out: a `LinkState`. No error return: a missing input yields `unknown`, which is a legitimate answer, not a failure.
-- **Failure behaviour.** `probes == nil` or empty → `unknown` (the tile falls back to throughput only). `wan == nil` → the WAN clause is skipped; the probe rules still apply, and the subtitle omits the WAN phrase (AC-087-003). A nil element inside the slice is skipped rather than dereferenced.
-
-### FR-086 — throughput subtitle and collapsed detail
-
-- **Method.** `primaryNetwork` runs `dashboardNetworks` (the BG-072 virtual-interface filter) and returns the interface with the largest `BytesSentPS + BytesRecvPS`. The template renders its name and both rates in the subtitle, then emits a `<details>` whose `<summary>` is the toggle and whose body is one row per filtered interface.
-- **I/O contract.** In: `Metrics.Networks`. Out: one interface (or nil → the subtitle degrades to the verdict reason alone).
-- **Failure behaviour.** No interfaces at all → no subtitle throughput, no disclosure; the tile still shows its verdict. All interfaces virtual → the BG-072 fallback returns the unfiltered list, so an unusual host still sees its traffic instead of an empty tile.
-- **Explicitly not done.** The rates are never summed. `tailscale0` carries the same bytes as `eth0` when the VPN is active; a "total" would double-count them exactly when the admin is watching.
+- **Failure behaviour.** `probes == nil` or empty → `unknown`, rendered as `--` with the subtitle `no probes`. `wan == nil` → the WAN clause is skipped; the probe rules still apply, and the subtitle omits the WAN phrase (AC-087-003). A nil element inside the slice is skipped rather than dereferenced.
 
 ### FR-087 — absorb the WAN chip
 
@@ -141,9 +135,8 @@ Target: Raspberry Pi, ARM64, limited RAM. The owner's standing constraint is tha
 | Path | Cost |
 |---|---|
 | `dashboardLinkState` | One pass over ≤4 probe snapshots (the default target list). No allocation beyond the returned struct and one reason string. Pure CPU, microseconds. |
-| `primaryNetwork` | One pass over the filtered interface list (≤5 real interfaces after the BG-072 filter, from ~15 raw on this Pi). |
 | Per SSE tick | Both run once per rendered `sse-metrics` partial — the same tick that already renders CPU/RAM/Disk/Temp. **No new query, no new goroutine, no new I/O.** |
-| Payload | The tile's HTML gets *smaller* on this Pi: 3 visible rows → 1 headline + 1 subtitle + a collapsed `<details>`. The rows still ship (inside the disclosure), so the byte delta is ≈ neutral; the visual delta is the point. |
+| Payload | The tile's HTML gets strictly smaller on this Pi: 3 visible rows → 1 headline + 1 subtitle, with no rows shipped at all. Both the byte delta and the visual delta go the same way. |
 
 ## Deployment Architecture
 
@@ -163,17 +156,20 @@ Two threshold sets on one page can disagree: the tile says "Stable" while the sp
 **ADR-2 — "Unstable" at ≥10% loss, not at >0%.**
 The probe's loss window is 20 samples, so a single dropped ping is 5%. A `>0%` rule would flip the tile to yellow on one lost packet on an otherwise healthy home link — the tile would cry wolf, the admin would learn to ignore it, and the feature would have made things worse than the byte counter it replaced.
 
-**ADR-3 — Max interface, never the sum.**
-`tailscale0` tunnels over `eth0`. A summed "total throughput" double-counts the same bytes whenever the VPN carries traffic — inflating the headline silently, precisely when the admin is looking. Max is boring and correct.
+**ADR-3 — Withdrawn with FR-086.**
+This ADR chose max-interface over a sum, because `tailscale0` tunnels over `eth0` and a total
+would double-count the same bytes. The reasoning still holds; it simply has nothing left to
+govern, because the throughput readout it protected was deleted. Recorded rather than erased —
+anyone tempted to reintroduce a "total throughput" should read it first.
 
 | # | Risk | Severity | Mitigation |
 |---|---|---|---|
 | 1 | The verdict flaps (Stable ↔ Unstable) on a single lost packet, training the admin to ignore it. | high | ADR-2: the ≥10% crit threshold (2 of 20 samples). The WAN clause additionally inherits the monitor's 3-consecutive-failure hysteresis. |
 | 2 | The tile disagrees with the sparklines below it. | medium | ADR-1: one constant set, two consumers. A test asserts a probe at 15% loss yields both `Unstable` on the tile and the warn colour on the sparkline. |
 | 3 | "Offline" is shown when only one off-box target is timing out (crying wolf in the other direction). | medium | Rule order: `offline` requires the WAN monitor to be down or the **gateway** to fail. A single dead off-box target yields `unstable`, which is the honest word. |
-| 4 | The throughput readout — the only one in the app — becomes unreachable. | medium | It stays on the tile, one click away, rather than being deleted or relocated. |
+| 4 | ~~The throughput readout — the only one in the app — becomes unreachable.~~ | — | Accepted, not mitigated: the owner chose to delete it outright on 2026-07-14. The risk was correctly identified and the product decision went the other way. |
 | 5 | Registering the template funcs in only one of the two FuncMaps (the file has two) silently breaks the SSE path or the page path. | medium | Both registration sites are named in the touch-points; a rendered-HTML test exercises the partial through `renderPartial`, which uses the SSE FuncMap. |
-| 6 | The `<details>` marker or a new class is missing from the committed `app.css`. | low | `make css` runs before deploy and the diff is committed — the exact discipline that caught the hardware section's missing `grid-cols-4`. |
+| 6 | A class used by the tile is missing from the committed `app.css`. | low | `make css` runs before deploy and the diff is committed — the exact discipline that caught the hardware section's missing `grid-cols-4`. |
 
 ## Technical Risk Flags
 

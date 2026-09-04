@@ -10,10 +10,12 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/cesareyeserrano/ultron-ap/internal/database"
 	"github.com/cesareyeserrano/ultron-ap/internal/metrics"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/gatewayprobe"
 	"github.com/cesareyeserrano/ultron-ap/internal/network/wanmonitor"
@@ -328,4 +330,116 @@ func TestMetricTiles_AreUniform(t *testing.T) {
 
 func stripTags(s string) string {
 	return regexp.MustCompile(`<[^>]+>`).ReplaceAllString(s, "")
+}
+
+// TC-NT-087d / AC-087-004
+// Absorbing the WAN chip must not smuggle in a new type scale or colour: the
+// tile's WAN text rides the subtitle tokens the other tiles already use, and the
+// chip's own wrapper is gone rather than restyled. This is the criterion that
+// stops "absorb the chip" quietly becoming "redesign the tile".
+func TestTC_NT_087d_WANTextUsesExistingSubtitleTokensOnly(t *testing.T) {
+	full := renderTile(t, DashboardData{
+		Metrics: &metrics.Snapshot{Networks: piInterfaces()},
+		Network: healthyProbes(),
+		WAN:     wanUp(),
+	})
+	tile := networkTileHTML(t, full)
+
+	// The WAN phrase lives on the subtitle line, at the shared context size.
+	require.Contains(t, tile, "WAN up")
+	assert.Contains(t, tile, `class="text-xs text-text-muted truncate"`,
+		"the reason line uses the subtitle tokens the other tiles use")
+
+	// The chip's wrapper is deleted, not hidden or recoloured.
+	for _, gone := range []string{"bg-green-400/10", "bg-red-400/10", "WAN DOWN", "WAN ?"} {
+		assert.NotContains(t, full, gone, "the standalone WAN chip's markup must be gone: %s", gone)
+	}
+
+	// No bespoke size or colour was introduced for the WAN text. The tile may
+	// only use the value size and the muted subtitle size.
+	tileNoValue := strings.ReplaceAll(tile, "text-2xl font-mono font-bold", "")
+	for _, forbidden := range []string{"text-sm", "text-base", "text-lg", "text-[", "font-semibold"} {
+		assert.NotContains(t, tileNoValue, forbidden,
+			"no new type scale may enter the tile: %s", forbidden)
+	}
+}
+
+// --- NFR-089b — the BG-073 sparkline-history regression guard --------------
+//
+// BG-072's virtual-interface filter used to live under this NFR too. It was
+// deleted with FR-086 on 2026-07-14: it existed only to tidy a per-interface
+// list the tile no longer renders. What remains worth guarding is BG-073 —
+// history is stored keyed by the probe's LABEL, and reading it back any other
+// way silently returns nothing.
+
+// TC-NT-089f / NFR-089b (negative)
+// Reading history by the resolved IP finds nothing. This is the bug itself:
+// live numbers looked fine while every sparkline whose label != host stayed
+// empty, so the failure was invisible without looking at the chart.
+func TestTC_NT_089f_HistoryByResolvedIPFindsNothing(t *testing.T) {
+	srv, _ := setupTestServerWithSession(t)
+
+	now := time.Now()
+	v := 4.2
+	require.NoError(t, srv.db.InsertNetSample(database.NetSample{
+		TS: now, Target: "gateway", Kind: "icmp", RTTMs: &v, Status: "ok",
+	}))
+
+	byIP, err := srv.db.RecentNetSamples("192.168.1.1", 12)
+	require.NoError(t, err)
+	assert.Empty(t, byIP, "the resolved IP is not the storage key — querying by it must find nothing")
+
+	byLabel, err := srv.db.RecentNetSamples("gateway", 12)
+	require.NoError(t, err)
+	assert.Len(t, byLabel, 1, "the label is the storage key")
+}
+
+// TC-NT-089e / NFR-089b (edge case)
+// A label with no history yet — a freshly added probe, or the first minutes
+// after a restart — must yield an empty series and a renderable sparkline
+// rather than a panic or a malformed SVG.
+func TestTC_NT_089e_EmptyHistoryRendersRatherThanPanics(t *testing.T) {
+	srv, _ := setupTestServerWithSession(t)
+
+	rows, err := srv.db.RecentNetSamples("a-probe-that-never-sampled", 12)
+	require.NoError(t, err)
+	require.Empty(t, rows)
+
+	series, minMs, maxMs, avgMs := computeRTTSeries(rows)
+	assert.Empty(t, series, "no samples means no series")
+	assert.Zero(t, minMs)
+	assert.Zero(t, maxMs)
+	assert.Zero(t, avgMs)
+
+	// The template calls this with whatever computeRTTSeries returned.
+	assert.NotPanics(t, func() { _ = sparklineSVG(series) },
+		"an empty series must still render — the dashboard draws before the first sample lands")
+}
+
+// TC-NT-089h / NFR-089b (happy path)
+// History stored under the probe's label is readable under that label and
+// produces a plottable series. TestNetworkTargetViews_ReadHistoryByLabelNotResolvedIP
+// asserts the same invariant from the ac-coverage-gaps feature's file; this one
+// carries the TC-NT id so network-tile's own runner (-run TestTC_NT) executes it
+// rather than reporting it skipped.
+func TestTC_NT_089h_HistoryIsReadableByProbeLabel(t *testing.T) {
+	srv, _ := setupTestServerWithSession(t)
+
+	now := time.Now()
+	for i, rtt := range []float64{4.2, 5.1, 3.8} {
+		v := rtt
+		require.NoError(t, srv.db.InsertNetSample(database.NetSample{
+			TS:     now.Add(time.Duration(i) * time.Second),
+			Target: "gateway", Kind: "icmp", RTTMs: &v, Status: "ok",
+		}))
+	}
+
+	rows, err := srv.db.RecentNetSamples("gateway", 12)
+	require.NoError(t, err)
+	require.Len(t, rows, 3, "history is keyed by the probe label")
+
+	series, minMs, maxMs, _ := computeRTTSeries(rows)
+	assert.Len(t, series, 3, "the sparkline finds every sample it stored")
+	assert.InDelta(t, 3.8, minMs, 0.01)
+	assert.InDelta(t, 5.1, maxMs, 0.01)
 }

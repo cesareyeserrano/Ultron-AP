@@ -137,115 +137,6 @@
       "test_function": "TestTC_NT_085Bh_SingleDroppedPingDoesNotFlap"
     },
     {
-      "id": "TC-NT-086h",
-      "requirement_id": "FR-086",
-      "user_story_id": "US-086",
-      "ac_id": "AC-086-001",
-      "title": "Tile subtitle names the busiest interface with both rates",
-      "type": "integration",
-      "scenario": "happy_path",
-      "priority": "high",
-      "preconditions": [],
-      "given": "eth0 at 7.2 KB/s up / 54.7 KB/s down, wlan0 and tailscale0 idle",
-      "when": "the sse-metrics partial renders",
-      "then": "the subtitle names eth0 with its send and receive rates, and neither wlan0 nor tailscale0 appears outside the collapsed disclosure",
-      "steps": [
-        "the sse-metrics partial renders"
-      ],
-      "expected_result": "rendered HTML: eth0 + both rates in the subtitle; idle interfaces only inside <details>",
-      "test_data": {},
-      "test_function": "TestTC_NT_086h_SubtitleNamesBusiestInterface"
-    },
-    {
-      "id": "TC-NT-086e",
-      "user_story_id": "US-086",
-      "ac_id": "AC-086-002",
-      "title": "No per-interface row is visible before interaction",
-      "type": "integration",
-      "scenario": "edge_case",
-      "priority": "high",
-      "preconditions": [],
-      "given": "three interfaces present in the snapshot",
-      "when": "the sse-metrics partial renders",
-      "then": "the per-interface rows live inside a <details> element that carries no 'open' attribute — the visible body is the verdict plus one subtitle plus the toggle",
-      "steps": [
-        "the sse-metrics partial renders"
-      ],
-      "expected_result": "rendered HTML contains <details> without open, and the rows are inside it",
-      "test_data": {},
-      "test_function": "TestTC_NT_086e_DetailIsCollapsedByDefault",
-      "frs": [
-        "FR-086",
-        "NFR-090b"
-      ]
-    },
-    {
-      "id": "TC-NT-089h",
-      "user_story_id": "US-086",
-      "ac_id": "AC-086-003",
-      "title": "Expanding the disclosure shows every non-virtual interface",
-      "type": "integration",
-      "scenario": "happy_path",
-      "priority": "high",
-      "preconditions": [],
-      "given": "eth0, wlan0 and tailscale0 in the snapshot",
-      "when": "the disclosure body is inspected in the rendered HTML",
-      "then": "all three interfaces appear with their send and receive rates",
-      "steps": [
-        "the disclosure body is inspected in the rendered HTML"
-      ],
-      "expected_result": "the <details> body lists eth0, wlan0 and tailscale0 with rates",
-      "test_data": {},
-      "test_function": "TestTC_NT_089h_ExpandedDetailListsEveryInterface",
-      "frs": [
-        "FR-086",
-        "NFR-089b"
-      ]
-    },
-    {
-      "id": "TC-NT-086f",
-      "requirement_id": "FR-086",
-      "user_story_id": "US-086",
-      "ac_id": "AC-086-004",
-      "title": "The busiest interface is picked by max, never by summing (a VPN would double-count)",
-      "type": "unit",
-      "scenario": "negative",
-      "priority": "high",
-      "preconditions": [],
-      "given": "eth0 carrying 60 KB/s and tailscale0 carrying 50 KB/s of the SAME tunnelled traffic",
-      "when": "primaryNetwork(ifaces) runs",
-      "then": "eth0 is returned — the rates are never added together, which would report 110 KB/s for 60 KB/s of real traffic",
-      "steps": [
-        "primaryNetwork(ifaces) runs"
-      ],
-      "expected_result": "primaryNetwork returns eth0; no summed total exists anywhere in the tile",
-      "test_data": {},
-      "test_function": "TestTC_NT_086f_BusiestInterfaceIsMaxNotSum"
-    },
-    {
-      "id": "TC-NT-089f",
-      "user_story_id": "US-086",
-      "ac_id": "AC-086-005",
-      "title": "Virtual docker interfaces never appear, even expanded (BG-072 still holds)",
-      "type": "integration",
-      "scenario": "negative",
-      "priority": "high",
-      "preconditions": [],
-      "given": "a host with eth0 plus docker0, five br-* bridges and four veth pairs",
-      "when": "the sse-metrics partial renders",
-      "then": "no docker0, br-* or veth* appears anywhere in the tile, expanded or not",
-      "steps": [
-        "the sse-metrics partial renders"
-      ],
-      "expected_result": "rendered HTML excludes every virtual interface name",
-      "test_data": {},
-      "test_function": "TestTC_NT_089f_VirtualInterfacesStayHidden",
-      "frs": [
-        "FR-086",
-        "NFR-089b"
-      ]
-    },
-    {
       "id": "TC-NT-087h",
       "requirement_id": "FR-087",
       "user_story_id": "US-087",
@@ -350,75 +241,6 @@
       ]
     },
     {
-      "id": "TC-NT-088e",
-      "user_story_id": "US-086",
-      "ac_id": "AC-086-005",
-      "title": "The BG-072 fallback survives: a host with only virtual interfaces still sees its traffic",
-      "type": "unit",
-      "scenario": "edge_case",
-      "priority": "high",
-      "preconditions": [],
-      "given": "an interface list containing only docker0",
-      "when": "primaryNetwork / dashboardNetworks run",
-      "then": "docker0 is returned rather than an empty list — the filter must never empty the tile",
-      "steps": [
-        "primaryNetwork / dashboardNetworks run"
-      ],
-      "expected_result": "the unfiltered list is returned as a fallback",
-      "test_data": {},
-      "test_function": "TestTC_NT_088e_FilterNeverEmptiesTheTile",
-      "frs": [
-        "NFR-089b"
-      ]
-    },
-    {
-      "id": "TC-NT-090h",
-      "user_story_id": "US-086",
-      "ac_id": "AC-086-002",
-      "title": "The disclosure toggle meets the project's 44px touch target",
-      "type": "integration",
-      "scenario": "happy_path",
-      "priority": "medium",
-      "preconditions": [],
-      "given": "three interfaces present",
-      "when": "the sse-metrics partial renders",
-      "then": "the <summary> element carries the min-h-[44px] marker the project enforces everywhere else",
-      "steps": [
-        "the sse-metrics partial renders"
-      ],
-      "expected_result": "rendered summary contains min-h-[44px]",
-      "test_data": {},
-      "test_function": "TestTC_NT_090h_DisclosureMeetsTouchTarget",
-      "frs": [
-        "NFR-090b"
-      ]
-    },
-    {
-      "id": "TC-NT-090f",
-      "frs": [
-        "NFR-090b",
-        "FR-086"
-      ],
-      "user_story_id": "US-086",
-      "ac_id": "AC-086-002",
-      "title": "The tile never renders a per-interface row outside the disclosure",
-      "type": "integration",
-      "scenario": "negative",
-      "priority": "high",
-      "preconditions": [],
-      "given": "a host with three real interfaces",
-      "when": "the sse-metrics partial renders and the <details> block is removed from the HTML",
-      "then": "no interface rate row remains — proving every row lives inside the disclosure and none leaked back into the tile body",
-      "steps": [
-        "render the partial",
-        "strip the <details> block",
-        "assert no interface rows remain"
-      ],
-      "expected_result": "with the disclosure stripped, the HTML contains no per-interface rate rows",
-      "test_data": {},
-      "test_function": "TestTC_NT_090f_NoInterfaceRowLeaksOutsideDisclosure"
-    },
-    {
       "id": "TC-NT-E2E-001h",
       "frs": [
         "FR-085",
@@ -445,12 +267,11 @@
     {
       "id": "TC-NT-E2E-002h",
       "frs": [
-        "FR-085",
-        "FR-086"
+        "FR-085"
       ],
       "user_story_id": "US-086",
-      "ac_id": "AC-086-002",
-      "title": "Full SSE flow: the live metrics event carries the new tile through the OTHER FuncMap",
+      "ac_id": "AC-085-001",
+      "title": "Full SSE flow: the live metrics event carries the new tile through the OTHER FuncMap (re-pointed from AC-086-002 when FR-086 was retired; the test asserts the tile renders through the SSE FuncMap, which is FR-085 behaviour)",
       "type": "e2e",
       "scenario": "happy_path",
       "priority": "high",
@@ -465,7 +286,116 @@
       ],
       "expected_result": "the SSE metrics event renders the tile without a template error",
       "test_data": {},
-      "test_function": "TestTC_NT_E2E_002h_SSEMetricsEventRendersTheTile"
+      "test_function": "TestTC_NT_E2E_002h_SSEMetricsEventRendersTheTile",
+      "requirement_id": "FR-085"
+    },
+    {
+      "id": "TC-NT-087d",
+      "requirement_id": "FR-087",
+      "user_story_id": "US-087",
+      "ac_id": "AC-087-004",
+      "title": "Absorbing the WAN chip introduces no new type scale or colour",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [
+        "The dashboard partial renders through the SSE FuncMap"
+      ],
+      "given": "A healthy Pi with WAN up and the full interface list",
+      "when": "sse-metrics.html renders and the Network tile is isolated",
+      "then": "The WAN phrase sits on the reason line under the shared subtitle tokens (text-xs text-text-muted); the chip's wrapper markup is absent; and outside the value line the tile introduces no other type scale or weight",
+      "steps": [
+        "Render the partial with WAN up",
+        "Isolate the Network tile",
+        "Assert the reason line carries class=\"text-xs text-text-muted truncate\"",
+        "Assert the chip's background and label markup are absent",
+        "Strip the value classes and assert no other size or weight token appears"
+      ],
+      "expected_result": "WAN text on the existing subtitle tokens, chip markup gone, no new size/colour introduced",
+      "test_data": {},
+      "test_function": "TestTC_NT_087d_WANTextUsesExistingSubtitleTokensOnly"
+    },
+    {
+      "id": "TC-NT-089h",
+      "requirement_id": null,
+      "user_story_id": "US-087",
+      "ac_id": "AC-085-002",
+      "frs": [
+        "NFR-089b"
+      ],
+      "title": "BG-073 happy path: sparkline history is read back by probe label (traced to AC-085-002 — the degraded-link case the sparklines are the drill-down for; NFR-089b is a Regression NFR with no acceptance-criterion id of its own, so it borrows one, as TC-NT-088h/088f do for NFR-088b)",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [
+        "A test server with its database"
+      ],
+      "given": "Two net samples stored keyed by the probe LABEL 'gateway', the way main.go stores them",
+      "when": "The dashboard reads recent samples for the sparkline",
+      "then": "Reading by label returns both rows and computeRTTSeries yields a two-point series; reading by the resolved IP 192.168.1.1 returns nothing, which is what the old code did",
+      "steps": [
+        "Insert two samples with Target='gateway'",
+        "Read RecentNetSamples('gateway')",
+        "Assert two rows and a two-point series",
+        "Assert RecentNetSamples('192.168.1.1') is empty"
+      ],
+      "expected_result": "History is label-keyed; the sparkline finds its samples",
+      "test_data": {},
+      "test_function": "TestTC_NT_089h_HistoryIsReadableByProbeLabel"
+    },
+    {
+      "requirement_id": null,
+      "user_story_id": "US-085",
+      "frs": [
+        "NFR-089b"
+      ],
+      "test_data": {},
+      "id": "TC-NT-089f",
+      "ac_id": "AC-085-002",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "title": "BG-073 negative: reading probe history by the resolved IP finds nothing",
+      "preconditions": [
+        "A test server with its database"
+      ],
+      "given": "One net sample stored keyed by the probe LABEL 'gateway'",
+      "when": "History is queried by the resolved IP 192.168.1.1 and then by the label",
+      "then": "The IP query returns nothing — the original bug — while the label query returns the sample",
+      "steps": [
+        "Insert one sample with Target='gateway'",
+        "Query RecentNetSamples('192.168.1.1') and assert empty",
+        "Query RecentNetSamples('gateway') and assert one row"
+      ],
+      "expected_result": "IP query empty, label query returns 1 row",
+      "test_function": "TestTC_NT_089f_HistoryByResolvedIPFindsNothing"
+    },
+    {
+      "requirement_id": null,
+      "user_story_id": "US-085",
+      "frs": [
+        "NFR-089b"
+      ],
+      "test_data": {},
+      "id": "TC-NT-089e",
+      "ac_id": "AC-085-005",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "title": "BG-073 edge: a label with no history yet renders instead of panicking",
+      "preconditions": [
+        "A test server with its database"
+      ],
+      "given": "A probe label that has never sampled — a freshly added target, or the first minutes after a restart",
+      "when": "computeRTTSeries runs over the empty row set and the template renders the sparkline",
+      "then": "The series is empty, min/max/avg are zero, and sparklineSVG does not panic",
+      "steps": [
+        "Query history for an unknown label and assert no rows",
+        "Call computeRTTSeries and assert an empty series with zero stats",
+        "Assert sparklineSVG does not panic on the empty series"
+      ],
+      "expected_result": "Empty series, zero stats, sparkline renders without panic",
+      "test_function": "TestTC_NT_089e_EmptyHistoryRendersRatherThanPanics"
     }
   ]
 }
