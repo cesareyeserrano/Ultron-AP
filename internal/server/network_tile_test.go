@@ -351,7 +351,15 @@ func TestTC_NT_087d_WANTextUsesExistingSubtitleTokensOnly(t *testing.T) {
 		"the reason line uses the subtitle tokens the other tiles use")
 
 	// The chip's wrapper is deleted, not hidden or recoloured.
-	for _, gone := range []string{"bg-green-400/10", "bg-red-400/10", "WAN DOWN", "WAN ?"} {
+	//
+	// These class names are assembled rather than written out. Tailwind v4 scans
+	// the whole project, not only the @source globs, so spelling a utility name
+	// anywhere in the tree makes Tailwind generate it — meaning a test asserting
+	// a class is ABSENT would put that very class into the shipped bundle. The
+	// red tint below reached app.css that way and cost 220 bytes nothing used.
+	// Comments count as source too: do not name the utility here either.
+	const tint = "-400/10"
+	for _, gone := range []string{"bg-green" + tint, "bg-red" + tint, "WAN DOWN", "WAN ?"} {
 		assert.NotContains(t, full, gone, "the standalone WAN chip's markup must be gone: %s", gone)
 	}
 
