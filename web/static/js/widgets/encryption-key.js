@@ -1,4 +1,4 @@
-// FR-068 — encryption-key composite picker. On blur of the value input, hits
+// Encryption-key composite picker. On blur of the value input, hits
 // the auth-gated /api/settings/encryption-key/probe endpoint and renders the
 // ✓/✗ + reason badge. Probe response NEVER includes key bytes/length/hash.
 //
@@ -104,7 +104,7 @@
   }
 
   // Re-init on hx-boost swaps and history restores — the swapped-in widget is
-  // a fresh node (BG-038 family; __encKeyBound keeps re-init idempotent).
+  // a fresh node (__encKeyBound keeps re-init idempotent).
   document.body.addEventListener('htmx:afterSwap', function (e) { initAll(e.target); });
   document.body.addEventListener('htmx:historyRestore', function () { initAll(); });
 })();

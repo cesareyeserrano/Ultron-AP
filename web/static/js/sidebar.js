@@ -1,12 +1,12 @@
 // Sidebar: collapse/expand on desktop, slide-over on mobile.
 //
-// BG-076 — this file used to capture #sidebar and the buttons ONCE at load and
+// This file used to capture #sidebar and the buttons ONCE at load and
 // hold them in closure variables. hx-boost swaps the whole body on every
 // navigation, so after the first click those references pointed at detached
 // nodes: the new sidebar came back with the server's classes, nobody reapplied
 // the stored state, and the collapse was lost. Now nothing is cached — every
 // handler re-queries the DOM — and the state is reapplied on htmx:afterSwap and
-// htmx:historyRestore, the same lifecycle the widgets use (BG-038).
+// htmx:historyRestore, the same lifecycle the widgets use.
 (function () {
   'use strict';
 
@@ -81,7 +81,7 @@
     var collapsed = !el.classList.contains('sidebar-collapsed');
     el.classList.toggle('sidebar-collapsed', collapsed);
     // On desktop the slide-over class must not linger, or its md: width rule
-    // fights the collapsed width and the sidebar stops resizing (BG-076).
+    // fights the collapsed width and the sidebar stops resizing.
     el.classList.remove('sidebar-hidden');
     saveState(collapsed);
     updateToggleIcons();
@@ -140,7 +140,7 @@
   // afterSettle, not just afterSwap: with hx-boost the body is still being
   // settled when afterSwap fires, so classes written then land on a node htmx
   // is about to discard — the sidebar visibly reverted to expanded on the first
-  // navigation and only behaved from the second one on (BG-076). afterSettle is
+  // navigation and only behaved from the second one on. afterSettle is
   // the last event of the cycle, when the new sidebar is definitively in place.
   // Both are harmless to run twice: applyState is idempotent.
   document.addEventListener('htmx:afterSwap', applyState);

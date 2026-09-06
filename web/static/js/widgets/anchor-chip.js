@@ -1,4 +1,4 @@
-// FR-063 — anchor-chip strip wires clicks to scroll AND expand the target
+// The anchor-chip strip wires clicks to scroll AND expand the target
 // accordion. Hash on page load auto-expands the matching accordion before
 // first paint. Hash updates use replaceState — no extra Back-button entries.
 (function () {
@@ -76,7 +76,7 @@
   }
 
   // Re-bind on hx-boost swaps and history restores — the swapped-in chips are
-  // fresh nodes (BG-038 family; the per-chip guard keeps re-binding idempotent).
+  // fresh nodes (the per-chip guard keeps re-binding idempotent).
   document.body.addEventListener('htmx:afterSwap', function () { bind(); });
   document.body.addEventListener('htmx:historyRestore', function () { bind(); });
 })();

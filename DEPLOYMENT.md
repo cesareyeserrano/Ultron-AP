@@ -100,18 +100,32 @@ ULTRON_SMTP_FROM=alerts@example.com
 
 ---
 
-## 5. Install systemd units and sudoers
+## 5. Install systemd units
 
 ```bash
 sudo install -m 0644 deploy/ultron-ap.service     /etc/systemd/system/
 sudo install -m 0644 deploy/ultron-helper.service /etc/systemd/system/
-sudo install -m 0440 deploy/ultron-ap.sudoers     /etc/sudoers.d/ultron-ap
-sudo visudo -c    # verify sudoers syntax — fix before proceeding if error
 
 sudo systemctl daemon-reload
 sudo systemctl enable --now ultron-helper.service
 sudo systemctl enable --now ultron-ap.service
 ```
+
+> **The `ultron` user gets no sudo rights at all, and must not.** This step used
+> to install `deploy/ultron-ap.sudoers`, which granted the panel passwordless
+> `systemctl start/stop/restart` on ultron-ap, docker and tailscaled, plus
+> `journalctl`, `shutdown -r/-h now`, and `/usr/local/bin/pironman5 *` — a
+> wildcard accepting any arguments.
+>
+> None of it was ever needed. The panel makes zero `sudo` calls: every
+> privileged operation goes through `ultron-helper` over its Unix socket, which
+> is what FR-011 (privilege separation) describes. The file was a leftover from
+> before the helper existed, and following this document would have handed a
+> process exposed on LAN `:8080` and tailnet `:34002` the ability to halt the
+> machine and stop the Docker daemon.
+>
+> Removed in BG-079. If a future host action needs root, it goes in the helper's
+> allow-list — never back into sudoers.
 
 ---
 

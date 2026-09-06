@@ -1,4 +1,4 @@
-// FR-058 — 3-button segmented severity control. Vanilla JS.
+// 3-button segmented severity control. Vanilla JS.
 // One-click selection, keyboard nav (←/→ to cycle, Space/Enter to select).
 // The control submits its value through a hidden <input> sibling.
 (function () {
@@ -65,6 +65,6 @@
     initAll();
   }
   document.body.addEventListener('htmx:afterSwap', function (e) { initAll(e.target); });
-  // History restores re-insert cached DOM without firing afterSwap (BG-038 family).
+  // History restores re-insert cached DOM without firing afterSwap.
   document.body.addEventListener('htmx:historyRestore', function () { initAll(); });
 })();

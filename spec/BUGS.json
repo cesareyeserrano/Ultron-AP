@@ -1837,6 +1837,46 @@
       "fix_at": "2026-09-02T23:14:52.238Z",
       "close_commit_sha": "ac4ea4b1258373c249fe1706f7fc4375a0c4077d",
       "close_at": "2026-09-02T23:14:58.592Z"
+    },
+    {
+      "id": "BG-079",
+      "title": "deploy/ultron-ap.sudoers concede al panel privilegios que ya no necesita y que contradicen FR-011: incluye un comodin pironman5 *, systemctl stop docker y shutdown, y DEPLOYMENT.md manda instalarlo",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "high",
+      "status": "open",
+      "fr": "FR-011",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-09-06T21:48:25.417Z",
+      "updated_at": "2026-09-06T21:48:25.417Z",
+      "resolution": null
+    },
+    {
+      "id": "BG-080",
+      "title": "El JS servido al navegador lleva ids de traza Aitri (FR/BG/AC/TC) en comentarios, filtrando el mapa interno de requisitos a cualquiera que vea el codigo fuente de la pagina",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "low",
+      "status": "open",
+      "fr": "FR-009",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-09-06T21:48:29.324Z",
+      "updated_at": "2026-09-06T21:48:29.324Z",
+      "resolution": null
     }
   ]
 }

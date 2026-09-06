@@ -1,4 +1,4 @@
-// FR-059 — chip-preset row + custom escape hatch. Click a preset chip to
+// Chip-preset row + custom escape hatch. Click a preset chip to
 // set the field's value and highlight the chip. Typing in the custom field
 // clears all preset highlights — the custom field is the source of truth.
 (function () {
@@ -57,6 +57,6 @@
     initAll();
   }
   document.body.addEventListener('htmx:afterSwap', function (e) { initAll(e.target); });
-  // History restores re-insert cached DOM without firing afterSwap (BG-038 family).
+  // History restores re-insert cached DOM without firing afterSwap.
   document.body.addEventListener('htmx:historyRestore', function () { initAll(); });
 })();

@@ -1,9 +1,9 @@
 // CSS7 — settings page controller: accordion sections, per-form dirty/save
-// state (FR-065 pill), inline field errors, retry, and the destructive
+// state pill, inline field errors, retry, and the destructive
 // System Controls confirm/countdown guard. Extracted from settings.html's
 // inline <script>.
 //
-// Loaded from <head> on every page (BG-038 pattern: hx-boost body swaps never
+// Loaded from <head> on every page (hx-boost body swaps never
 // re-run head scripts), so binding happens via DOMContentLoaded plus
 // htmx:afterSwap/historyRestore. Per-node __*Bound guards make re-init
 // idempotent; the htmx result handlers are delegated on document.body and
@@ -36,7 +36,7 @@
   function setFormState(form, state, message, allowRetry) {
     var shell = settingsShell();
     var name = form.getAttribute('data-settings-form');
-    // FR-065: form-state pill is rendered only when state != idle.
+    // The form-state pill is rendered only when state != idle.
     // At idle the pill element is removed from the DOM entirely.
     var host = (name && shell) ? shell.querySelector('[data-form-state-host="' + name + '"]') : null;
     var statusTargetSel = form.getAttribute('data-status-target');
