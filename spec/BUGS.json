@@ -1881,6 +1881,28 @@
       "resolution": null,
       "fix_commit_sha": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
       "fix_at": "2026-09-06T21:52:39.539Z"
+    },
+    {
+      "id": "BG-081",
+      "title": "El log 'alerts: metric=dns_failure_rate reason=insufficient_dns_samples' se escribe en cada evaluacion, una linea cada 5 segundos indefinidamente, en vez de una vez por transicion de estado",
+      "description": "",
+      "steps_to_reproduce": [],
+      "expected_result": "",
+      "actual_result": "",
+      "environment": null,
+      "severity": "low",
+      "status": "fixed",
+      "fr": "FR-004",
+      "tc_reference": null,
+      "phase_detected": null,
+      "detected_by": "manual",
+      "evidence": null,
+      "reported_by": null,
+      "created_at": "2026-09-06T22:10:32.058Z",
+      "updated_at": "2026-09-06T22:12:24.317Z",
+      "resolution": "Anadido markDNSSparse() en internal/alerts/engine.go: un guardia de transicion de estado con mutex que solo devuelve true al ENTRAR en la condicion de muestras insuficientes, de modo que una condicion persistente escribe una linea y no una cada 5 segundos indefinidamente. Al recuperarse escribe una unica linea 'dns_samples_recovered' y re-arma el guardia, para que una reaparicion posterior si se reporte en vez de quedar silenciada para siempre. Los dos puntos que logueaban el mensaje se unificaron en uno: dnsFailureValue es una funcion libre sin Engine donde guardar el flag, asi que la decision de loguear se movio al llamante y queda un unico propietario de la regla en vez de dos compitiendo. Cubierto por tres tests: que entra una sola vez tras 100 evaluaciones seguidas, que re-arma tras recuperarse, y que un motor sano no reporta nunca. Implementa NFR-009, que exige registrar transiciones una vez por cambio y no por sondeo.",
+      "fix_commit_sha": "39852d7bff4c9863239862bde584202806f5239d",
+      "fix_at": "2026-09-06T22:12:24.317Z"
     }
   ]
 }
