@@ -1,0 +1,137 @@
+{
+  "project": "Ultron — net-sample-retention",
+  "version": "1.1.0",
+  "version_source": "team",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "overall_status": "partial",
+  "requirement_compliance": [
+    {
+      "id": "FR-096",
+      "title": "Ventana de retencion de red configurable por entorno",
+      "level": "partial",
+      "evidence": "4 TC pasando (TC-NSR-001h/002e/003f/004f). Un valor no numerico, 0 o negativo produce 30 con aviso y sin abortar. Parcial por la deuda declarada: estas dos variables avisan y caen al defecto mientras sus vecinas en la misma funcion abortan el arranque (ADR-002)."
+    },
+    {
+      "id": "FR-097",
+      "title": "Poda periodica de NetSample",
+      "level": "complete",
+      "evidence": "5 TC pasando. TC-NSR-011e verifica que el limite es la ventana exacta: una muestra de 29 dias y 23 horas sobrevive a una ventana de 30. TC-NSR-014f verifica que un fallo de la poda de red no tumba el trabajo compartido."
+    },
+    {
+      "id": "FR-098",
+      "title": "Borrado por lotes acotados",
+      "level": "complete",
+      "evidence": "4 TC pasando. TC-NSR-021e cuenta las filas afectadas por cada sentencia y exige exactamente [50000, 50000, 1000] para 101000 filas fuera de ventana. TC-NSR-022f protege contra un bucle que no avance, que colgaria el trabajo de retencion para siempre."
+    },
+    {
+      "id": "FR-099",
+      "title": "Recuperacion del espacio en disco tras podar",
+      "level": "partial",
+      "evidence": "5 TC pasando. TC-NSR-030h mide el tamano real del archivo antes y despues, y fue el que encontro que en modo WAL el VACUUM no encoge el fichero sin PRAGMA wal_checkpoint(TRUNCATE) — sin ese arreglo la feature habria fallado en silencio en la Pi. Parcial por la deuda declarada: VACUUM con umbral en vez de auto_vacuum=INCREMENTAL (ADR-001)."
+    },
+    {
+      "id": "FR-100",
+      "title": "Intervalo del monitor de red configurable por entorno",
+      "level": "partial",
+      "evidence": "4 TC pasando. TC-NSR-043e y TC-NSR-100h leen el intervalo de vuelta desde el probe construido, que es la unica forma de distinguir un valor que viaja desde la configuracion de uno fijo en el codigo. Parcial por la deuda declarada: el defecto se deja en 5 s y no en 15, para no alterar el comportamiento observable de un despliegue que no toque el entorno."
+    },
+    {
+      "id": "NFR-102",
+      "title": "Seguridad: una ventana invalida no puede borrar el historico",
+      "level": "complete",
+      "evidence": "4 TC pasando. TC-NSR-051f y 052f van de extremo a extremo — entorno, config.Load, poda, filas — en vez de afirmar solo que Load devuelve 30: verifican que una muestra de ayer sobrevive a ULTRON_NET_RETENTION_DAYS=0 y una de hace una hora sobrevive a -30. TC-NSR-050h afirma que el SQL de poda no usa Sprintf ni concatenacion."
+    },
+    {
+      "id": "NFR-103",
+      "title": "Fiabilidad: un fallo de la poda de red queda contenido",
+      "level": "complete",
+      "evidence": "TC-NSR-014f cierra la base bajo el trabajo y afirma que no hay panic y que el fallo se registra. TC-NSR-092f afirma la contencion en el sentido contrario."
+    },
+    {
+      "id": "NFR-104",
+      "title": "Observabilidad: log util y sin ruido diario",
+      "level": "complete",
+      "evidence": "TC-NSR-012e afirma que la linea incluye el numero de filas y la ventana; el test auxiliar de silencio afirma que una poda que no borro nada NO escribe linea, para no ensuciar el journal a diario."
+    },
+    {
+      "id": "NFR-105",
+      "title": "CI/CD: la suite completa corre en cada push a main",
+      "level": "complete",
+      "evidence": ".github/workflows/ci.yml dispara en push a main y en pull_request y ejecuta 'go test -race -count=1 ./...', que incluye los 44 TC de esta feature, ademas de compilar linux/arm64."
+    },
+    {
+      "id": "NFR-106",
+      "title": "Regresion: la retencion de UPS sigue funcionando",
+      "level": "complete",
+      "evidence": "TC-NSR-060h/061f verifican que las dos ventanas son independientes. TC-NSR-062e escribe una muestra de UPS de 45 dias y una de red de 45 dias en la MISMA base y afirma que la poda de UPS borra solo la suya y no toca NetSample."
+    },
+    {
+      "id": "NFR-107",
+      "title": "Regresion: esquema e indices de NetSample intactos",
+      "level": "complete",
+      "evidence": "TC-NSR-070h afirma las seis columnas exactas via PRAGMA table_info. TC-NSR-071e afirma los dos nombres de indice. TC-NSR-072f afirma que RecentNetSamples, la consulta que alimenta la interfaz, sigue devolviendo filas tras podar y compactar."
+    },
+    {
+      "id": "NFR-108",
+      "title": "Regresion: el panel semanal de cortes sigue mostrando datos",
+      "level": "complete",
+      "evidence": "TC-NSR-080h compara los identificadores devueltos por una consulta de 7 dias antes y despues de podar y exige que sean el mismo conjunto. TC-NSR-081e afirma que la poda no se extiende a NetEvent."
+    },
+    {
+      "id": "NFR-109",
+      "title": "Regresion: las demas podas siguen en el mismo ciclo",
+      "level": "complete",
+      "evidence": "TC-NSR-090h ejecuta las tres podas y verifica sus efectos. TC-NSR-091e afirma que timer.Reset(24h) sigue presente y que aparece DESPUES de la llamada a la poda de red, de modo que un fallo no pueda dejar el trabajo sin re-armar."
+    },
+    {
+      "id": "NFR-110",
+      "title": "Regresion: sin configurar, el muestreo sigue siendo de 5 s",
+      "level": "complete",
+      "evidence": "TC-NSR-100h construye el probe desde una configuracion sin la variable y lee su intervalo de vuelta: 5 s exactos. TC-NSR-101e afirma que el respaldo propio del constructor sigue siendo 5 s. TC-NSR-102f afirma que un valor corrupto tampoco altera el muestreo."
+    },
+    {
+      "id": "NFR-111",
+      "title": "Regresion: la insercion no se bloquea durante la poda",
+      "level": "complete",
+      "evidence": "TC-NSR-110h inserta continuamente durante una poda de 100000 filas y exige cero errores. TC-NSR-111e afirma que las 30 muestras escritas mientras corre la poda sobreviven a ella. TC-NSR-112f afirma que no aparece error de base bloqueada."
+    },
+    {
+      "id": "NFR-112",
+      "title": "Rendimiento: el historico se estabiliza en torno a 175 MB",
+      "level": "functionally_present",
+      "evidence": "Implementado y respaldado por TC-NSR-030h, que demuestra la reduccion real del archivo en disco sobre una base de prueba. La cifra concreta de 175 MB solo es verificable en la Pi tras el despliegue; el procedimiento de verificacion esta en DEPLOYMENT.md."
+    },
+    {
+      "id": "NFR-113",
+      "title": "Healthcheck: no aplica uno nuevo",
+      "level": "functionally_present",
+      "evidence": "Declarado no aplicable en fase 1 con su motivo: esta feature no anade servicios ni endpoints y el /health existente ya cubre la vivacidad del proceso. Sin TC dedicado, por diseno."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-099",
+      "substitution": "La recuperacion de espacio es un VACUUM completo con umbral de 100 MB, no auto_vacuum=INCREMENTAL como prefiere en primer lugar la nota de origen.",
+      "reason": "La primera opcion no evita el coste que pretende evitar: convertir una base existente a auto_vacuum=INCREMENTAL exige un VACUUM completo de todas formas, asi que se pagaria el mismo VACUUM unico mas un cambio permanente de esquema mas una llamada extra en cada poda. Ademas la ganancia continua no aplica a esta carga: en regimen estacionario la poda diaria libera aproximadamente lo que insertan las 24 h siguientes, asi que el freelist no crece y SQLite reutiliza esas paginas. Y auto_vacuum anade paginas de mapa de punteros con un 1-2% de sobrecarga permanente en cada escritura. Documentado como ADR-001. Coste asumido: el VACUUM bloquea escrituras unos segundos cuando dispara, lo que en la practica ocurre una sola vez en la vida de la base.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-096",
+      "substitution": "Las dos variables nuevas avisan y caen al defecto ante un valor invalido, mientras que sus vecinas en la misma funcion config.Load (ULTRON_METRICS_INTERVAL, ULTRON_HELPER_TIMEOUT) devuelven error y abortan el arranque.",
+      "reason": "Es lo que pide explicitamente la nota de origen y es la conducta correcta para este producto: un panel de monitorizacion que no arranca por una errata en una variable de retencion deja al operador sin ninguna visibilidad justo cuando necesita entrar a arreglarla. No se unifica el estilo de las entradas existentes porque convertir un arranque que hoy falla ruidoso en uno que arranca con valores inesperados seria una regresion fuera del alcance. Documentado como ADR-002 y FLAG-2. Deuda real: dos estilos conviven en la misma funcion.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-100",
+      "substitution": "El intervalo por defecto se deja en 5 s, no en los 15 s que reducirian el crecimiento tres veces.",
+      "reason": "Cambiar el defecto haria que un despliegue que no toca el entorno alterase el comportamiento observable, rompiendo NFR-110. Ademas, subir a 15 s implica que un corte de menos de 15 s puede caer entre dos muestras — la misma clase de problema que BL-041 documenta para el sondeo del UPS. Es una decision de compromiso que corresponde al owner, tomada por entorno y no impuesta por el binario. El owner pondra 15 en la Pi.",
+      "effort_to_fix": "low"
+    }
+  ]
+}

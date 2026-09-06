@@ -1,0 +1,91 @@
+{
+  "files_created": [
+    "internal/dockerapi/client.go",
+    "internal/dockerapi/models.go",
+    "internal/dockerapi/demux.go",
+    "internal/dockerapi/client_test.go",
+    "cmd/ultron-helper/docker.go",
+    "cmd/ultron-helper/docker_test.go",
+    "internal/docker/source.go",
+    "internal/docker/fakesource_test.go",
+    "internal/server/docker_readonly_test.go",
+    "internal/isolation/docker_isolation_test.go",
+    "features/docker-via-helper/spec/BUILD_PLAN.md",
+    "scripts/gofmt-check.sh",
+    "scripts/build-arm64-check.sh"
+  ],
+  "files_modified": [
+    "cmd/ultron-helper/main.go",
+    "cmd/ultron-helper/peercred_linux.go",
+    "cmd/ultron-helper/servicename_test.go",
+    "internal/docker/monitor.go",
+    "internal/docker/models.go",
+    "internal/docker/monitor_test.go",
+    "internal/docker/monitor_health_test.go",
+    "internal/privileged/client.go",
+    "internal/server/handlers_docker.go",
+    "internal/server/handlers_docker_test.go",
+    "internal/server/handlers_services_test.go",
+    "internal/server/ac_coverage_test.go",
+    "internal/server/server.go",
+    "internal/server/templates.go",
+    "web/templates/docker.html",
+    "web/templates/partials/docker-list.html",
+    "web/static/css/app.css",
+    "go.mod",
+    "go.sum",
+    ".github/vuln-allowlist.txt"
+  ],
+  "setup_commands": [],
+  "environment_variables": [],
+  "technical_debt": [
+    {
+      "fr_id": "FR-089",
+      "substitution": "TC-DVH-081f y TC-DVH-082f verifican authorize(), la funcion pura de decision de autenticacion que usa handleConn, en vez de abrir una conexion real por socket desde otro UID.",
+      "reason": "SO_PEERCRED es una extension exclusiva de Linux: en darwin peerCredSupported es false y handleConn omite el bloque entero, asi que el test pasaria por vacuidad en la maquina de desarrollo. Y ni siquiera en Linux puede un proceso de test conectar como otro UID sin ser root, ni en CI ni localmente. Un round trip cruzando UIDs no es alcanzable desde ningun entorno de test de este proyecto. La alternativa era t.Skip en no-Linux, que cuenta como AC sin cobertura y bloquea verify-complete. TC-DVH-080h si ejecuta el round trip completo por socket con el UID del proceso, y el refactor a authorize() no cambio ninguna decision, solo la extrajo.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-091",
+      "substitution": "Los 11 TC declarados type=e2e se ejecutan como tests HTTP en Go con httptest contra el servidor levantado en proceso, no en un navegador.",
+      "reason": "El proyecto no tiene runner de navegador (sin package.json, sin Playwright, sin chromedp) — es la deuda registrada como BL-042. Precedente ya establecido y verde en NUT_UPS_Pi_On_Dashboard (11 e2e), insights-engine (2) y network-tile (2). Mitigacion deliberada en fase 1: los criterios de aceptacion de esta feature se redactaron desde el principio como aserciones de presencia de texto en el HTML renderizado y como calculo de contraste sobre los tokens reales de input.css, de modo que ninguno exige geometria de layout, estilos computados ni trayectorias de animacion. Por eso los 59 TC pasan de verdad, en vez de repetir los ~20 ACs sin cobertura de help-page y settings-revamp.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-094",
+      "substitution": "El criterio AC-008-002 del FR-008 raiz ('Start, Stop, Restart buttons per Docker container') queda falso y el TC-008e declarado queda huerfano; no se enmienda el PRD raiz en este ciclo.",
+      "reason": "Enmendar FR-008 exige 'aitri run-phase requirements --feedback' en la raiz, que cascadea e invalida arquitectura, tests, build y deploy, hoy 5/5 y Deployable. Decidido con el owner el 2026-09-06 tras comprobar que ningun test verde se rompe: TC-008a prueba /services (systemd), no contenedores, y no existe implementacion en Go de TC-008e. Registrado como BL-043 con su criterio de cierre.",
+      "effort_to_fix": "medium"
+    }
+  ],
+  "test_runner": "go test ../../... -run TestTC_DVH -v",
+  "test_files": [
+    "../../internal/dockerapi/client_test.go",
+    "../../cmd/ultron-helper/docker_test.go",
+    "../../internal/docker/monitor_test.go",
+    "../../internal/server/docker_readonly_test.go",
+    "../../internal/isolation/docker_isolation_test.go"
+  ],
+  "quality_gates": [
+    {
+      "name": "vet",
+      "command": "go vet ../../...",
+      "required": true
+    },
+    {
+      "name": "gofmt",
+      "command": "sh ../../scripts/gofmt-check.sh",
+      "required": true
+    },
+    {
+      "name": "build-linux-arm64",
+      "command": "sh ../../scripts/build-arm64-check.sh",
+      "required": true
+    },
+    {
+      "name": "no-docker-sdk-in-webapp",
+      "command": "go test ../../internal/isolation/ -run TestTC_DVH_050h -count=1",
+      "required": true
+    }
+  ]
+}

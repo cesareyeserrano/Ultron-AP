@@ -1,0 +1,180 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "net-sample-retention",
+  "createdAt": "2026-09-06T21:12:35.339Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-09-06T21:31:36.664Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-09-06T21:13:19.786Z",
+      "event": "started",
+      "phase": 1
+    },
+    {
+      "at": "2026-09-06T21:15:11.805Z",
+      "event": "completed",
+      "phase": 1
+    },
+    {
+      "at": "2026-09-06T21:15:15.020Z",
+      "event": "approved",
+      "phase": 1,
+      "ideaArchived": true
+    },
+    {
+      "at": "2026-09-06T21:18:02.160Z",
+      "event": "completed",
+      "phase": 2
+    },
+    {
+      "at": "2026-09-06T21:18:07.306Z",
+      "event": "approved",
+      "phase": 2
+    },
+    {
+      "at": "2026-09-06T21:18:07.359Z",
+      "event": "started",
+      "phase": 3
+    },
+    {
+      "at": "2026-09-06T21:20:11.076Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-09-06T21:20:32.727Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-09-06T21:20:32.816Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T21:30:21.546Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T21:30:25.546Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T21:30:29.432Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T21:30:29.525Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-06T21:31:36.470Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-06T21:31:36.562Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-06T21:31:36.649Z",
+      "event": "approved",
+      "phase": 5,
+      "version": "1.1.0",
+      "version_source": "team"
+    }
+  ],
+  "cascadedPhases": [],
+  "artifactHashes": {
+    "1": "56b8feccf37a7506c11e0d794ad33ce496e87b5240e7446335c56ed09bc38ef7",
+    "2": "aec1a1bdbe6586084e01352cd6d45f454c0611c3261a6e60f5f68bea9a94498e",
+    "3": "49c9d905f78669fb80acfb9e578591c39deef75a6b01254472c74e30c3859534",
+    "4": "481733fbad9b184311c96c09b6d2d875e379ebb52d41c84bdc85b3825651fbff",
+    "5": "71b0f49b2fbaaaab4c73f8fc7d355c3d681a42094ef832ca8fd0089e7f0a6ccf"
+  },
+  "frSnapshots": {
+    "2": [
+      "FR-096",
+      "FR-097",
+      "FR-098",
+      "FR-099",
+      "FR-100"
+    ],
+    "3": [
+      "FR-096",
+      "FR-097",
+      "FR-098",
+      "FR-099",
+      "FR-100"
+    ],
+    "4": [
+      "FR-096",
+      "FR-097",
+      "FR-098",
+      "FR-099",
+      "FR-100"
+    ],
+    "5": [
+      "FR-096",
+      "FR-097",
+      "FR-098",
+      "FR-099",
+      "FR-100"
+    ]
+  },
+  "verifyResultsHash": "cac863d23fd3566efc0c7e4d38bfb7e5da7932bf6dc84eb833777b064d8e309c",
+  "verifyRanAt": "2026-09-06T21:30:29.392Z",
+  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
+  "verifyRanDirty": true,
+  "lastVerifyRun": {
+    "passed": 44,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-09-06T21:30:29.392Z"
+  },
+  "verifyPassed": true,
+  "verifySummary": {
+    "total": 44,
+    "passed": 44,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "releaseHistory": [
+    {
+      "version": "1.1.0",
+      "version_source": "team",
+      "at": "2026-09-06T21:31:36.648Z"
+    }
+  ]
+}

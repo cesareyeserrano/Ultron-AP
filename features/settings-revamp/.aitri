@@ -5,33 +5,21 @@
     "ux",
     2,
     3,
-    4,
-    5
+    4
   ],
   "completedPhases": [
     1,
     "ux",
     2,
     3,
-    4,
-    5
+    4
   ],
   "projectName": "settings-revamp",
   "createdAt": "2026-05-06T21:34:58.844Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-21T21:47:18.850Z",
+  "updatedAt": "2026-09-06T19:02:16.027Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-06T21:36:30.489Z",
-      "event": "started",
-      "phase": 3
-    },
-    {
-      "at": "2026-05-06T21:36:30.522Z",
-      "event": "completed",
-      "phase": 3
-    },
     {
       "at": "2026-05-06T21:36:30.570Z",
       "event": "approved",
@@ -142,56 +130,73 @@
       "phase": "verify",
       "passed": 30,
       "failed": 0
+    },
+    {
+      "at": "2026-09-06T19:01:48.529Z",
+      "event": "approved",
+      "phase": 4,
+      "afterDrift": true
+    },
+    {
+      "at": "2026-09-06T19:02:15.984Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 30,
+      "failed": 0,
+      "skipped": 16,
+      "manual": 10
     }
   ],
   "artifactHashes": {
     "1": "5dad6701e64d2585b25d02496840bb5c09cbca359d0ff74b14691ec669f8fb0f",
     "2": "b3efeb2b9dd50447a3b753e972a58521af19b3f08e91c8497606c41cc6e953d9",
     "3": "cbb70a3e82d15493bc484eb49f8d88c851a0cb0998e175ec6cfaaa85d57ce1cf",
-    "4": "1da35a9f056d729fc4482a969af0305d092c92775771c7757afc2ad69ef7524f",
-    "5": "8983a8e3e3b8ea93c041fd6cffa4700afe8e91408718a9e666854622ecd64179",
+    "4": "68a856eed0116c151a4f11e325b909f462f4034b4877eeff6b35e95f9d6df7b9",
     "ux": "6194a3b6dbb004ce7ae197b977a10b37bacf64f54b3cbd4208c849bcf8728a08"
   },
-  "lastSession": {
-    "at": "2026-05-21T21:47:18.849Z",
-    "agent": "unknown",
-    "event": "verify-complete",
-    "files_touched": [
-      ".aitri/config.json",
-      "features/help-page/.aitri",
-      "features/help-page/spec/04_TEST_RESULTS.json",
-      "features/insights-engine/.aitri",
-      "features/insights-engine/spec/04_TEST_RESULTS.json",
-      "features/lan-devices/.aitri",
-      "features/lan-devices/spec/04_TEST_RESULTS.json",
-      "features/network-monitoring/.aitri",
-      "features/network-monitoring/spec/04_TEST_RESULTS.json",
-      "features/settings-revamp/.aitri",
-      "features/settings-revamp/spec/04_TEST_RESULTS.json"
-    ]
-  },
-  "verifyRanAt": "2026-05-21T21:47:13.684Z",
   "rejections": {
     "3": {
       "at": "2026-05-06T21:38:36.816Z",
       "feedback": "Mark 10 e2e TCs (TC-SR-057E2E, TC-SR-058E2E, TC-SR-063h, TC-SR-063e, TC-SR-063f, TC-SR-065e, TC-SR-065f, TC-SR-067E2E, TC-SR-068E2E, TC-SR-070e) with automation: manual since the project has no headless-browser stack — verified at server-rendered HTML/JS-source layer per declared tech debt in 04_IMPLEMENTATION_MANIFEST.json."
     }
   },
-  "verifyPassed": true,
+  "verifyPassed": false,
   "normalizeState": {
     "baseRef": "0ea4827c360385af066abcb8cbfebb9236f276eb",
     "method": "git",
     "status": "resolved",
     "lastRun": "2026-05-06T21:38:41.254Z"
   },
-  "verifySummary": {
-    "total": 56,
+  "cascadedPhases": [
+    "5"
+  ],
+  "frSnapshots": {
+    "4": [
+      "FR-057",
+      "FR-058",
+      "FR-059",
+      "FR-060",
+      "FR-061",
+      "FR-062",
+      "FR-063",
+      "FR-064",
+      "FR-065",
+      "FR-066",
+      "FR-067",
+      "FR-068",
+      "FR-069",
+      "FR-070"
+    ]
+  },
+  "verifyResultsHash": "0f8cda8b1c0be3d772601fa1257789c1b5c1604f119a4fb97a22ea565f19e30b",
+  "verifyRanAt": "2026-09-06T19:02:15.876Z",
+  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
+  "verifyRanDirty": false,
+  "lastVerifyRun": {
     "passed": 30,
     "failed": 0,
     "skipped": 16,
-    "skipped_e2e": 0,
-    "skipped_no_marker": 16,
     "manual": 10,
-    "manual_verified": 0
+    "at": "2026-09-06T19:02:15.876Z"
   }
 }

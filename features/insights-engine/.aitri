@@ -17,25 +17,9 @@
   "projectName": "insights-engine",
   "createdAt": "2026-05-05T22:07:04.650Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-04T20:34:29.238Z",
+  "updatedAt": "2026-09-06T19:02:38.056Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-09-03T03:20:51.976Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 37,
-      "failed": 0,
-      "skipped": 0,
-      "manual": 0
-    },
-    {
-      "at": "2026-09-03T03:20:54.413Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 37,
-      "failed": 0
-    },
     {
       "at": "2026-09-03T03:21:57.810Z",
       "event": "approved",
@@ -148,6 +132,22 @@
       "phase": 5,
       "version": "1.0.0",
       "version_source": null
+    },
+    {
+      "at": "2026-09-06T19:02:19.246Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T19:02:38.028Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -164,7 +164,7 @@
     "status": "resolved",
     "lastRun": "2026-05-05T23:03:14.902Z"
   },
-  "verifyRanRef": "151f1d7d6d4261b2722a3940427effab3817f382",
+  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
   "verifyRanDirty": false,
   "cascadedPhases": [],
   "frSnapshots": {
@@ -214,14 +214,14 @@
       "at": "2026-09-04T20:34:29.189Z"
     }
   ],
-  "verifyResultsHash": "7f4c0c3eb4ead6e23a5a0394d5c079bac25a80497629efab1681960303c77f47",
-  "verifyRanAt": "2026-09-04T20:34:18.218Z",
+  "verifyResultsHash": "ef8ff0dacd1242947329000307edbfc1949a3b5c2a274f35108b11dc22e931dd",
+  "verifyRanAt": "2026-09-06T19:02:19.159Z",
   "lastVerifyRun": {
     "passed": 37,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-04T20:34:18.218Z"
+    "at": "2026-09-06T19:02:19.159Z"
   },
   "verifySummary": {
     "total": 37,

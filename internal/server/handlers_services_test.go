@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -23,14 +24,41 @@ import (
 type mockCommandRunner struct {
 	output []byte
 	err    error
+
+	// mu/invocations record every argv the runner was asked to execute, so a
+	// test can assert that a rejected unit name produced NO systemctl call at
+	// all — the difference between "refused" and "refused after running it".
+	mu          sync.Mutex
+	invocations [][]string
 }
 
 func (m *mockCommandRunner) Run(_ context.Context, _ string, args ...string) ([]byte, error) {
+	m.mu.Lock()
+	m.invocations = append(m.invocations, append([]string(nil), args...))
+	m.mu.Unlock()
+
 	// For list-units, return a minimal valid output so refresh works.
 	if len(args) > 0 && args[0] == "list-units" {
 		return m.output, nil
 	}
 	return m.output, m.err
+}
+
+// ranAction reports whether the runner was asked to perform a unit action
+// (anything other than the periodic list-units/show refresh).
+func (m *mockCommandRunner) ranAction() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, argv := range m.invocations {
+		if len(argv) == 0 {
+			continue
+		}
+		switch argv[0] {
+		case "start", "stop", "restart":
+			return true
+		}
+	}
+	return false
 }
 
 // setupServiceTestServer creates a test server with a mock systemd runner.

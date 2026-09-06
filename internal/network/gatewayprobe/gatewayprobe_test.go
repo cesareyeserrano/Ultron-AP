@@ -100,7 +100,7 @@ func TestNew_NilSinkAccepted(t *testing.T) {
 
 func TestNew_DefaultsKindToICMPWhenZero(t *testing.T) {
 	p := New(time.Second, nil, []Target{
-		{Label: "gateway"},                            // Kind unset
+		{Label: "gateway"}, // Kind unset
 		{Label: "dns-cf", Host: "1.1.1.1", Kind: KindDNS},
 	})
 	snaps := p.Snapshots()

@@ -8,14 +8,14 @@ import "testing"
 
 func TestServiceNameRe_RejectsOptionLikeNames(t *testing.T) {
 	bad := []string{
-		"-Mfoo",             // -M<machine>: retarget systemd instance
-		"--version",         // long option
-		"-Hroot@evil.com",   // -H<host>: remote over ssh (@ is otherwise allowed)
-		"-r",                // shutdown-style flag
-		"",                  // empty
-		".hidden",           // leading dot
-		"foo bar",           // space
-		"foo;rm",            // shell metachar (belt-and-braces)
+		"-Mfoo",           // -M<machine>: retarget systemd instance
+		"--version",       // long option
+		"-Hroot@evil.com", // -H<host>: remote over ssh (@ is otherwise allowed)
+		"-r",              // shutdown-style flag
+		"",                // empty
+		".hidden",         // leading dot
+		"foo bar",         // space
+		"foo;rm",          // shell metachar (belt-and-braces)
 	}
 	for _, name := range bad {
 		if serviceNameRe.MatchString(name) {

@@ -76,15 +76,61 @@ func (db *DB) RecentNetSamplesByKind(kind string, limit int) ([]NetSample, error
 	return scanNetSamples(rows)
 }
 
-// PruneNetSamples deletes NetSample rows older than days. Returns rows removed.
+// netPruneBatch bounds how many rows a single DELETE may remove.
+//
+// It is a constant, never configurable: the environment may influence the
+// PARAMETER of the statement (the cutoff) but never its shape (NFR-102).
+const netPruneBatch = 50000
+
+// PruneNetSamples deletes NetSample rows older than days, in bounded batches.
+// Returns the total rows removed.
+//
+// Batching is the point. The first run in production has to remove ~6.3M rows
+// from a 719 MB database on a Raspberry Pi, and a single DELETE of that size
+// holds one transaction open for the whole delete, inflates the WAL, and blocks
+// writers — and the writer here is the network probe, inserting every few
+// seconds. With bounded batches each transaction lasts tens of milliseconds and
+// the probe finds the database free in between (NFR-111).
+//
+// The cutoff is computed ONCE, before the loop: recomputing it per batch would
+// walk the boundary forward while the delete is in progress.
+//
+// SQLite's DELETE ... LIMIT needs SQLITE_ENABLE_UPDATE_DELETE_LIMIT at compile
+// time and the Go driver does not guarantee it, so the bound is expressed as a
+// subquery over the primary key instead (ADR-003).
+//
+// Params:
+//   - days: retention window; the caller is responsible for it being >= 1,
+//     which config.Load guarantees.
+//
+// Returns rows removed so far and the first error, if any — a partial delete is
+// valid work and the next daily pass continues from where it stopped.
+//
+// @aitri-trace FR-097, FR-098, AC-098-001, AC-098-002, TC-NSR-020h, TC-NSR-021e
 func (db *DB) PruneNetSamples(days int) (int64, error) {
 	cutoff := time.Now().AddDate(0, 0, -days).UnixMilli()
-	res, err := db.Exec(`DELETE FROM NetSample WHERE ts < ?`, cutoff)
-	if err != nil {
-		return 0, fmt.Errorf("prune net samples: %w", err)
+
+	var total int64
+	for {
+		res, err := db.Exec(
+			`DELETE FROM NetSample WHERE id IN (
+			     SELECT id FROM NetSample WHERE ts < ? LIMIT ?
+			 )`, cutoff, netPruneBatch)
+		if err != nil {
+			return total, fmt.Errorf("prune net samples: %w", err)
+		}
+		n, err := res.RowsAffected()
+		if err != nil {
+			return total, fmt.Errorf("prune net samples: rows affected: %w", err)
+		}
+		total += n
+		// A batch that removed nothing means there is nothing left in range.
+		// This is what terminates the loop; without it a non-advancing query
+		// would spin forever inside the retention job (TC-NSR-022f).
+		if n == 0 {
+			return total, nil
+		}
 	}
-	n, _ := res.RowsAffected()
-	return n, nil
 }
 
 // NetEvent is one structured network event row (e.g. WAN outage transitions,

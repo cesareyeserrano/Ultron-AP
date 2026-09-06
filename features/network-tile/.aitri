@@ -19,23 +19,9 @@
   "projectName": "network-tile",
   "createdAt": "2026-07-14T16:36:57.812Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-04T20:34:46.883Z",
+  "updatedAt": "2026-09-06T19:02:38.237Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-09-04T19:36:49.998Z",
-      "event": "approved",
-      "phase": 4
-    },
-    {
-      "at": "2026-09-04T19:36:53.144Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 16,
-      "failed": 0,
-      "skipped": 1,
-      "manual": 0
-    },
     {
       "at": "2026-09-04T19:36:53.349Z",
       "event": "verify-complete",
@@ -141,6 +127,22 @@
       "phase": "verify",
       "passed": 17,
       "failed": 0
+    },
+    {
+      "at": "2026-09-06T19:02:21.090Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T19:02:38.210Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0
     }
   ],
   "cascadedPhases": [],
@@ -175,16 +177,16 @@
     ]
   },
   "verifyPassed": true,
-  "verifyRanRef": "151f1d7d6d4261b2722a3940427effab3817f382",
+  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
   "verifyRanDirty": false,
-  "verifyResultsHash": "7135ce686684ed7edee832c318171d837cef1046799af435e2a8d9a6bf35894b",
-  "verifyRanAt": "2026-09-04T20:34:46.188Z",
+  "verifyResultsHash": "3188a1e0c009a6c69d8a8872cb16089424d0e8361dc379d5df5df07f34c4b720",
+  "verifyRanAt": "2026-09-06T19:02:20.990Z",
   "lastVerifyRun": {
     "passed": 17,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-04T20:34:46.188Z"
+    "at": "2026-09-06T19:02:20.990Z"
   },
   "verifySummary": {
     "total": 17,

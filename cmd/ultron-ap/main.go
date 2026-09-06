@@ -187,7 +187,10 @@ func main() {
 	})
 
 	lastLoggedProbeErr := map[string]string{}
-	gateway := gatewayprobe.New(5*time.Second, func(snap gatewayprobe.Snapshot) {
+	// The sampling interval comes from configuration now (FR-100). The default
+	// is 5s, identical to the literal this replaced, so an unchanged
+	// environment keeps sampling exactly as before.
+	gateway := gatewayprobe.New(cfg.NetInterval, func(snap gatewayprobe.Snapshot) {
 		var rtt *float64
 		if snap.Status == gatewayprobe.StatusOK {
 			v := snap.RTTMs

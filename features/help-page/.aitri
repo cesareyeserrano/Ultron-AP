@@ -4,32 +4,20 @@
     1,
     2,
     3,
-    4,
-    5
+    4
   ],
   "completedPhases": [
     1,
     2,
     3,
-    4,
-    5
+    4
   ],
   "projectName": "help-page",
   "createdAt": "2026-05-05T23:20:30.189Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-05-21T21:34:35.041Z",
+  "updatedAt": "2026-09-06T19:02:13.415Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-05T23:23:45.825Z",
-      "event": "started",
-      "phase": 1
-    },
-    {
-      "at": "2026-05-05T23:32:04.804Z",
-      "event": "completed",
-      "phase": 1
-    },
     {
       "at": "2026-05-05T23:36:05.343Z",
       "event": "approved",
@@ -136,24 +124,28 @@
       "phase": "verify",
       "passed": 37,
       "failed": 0
+    },
+    {
+      "at": "2026-09-06T19:01:46.783Z",
+      "event": "approved",
+      "phase": 4,
+      "afterDrift": true
+    },
+    {
+      "at": "2026-09-06T19:02:13.376Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 18,
+      "manual": 0
     }
   ],
   "artifactHashes": {
     "1": "d9d002e9a46033581fc8d6898e8acae1ca88ebbb4efd364048b47cb5a7f658ca",
     "2": "0c35eade36b3bccaebd4dba14cb402a1dae0d517b869cd6ad40a711996eb7d8f",
     "3": "a00a3753c111eb4bb82182d1c9adcc217045d8d2020c28670fceb3f78002b21a",
-    "4": "56c479368f90958de638324854b7d83c8881ea7f925a48593b4c87d889e7f425",
-    "5": "d7bbf804b8a7f8c199b5e1fe05a0a3d46a0b1219f7fa86c96e73131d6ba79553"
-  },
-  "lastSession": {
-    "at": "2026-05-21T21:34:35.040Z",
-    "agent": "unknown",
-    "event": "verify-complete",
-    "files_touched": [
-      ".aitri/config.json",
-      "features/help-page/.aitri",
-      "features/help-page/spec/04_TEST_RESULTS.json"
-    ]
+    "4": "fc4303719aa6f37a046dcd06c5465163e3dbfd187b76642514998be3c70d2d02"
   },
   "normalizeState": {
     "baseRef": "929fd525e800d9ba02c4121f8838e31339aa9e1b",
@@ -161,16 +153,32 @@
     "status": "resolved",
     "lastRun": "2026-05-06T00:09:00.451Z"
   },
-  "verifyRanAt": "2026-05-21T21:34:29.442Z",
-  "verifyPassed": true,
-  "verifySummary": {
-    "total": 55,
+  "verifyPassed": false,
+  "cascadedPhases": [
+    "5"
+  ],
+  "frSnapshots": {
+    "4": [
+      "FR-048",
+      "FR-049",
+      "FR-050",
+      "FR-051",
+      "FR-052",
+      "FR-053",
+      "FR-054",
+      "FR-055",
+      "FR-056"
+    ]
+  },
+  "verifyResultsHash": "91aafb68273792532356a817acfd4a67bd1a99cbcf7b5d4d24a4941b68f23f34",
+  "verifyRanAt": "2026-09-06T19:02:13.261Z",
+  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
+  "verifyRanDirty": false,
+  "lastVerifyRun": {
     "passed": 37,
     "failed": 0,
     "skipped": 18,
-    "skipped_e2e": 13,
-    "skipped_no_marker": 5,
     "manual": 0,
-    "manual_verified": 0
+    "at": "2026-09-06T19:02:13.261Z"
   }
 }

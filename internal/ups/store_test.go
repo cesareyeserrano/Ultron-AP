@@ -139,3 +139,41 @@ func TestTC_UPS_018f_NoDoubleCountOnRestart(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, count, "exactly one outage event, no orphaned duplicate")
 }
+
+// @aitri-tc TC-NSR-062e — the UPS prune keeps working and stays in its own
+// lane: it removes its own old rows and never touches NetSample.
+//
+// This is the regression the network-retention feature has to protect. Both
+// tables are pruned from the same daily job now, and the cheapest way to break
+// UPS retention would be to widen a WHERE clause by accident.
+//
+// @aitri-trace NFR-106
+func TestTC_NSR_062e(t *testing.T) {
+	st, path := newTestStore(t)
+
+	old := Snapshot{State: StateOnline, RawStatus: "OL", Reachable: true, BatteryV: fp(27.0), LastGood: time.Now().AddDate(0, 0, -45)}
+	fresh := Snapshot{State: StateOnline, RawStatus: "OL", Reachable: true, BatteryV: fp(27.2), LastGood: time.Now().AddDate(0, 0, -1)}
+	require.NoError(t, st.WriteSample(old))
+	require.NoError(t, st.WriteSample(fresh))
+
+	// A network sample in the same database, also outside a 30-day window.
+	db, err := database.New(path)
+	require.NoError(t, err)
+	defer db.Close()
+	rtt := 5.0
+	require.NoError(t, db.InsertNetSample(database.NetSample{
+		TS: time.Now().AddDate(0, 0, -45), Target: "gateway", Kind: "icmp", RTTMs: &rtt, Status: "ok",
+	}))
+
+	removed, err := st.PruneSamples(30)
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, removed, "the UPS prune removes its own 45-day row")
+
+	var nets int
+	require.NoError(t, db.QueryRow("SELECT COUNT(*) FROM NetSample").Scan(&nets))
+	assert.Equal(t, 1, nets, "the UPS prune must not reach into NetSample")
+
+	series, err := st.Series(time.Now().AddDate(0, 0, -60), time.Now())
+	require.NoError(t, err)
+	require.Len(t, series, 1, "the in-window UPS row survives")
+}

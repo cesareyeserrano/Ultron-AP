@@ -1,0 +1,717 @@
+{
+  "executed_at": "2026-09-06T20:49:36.036Z",
+  "test_runner": "go test ../../... -run TestTC_DVH -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-DVH-001h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_001h (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-002e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_002e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-003e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_003e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-004e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_004e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-005f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_005f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-006e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_006e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-010h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_010h (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-011f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_011f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-012f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_012f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-013f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_013f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-014f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_014f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-015f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_015f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-016e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_016e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-020h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_020h (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-021f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_021f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-022e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_022e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-023e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_023e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-024f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_024f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-030h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_030h (0.03s)"
+    },
+    {
+      "tc_id": "TC-DVH-031f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_031f (0.01s)"
+    },
+    {
+      "tc_id": "TC-DVH-032f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_032f (0.01s)"
+    },
+    {
+      "tc_id": "TC-DVH-033e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_033e (0.01s)"
+    },
+    {
+      "tc_id": "TC-DVH-034e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_034e (0.03s)"
+    },
+    {
+      "tc_id": "TC-DVH-035h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_035h (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-036h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_036h (0.02s)"
+    },
+    {
+      "tc_id": "TC-DVH-040h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_040h (0.05s)"
+    },
+    {
+      "tc_id": "TC-DVH-041f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_041f (3.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-042e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_042e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-043e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_043e (0.10s)"
+    },
+    {
+      "tc_id": "TC-DVH-050h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_050h (0.20s)"
+    },
+    {
+      "tc_id": "TC-DVH-051e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_051e (0.12s)"
+    },
+    {
+      "tc_id": "TC-DVH-052f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_052f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-053f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_053f (0.20s)"
+    },
+    {
+      "tc_id": "TC-DVH-054e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_054e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-060h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_060h (0.02s)"
+    },
+    {
+      "tc_id": "TC-DVH-061f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_061f (0.02s)"
+    },
+    {
+      "tc_id": "TC-DVH-062f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_062f (0.02s)"
+    },
+    {
+      "tc_id": "TC-DVH-063e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_063e (0.14s)"
+    },
+    {
+      "tc_id": "TC-DVH-070h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_070h (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-071f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_071f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-072e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_072e (0.03s)"
+    },
+    {
+      "tc_id": "TC-DVH-073f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_073f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-074e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_074e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-080h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_080h (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-081f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_081f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-082f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_082f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-083e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_083e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-090h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_090h (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-091f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_091f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-092e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_092e (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-100h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_100h (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-101f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_101f (0.00s)"
+    },
+    {
+      "tc_id": "TC-DVH-102e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_102e (0.07s)"
+    },
+    {
+      "tc_id": "TC-DVH-110h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_110h (0.14s)"
+    },
+    {
+      "tc_id": "TC-DVH-111f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_111f (0.14s)"
+    },
+    {
+      "tc_id": "TC-DVH-112e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_112e (0.15s)"
+    },
+    {
+      "tc_id": "TC-DVH-120h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_120h (0.03s)"
+    },
+    {
+      "tc_id": "TC-DVH-121f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_121f (0.01s)"
+    },
+    {
+      "tc_id": "TC-DVH-122e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_DVH_122e (0.01s)"
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-088",
+      "tests_passing": 6,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-089",
+      "tests_passing": 7,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-090",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-091",
+      "tests_passing": 7,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-092",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-093",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-094",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-095",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "ac_coverage": [
+    {
+      "ac_id": "AC-088-001",
+      "fr_id": "FR-088",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-088-002",
+      "fr_id": "FR-088",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-088-003",
+      "fr_id": "FR-088",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-088-004",
+      "fr_id": "FR-088",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-089-001",
+      "fr_id": "FR-089",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-089-002",
+      "fr_id": "FR-089",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-089-003",
+      "fr_id": "FR-089",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-089-004",
+      "fr_id": "FR-089",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-090-001",
+      "fr_id": "FR-090",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-090-002",
+      "fr_id": "FR-090",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-090-003",
+      "fr_id": "FR-090",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-090-004",
+      "fr_id": "FR-090",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-091-001",
+      "fr_id": "FR-091",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-091-002",
+      "fr_id": "FR-091",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-091-003",
+      "fr_id": "FR-091",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-091-004",
+      "fr_id": "FR-091",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-092-001",
+      "fr_id": "FR-092",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-092-002",
+      "fr_id": "FR-092",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-092-003",
+      "fr_id": "FR-092",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-092-004",
+      "fr_id": "FR-092",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-093-001",
+      "fr_id": "FR-093",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-093-002",
+      "fr_id": "FR-093",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-093-003",
+      "fr_id": "FR-093",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-093-004",
+      "fr_id": "FR-093",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-094-001",
+      "fr_id": "FR-094",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-094-002",
+      "fr_id": "FR-094",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-094-003",
+      "fr_id": "FR-094",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-094-004",
+      "fr_id": "FR-094",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-095-001",
+      "fr_id": "FR-095",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-095-002",
+      "fr_id": "FR-095",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-095-003",
+      "fr_id": "FR-095",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-095-004",
+      "fr_id": "FR-095",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 59,
+    "passed": 59,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "low_confidence_tcs": [
+    {
+      "tc_id": "TC-DVH-080h",
+      "file": "../../cmd/ultron-helper/docker_test.go",
+      "assertCount": 1
+    }
+  ],
+  "quality_gates": [
+    {
+      "name": "vet",
+      "command": "go vet ../../...",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0,
+      "duration_ms": 370
+    },
+    {
+      "name": "gofmt",
+      "command": "sh ../../scripts/gofmt-check.sh",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0,
+      "duration_ms": 11,
+      "output": "gofmt: clean (internal/dockerapi internal/isolation internal/docker internal/privileged cmd/ultron-helper)"
+    },
+    {
+      "name": "build-linux-arm64",
+      "command": "sh ../../scripts/build-arm64-check.sh",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0,
+      "duration_ms": 1164,
+      "output": "build: linux/arm64 OK for ultron-ap and ultron-helper"
+    },
+    {
+      "name": "no-docker-sdk-in-webapp",
+      "command": "go test ../../internal/isolation/ -run TestTC_DVH_050h -count=1",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0,
+      "duration_ms": 549,
+      "output": "ok  \tgithub.com/cesareyeserrano/ultron-ap/internal/isolation\t0.374s"
+    }
+  ],
+  "timings": {
+    "runner_ms": 4124,
+    "gates_ms": 2095,
+    "total_ms": 6223
+  }
+}

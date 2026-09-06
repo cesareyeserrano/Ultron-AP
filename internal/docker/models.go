@@ -1,6 +1,9 @@
 package docker
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // HealthStatus represents the health state of a container for UI display.
 type HealthStatus string
@@ -64,4 +67,23 @@ func MapHealthStatus(state string, exitCode int) HealthStatus {
 	default:
 		return HealthStopped
 	}
+}
+
+// ParseExitCode extracts the exit code from a Docker status string such as
+// "Exited (1) 5 minutes ago".
+//
+// Exported because the privileged helper builds ContainerInfo values now and
+// must classify health exactly as the panel always has — a second parser
+// there is how the two would drift.
+//
+// Params:
+//   - status: the daemon's human-readable status text.
+//
+// Returns the parsed code, or 0 when the text carries none.
+//
+// @aitri-trace FR-088, AC-088-003
+func ParseExitCode(status string) int {
+	var code int
+	_, _ = fmt.Sscanf(status, "Exited (%d)", &code)
+	return code
 }

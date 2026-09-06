@@ -67,7 +67,7 @@
       "effort_to_fix": "medium"
     }
   ],
-  "test_runner": "go test -C ../.. ./internal/help/... ./internal/server/ -run TC_HP -v",
+  "test_runner": "go test ../../internal/help/... ../../internal/server/ -run TC_HP -v",
   "test_files": [
     "../../internal/help/loader_test.go",
     "../../internal/help/validator_test.go",

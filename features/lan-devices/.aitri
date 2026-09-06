@@ -17,21 +17,9 @@
   "projectName": "lan-devices",
   "createdAt": "2026-05-05T17:27:43.037Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-04T20:34:29.763Z",
+  "updatedAt": "2026-09-06T19:02:37.875Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-05T20:42:22.337Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 31,
-      "failed": 0
-    },
-    {
-      "at": "2026-05-05T21:02:55.934Z",
-      "event": "started",
-      "phase": 5
-    },
     {
       "at": "2026-05-05T21:05:38.871Z",
       "event": "completed",
@@ -146,6 +134,22 @@
       "phase": 5,
       "version": "1.0.0",
       "version_source": null
+    },
+    {
+      "at": "2026-09-06T19:02:17.585Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T19:02:37.847Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -162,7 +166,7 @@
     "status": "resolved",
     "lastRun": "2026-05-05T21:33:16.819Z"
   },
-  "verifyRanRef": "151f1d7d6d4261b2722a3940427effab3817f382",
+  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
   "verifyRanDirty": false,
   "cascadedPhases": [],
   "frSnapshots": {
@@ -189,14 +193,14 @@
       "FR-038"
     ]
   },
-  "verifyResultsHash": "1da58808ea4872252aad956b5a98bd2efe09367ef49894e755cc7ec1ad4cc8f8",
-  "verifyRanAt": "2026-09-04T20:34:19.850Z",
+  "verifyResultsHash": "f67638703b86fee4e5b856892bca28b47e267466c4f0142e61f853462146ef4d",
+  "verifyRanAt": "2026-09-06T19:02:17.486Z",
   "lastVerifyRun": {
     "passed": 31,
     "failed": 0,
     "skipped": 11,
     "manual": 0,
-    "at": "2026-09-04T20:34:19.850Z"
+    "at": "2026-09-06T19:02:17.486Z"
   },
   "verifySummary": {
     "total": 42,

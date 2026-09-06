@@ -365,7 +365,7 @@ func TestSSESummary_CarriesTailscaleStatus(t *testing.T) {
 // @aitri-tc TC-002b — the Docker page refreshes its container list
 // automatically every 10 seconds (AC-002-004).
 func TestDockerPage_AutoRefreshEvery10s(t *testing.T) {
-	srv, session := setupDockerTestServer(t, &mockDockerClient{})
+	srv, session := setupDockerTestServer(t, &fakeDockerSource{})
 
 	req := httptest.NewRequest(http.MethodGet, "/docker", nil)
 	req.AddCookie(&http.Cookie{Name: "session", Value: session.ID})

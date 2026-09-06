@@ -1,0 +1,1137 @@
+{
+  "test_plan": {
+    "strategy": "Tres niveles sobre el binario, sin navegador. Unit para el transporte de dockerapi, el mapeo de modelos, la redaccion y la politica de timeouts. Integration para el protocolo del helper sobre un socket Unix temporal con un demonio Docker simulado por httptest sobre un socket propio, y para las rutas del servidor. Los TC marcados e2e se ejecutan como tests HTTP en Go contra el servidor levantado en proceso con httptest, que es el precedente ya establecido en este repo (NUT_UPS_Pi_On_Dashboard, insights-engine, network-tile) por no existir runner de navegador — ver BL-042. Toda asercion de este plan es observable desde ese nivel: no hay ningun TC que dependa de geometria de layout real, de estilos computados por un motor de render ni de trayectorias de animacion, precisamente para no repetir los ACs sin cobertura de help-page y settings-revamp. El contraste se verifica parseando los tokens reales de web/css/input.css y calculando la razon WCAG, que es un calculo puro y no necesita navegador.",
+    "coverage_goal": "100% de los ACs declarados con al menos un test que pase; sin objetivo de cobertura de linea, que no predice deteccion de fallos",
+    "test_types": [
+      "unit",
+      "integration",
+      "e2e"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "TC-DVH-001h",
+      "requirement_id": "FR-088",
+      "user_story_id": "US-088",
+      "ac_id": "AC-088-001",
+      "title": "Lista via helper devuelve los 5 contenedores con state y health poblados",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un containerSource falso que devuelve 5 contenedores: homeassistant(running), hermes(running), openclaw(running), ledger(exited,exit=0), mosquitto(running)",
+      "when": "Monitor.refresh(ctx) se ejecuta una vez y se lee Monitor.Containers()",
+      "then": "len==5; los nombres son exactamente [homeassistant hermes openclaw ledger mosquitto]; ledger.Health==HealthStopped; los otros 4 Health==HealthRunning; Monitor.Available()==true",
+      "steps": [
+        "Monitor.refresh(ctx) se ejecuta una vez y se lee Monitor.Containers()"
+      ],
+      "expected_result": "Containers() devuelve 5 elementos con Name e Image no vacios, Health==running en 4 y stopped en ledger, y Available()==true",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-002e",
+      "requirement_id": "FR-088",
+      "user_story_id": "US-088",
+      "ac_id": "AC-088-002",
+      "title": "Stats de un contenedor en marcha llegan numericas y mem_percent acotado",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "el source falso devuelve homeassistant en running con MemUsage=268435456 y MemLimit=1073741824",
+      "when": "se lee el ContainerInfo de homeassistant tras el refresco",
+      "then": "CPUPercent>=0; MemUsage==268435456; MemLimit==1073741824; MemPercent==25.0 exacto con tolerancia 0.01",
+      "steps": [
+        "se lee el ContainerInfo de homeassistant tras el refresco"
+      ],
+      "expected_result": "MemPercent es 25.0 (256MiB de 1GiB) y MemUsage/MemLimit conservan los bytes exactos, no valores redondeados",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-003e",
+      "requirement_id": "FR-088",
+      "user_story_id": "US-088",
+      "ac_id": "AC-088-003",
+      "title": "Contenedor detenido se lista sin exigir stats",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "el source falso devuelve ledger en state=exited con Status='Exited (0) 2 hours ago' y sin stats",
+      "when": "Monitor.refresh(ctx) se ejecuta y se lee la fila de ledger",
+      "then": "ledger aparece en la lista; Health==HealthStopped; CPUPercent==0 y MemUsage==0 sin que el refresco devuelva error",
+      "steps": [
+        "Monitor.refresh(ctx) se ejecuta y se lee la fila de ledger"
+      ],
+      "expected_result": "ledger se lista con Health stopped, CPU y memoria a cero, y el refresco completo no falla por su ausencia de stats",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-004e",
+      "requirement_id": "FR-088",
+      "user_story_id": "US-088",
+      "ac_id": "AC-088-001",
+      "title": "Volumen de produccion: 200 contenedores se procesan en un refresco",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "el source falso devuelve 200 contenedores, 150 en running con stats",
+      "when": "Monitor.refresh(ctx) se ejecuta una vez",
+      "then": "Containers() devuelve exactamente 200 elementos; los 150 running tienen MemPercent>0; el refresco termina en menos de 2s",
+      "steps": [
+        "Monitor.refresh(ctx) se ejecuta una vez"
+      ],
+      "expected_result": "Se devuelven los 200 contenedores con los 150 running con stats pobladas, en menos de 2s",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-005f",
+      "requirement_id": "FR-088",
+      "user_story_id": "US-088",
+      "ac_id": "AC-088-004",
+      "title": "Payload no-JSON del helper deja el monitor no disponible sin panic",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un containerSource falso que devuelve el error de decodificacion que produce el payload '<html>502</html>'",
+      "when": "Monitor.refresh(ctx) se ejecuta una vez",
+      "then": "no hay panic; Monitor.Available()==false; Containers() devuelve la ultima lista buena (vacia en el primer refresco), no una lista parcial",
+      "steps": [
+        "Monitor.refresh(ctx) se ejecuta una vez"
+      ],
+      "expected_result": "Available()==false, sin panic, y Containers() no contiene elementos a medio construir",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-006e",
+      "requirement_id": "FR-088",
+      "user_story_id": "US-088",
+      "ac_id": "AC-088-004",
+      "title": "Un fallo transitorio conserva la ultima lista buena",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un source que devuelve 5 contenedores en la primera llamada y error en la segunda",
+      "when": "se ejecutan dos refrescos consecutivos",
+      "then": "tras el segundo, Available()==false pero Containers() sigue devolviendo los 5 de la primera lectura",
+      "steps": [
+        "se ejecutan dos refrescos consecutivos"
+      ],
+      "expected_result": "La lista de 5 se conserva tras el fallo y Available() pasa a false, de modo que la pantalla no parpadea a vacio",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-010h",
+      "requirement_id": "FR-089",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-004",
+      "title": "La accion docker.list es atendida y devuelve la lista",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha sobre un socket temporal con un demonio Docker simulado que responde a GET /containers/json?all=1 con 2 contenedores",
+      "when": "se envia por el socket {'action':'docker.list','payload':{}}",
+      "then": "la respuesta trae ok=true y Payload decodifica a 2 ContainerInfo con Name no vacio",
+      "steps": [
+        "se envia por el socket {'action':'docker.list','payload':{}}"
+      ],
+      "expected_result": "ok=true y Payload contiene exactamente 2 contenedores con nombre e imagen",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-011f",
+      "requirement_id": "FR-089",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-001",
+      "title": "docker.start no existe como accion",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha sobre un socket temporal",
+      "when": "se envia {'action':'docker.start','payload':{'id':'abc123'}}",
+      "then": "la respuesta es ok=false con message=='unknown action'; el demonio simulado no ha recibido ninguna peticion",
+      "steps": [
+        "se envia {'action':'docker.start','payload':{'id':'abc123'}}"
+      ],
+      "expected_result": "ok=false, message 'unknown action', y cero peticiones registradas en el demonio simulado",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-012f",
+      "requirement_id": "FR-089",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-001",
+      "title": "docker.stop, docker.restart y docker.exec tampoco existen",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha sobre un socket temporal",
+      "when": "se envian por separado las acciones docker.stop, docker.restart y docker.exec",
+      "then": "las tres devuelven ok=false con message=='unknown action'; el demonio simulado registra cero peticiones",
+      "steps": [
+        "se envian por separado las acciones docker.stop, docker.restart y docker.exec"
+      ],
+      "expected_result": "Las tres acciones devuelven 'unknown action' y ninguna alcanza al demonio",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-013f",
+      "requirement_id": "FR-089",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-003",
+      "title": "Id con travesia de ruta se rechaza antes de emitir peticion",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un dockerapi.Client apuntando a un demonio simulado que cuenta peticiones",
+      "when": "se llama a Inspect(ctx, '../../info')",
+      "then": "devuelve error de id invalido; el contador de peticiones del demonio simulado sigue en 0",
+      "steps": [
+        "se llama a Inspect(ctx, '../../info')"
+      ],
+      "expected_result": "Error 'invalid container id' y cero peticiones emitidas al socket",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-014f",
+      "requirement_id": "FR-089",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-003",
+      "title": "Id con travesia codificada en URL se rechaza",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un dockerapi.Client apuntando a un demonio simulado que cuenta peticiones",
+      "when": "se llama a Inspect(ctx, '%2e%2e%2finfo')",
+      "then": "devuelve error de id invalido; cero peticiones emitidas",
+      "steps": [
+        "se llama a Inspect(ctx, '%2e%2e%2finfo')"
+      ],
+      "expected_result": "Error 'invalid container id' y cero peticiones emitidas al socket",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-015f",
+      "requirement_id": "FR-089",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-003",
+      "title": "Id con caracteres especiales y byte nulo se rechaza",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un dockerapi.Client apuntando a un demonio simulado que cuenta peticiones",
+      "when": "se llama a Inspect con los ids \";DROP TABLE containers\", \"abc\\x00def\" y una cadena de 200 caracteres alfanumericos",
+      "then": "los tres devuelven error de id invalido; cero peticiones emitidas en los tres casos",
+      "steps": [
+        "se llama a Inspect con los ids \";DROP TABLE containers\", \"abc\\x00def\" y una cadena de 200 caracteres alfanumericos"
+      ],
+      "expected_result": "Los tres ids son rechazados con 'invalid container id' y ninguno emite peticion",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-016e",
+      "requirement_id": "FR-089",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-002",
+      "title": "Todas las peticiones al demonio usan el metodo GET",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un demonio simulado que registra el metodo de cada peticion recibida",
+      "when": "se ejecutan en secuencia Containers(), Stats(id), Inspect(id) y Logs(id,100) con un id valido",
+      "then": "el demonio registra 4 peticiones y el metodo de las 4 es exactamente GET",
+      "steps": [
+        "se ejecutan en secuencia Containers(), Stats(id), Inspect(id) y Logs(id,100) con un id valido"
+      ],
+      "expected_result": "Las 4 peticiones registradas tienen metodo GET y ninguna usa POST, DELETE ni PUT",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-020h",
+      "requirement_id": "FR-090",
+      "user_story_id": "US-090",
+      "ac_id": "AC-090-001",
+      "title": "El detalle devuelve los nombres de las variables de entorno",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un demonio simulado cuyo inspect devuelve Config.Env = ['PATH=/usr/bin','TZ=America/Bogota']",
+      "when": "se llama a Inspect(ctx,'abc123') y se construye el ContainerDetail",
+      "then": "EnvVarNames == ['PATH','TZ'] en ese orden",
+      "steps": [
+        "se llama a Inspect(ctx,'abc123') y se construye el ContainerDetail"
+      ],
+      "expected_result": "EnvVarNames contiene exactamente PATH y TZ",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-021f",
+      "requirement_id": "FR-090",
+      "user_story_id": "US-090",
+      "ac_id": "AC-090-001",
+      "title": "El valor de una variable secreta nunca cruza la frontera",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un demonio simulado cuyo inspect devuelve Config.Env = ['POSTGRES_PASSWORD=hunter2','API_KEY=sk-live-9f3a']",
+      "when": "se serializa a JSON el ContainerDetail resultante",
+      "then": "el JSON contiene las cadenas 'POSTGRES_PASSWORD' y 'API_KEY'; el JSON NO contiene 'hunter2' ni 'sk-live-9f3a' en ninguna posicion",
+      "steps": [
+        "se serializa a JSON el ContainerDetail resultante"
+      ],
+      "expected_result": "El JSON serializado incluye ambos nombres y no contiene ninguna de las dos cadenas de valor",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-022e",
+      "requirement_id": "FR-090",
+      "user_story_id": "US-090",
+      "ac_id": "AC-090-002",
+      "title": "Los puertos publicados llegan con host, contenedor y protocolo",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "un inspect simulado con NetworkSettings.Ports = {'8123/tcp': [{'HostPort':'8123'}]}",
+      "when": "se construye el ContainerDetail",
+      "then": "Ports tiene 1 elemento con HostPort=='8123', ContainerPort=='8123/tcp' y Protocol=='tcp'",
+      "steps": [
+        "se construye el ContainerDetail"
+      ],
+      "expected_result": "Un unico mapeo con HostPort 8123, ContainerPort 8123/tcp y Protocol tcp",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-023e",
+      "requirement_id": "FR-090",
+      "user_story_id": "US-090",
+      "ac_id": "AC-090-003",
+      "title": "Los volumenes llegan con origen, destino y modo",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "un inspect simulado con Mounts = [{'Source':'/srv/ha','Destination':'/config','Mode':'rw'}]",
+      "when": "se construye el ContainerDetail",
+      "then": "Volumes tiene 1 elemento con Source=='/srv/ha', Destination=='/config' y Mode=='rw'",
+      "steps": [
+        "se construye el ContainerDetail"
+      ],
+      "expected_result": "Un unico montaje con esos tres valores exactos",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-024f",
+      "requirement_id": "FR-090",
+      "user_story_id": "US-090",
+      "ac_id": "AC-090-004",
+      "title": "Contenedor inexistente devuelve error, no un detalle vacio",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un demonio simulado que responde 404 a GET /containers/nosuch/json",
+      "when": "se llama a Inspect(ctx,'nosuch')",
+      "then": "devuelve error cuyo mensaje contiene 'not found'; el ContainerDetail devuelto es nil",
+      "steps": [
+        "se llama a Inspect(ctx,'nosuch')"
+      ],
+      "expected_result": "Error 'container not found' y detalle nil, no un ContainerDetail con listas vacias",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-030h",
+      "requirement_id": "FR-091",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-003",
+      "title": "Con helper disponible la pagina lista contenedores y no muestra el aviso",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba con un source que devuelve 3 contenedores y una sesion autenticada",
+      "when": "GET /docker",
+      "then": "status 200; el cuerpo contiene los 3 nombres de contenedor; el cuerpo NO contiene el texto del aviso de indisponibilidad",
+      "steps": [
+        "GET /docker"
+      ],
+      "expected_result": "200 con los 3 nombres presentes y sin el texto de helper no disponible",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-031f",
+      "requirement_id": "FR-091",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-001",
+      "title": "Con el helper caido la pagina muestra el aviso de indisponibilidad",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba cuyo source devuelve siempre privileged.ErrUnavailable y una sesion autenticada",
+      "when": "GET /docker",
+      "then": "status 200; el cuerpo contiene el texto del aviso de fuente de datos no disponible",
+      "steps": [
+        "GET /docker"
+      ],
+      "expected_result": "200 y el cuerpo contiene el aviso de indisponibilidad del helper",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-032f",
+      "requirement_id": "FR-091",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-002",
+      "title": "Con el helper caido la pagina NO dice que no hay contenedores",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba cuyo source devuelve siempre privileged.ErrUnavailable y una sesion autenticada",
+      "when": "GET /docker",
+      "then": "el cuerpo NO contiene la cadena 'No containers found' ni ningun texto de lista vacia",
+      "steps": [
+        "GET /docker"
+      ],
+      "expected_result": "El cuerpo no contiene 'No containers found' — el estado vacio y el de error son mutuamente excluyentes",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-033e",
+      "requirement_id": "FR-091",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-002",
+      "title": "Con lectura confirmada y cero contenedores se muestra el estado vacio, no el de error",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba cuyo source devuelve una lista de longitud 0 sin error, y una sesion autenticada",
+      "when": "GET /docker",
+      "then": "status 200; el cuerpo contiene el texto de lista vacia; el cuerpo NO contiene el aviso de indisponibilidad",
+      "steps": [
+        "GET /docker"
+      ],
+      "expected_result": "200 con el estado vacio presente y el aviso de indisponibilidad ausente",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-034e",
+      "requirement_id": "FR-091",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-004",
+      "title": "Con el helper caido el resto del panel sigue respondiendo",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba cuyo source devuelve siempre privileged.ErrUnavailable y una sesion autenticada",
+      "when": "GET / y GET /alerts y GET /network en secuencia",
+      "then": "las tres respuestas son 200 y ninguna contiene el aviso de indisponibilidad de Docker",
+      "steps": [
+        "GET / y GET /alerts y GET /network en secuencia"
+      ],
+      "expected_result": "Las tres rutas devuelven 200 con su contenido habitual, sin contagiarse del error de Docker",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-035h",
+      "requirement_id": "FR-091",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-001",
+      "title": "Contraste del aviso de error cumple WCAG AA sobre su fondo",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "los tokens --color-error-text y --color-error-bg definidos en web/css/input.css",
+      "when": "se parsean ambos tokens del fichero y se calcula la razon de contraste WCAG 2.1 entre ellos",
+      "then": "la razon calculada es >= 4.5",
+      "steps": [
+        "se parsean ambos tokens del fichero y se calcula la razon de contraste WCAG 2.1 entre ellos"
+      ],
+      "expected_result": "La razon de contraste entre el texto y el fondo de error es >= 4.5:1, medida sobre los tokens reales del fichero",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-036h",
+      "requirement_id": "FR-091",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-003",
+      "title": "La fila de contenedor conserva su afordancia de detalle",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "un servidor de prueba con 1 contenedor y una sesion autenticada",
+      "when": "GET /docker y se inspecciona el marcado de la fila",
+      "then": "la fila declara un disparador de detalle hacia /api/docker/<id> con destino el bloque de detalle de esa fila",
+      "steps": [
+        "GET /docker y se inspecciona el marcado de la fila"
+      ],
+      "expected_result": "La fila mantiene su afordancia de expandir detalle apuntando a /api/docker/<id>",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-040h",
+      "requirement_id": "FR-092",
+      "user_story_id": "US-092",
+      "ac_id": "AC-092-001",
+      "title": "El timeout configurado para las llamadas al helper respeta las cotas de 2s a 3s",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "la constante helperDockerTimeout que acota cada llamada de Docker al helper",
+      "when": "se comprueba su valor y se ejecuta un refresco contra una fuente que responde en 50ms",
+      "then": "helperDockerTimeout es >=2s y <=3s; el refresco completa sin error en menos de 1s y el monitor queda disponible",
+      "steps": [
+        "comprobar las cotas de helperDockerTimeout",
+        "ejecutar un refresco contra una fuente que responde en 50ms"
+      ],
+      "expected_result": "helperDockerTimeout esta dentro de [2s, 3s] y un refresco normal completa en menos de 1s con Available()==true",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-041f",
+      "requirement_id": "FR-092",
+      "user_story_id": "US-092",
+      "ac_id": "AC-092-002",
+      "title": "Un helper colgado aborta por timeout en menos de 4s",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper simulado que acepta la conexion y nunca escribe respuesta",
+      "when": "se llama a helperSource.List(ctx) y se mide el tiempo transcurrido",
+      "then": "devuelve error; el tiempo transcurrido es >=2s y <4s",
+      "steps": [
+        "se llama a helperSource.List(ctx) y se mide el tiempo transcurrido"
+      ],
+      "expected_result": "Devuelve error por deadline entre 2s y 4s, no bloquea indefinidamente",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-042e",
+      "requirement_id": "FR-092",
+      "user_story_id": "US-092",
+      "ac_id": "AC-092-003",
+      "title": "Tras un timeout el siguiente refresco recupera la disponibilidad",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un source que devuelve error de deadline en la primera llamada y la lista de 3 contenedores en la segunda",
+      "when": "se ejecutan dos refrescos consecutivos",
+      "then": "tras el primero Available()==false; tras el segundo Available()==true y Containers() devuelve 3",
+      "steps": [
+        "se ejecutan dos refrescos consecutivos"
+      ],
+      "expected_result": "El monitor pasa de no disponible a disponible sin reiniciar el proceso, con 3 contenedores tras el segundo refresco",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-043e",
+      "requirement_id": "FR-092",
+      "user_story_id": "US-092",
+      "ac_id": "AC-092-004",
+      "title": "Stop tras un timeout no deja goroutines vivas",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un monitor arrancado contra un helper simulado que nunca responde",
+      "when": "se llama a Start(ctx), se espera a que ocurra al menos un timeout, y se llama a Stop()",
+      "then": "Stop() retorna en menos de 5s; el numero de goroutines vuelve al valor previo a Start con tolerancia 0 tras un margen de 200ms",
+      "steps": [
+        "se llama a Start(ctx), se espera a que ocurra al menos un timeout, y se llama a Stop()"
+      ],
+      "expected_result": "Stop retorna y el recuento de goroutines vuelve a su valor inicial, sin fugas",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-050h",
+      "requirement_id": "FR-093",
+      "user_story_id": "US-093",
+      "ac_id": "AC-093-002",
+      "title": "El binario de la web app no depende del SDK de Docker ni de dockerapi",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "el modulo Go del proyecto",
+      "when": "se ejecuta 'go list -deps ./cmd/ultron-ap' y se recorre la lista de paquetes resultante",
+      "then": "ningun paquete de la salida empieza por 'github.com/docker/' ni es 'github.com/cesareyeserrano/ultron-ap/internal/dockerapi'",
+      "steps": [
+        "se ejecuta 'go list -deps ./cmd/ultron-ap' y se recorre la lista de paquetes resultante"
+      ],
+      "expected_result": "El cierre de dependencias de cmd/ultron-ap no contiene ningun paquete github.com/docker/ ni internal/dockerapi",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-051e",
+      "requirement_id": "FR-093",
+      "user_story_id": "US-093",
+      "ac_id": "AC-093-002",
+      "title": "Control positivo: el helper SI depende de dockerapi",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "el modulo Go del proyecto",
+      "when": "se ejecuta 'go list -deps ./cmd/ultron-helper' y se recorre la lista",
+      "then": "la salida contiene 'github.com/cesareyeserrano/ultron-ap/internal/dockerapi'",
+      "steps": [
+        "se ejecuta 'go list -deps ./cmd/ultron-helper' y se recorre la lista"
+      ],
+      "expected_result": "El cierre de dependencias del helper SI contiene internal/dockerapi, lo que prueba que el test de TC-DVH-050h sabe detectar la presencia y no pasa por vacuidad",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-052f",
+      "requirement_id": "FR-093",
+      "user_story_id": "US-093",
+      "ac_id": "AC-093-001",
+      "title": "El arbol de la web app no menciona el socket de Docker",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "los ficheros .go de internal/server, internal/docker, internal/metrics y cmd/ultron-ap",
+      "when": "se buscan en ellos las cadenas '/var/run/docker.sock' y 'docker.sock'",
+      "then": "cero coincidencias en los cuatro arboles",
+      "steps": [
+        "se buscan en ellos las cadenas '/var/run/docker.sock' y 'docker.sock'"
+      ],
+      "expected_result": "Cero apariciones de docker.sock fuera del helper y de internal/dockerapi",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-053f",
+      "requirement_id": "FR-093",
+      "user_story_id": "US-093",
+      "ac_id": "AC-093-003",
+      "title": "El arranque no emite el log de demonio inalcanzable",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "la salida de log capturada durante la construccion y arranque de un Monitor sin socket de helper disponible",
+      "when": "se construye NewMonitor(), se llama a Start(ctx) y se espera un ciclo de refresco",
+      "then": "la salida capturada NO contiene 'daemon not reachable' ni 'permission denied'",
+      "steps": [
+        "se construye NewMonitor(), se llama a Start(ctx) y se espera un ciclo de refresco"
+      ],
+      "expected_result": "El log de arranque no contiene ninguna de las dos cadenas",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-054e",
+      "requirement_id": "FR-093",
+      "user_story_id": "US-093",
+      "ac_id": "AC-093-004",
+      "title": "Sin socket de helper el arranque no se bloquea",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una ruta de socket que no existe en el sistema de ficheros",
+      "when": "se mide el tiempo de NewMonitor() seguido de Start(ctx) y Stop()",
+      "then": "la secuencia completa termina en menos de 1s y no devuelve error",
+      "steps": [
+        "se mide el tiempo de NewMonitor() seguido de Start(ctx) y Stop()"
+      ],
+      "expected_result": "NewMonitor + Start + Stop terminan en menos de 1s sin error con el socket ausente",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-060h",
+      "requirement_id": "FR-094",
+      "user_story_id": "US-094",
+      "ac_id": "AC-094-001",
+      "title": "La pagina de Docker no ofrece ninguna accion de contenedor",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba con 3 contenedores, uno de ellos detenido, y una sesion autenticada",
+      "when": "GET /docker y se inspecciona el marcado",
+      "then": "el cuerpo no contiene ninguna peticion declarada hacia /api/docker/<id>/start, /stop ni /restart",
+      "steps": [
+        "GET /docker y se inspecciona el marcado"
+      ],
+      "expected_result": "Cero disparadores hacia las tres rutas de accion de contenedor en el HTML renderizado",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-061f",
+      "requirement_id": "FR-094",
+      "user_story_id": "US-094",
+      "ac_id": "AC-094-002",
+      "title": "POST a la ruta de arranque de contenedor responde 404",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba con sesion autenticada y token CSRF valido",
+      "when": "POST /api/docker/abc123/start con el token CSRF valido",
+      "then": "status 404",
+      "steps": [
+        "POST /api/docker/abc123/start con el token CSRF valido"
+      ],
+      "expected_result": "404 — la ruta no esta registrada, no 403 ni 500",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-062f",
+      "requirement_id": "FR-094",
+      "user_story_id": "US-094",
+      "ac_id": "AC-094-004",
+      "title": "Los handlers de accion de contenedor y controls.go ya no existen en el arbol",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "el arbol de codigo tras retirar los controles, y un servidor de prueba con sesion autenticada",
+      "when": "se buscan internal/docker/controls.go y los handlers de accion de contenedor en el arbol, y se hace POST a las rutas de parada y reinicio",
+      "then": "controls.go no existe; no hay ninguna definicion de handleDockerStart, handleDockerStop ni handleDockerRestart; y ambos POST responden 404",
+      "steps": [
+        "comprobar que controls.go no existe",
+        "buscar las definiciones de los tres handlers",
+        "POST a /stop y /restart"
+      ],
+      "expected_result": "internal/docker/controls.go ausente del disco, cero definiciones de los tres handlers en internal/server, y 404 en las rutas de stop y restart",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-063e",
+      "requirement_id": "FR-094",
+      "user_story_id": "US-094",
+      "ac_id": "AC-094-003",
+      "title": "Los controles de servicios systemd siguen presentes",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba con el monitor de systemd simulado devolviendo nginx.service y una sesion autenticada",
+      "when": "GET /services y se inspecciona el marcado",
+      "then": "el cuerpo declara peticiones hacia /api/services/nginx.service/start, /stop y /restart",
+      "steps": [
+        "GET /services y se inspecciona el marcado"
+      ],
+      "expected_result": "Las tres rutas de accion de servicio systemd siguen declaradas en el HTML",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-070h",
+      "requirement_id": "FR-095",
+      "user_story_id": "US-095",
+      "ac_id": "AC-095-001",
+      "title": "Los logs de contenedor llegan por el helper",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha con un demonio simulado que devuelve 2 lineas de log para el contenedor abc123",
+      "when": "se envia {'action':'docker.logs','payload':{'id':'abc123','lines':100}}",
+      "then": "ok=true; el Payload contiene las 2 lineas en orden",
+      "steps": [
+        "se envia {'action':'docker.logs','payload':{'id':'abc123','lines':100}}"
+      ],
+      "expected_result": "ok=true con las 2 lineas de log en el mismo orden que las emitio el demonio",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-071f",
+      "requirement_id": "FR-095",
+      "user_story_id": "US-095",
+      "ac_id": "AC-095-002",
+      "title": "Una linea con secreto sale redactada",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una salida de log de contenedor que contiene una linea con un token con la forma de un token de Telegram",
+      "when": "la salida pasa por finalizeLog con la politica de journal",
+      "then": "la cadena del token NO aparece en el resultado; la linea sigue presente en forma enmascarada",
+      "steps": [
+        "la salida pasa por finalizeLog con la politica de journal"
+      ],
+      "expected_result": "El token no aparece literal en la salida y la linea se conserva enmascarada, igual que en los logs de journalctl",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-072e",
+      "requirement_id": "FR-095",
+      "user_story_id": "US-095",
+      "ac_id": "AC-095-003",
+      "title": "La salida de logs esta acotada al mismo tope de bytes",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "una salida de log de contenedor de 5 MiB",
+      "when": "la salida pasa por finalizeLog con la politica de journal",
+      "then": "la longitud del resultado es menor o igual al tope de bytes que ya aplica a journalctl",
+      "steps": [
+        "la salida pasa por finalizeLog con la politica de journal"
+      ],
+      "expected_result": "El resultado esta acotado al mismo tope que journalctl, no se devuelven los 5 MiB",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-073f",
+      "requirement_id": "FR-095",
+      "user_story_id": "US-095",
+      "ac_id": "AC-095-004",
+      "title": "Un id invalido en logs devuelve error y no la salida de otro contenedor",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha con un demonio simulado que tiene logs para abc123",
+      "when": "se envia {'action':'docker.logs','payload':{'id':'../abc123','lines':100}}",
+      "then": "ok=false con mensaje de id invalido; el Payload esta vacio y no contiene ninguna linea de abc123",
+      "steps": [
+        "se envia {'action':'docker.logs','payload':{'id':'../abc123','lines':100}}"
+      ],
+      "expected_result": "ok=false con 'invalid container id' y sin ninguna linea de log en el payload",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-074e",
+      "requirement_id": "FR-095",
+      "user_story_id": "US-095",
+      "ac_id": "AC-095-001",
+      "title": "El desmultiplexado del flujo de Docker maneja tramas partidas y cabeceras truncadas",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "tres flujos construidos a mano: (a) dos tramas completas stdout+stderr, (b) una trama cuya carga llega partida en dos lecturas, (c) una cabecera de 5 bytes truncada al final",
+      "when": "cada flujo se pasa por la funcion de desmultiplexado",
+      "then": "(a) devuelve las dos cargas concatenadas en orden; (b) devuelve la carga completa reensamblada; (c) devuelve la parte ya leida sin error de panic",
+      "steps": [
+        "cada flujo se pasa por la funcion de desmultiplexado"
+      ],
+      "expected_result": "Las tramas completas y la partida se reensamblan intactas y la cabecera truncada no provoca panic",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-080h",
+      "requirement_id": "NFR-092",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-004",
+      "title": "Un UID de la allowlist puede usar las acciones de Docker",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha con la allowlist de UID conteniendo el UID del proceso de test",
+      "when": "se conecta al socket y se envia {'action':'docker.list','payload':{}}",
+      "then": "ok=true con la lista de contenedores",
+      "steps": [
+        "se conecta al socket y se envia {'action':'docker.list','payload':{}}"
+      ],
+      "expected_result": "La conexion se acepta y docker.list responde ok=true",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-081f",
+      "requirement_id": "NFR-092",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-001",
+      "title": "Un UID fuera de la allowlist recibe forbidden en las acciones de Docker",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha con una allowlist que contiene unicamente el UID 65534, distinto del UID del proceso de test",
+      "when": "se conecta al socket y se envia {'action':'docker.list','payload':{}}",
+      "then": "ok=false con message=='forbidden'; el demonio simulado registra cero peticiones",
+      "steps": [
+        "se conecta al socket y se envia {'action':'docker.list','payload':{}}"
+      ],
+      "expected_result": "ok=false con 'forbidden' y cero peticiones al demonio — la comprobacion ocurre antes de leer la accion",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-082f",
+      "requirement_id": "NFR-092",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-001",
+      "title": "Sin allowlist resoluble el helper falla cerrado tambien para Docker",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha con SO_PEERCRED soportado y una allowlist vacia",
+      "when": "se conecta al socket y se envia {'action':'docker.list','payload':{}}",
+      "then": "ok=false con message=='forbidden'; ninguna accion se ejecuta",
+      "steps": [
+        "se conecta al socket y se envia {'action':'docker.list','payload':{}}"
+      ],
+      "expected_result": "ok=false con 'forbidden' — fail-closed, la ausencia de allowlist no abre el helper",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-083e",
+      "requirement_id": "NFR-092",
+      "user_story_id": "US-090",
+      "ac_id": "AC-090-001",
+      "title": "La validacion del id se aplica en las tres acciones de Docker",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "el helper con un demonio simulado que cuenta peticiones",
+      "when": "se invocan docker.inspect y docker.logs con el id '../../info', y docker.list sin id",
+      "then": "las dos primeras devuelven error de id invalido; el contador de peticiones al demonio queda en 1, la de docker.list",
+      "steps": [
+        "se invocan docker.inspect y docker.logs con el id '../../info', y docker.list sin id"
+      ],
+      "expected_result": "Solo docker.list alcanza al demonio; las dos acciones con id invalido se detienen antes de emitir peticion",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-090h",
+      "requirement_id": "NFR-096",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-004",
+      "title": "La accion ping sigue respondiendo pong",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha con las acciones de Docker anadidas",
+      "when": "se envia {'action':'ping'}",
+      "then": "ok=true con message=='pong'",
+      "steps": [
+        "se envia {'action':'ping'}"
+      ],
+      "expected_result": "ok=true con message exactamente 'pong'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-091f",
+      "requirement_id": "NFR-096",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-001",
+      "title": "Una accion inexistente sigue devolviendo unknown action",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha con las acciones de Docker anadidas",
+      "when": "se envia {'action':'no-such-action'}",
+      "then": "ok=false con message=='unknown action'",
+      "steps": [
+        "se envia {'action':'no-such-action'}"
+      ],
+      "expected_result": "ok=false con message exactamente 'unknown action'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-092e",
+      "requirement_id": "NFR-096",
+      "user_story_id": "US-089",
+      "ac_id": "AC-089-003",
+      "title": "systemctl sigue validando el nombre de unidad",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un helper en marcha con las acciones de Docker anadidas",
+      "when": "se envia {'action':'systemctl','payload':{'action':'start','name':'-M evil'}}",
+      "then": "ok=false con mensaje de nombre de servicio invalido; no se ejecuta ningun systemctl",
+      "steps": [
+        "se envia {'action':'systemctl','payload':{'action':'start','name':'-M evil'}}"
+      ],
+      "expected_result": "ok=false con 'invalid service name' y sin ejecucion de systemctl",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-100h",
+      "requirement_id": "NFR-097",
+      "user_story_id": "US-095",
+      "ac_id": "AC-095-002",
+      "title": "Los logs de journalctl siguen saliendo redactados",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una salida de journalctl que contiene una linea con un token con forma de token de Telegram",
+      "when": "la salida pasa por finalizeLog con la politica de journal",
+      "then": "la cadena del token no aparece en el resultado",
+      "steps": [
+        "la salida pasa por finalizeLog con la politica de journal"
+      ],
+      "expected_result": "El token no aparece literal en la salida de journalctl, igual que antes del cambio",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-101f",
+      "requirement_id": "NFR-097",
+      "user_story_id": "US-095",
+      "ac_id": "AC-095-002",
+      "title": "Los logs de contenedor usan la misma politica, no una mas laxa",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "la misma linea con token pasada por la ruta de logs de contenedor y por la de journalctl",
+      "when": "se comparan las dos salidas redactadas",
+      "then": "las dos salidas son identicas byte a byte",
+      "steps": [
+        "se comparan las dos salidas redactadas"
+      ],
+      "expected_result": "Ambas rutas producen exactamente la misma salida redactada — no hay una politica de contenedor mas laxa",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-102e",
+      "requirement_id": "NFR-097",
+      "user_story_id": "US-095",
+      "ac_id": "AC-095-003",
+      "title": "El tope de bytes se aplica igual en ambas rutas",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "una entrada de 5 MiB pasada por la ruta de journalctl y por la de logs de contenedor",
+      "when": "se comparan las longitudes de ambas salidas",
+      "then": "las dos longitudes son iguales y menores o iguales al tope declarado",
+      "steps": [
+        "se comparan las longitudes de ambas salidas"
+      ],
+      "expected_result": "Ambas salidas tienen la misma longitud acotada al tope de journalctl",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-110h",
+      "requirement_id": "NFR-098",
+      "user_story_id": "US-094",
+      "ac_id": "AC-094-003",
+      "title": "La pagina de servicios sigue renderizando sus tres controles",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba con el monitor de systemd simulado devolviendo nginx.service y una sesion autenticada",
+      "when": "GET /services",
+      "then": "status 200 y el cuerpo declara peticiones hacia las rutas de start, stop y restart de nginx.service",
+      "steps": [
+        "GET /services"
+      ],
+      "expected_result": "200 con las tres rutas de accion de servicio presentes en el HTML",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-111f",
+      "requirement_id": "NFR-098",
+      "user_story_id": "US-094",
+      "ac_id": "AC-094-003",
+      "title": "Un nombre de unidad invalido sigue siendo rechazado",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba con sesion autenticada y token CSRF valido",
+      "when": "POST /api/services/-M%20evil/restart con el token CSRF valido",
+      "then": "la respuesta no es 2xx y no se ejecuta ningun systemctl en el runner simulado",
+      "steps": [
+        "POST /api/services/-M%20evil/restart con el token CSRF valido"
+      ],
+      "expected_result": "Respuesta de error y cero invocaciones de systemctl registradas en el runner simulado",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-112e",
+      "requirement_id": "NFR-098",
+      "user_story_id": "US-094",
+      "ac_id": "AC-094-003",
+      "title": "Una accion sobre un servicio sigue registrandose en el audit trail",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "un servidor de prueba con base de datos temporal, systemd simulado y sesion autenticada",
+      "when": "POST /api/services/nginx.service/restart con el token CSRF valido, y despues se consulta el registro de acciones",
+      "then": "el registro contiene una fila nueva con target=='nginx.service' y action=='restart'",
+      "steps": [
+        "POST /api/services/nginx.service/restart con el token CSRF valido, y despues se consulta el registro de acciones"
+      ],
+      "expected_result": "Una fila nueva en el audit trail con ese objetivo y esa accion",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-120h",
+      "requirement_id": "NFR-099",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-004",
+      "title": "El dashboard sigue renderizando con Docker en error",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba cuyo source de Docker devuelve siempre error, con metricas simuladas de CPU 12.5% y temperatura 47.0C, y sesion autenticada",
+      "when": "GET /",
+      "then": "status 200; el cuerpo contiene los valores de CPU y temperatura",
+      "steps": [
+        "GET /"
+      ],
+      "expected_result": "200 con CPU 12.5% y 47.0C renderizados pese al fallo de Docker",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-121f",
+      "requirement_id": "NFR-099",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-004",
+      "title": "El error de Docker no se propaga a otras rutas",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba cuyo source de Docker devuelve siempre error y sesion autenticada",
+      "when": "GET /alerts, GET /network y GET /services en secuencia",
+      "then": "las tres devuelven 200 y ninguna contiene el aviso de indisponibilidad de Docker",
+      "steps": [
+        "GET /alerts, GET /network y GET /services en secuencia"
+      ],
+      "expected_result": "Las tres rutas devuelven 200 sin el aviso de Docker en su cuerpo",
+      "test_data": {}
+    },
+    {
+      "id": "TC-DVH-122e",
+      "requirement_id": "NFR-099",
+      "user_story_id": "US-091",
+      "ac_id": "AC-091-004",
+      "title": "El tile de Docker del dashboard distingue indisponible de vacio",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un servidor de prueba con dos escenarios: (a) source con error, (b) source con lista de longitud 0",
+      "when": "se renderiza el parcial del tile de Docker del dashboard en ambos escenarios",
+      "then": "(a) contiene el texto de no disponible y no el de lista vacia; (b) contiene el de lista vacia y no el de no disponible",
+      "steps": [
+        "se renderiza el parcial del tile de Docker del dashboard en ambos escenarios"
+      ],
+      "expected_result": "Los dos escenarios producen textos distintos y mutuamente excluyentes en el tile del dashboard",
+      "test_data": {}
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-04T20:34:46.184Z",
+  "executed_at": "2026-09-06T19:02:20.988Z",
   "test_runner": "go test ../../internal/server -run TestTC_NT -v",
   "exit_code": 0,
   "results": [
@@ -26,7 +26,7 @@
     {
       "tc_id": "TC-NT-085Be",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_085Be_NoProbesIsUnknown (0.04s)"
+      "notes": "--- PASS: TestTC_NT_085Be_NoProbesIsUnknown (0.02s)"
     },
     {
       "tc_id": "TC-NT-085Bh",
@@ -36,22 +36,22 @@
     {
       "tc_id": "TC-NT-087h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_087h_WANStateMovesIntoTheTile (0.02s)"
+      "notes": "--- PASS: TestTC_NT_087h_WANStateMovesIntoTheTile (0.01s)"
     },
     {
       "tc_id": "TC-NT-087f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_087f_WANDownRendersOfflineWithNoChip (0.03s)"
+      "notes": "--- PASS: TestTC_NT_087f_WANDownRendersOfflineWithNoChip (0.01s)"
     },
     {
       "tc_id": "TC-NT-087e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_087e_NilWANDoesNotCrashTheTile (0.03s)"
+      "notes": "--- PASS: TestTC_NT_087e_NilWANDoesNotCrashTheTile (0.01s)"
     },
     {
       "tc_id": "TC-NT-088h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_088h_NeighbouringTilesUnchanged (0.02s)"
+      "notes": "--- PASS: TestTC_NT_088h_NeighbouringTilesUnchanged (0.01s)"
     },
     {
       "tc_id": "TC-NT-088f",
@@ -61,22 +61,22 @@
     {
       "tc_id": "TC-NT-E2E-001h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_E2E_001h_DashboardPageRendersTheNewTile (0.33s)"
+      "notes": "--- PASS: TestTC_NT_E2E_001h_DashboardPageRendersTheNewTile (0.24s)"
     },
     {
       "tc_id": "TC-NT-E2E-002h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_E2E_002h_SSEMetricsEventRendersTheTile (0.07s)"
+      "notes": "--- PASS: TestTC_NT_E2E_002h_SSEMetricsEventRendersTheTile (0.05s)"
     },
     {
       "tc_id": "TC-NT-087d",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_087d_WANTextUsesExistingSubtitleTokensOnly (0.02s)"
+      "notes": "--- PASS: TestTC_NT_087d_WANTextUsesExistingSubtitleTokensOnly (0.01s)"
     },
     {
       "tc_id": "TC-NT-089h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_089h_HistoryIsReadableByProbeLabel (0.03s)"
+      "notes": "--- PASS: TestTC_NT_089h_HistoryIsReadableByProbeLabel (0.01s)"
     },
     {
       "tc_id": "TC-NT-089f",
@@ -86,7 +86,7 @@
     {
       "tc_id": "TC-NT-089e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_089e_EmptyHistoryRendersRatherThanPanics (0.02s)"
+      "notes": "--- PASS: TestTC_NT_089e_EmptyHistoryRendersRatherThanPanics (0.01s)"
     }
   ],
   "fr_coverage": [
@@ -202,8 +202,8 @@
   },
   "low_confidence_tcs": [],
   "timings": {
-    "runner_ms": 1048,
+    "runner_ms": 1620,
     "gates_ms": 0,
-    "total_ms": 1055
+    "total_ms": 1625
   }
 }
