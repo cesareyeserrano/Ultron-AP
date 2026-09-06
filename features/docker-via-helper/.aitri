@@ -19,19 +19,9 @@
   "projectName": "docker-via-helper",
   "createdAt": "2026-09-06T19:04:16.801Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-06T21:09:33.354Z",
+  "updatedAt": "2026-09-06T21:59:02.809Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-09-06T19:24:38.014Z",
-      "event": "approved",
-      "phase": 2
-    },
-    {
-      "at": "2026-09-06T19:35:03.699Z",
-      "event": "started",
-      "phase": 3
-    },
     {
       "at": "2026-09-06T19:39:08.130Z",
       "event": "completed",
@@ -137,6 +127,22 @@
       "phase": 5,
       "version": "1.1.0",
       "version_source": "team"
+    },
+    {
+      "at": "2026-09-06T21:59:02.580Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T21:59:02.777Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0
     }
   ],
   "cascadedPhases": [],
@@ -200,17 +206,17 @@
       "FR-095"
     ]
   },
-  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
-  "verifyRanDirty": true,
+  "verifyRanRef": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
+  "verifyRanDirty": false,
   "verifyPassed": true,
-  "verifyResultsHash": "c7fa94970a2b9944595b7b603977d735926b67d6e68761d978b761e789382712",
-  "verifyRanAt": "2026-09-06T20:49:36.038Z",
+  "verifyResultsHash": "ddc67f0d6878cb373434043fcfc0caf788ec8da1c88fd44aaa9f74d0ff806edb",
+  "verifyRanAt": "2026-09-06T21:59:02.492Z",
   "lastVerifyRun": {
     "passed": 59,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-06T20:49:36.038Z"
+    "at": "2026-09-06T21:59:02.492Z"
   },
   "verifySummary": {
     "total": 59,

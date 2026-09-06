@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-06T20:49:36.036Z",
+  "executed_at": "2026-09-06T21:59:02.489Z",
   "test_runner": "go test ../../... -run TestTC_DVH -v",
   "exit_code": 0,
   "results": [
@@ -116,7 +116,7 @@
     {
       "tc_id": "TC-DVH-034e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_DVH_034e (0.03s)"
+      "notes": "--- PASS: TestTC_DVH_034e (0.05s)"
     },
     {
       "tc_id": "TC-DVH-035h",
@@ -151,12 +151,12 @@
     {
       "tc_id": "TC-DVH-050h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_DVH_050h (0.20s)"
+      "notes": "--- PASS: TestTC_DVH_050h (0.33s)"
     },
     {
       "tc_id": "TC-DVH-051e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_DVH_051e (0.12s)"
+      "notes": "--- PASS: TestTC_DVH_051e (0.22s)"
     },
     {
       "tc_id": "TC-DVH-052f",
@@ -191,7 +191,7 @@
     {
       "tc_id": "TC-DVH-063e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_DVH_063e (0.14s)"
+      "notes": "--- PASS: TestTC_DVH_063e (0.15s)"
     },
     {
       "tc_id": "TC-DVH-070h",
@@ -276,17 +276,17 @@
     {
       "tc_id": "TC-DVH-111f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_DVH_111f (0.14s)"
+      "notes": "--- PASS: TestTC_DVH_111f (0.15s)"
     },
     {
       "tc_id": "TC-DVH-112e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_DVH_112e (0.15s)"
+      "notes": "--- PASS: TestTC_DVH_112e (0.14s)"
     },
     {
       "tc_id": "TC-DVH-120h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_DVH_120h (0.03s)"
+      "notes": "--- PASS: TestTC_DVH_120h (0.05s)"
     },
     {
       "tc_id": "TC-DVH-121f",
@@ -296,7 +296,7 @@
     {
       "tc_id": "TC-DVH-122e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_DVH_122e (0.01s)"
+      "notes": "--- PASS: TestTC_DVH_122e (0.02s)"
     }
   ],
   "fr_coverage": [
@@ -679,7 +679,7 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 370
+      "duration_ms": 656
     },
     {
       "name": "gofmt",
@@ -687,7 +687,7 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 11,
+      "duration_ms": 26,
       "output": "gofmt: clean (internal/dockerapi internal/isolation internal/docker internal/privileged cmd/ultron-helper)"
     },
     {
@@ -696,7 +696,7 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 1164,
+      "duration_ms": 1743,
       "output": "build: linux/arm64 OK for ultron-ap and ultron-helper"
     },
     {
@@ -705,13 +705,13 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 549,
-      "output": "ok  \tgithub.com/cesareyeserrano/ultron-ap/internal/isolation\t0.374s"
+      "duration_ms": 829,
+      "output": "ok  \tgithub.com/cesareyeserrano/ultron-ap/internal/isolation\t0.537s"
     }
   ],
   "timings": {
-    "runner_ms": 4124,
-    "gates_ms": 2095,
-    "total_ms": 6223
+    "runner_ms": 5892,
+    "gates_ms": 3254,
+    "total_ms": 9154
   }
 }

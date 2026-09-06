@@ -17,20 +17,9 @@
   "projectName": "insights-engine",
   "createdAt": "2026-05-05T22:07:04.650Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-06T19:02:38.056Z",
+  "updatedAt": "2026-09-06T21:58:39.563Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-09-03T03:21:57.810Z",
-      "event": "approved",
-      "phase": 3,
-      "afterDrift": true
-    },
-    {
-      "at": "2026-09-03T03:22:58.845Z",
-      "event": "started",
-      "phase": 4
-    },
     {
       "at": "2026-09-03T03:23:15.465Z",
       "event": "completed",
@@ -148,6 +137,22 @@
       "phase": "verify",
       "passed": 37,
       "failed": 0
+    },
+    {
+      "at": "2026-09-06T21:58:39.350Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T21:58:39.533Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -164,7 +169,7 @@
     "status": "resolved",
     "lastRun": "2026-05-05T23:03:14.902Z"
   },
-  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
+  "verifyRanRef": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
   "verifyRanDirty": false,
   "cascadedPhases": [],
   "frSnapshots": {
@@ -214,14 +219,14 @@
       "at": "2026-09-04T20:34:29.189Z"
     }
   ],
-  "verifyResultsHash": "ef8ff0dacd1242947329000307edbfc1949a3b5c2a274f35108b11dc22e931dd",
-  "verifyRanAt": "2026-09-06T19:02:19.159Z",
+  "verifyResultsHash": "f3736fc0ff72364b8cae30ac628843d63b67ece6173aacccc4edccf897a20513",
+  "verifyRanAt": "2026-09-06T21:58:39.267Z",
   "lastVerifyRun": {
     "passed": 37,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-06T19:02:19.159Z"
+    "at": "2026-09-06T21:58:39.267Z"
   },
   "verifySummary": {
     "total": 37,

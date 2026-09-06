@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-06T19:02:19.157Z",
+  "executed_at": "2026-09-06T21:58:39.265Z",
   "test_runner": "go test ../../internal/insights/... ../../internal/server/ -run TC_IE -v",
   "exit_code": 0,
   "results": [
@@ -96,17 +96,17 @@
     {
       "tc_id": "TC-IE-007h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_007h_FreshDBSeedsTenEnabledRules (0.00s)"
+      "notes": "--- PASS: TestTC_IE_007h_FreshDBSeedsTenEnabledRules (0.01s)"
     },
     {
       "tc_id": "TC-IE-007f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_007f_DisableSurvivesReOpen (0.00s)"
+      "notes": "--- PASS: TestTC_IE_007f_DisableSurvivesReOpen (0.01s)"
     },
     {
       "tc_id": "TC-IE-007e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_007e_SchemaIdempotentOrphanStateTolerated (0.00s)"
+      "notes": "--- PASS: TestTC_IE_007e_SchemaIdempotentOrphanStateTolerated (0.01s)"
     },
     {
       "tc_id": "TC-IE-008h",
@@ -560,8 +560,8 @@
     }
   ],
   "timings": {
-    "runner_ms": 1446,
+    "runner_ms": 1763,
     "gates_ms": 0,
-    "total_ms": 1453
+    "total_ms": 1770
   }
 }

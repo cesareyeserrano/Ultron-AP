@@ -1847,7 +1847,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "high",
-      "status": "open",
+      "status": "fixed",
       "fr": "FR-011",
       "tc_reference": null,
       "phase_detected": null,
@@ -1855,8 +1855,10 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-09-06T21:48:25.417Z",
-      "updated_at": "2026-09-06T21:48:25.417Z",
-      "resolution": null
+      "updated_at": "2026-09-06T21:52:51.297Z",
+      "resolution": "Eliminado deploy/ultron-ap.sudoers por completo y retirado su paso de instalacion de DEPLOYMENT.md, que es la remediacion que AUDIT_REPORT.md prescribe literalmente para RQ-SEC-002. El fichero concedia al usuario ultron NOPASSWD sobre systemctl start/stop/restart de ultron-ap, docker y tailscaled, sobre journalctl y dmesg, sobre shutdown -r/-h now, y sobre /usr/local/bin/pironman5 con comodin de argumentos. Nada de eso se usaba jamas: el panel no invoca sudo en ningun punto del arbol y toda operacion privilegiada pasa por ultron-helper sobre su socket Unix, que es exactamente lo que describe FR-011. Ni siquiera existe una invocacion de pironman5 en el codigo; las unicas referencias son etiquetas de fuente de log y mapeo de nombres de servicio, y esas van por el journalctl del helper. Como DEPLOYMENT.md mandaba instalarlo, seguir el procedimiento documentado habria dado a un proceso expuesto en LAN :8080 y tailnet :34002 la capacidad de apagar la maquina y parar el demonio de Docker. No estaba instalado en la Pi porque la auditoria del 2026-09-05 lo retiro alli, de modo que el repositorio estaba en peor estado que produccion. Se conserva el porque en DEPLOYMENT.md para que nadie lo reintroduzca, con la regla explicita de que una accion privilegiada futura va a la allow-list del helper y nunca de vuelta a sudoers. Verificado: scripts/security-gate.sh sale 0 por primera vez, y ese script se ha cableado como segundo job del workflow Security Gate para que la regresion falle un PR en vez de esperar a que alguien lo ejecute a mano.",
+      "fix_commit_sha": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
+      "fix_at": "2026-09-06T21:52:51.297Z"
     },
     {
       "id": "BG-080",
@@ -1867,7 +1869,7 @@
       "actual_result": "",
       "environment": null,
       "severity": "low",
-      "status": "open",
+      "status": "fixed",
       "fr": "FR-009",
       "tc_reference": null,
       "phase_detected": null,
@@ -1875,8 +1877,10 @@
       "evidence": null,
       "reported_by": null,
       "created_at": "2026-09-06T21:48:29.324Z",
-      "updated_at": "2026-09-06T21:48:29.324Z",
-      "resolution": null
+      "updated_at": "2026-09-06T21:52:39.539Z",
+      "resolution": null,
+      "fix_commit_sha": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
+      "fix_at": "2026-09-06T21:52:39.539Z"
     }
   ]
 }

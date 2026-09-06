@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-06T19:02:20.988Z",
+  "executed_at": "2026-09-06T21:58:41.100Z",
   "test_runner": "go test ../../internal/server -run TestTC_NT -v",
   "exit_code": 0,
   "results": [
@@ -66,7 +66,7 @@
     {
       "tc_id": "TC-NT-E2E-002h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NT_E2E_002h_SSEMetricsEventRendersTheTile (0.05s)"
+      "notes": "--- PASS: TestTC_NT_E2E_002h_SSEMetricsEventRendersTheTile (0.04s)"
     },
     {
       "tc_id": "TC-NT-087d",
@@ -202,8 +202,8 @@
   },
   "low_confidence_tcs": [],
   "timings": {
-    "runner_ms": 1620,
+    "runner_ms": 1451,
     "gates_ms": 0,
-    "total_ms": 1625
+    "total_ms": 1455
   }
 }

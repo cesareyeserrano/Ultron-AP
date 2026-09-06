@@ -17,7 +17,7 @@
   "projectName": "net-sample-retention",
   "createdAt": "2026-09-06T21:12:35.339Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-06T21:31:36.664Z",
+  "updatedAt": "2026-09-06T21:59:06.747Z",
   "driftPhases": [],
   "events": [
     {
@@ -108,6 +108,22 @@
       "phase": 5,
       "version": "1.1.0",
       "version_source": "team"
+    },
+    {
+      "at": "2026-09-06T21:59:06.536Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T21:59:06.719Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0
     }
   ],
   "cascadedPhases": [],
@@ -148,16 +164,16 @@
       "FR-100"
     ]
   },
-  "verifyResultsHash": "cac863d23fd3566efc0c7e4d38bfb7e5da7932bf6dc84eb833777b064d8e309c",
-  "verifyRanAt": "2026-09-06T21:30:29.392Z",
-  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
-  "verifyRanDirty": true,
+  "verifyResultsHash": "394e05210d13a16f8852b0b04978a4efe8bd98d658ac789e5069678d399e82b6",
+  "verifyRanAt": "2026-09-06T21:59:06.454Z",
+  "verifyRanRef": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
+  "verifyRanDirty": false,
   "lastVerifyRun": {
     "passed": 44,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-06T21:30:29.392Z"
+    "at": "2026-09-06T21:59:06.454Z"
   },
   "verifyPassed": true,
   "verifySummary": {
