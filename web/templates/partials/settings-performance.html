@@ -7,7 +7,7 @@
                 </div>
                 <form hx-post="/api/performance" hx-target="#perf-status" hx-swap="innerHTML" data-status-target="#perf-status" data-saving-label="Applying performance profile..." data-settings-form="performance" class="space-y-3">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                    <!-- FR-057, FR-060: stepper widgets with inline range hint from RangeFor() -->
+                    <!-- stepper widgets with inline range hint from RangeFor() -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                             <label class="text-[11px] text-text-muted">{{rangeLabel "sse_interval_sec"}}</label>
