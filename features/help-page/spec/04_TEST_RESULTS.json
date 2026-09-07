@@ -1,12 +1,12 @@
 {
-  "executed_at": "2026-09-06T19:02:13.255Z",
-  "test_runner": "go test ../../internal/help/... ../../internal/server/ -run TC_HP -v",
+  "executed_at": "2026-09-07T02:36:21.236Z",
+  "test_runner": "go test -tags e2e ../../internal/help/... ../../internal/server/ -run TC_HP -v",
   "exit_code": 0,
   "results": [
     {
       "tc_id": "TC-HP-048h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_048h (0.02s)"
+      "notes": "--- PASS: TestTC_HP_048h (0.01s)"
     },
     {
       "tc_id": "TC-HP-048f",
@@ -60,13 +60,13 @@
     },
     {
       "tc_id": "TC-HP-050e",
-      "status": "skip",
-      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-HP-050e\" so it appears on stdout (e.g. test_TC_HP_050e_description, # @aitri-tc TC-HP-050e); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-HP-050e --result pass|fail --evidence <path>."
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_050e (1.77s)"
     },
     {
       "tc_id": "TC-HP-050f",
-      "status": "skip",
-      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-HP-050f\" so it appears on stdout (e.g. test_TC_HP_050f_description, # @aitri-tc TC-HP-050f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-HP-050f --result pass|fail --evidence <path>."
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_050f (1.65s)"
     },
     {
       "tc_id": "TC-HP-051h",
@@ -75,8 +75,8 @@
     },
     {
       "tc_id": "TC-HP-051e",
-      "status": "skip",
-      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-HP-051e\" so it appears on stdout (e.g. test_TC_HP_051e_description, # @aitri-tc TC-HP-051e); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-HP-051e --result pass|fail --evidence <path>."
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_051e (3.78s)"
     },
     {
       "tc_id": "TC-HP-051e2",
@@ -85,8 +85,8 @@
     },
     {
       "tc_id": "TC-HP-051f",
-      "status": "skip",
-      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-HP-051f\" so it appears on stdout (e.g. test_TC_HP_051f_description, # @aitri-tc TC-HP-051f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-HP-051f --result pass|fail --evidence <path>."
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_051f (1.68s)"
     },
     {
       "tc_id": "TC-HP-052h",
@@ -131,7 +131,7 @@
     {
       "tc_id": "TC-HP-053e2",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_053e2 (0.03s)"
+      "notes": "--- PASS: TestTC_HP_053e2 (0.01s)"
     },
     {
       "tc_id": "TC-HP-053e3",
@@ -145,13 +145,13 @@
     },
     {
       "tc_id": "TC-HP-054e",
-      "status": "skip",
-      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-HP-054e\" so it appears on stdout (e.g. test_TC_HP_054e_description, # @aitri-tc TC-HP-054e); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-HP-054e --result pass|fail --evidence <path>."
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_054e (1.83s)"
     },
     {
       "tc_id": "TC-HP-054f",
-      "status": "skip",
-      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-HP-054f\" so it appears on stdout (e.g. test_TC_HP_054f_description, # @aitri-tc TC-HP-054f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-HP-054f --result pass|fail --evidence <path>."
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_054f (1.63s)"
     },
     {
       "tc_id": "TC-HP-054e2",
@@ -181,27 +181,27 @@
     {
       "tc_id": "TC-HP-056h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_056h (0.09s)"
+      "notes": "--- PASS: TestTC_HP_056h (0.04s)"
     },
     {
       "tc_id": "TC-HP-056e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_056e (0.04s)"
+      "notes": "--- PASS: TestTC_HP_056e (0.01s)"
     },
     {
       "tc_id": "TC-HP-056f",
-      "status": "skip",
-      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-HP-056f\" so it appears on stdout (e.g. test_TC_HP_056f_description, # @aitri-tc TC-HP-056f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-HP-056f --result pass|fail --evidence <path>."
+      "status": "pass",
+      "notes": "--- PASS: TestTC_HP_056f (2.40s)"
     },
     {
       "tc_id": "TC-HP-056fneg",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_056fneg (0.08s)"
+      "notes": "--- PASS: TestTC_HP_056fneg (0.04s)"
     },
     {
       "tc_id": "TC-HP-NFR-022h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_NFR_022h (0.08s)"
+      "notes": "--- PASS: TestTC_HP_NFR_022h (0.06s)"
     },
     {
       "tc_id": "TC-HP-NFR-022h2",
@@ -211,7 +211,7 @@
     {
       "tc_id": "TC-HP-NFR-022f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_NFR_022f (0.02s)"
+      "notes": "--- PASS: TestTC_HP_NFR_022f (0.01s)"
     },
     {
       "tc_id": "TC-HP-NFR-023h",
@@ -256,7 +256,7 @@
     {
       "tc_id": "TC-HP-NFR-025e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_NFR_025e (0.01s)"
+      "notes": "--- PASS: TestTC_HP_NFR_025e (0.00s)"
     },
     {
       "tc_id": "TC-HP-NFR-025f",
@@ -266,7 +266,7 @@
     {
       "tc_id": "TC-HP-NFR-026h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_NFR_026h (0.12s)"
+      "notes": "--- PASS: TestTC_HP_NFR_026h (0.06s)"
     },
     {
       "tc_id": "TC-HP-NFR-026f",
@@ -298,17 +298,17 @@
     },
     {
       "fr_id": "FR-050",
-      "tests_passing": 1,
+      "tests_passing": 3,
       "tests_failing": 0,
-      "tests_skipped": 2,
+      "tests_skipped": 0,
       "tests_manual": 0,
       "status": "covered"
     },
     {
       "fr_id": "FR-051",
-      "tests_passing": 1,
+      "tests_passing": 3,
       "tests_failing": 0,
-      "tests_skipped": 3,
+      "tests_skipped": 1,
       "tests_manual": 0,
       "status": "covered"
     },
@@ -330,9 +330,9 @@
     },
     {
       "fr_id": "FR-054",
-      "tests_passing": 3,
+      "tests_passing": 5,
       "tests_failing": 0,
-      "tests_skipped": 4,
+      "tests_skipped": 2,
       "tests_manual": 0,
       "status": "covered"
     },
@@ -346,9 +346,9 @@
     },
     {
       "fr_id": "FR-056",
-      "tests_passing": 3,
+      "tests_passing": 4,
       "tests_failing": 0,
-      "tests_skipped": 1,
+      "tests_skipped": 0,
       "tests_manual": 0,
       "status": "covered"
     }
@@ -420,20 +420,20 @@
     {
       "ac_id": "AC-050-002",
       "fr_id": "FR-050",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
-      "tests_skipped": 1,
+      "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "uncovered"
+      "status": "covered"
     },
     {
       "ac_id": "AC-050-003",
       "fr_id": "FR-050",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
-      "tests_skipped": 1,
+      "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "uncovered"
+      "status": "covered"
     },
     {
       "ac_id": "AC-051-001",
@@ -447,20 +447,20 @@
     {
       "ac_id": "AC-051-002",
       "fr_id": "FR-051",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
-      "tests_skipped": 1,
+      "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "uncovered"
+      "status": "covered"
     },
     {
       "ac_id": "AC-051-003",
       "fr_id": "FR-051",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
-      "tests_skipped": 1,
+      "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "uncovered"
+      "status": "covered"
     },
     {
       "ac_id": "AC-052-001",
@@ -528,20 +528,20 @@
     {
       "ac_id": "AC-054-002",
       "fr_id": "FR-054",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
-      "tests_skipped": 1,
+      "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "uncovered"
+      "status": "covered"
     },
     {
       "ac_id": "AC-054-003",
       "fr_id": "FR-054",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
-      "tests_skipped": 1,
+      "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "uncovered"
+      "status": "covered"
     },
     {
       "ac_id": "AC-055-001",
@@ -582,11 +582,11 @@
     {
       "ac_id": "AC-056-002",
       "fr_id": "FR-056",
-      "tests_passing": 0,
+      "tests_passing": 1,
       "tests_failing": 0,
-      "tests_skipped": 1,
+      "tests_skipped": 0,
       "tests_manual": 0,
-      "status": "uncovered"
+      "status": "covered"
     },
     {
       "ac_id": "AC-056-003",
@@ -600,10 +600,10 @@
   ],
   "summary": {
     "total": 55,
-    "passed": 37,
+    "passed": 44,
     "failed": 0,
-    "skipped": 18,
-    "skipped_e2e": 13,
+    "skipped": 11,
+    "skipped_e2e": 6,
     "skipped_no_marker": 5,
     "manual": 0,
     "manual_verified": 0
@@ -771,8 +771,8 @@
     }
   ],
   "timings": {
-    "runner_ms": 3519,
+    "runner_ms": 16325,
     "gates_ms": 0,
-    "total_ms": 3530
+    "total_ms": 16332
   }
 }

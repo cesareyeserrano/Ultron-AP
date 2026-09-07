@@ -3,77 +3,60 @@
   "phase": 4,
   "stack": "Go 1.25.7 (parent ultron-ap monolith) + html/template + Tailwind utility classes + go:embed. Zero new runtime dependencies. The help-page package is a read-only consumer of public types and lives in internal/help/ alongside a tiny shared-types peer package internal/help/contract/ — the architectural boundary required by NFR-026.",
   "files_created": [
+    "../../internal/help/anchor_test.go",
     "../../internal/help/contract/contract.go",
+    "../../internal/help/glossary/glossary.json",
     "../../internal/help/help.go",
     "../../internal/help/loader.go",
-    "../../internal/help/validator.go",
-    "../../internal/help/render.go",
-    "../../internal/help/glossary/glossary.json",
     "../../internal/help/loader_test.go",
-    "../../internal/help/validator_test.go",
-    "../../internal/help/anchor_test.go",
+    "../../internal/help/render.go",
     "../../internal/help/render_test.go",
     "../../internal/help/static_test.go",
+    "../../internal/help/validator.go",
+    "../../internal/help/validator_test.go",
     "../../internal/server/handlers_help.go",
     "../../internal/server/handlers_help_test.go",
-    "../../web/templates/help.html"
+    "../../web/templates/help.html",
+    "internal/server/e2e_harness_test.go",
+    "internal/server/e2e_help_test.go"
   ],
   "files_modified": [
+    "../../cmd/ultron-ap/main.go",
     "../../internal/insights/insights.go",
+    "../../internal/server/handlers_insights.go",
     "../../internal/server/server.go",
     "../../internal/server/templates.go",
-    "../../internal/server/handlers_insights.go",
     "../../web/templates/partials/sidebar.html",
     "../../web/templates/partials/sse-verdicts.html",
-    "../../cmd/ultron-ap/main.go"
+    "go.mod",
+    "go.sum"
   ],
   "setup_commands": [],
   "environment_variables": [],
   "technical_debt": [
     {
-      "fr_id": "FR-050",
-      "substitution": "Two-voice responsive layout (1280x800 side-by-side vs 375 px stacked) is implemented purely via Tailwind grid (`grid md:grid-cols-2`) and is verified at the rendered-HTML layer (data-voice attributes, label presence, DOM order — plain before technical) rather than with browser-driven viewport tests. The TC-HP-050h/050e/050f Playwright e2e cases are not executed because the Ultron project has no headless-browser stack — adding Playwright/chromedp for one feature would impose a heavy dev dependency. Same precedent as insights-engine FR-044.",
-      "reason": "The HTML structure that the test cases assert (data-voice='plain' first in DOM order, both labels rendered, md:grid-cols-2 utility) is verified at the template-render layer with goquery-equivalent string assertions; layout correctness then follows mechanically from Tailwind's deterministic responsive breakpoint output.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-051",
-      "substitution": "Anchor-based scroll into view, the :target highlight 1.5 s fade, and graceful unknown-hash handling (TC-HP-051h/051e/051e2/051f) are implemented in pure CSS (the keyframes + animation declared inline in the rendered template) but are not exercised in CI because the verification requires a live browser. The CSS `:target` selector and `animation` declaration are present in the template; jurisdiction over their runtime behaviour is the browser's, not the renderer's.",
-      "reason": "Same as FR-050 — the implementation is pure HTML/CSS with no JS path; correctness reduces to whether the CSS rules are present in the served body, which the existing render_test.go assertions cover by checking for `:target` and the `help-target-flash` animation name in the inline <style> block.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-053",
-      "substitution": "TC-HP-053e3 (full e2e click flow from dashboard verdict card to /help anchor) is replaced with two server-rendered fragment tests: TC-HP-053e2 verifies that the rendered Learn-more anchor uses no target=_blank and points at /help#<slug>; TC-HP-053f_serverFragment verifies that a verdict whose rule has no valid anchor produces no Learn-more link. The browser-driven click+scroll+:target highlight chain is not driven from CI.",
-      "reason": "Same headless-browser cost; the anchor's href, presence/absence, and target attribute are deterministic at render time and fully covered by the fragment-level assertions.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-054",
-      "substitution": "TC-HP-054h (≤100 ms keystroke→visual update p99) and TC-HP-054e (category-collapse on no matches) are not executed in CI because they require a live browser to run the inline filter JS. The inline JS itself is asserted to be present and free of framework markers (TC-HP-054e2 covers FR-054 AC-005). The complexity budget of the filter is provably bounded — single getElementById, single addEventListener('input'), one String.indexOf per entry per keystroke — so latency at ≤100 entries on a Pi-served browser is far inside the 100 ms budget by inspection.",
-      "reason": "Same browser-stack cost; functional correctness of the inline filter is asserted at the source level (no framework imports, single inline <script>, pre-lowercased data-search attribute on every entry).",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "NFR-022",
-      "substitution": "TC-HP-NFR-022b/022c (in-browser keystroke latency p99 and zero-XHR-after-initial-load) require a real browser; the corresponding server-side assertions are: TC-HP-NFR-022h (server-side render p99 <500 ms over 100 sequential GET /help — verified, p99 measured ~1 ms in CI) and TC-HP-NFR-022f (no write API exists). The NFR-022 client-side budgets remain a deployment-time observation, not a CI gate.",
-      "reason": "Server-side render speed is the hard guarantee; the client-side filter latency is a derivative of inline-JS line count which is bounded at 23 lines — an order-of-magnitude budget margin. Adding browser CI infrastructure for this single check is not cost-effective.",
-      "effort_to_fix": "low"
-    },
-    {
       "fr_id": "NFR-024",
       "substitution": "TC-HP-NFR-024h/024e (axe-core / Lighthouse contrast scans on /help in light and dark themes) are deferred. The page reuses parent FR-009 design tokens (text-text, text-text-muted, bg-card, border-border, text-accent) which the parent UI's contrast tests already cover. Semantic landmarks (single <h1>, five <section data-category> wrappers each with a <header><h2>, one <article id=\"entry-...\"> per entry with an <h3>) and the labelled <input type=\"search\"> with aria-controls are verified by the render_test.go fragment assertions.",
       "reason": "axe-core requires a headless browser. Same dependency-cost reasoning as the insights-engine and lan-devices manifests; the colour palette is unchanged from parent NFR-009.",
       "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-051",
+      "substitution": "Los tests de navegador viven tras la etiqueta de compilacion 'e2e' y no se ejecutan en un 'go test ./...' normal.",
+      "reason": "Necesitan un binario de Chrome real. Sin la etiqueta, cualquier maquina sin Chrome veria fallar la suite por defecto, que es un modo de fallo peor que no ejecutarlos: convierte 'no tengo Chrome' en 'el producto esta roto'. El test_runner del manifiesto SI pasa -tags e2e, asi que aitri feature verify-run los ejecuta y el gate de cobertura de AC los cuenta; lo que queda fuera es unicamente el 'go test ./...' de conveniencia local.",
+      "effort_to_fix": "low"
     }
   ],
-  "test_runner": "go test ../../internal/help/... ../../internal/server/ -run TC_HP -v",
+  "test_runner": "go test -tags e2e ../../internal/help/... ../../internal/server/ -run TC_HP -v",
   "test_files": [
     "../../internal/help/loader_test.go",
     "../../internal/help/validator_test.go",
     "../../internal/help/anchor_test.go",
     "../../internal/help/render_test.go",
     "../../internal/help/static_test.go",
-    "../../internal/server/handlers_help_test.go"
-  ]
+    "../../internal/server/handlers_help_test.go",
+    "../../internal/server/e2e_harness_test.go",
+    "../../internal/server/e2e_help_test.go"
+  ],
+  "test_runner_timeout_ms": 1800000
 }

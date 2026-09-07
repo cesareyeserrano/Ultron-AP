@@ -4,56 +4,22 @@
     1,
     2,
     3,
-    4
+    4,
+    5
   ],
   "completedPhases": [
     1,
     2,
     3,
-    4
+    4,
+    5
   ],
   "projectName": "help-page",
   "createdAt": "2026-05-05T23:20:30.189Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-06T19:02:13.415Z",
+  "updatedAt": "2026-09-07T02:36:39.042Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-05T23:36:05.343Z",
-      "event": "approved",
-      "phase": 1,
-      "ideaArchived": true
-    },
-    {
-      "at": "2026-05-05T23:36:08.236Z",
-      "event": "started",
-      "phase": 2
-    },
-    {
-      "at": "2026-05-05T23:42:29.675Z",
-      "event": "completed",
-      "phase": 2
-    },
-    {
-      "at": "2026-05-05T23:43:00.404Z",
-      "event": "approved",
-      "phase": 2
-    },
-    {
-      "at": "2026-05-05T23:43:02.943Z",
-      "event": "started",
-      "phase": 3
-    },
-    {
-      "at": "2026-05-05T23:51:56.500Z",
-      "event": "completed",
-      "phase": 3
-    },
-    {
-      "at": "2026-05-05T23:52:33.047Z",
-      "event": "approved",
-      "phase": 3
-    },
     {
       "at": "2026-05-05T23:52:35.854Z",
       "event": "started",
@@ -139,13 +105,57 @@
       "failed": 0,
       "skipped": 18,
       "manual": 0
+    },
+    {
+      "at": "2026-09-07T02:36:00.737Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-07T02:36:04.806Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-07T02:36:21.325Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T02:36:21.533Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-07T02:36:38.781Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-07T02:36:38.907Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-07T02:36:39.012Z",
+      "event": "approved",
+      "phase": 5,
+      "version": "1.1.0",
+      "version_source": "team"
     }
   ],
   "artifactHashes": {
     "1": "d9d002e9a46033581fc8d6898e8acae1ca88ebbb4efd364048b47cb5a7f658ca",
     "2": "0c35eade36b3bccaebd4dba14cb402a1dae0d517b869cd6ad40a711996eb7d8f",
     "3": "a00a3753c111eb4bb82182d1c9adcc217045d8d2020c28670fceb3f78002b21a",
-    "4": "fc4303719aa6f37a046dcd06c5465163e3dbfd187b76642514998be3c70d2d02"
+    "4": "50b2bdfa664f12040e43e9672b6e6c5bd6a90c977fa2ec0ced132f295a7b9540",
+    "5": "b760680dc3217e872e8bbd3b95c7901277b5bef4870accbf18c0d492f59b239c"
   },
   "normalizeState": {
     "baseRef": "929fd525e800d9ba02c4121f8838e31339aa9e1b",
@@ -153,10 +163,8 @@
     "status": "resolved",
     "lastRun": "2026-05-06T00:09:00.451Z"
   },
-  "verifyPassed": false,
-  "cascadedPhases": [
-    "5"
-  ],
+  "verifyPassed": true,
+  "cascadedPhases": [],
   "frSnapshots": {
     "4": [
       "FR-048",
@@ -168,17 +176,45 @@
       "FR-054",
       "FR-055",
       "FR-056"
+    ],
+    "5": [
+      "FR-048",
+      "FR-049",
+      "FR-050",
+      "FR-051",
+      "FR-052",
+      "FR-053",
+      "FR-054",
+      "FR-055",
+      "FR-056"
     ]
   },
-  "verifyResultsHash": "91aafb68273792532356a817acfd4a67bd1a99cbcf7b5d4d24a4941b68f23f34",
-  "verifyRanAt": "2026-09-06T19:02:13.261Z",
-  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
-  "verifyRanDirty": false,
+  "verifyRanRef": "961fba8c83a1dcc1f652cc19b01bc87474de8313",
+  "verifyRanDirty": true,
+  "verifyResultsHash": "8e3d941924b5b05c7665aa55f07fc2cb4081079a94a2464210a0dc051bd2eb3f",
+  "verifyRanAt": "2026-09-07T02:36:21.239Z",
   "lastVerifyRun": {
-    "passed": 37,
+    "passed": 44,
     "failed": 0,
-    "skipped": 18,
+    "skipped": 11,
     "manual": 0,
-    "at": "2026-09-06T19:02:13.261Z"
-  }
+    "at": "2026-09-07T02:36:21.239Z"
+  },
+  "verifySummary": {
+    "total": 55,
+    "passed": 44,
+    "failed": 0,
+    "skipped": 11,
+    "skipped_e2e": 6,
+    "skipped_no_marker": 5,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "releaseHistory": [
+    {
+      "version": "1.1.0",
+      "version_source": "team",
+      "at": "2026-09-07T02:36:39.011Z"
+    }
+  ]
 }
