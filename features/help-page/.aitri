@@ -17,18 +17,9 @@
   "projectName": "help-page",
   "createdAt": "2026-05-05T23:20:30.189Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-07T04:25:11.644Z",
+  "updatedAt": "2026-09-07T04:28:23.538Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-06T00:09:52.369Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 37,
-      "failed": 0,
-      "skipped": 18,
-      "manual": 0
-    },
     {
       "at": "2026-05-06T00:09:55.191Z",
       "event": "verify-complete",
@@ -156,13 +147,21 @@
       "phase": "verify",
       "passed": 44,
       "failed": 0
+    },
+    {
+      "at": "2026-09-07T04:28:23.509Z",
+      "event": "rehash",
+      "phase": "4",
+      "artifact": "04_BUILD_REPORT.json",
+      "before_hash": "50b2bdfa664f12040e43e9672b6e6c5bd6a90c977fa2ec0ced132f295a7b9540",
+      "after_hash": "9ad8cc32c10feee0a93d1e51811f43cdca7f0e1a7aca3eede1a1ef883209267c"
     }
   ],
   "artifactHashes": {
     "1": "d9d002e9a46033581fc8d6898e8acae1ca88ebbb4efd364048b47cb5a7f658ca",
     "2": "0c35eade36b3bccaebd4dba14cb402a1dae0d517b869cd6ad40a711996eb7d8f",
     "3": "a00a3753c111eb4bb82182d1c9adcc217045d8d2020c28670fceb3f78002b21a",
-    "4": "50b2bdfa664f12040e43e9672b6e6c5bd6a90c977fa2ec0ced132f295a7b9540",
+    "4": "9ad8cc32c10feee0a93d1e51811f43cdca7f0e1a7aca3eede1a1ef883209267c",
     "5": "b760680dc3217e872e8bbd3b95c7901277b5bef4870accbf18c0d492f59b239c"
   },
   "normalizeState": {
