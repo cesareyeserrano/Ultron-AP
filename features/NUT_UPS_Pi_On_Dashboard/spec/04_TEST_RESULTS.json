@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-07T02:40:33.107Z",
+  "executed_at": "2026-09-07T04:29:35.236Z",
   "test_runner": "go test ../../internal/ups/... ../../internal/server/... -v",
   "exit_code": 0,
   "results": [
@@ -86,7 +86,7 @@
     {
       "tc_id": "TC-UPS-017e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_017e_CloseOutage (0.00s)"
+      "notes": "--- PASS: TestTC_UPS_017e_CloseOutage (0.01s)"
     },
     {
       "tc_id": "TC-UPS-018f",
@@ -131,7 +131,7 @@
     {
       "tc_id": "TC-UPS-026f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_026f_NoDegradationFromSingleSample (0.00s)"
+      "notes": "--- PASS: TestTC_UPS_026f_NoDegradationFromSingleSample (0.01s)"
     },
     {
       "tc_id": "TC-UPS-027h",
@@ -675,12 +675,12 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 440
+      "duration_ms": 447
     }
   ],
   "timings": {
-    "runner_ms": 10934,
-    "gates_ms": 441,
-    "total_ms": 11383
+    "runner_ms": 10739,
+    "gates_ms": 448,
+    "total_ms": 11194
   }
 }

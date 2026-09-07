@@ -19,19 +19,9 @@
   "projectName": "NUT_UPS_Pi_On_Dashboard",
   "createdAt": "2026-07-15T02:47:48.424Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-07T02:40:33.415Z",
+  "updatedAt": "2026-09-07T04:29:35.542Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-07-16T21:51:08.871Z",
-      "event": "completed",
-      "phase": 4
-    },
-    {
-      "at": "2026-07-16T21:51:09.015Z",
-      "event": "approved",
-      "phase": 4
-    },
     {
       "at": "2026-07-16T21:51:09.114Z",
       "event": "completed",
@@ -159,6 +149,22 @@
       "phase": "verify",
       "passed": 56,
       "failed": 0
+    },
+    {
+      "at": "2026-09-07T04:29:35.317Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 56,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T04:29:35.513Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 56,
+      "failed": 0
     }
   ],
   "cascadedPhases": [],
@@ -230,16 +236,16 @@
       "FR-024"
     ]
   },
-  "verifyResultsHash": "f5cb7bdd7bac6f1e1c0344cd345da4d942947cc924f4507c121f91e90e829610",
-  "verifyRanAt": "2026-09-07T02:40:33.110Z",
-  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
+  "verifyResultsHash": "433b0e7b3fa6b982dfd1ae0307f2e15cbd5950ef2805458f033b1ab6d5d2f65f",
+  "verifyRanAt": "2026-09-07T04:29:35.239Z",
+  "verifyRanRef": "0b91507280d0579fe37d8b39b25e4b5e41cbaf6e",
   "verifyRanDirty": false,
   "lastVerifyRun": {
     "passed": 56,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-07T02:40:33.110Z"
+    "at": "2026-09-07T04:29:35.239Z"
   },
   "verifySummary": {
     "total": 56,

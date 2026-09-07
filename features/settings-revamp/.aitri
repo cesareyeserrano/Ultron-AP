@@ -19,19 +19,9 @@
   "projectName": "settings-revamp",
   "createdAt": "2026-05-06T21:34:58.844Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-07T04:24:47.542Z",
+  "updatedAt": "2026-09-07T04:29:10.287Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-09-07T04:21:39.339Z",
-      "event": "approved",
-      "phase": 3
-    },
-    {
-      "at": "2026-09-07T04:21:39.448Z",
-      "event": "started",
-      "phase": 4
-    },
     {
       "at": "2026-09-07T04:21:39.524Z",
       "event": "completed",
@@ -143,6 +133,22 @@
       "phase": 5,
       "version": "1.1.0",
       "version_source": "team"
+    },
+    {
+      "at": "2026-09-07T04:29:10.046Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 43,
+      "failed": 0,
+      "skipped": 16,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T04:29:10.257Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 43,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -212,16 +218,16 @@
       "FR-070"
     ]
   },
-  "verifyRanRef": "3e6a6d9dab5322f70c6d3f46661c70543eaf8f8c",
-  "verifyRanDirty": true,
-  "verifyResultsHash": "9b2056d17c2e53a2f05031f6fcd2ef03588935a9225e8a9de39d778612f562cc",
-  "verifyRanAt": "2026-09-07T04:24:29.138Z",
+  "verifyRanRef": "0b91507280d0579fe37d8b39b25e4b5e41cbaf6e",
+  "verifyRanDirty": false,
+  "verifyResultsHash": "5511a4a3fa7fef6515f75ce97e53bdb7a6810738d32add3cc53d2c5feffebb31",
+  "verifyRanAt": "2026-09-07T04:29:09.961Z",
   "lastVerifyRun": {
     "passed": 43,
     "failed": 0,
     "skipped": 16,
     "manual": 0,
-    "at": "2026-09-07T04:24:29.138Z"
+    "at": "2026-09-07T04:29:09.961Z"
   },
   "verifySummary": {
     "total": 59,

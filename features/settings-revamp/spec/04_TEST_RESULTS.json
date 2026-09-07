@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-07T04:24:29.136Z",
+  "executed_at": "2026-09-07T04:29:09.958Z",
   "test_runner": "go test -count=1 -tags e2e ../../internal/server -run TestTC_SR -v",
   "exit_code": 0,
   "results": [
@@ -26,7 +26,7 @@
     {
       "tc_id": "TC-SR-057E2E",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_057E2E (1.87s)"
+      "notes": "--- PASS: TestTC_SR_057E2E (1.80s)"
     },
     {
       "tc_id": "TC-SR-058h",
@@ -111,17 +111,17 @@
     {
       "tc_id": "TC-SR-063h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_063h (3.08s)"
+      "notes": "--- PASS: TestTC_SR_063h (3.00s)"
     },
     {
       "tc_id": "TC-SR-063e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_063e (2.29s)"
+      "notes": "--- PASS: TestTC_SR_063e (2.31s)"
     },
     {
       "tc_id": "TC-SR-063f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_063f (2.96s)"
+      "notes": "--- PASS: TestTC_SR_063f (2.81s)"
     },
     {
       "tc_id": "TC-SR-064h",
@@ -146,7 +146,7 @@
     {
       "tc_id": "TC-SR-065e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_065e (1.68s)"
+      "notes": "--- PASS: TestTC_SR_065e (1.67s)"
     },
     {
       "tc_id": "TC-SR-065f",
@@ -286,17 +286,17 @@
     {
       "tc_id": "TC-SR-071e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_071e (2.60s)"
+      "notes": "--- PASS: TestTC_SR_071e (2.61s)"
     },
     {
       "tc_id": "TC-SR-072h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_072h (1.67s)"
+      "notes": "--- PASS: TestTC_SR_072h (1.66s)"
     },
     {
       "tc_id": "TC-SR-073f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_073f (2.58s)"
+      "notes": "--- PASS: TestTC_SR_073f (2.65s)"
     }
   ],
   "fr_coverage": [
@@ -768,12 +768,12 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 808
+      "duration_ms": 711
     }
   ],
   "timings": {
-    "runner_ms": 20995,
-    "gates_ms": 808,
-    "total_ms": 21814
+    "runner_ms": 20291,
+    "gates_ms": 711,
+    "total_ms": 21009
   }
 }
