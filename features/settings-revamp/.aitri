@@ -19,19 +19,9 @@
   "projectName": "settings-revamp",
   "createdAt": "2026-05-06T21:34:58.844Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-07T04:29:10.287Z",
+  "updatedAt": "2026-09-07T19:37:37.896Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-09-07T04:21:39.524Z",
-      "event": "completed",
-      "phase": 4
-    },
-    {
-      "at": "2026-09-07T04:21:39.682Z",
-      "event": "approved",
-      "phase": 4
-    },
     {
       "at": "2026-09-07T04:21:40.878Z",
       "event": "verify-run",
@@ -149,6 +139,22 @@
       "phase": "verify",
       "passed": 43,
       "failed": 0
+    },
+    {
+      "at": "2026-09-07T19:37:37.784Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 43,
+      "failed": 0,
+      "skipped": 16,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T19:37:37.879Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 43,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -218,16 +224,16 @@
       "FR-070"
     ]
   },
-  "verifyRanRef": "0b91507280d0579fe37d8b39b25e4b5e41cbaf6e",
+  "verifyRanRef": "b2b9430c18281a8d1af8bcbf0bf0decc754c7cc1",
   "verifyRanDirty": false,
-  "verifyResultsHash": "5511a4a3fa7fef6515f75ce97e53bdb7a6810738d32add3cc53d2c5feffebb31",
-  "verifyRanAt": "2026-09-07T04:29:09.961Z",
+  "verifyResultsHash": "69ecde31369f889effc159a10c865cff95d2cee9668ad572ba686d1eefce500d",
+  "verifyRanAt": "2026-09-07T19:37:37.739Z",
   "lastVerifyRun": {
     "passed": 43,
     "failed": 0,
     "skipped": 16,
     "manual": 0,
-    "at": "2026-09-07T04:29:09.961Z"
+    "at": "2026-09-07T19:37:37.739Z"
   },
   "verifySummary": {
     "total": 59,

@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-07T04:29:09.958Z",
+  "executed_at": "2026-09-07T19:37:37.738Z",
   "test_runner": "go test -count=1 -tags e2e ../../internal/server -run TestTC_SR -v",
   "exit_code": 0,
   "results": [
@@ -16,7 +16,7 @@
     {
       "tc_id": "TC-SR-057f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_057f_PerfOutOfRange400Hint (0.01s)"
+      "notes": "--- PASS: TestTC_SR_057f_PerfOutOfRange400Hint (0.00s)"
     },
     {
       "tc_id": "TC-SR-057f2",
@@ -26,7 +26,7 @@
     {
       "tc_id": "TC-SR-057E2E",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_057E2E (1.80s)"
+      "notes": "--- PASS: TestTC_SR_057E2E (1.63s)"
     },
     {
       "tc_id": "TC-SR-058h",
@@ -111,32 +111,32 @@
     {
       "tc_id": "TC-SR-063h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_063h (3.00s)"
+      "notes": "--- PASS: TestTC_SR_063h (2.67s)"
     },
     {
       "tc_id": "TC-SR-063e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_063e (2.31s)"
+      "notes": "--- PASS: TestTC_SR_063e (2.06s)"
     },
     {
       "tc_id": "TC-SR-063f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_063f (2.81s)"
+      "notes": "--- PASS: TestTC_SR_063f (2.67s)"
     },
     {
       "tc_id": "TC-SR-064h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_064h_BackupNewTimeFormAccepted (0.01s)"
+      "notes": "--- PASS: TestTC_SR_064h_BackupNewTimeFormAccepted (0.00s)"
     },
     {
       "tc_id": "TC-SR-064e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_064e_BackupBothFormsNewWins (0.01s)"
+      "notes": "--- PASS: TestTC_SR_064e_BackupBothFormsNewWins (0.00s)"
     },
     {
       "tc_id": "TC-SR-064f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_064f_BackupOutOfRangeTime400 (0.01s)"
+      "notes": "--- PASS: TestTC_SR_064f_BackupOutOfRangeTime400 (0.00s)"
     },
     {
       "tc_id": "TC-SR-065h",
@@ -146,7 +146,7 @@
     {
       "tc_id": "TC-SR-065e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_065e (1.67s)"
+      "notes": "--- PASS: TestTC_SR_065e (1.46s)"
     },
     {
       "tc_id": "TC-SR-065f",
@@ -176,7 +176,7 @@
     {
       "tc_id": "TC-SR-067e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_067e_HeaderLogoutOnEveryPage (0.05s)"
+      "notes": "--- PASS: TestTC_SR_067e_HeaderLogoutOnEveryPage (0.03s)"
     },
     {
       "tc_id": "TC-SR-067f",
@@ -216,7 +216,7 @@
     {
       "tc_id": "TC-SR-068sec3",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_068sec3_NullByteRejected (0.01s)"
+      "notes": "--- PASS: TestTC_SR_068sec3_NullByteRejected (0.00s)"
     },
     {
       "tc_id": "TC-SR-068E2E",
@@ -226,7 +226,7 @@
     {
       "tc_id": "TC-SR-069h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_069h (0.01s)"
+      "notes": "--- PASS: TestTC_SR_069h (0.00s)"
     },
     {
       "tc_id": "TC-SR-069e",
@@ -286,17 +286,17 @@
     {
       "tc_id": "TC-SR-071e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_071e (2.61s)"
+      "notes": "--- PASS: TestTC_SR_071e (2.40s)"
     },
     {
       "tc_id": "TC-SR-072h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_072h (1.66s)"
+      "notes": "--- PASS: TestTC_SR_072h (1.48s)"
     },
     {
       "tc_id": "TC-SR-073f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_073f (2.65s)"
+      "notes": "--- PASS: TestTC_SR_073f (2.39s)"
     }
   ],
   "fr_coverage": [
@@ -768,12 +768,12 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 711
+      "duration_ms": 362
     }
   ],
   "timings": {
-    "runner_ms": 20291,
-    "gates_ms": 711,
-    "total_ms": 21009
+    "runner_ms": 17716,
+    "gates_ms": 362,
+    "total_ms": 18081
   }
 }
