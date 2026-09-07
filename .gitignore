@@ -1,5 +1,12 @@
 # Binaries
 bin/
+
+# Bare binaries at the repo root. `go build ./cmd/ultron-helper/` writes its
+# output here by default, and a 10 MB Mach-O got committed that way before these
+# lines existed. `bin/` alone does not cover it.
+/ultron-ap
+/ultron-helper
+
 *.exe
 *.exe~
 *.dll
