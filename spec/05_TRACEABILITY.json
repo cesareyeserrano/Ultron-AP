@@ -1,7 +1,13 @@
 {
   "project": "Ultron-AP",
-  "version": "1.0.0",
-  "phases_completed": [1, 2, 3, 4, 5],
+  "version": "1.1.0",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
   "overall_status": "compliant",
   "generated_at": "2026-04-27T00:00:00.000Z",
   "test_evidence": {
@@ -13,8 +19,14 @@
   },
   "ci_cd": {
     "workflow": ".github/workflows/security-gate.yml",
-    "triggers": ["push to main", "pull_request"],
-    "steps": ["go test ./...", "govulncheck ./..."],
+    "triggers": [
+      "push to main",
+      "pull_request"
+    ],
+    "steps": [
+      "go test ./...",
+      "govulncheck ./..."
+    ],
     "status": "wired",
     "gap": "workflow uses 'go test ./...' directly — functionally equivalent to the TC-bridge script but TC-XXX markers are not emitted in CI output"
   },
@@ -29,10 +41,10 @@
     },
     {
       "id": "FR-002",
-      "title": "Docker container monitor",
+      "title": "Docker container monitor (read-only, via the privileged helper)",
       "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-002h (container list with name/state), TC-002e (no-name container uses truncated ID), TC-002f (Docker socket unavailable returns empty without panic) — 3 tests passing"
+      "evidence": "Lista, stats, detalle y logs se leen por ultron-helper; el panel no alcanza el socket de Docker. Verificado por TC-DVH-050h, que recorre 'go list -deps ./cmd/ultron-ap' y falla ante cualquier paquete github.com/docker/ o internal/dockerapi, con TC-DVH-051e como control positivo sobre el helper. En produccion: 'docker: helper reachable, 5 container(s)' con id ultron sin grupo docker."
     },
     {
       "id": "FR-003",
@@ -71,10 +83,10 @@
     },
     {
       "id": "FR-008",
-      "title": "Service controls",
+      "title": "Systemd service controls",
       "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-008h (service start with auth+CSRF, action_history persisted), TC-008e (Docker stop logs action), TC-008f (CSRF missing → 403, no action) — 3 tests passing"
+      "evidence": "Enmendado el 2026-09-06 (BL-043): FR-008 ya no promete controles de contenedores Docker. Se retiro AC-008-001 (given: 'a Docker container row is rendered') y el TC-008e huerfano, que nunca tuvo implementacion en Go. Los controles de systemd siguen intactos y cubiertos por TC-008a/b/c/f/h, mas TC-DVH-063e/110h/111f/112e como regresion explicita desde la feature que retiro los de Docker."
     },
     {
       "id": "FR-009",
@@ -95,7 +107,7 @@
       "title": "Privilege separation",
       "priority": "MUST",
       "level": "complete",
-      "evidence": "TC-011h (Secure cookie behind HTTPS proxy), TC-011e (Secure cookie under direct TLS), TC-011f (middleware blocks unauth before any handler) — 3 tests passing; architectural: helper isolated at Unix socket boundary (ADR-4); deploy/ultron-ap.service enforces NoNewPrivileges=true"
+      "evidence": "Dos binarios, helper root con SO_PEERCRED y fail-closed. Reforzado el 2026-09-06 (BG-079): se elimino deploy/ultron-ap.sudoers, un camino de privilegio paralelo que concedia al panel systemctl, shutdown y un comodin pironman5 * sin contrasena, y que DEPLOYMENT.md mandaba instalar. El panel no tiene ahora ningun derecho de sudo."
     },
     {
       "id": "FR-012",
@@ -124,13 +136,81 @@
       "priority": "SHOULD",
       "level": "complete",
       "evidence": "TC-015h (backup config save + schedule reschedule), TC-015e (backup outcome logged to action_history), TC-015f (CSRF missing rejects save) — 3 tests passing"
+    },
+    {
+      "id": "NFR-005",
+      "title": "Seguridad: separacion de privilegios",
+      "level": "complete",
+      "evidence": "Anadido el 2026-09-06: la postura existia en el codigo pero no como requisito, y el gate de fase 1 rechazaba el artefacto por no haber ninguna decision de seguridad registrada. Verificado por el test de grafo de dependencias, los tests de peercred y fail-closed, y la validacion de nombres de unidad e ids de contenedor."
+    },
+    {
+      "id": "NFR-006",
+      "title": "Seguridad: autenticacion, autorizacion y CSRF",
+      "level": "complete",
+      "evidence": "bcrypt, cookie HttpOnly/SameSite/Secure tras TLS, requireAuth en toda ruta salvo /login y /health, bloqueo por IP y CSRF por sesion. Cubierto por TC-007g y los tests de auth y CSRF existentes."
+    },
+    {
+      "id": "NFR-007",
+      "title": "Seguridad: contencion de secretos",
+      "level": "complete",
+      "evidence": "logfilter en la frontera del helper, credenciales cifradas en reposo, backups AES-GCM, valores de variables de entorno descartados dentro del helper, y cero ids de traza en assets servidos al navegador tras BG-080. Cubierto por TC-015a, los tests de logfilter y TC-DVH-021f/101f."
+    },
+    {
+      "id": "NFR-008",
+      "title": "Seguridad: contencion de rutas",
+      "level": "complete",
+      "evidence": "Rutas de backup acotadas a una raiz permitida y re-validadas en el momento de uso tras resolver enlaces simbolicos. Cubierto por los tests de backup_path existentes."
+    },
+    {
+      "id": "NFR-009",
+      "title": "Observabilidad",
+      "level": "complete",
+      "evidence": "Version y commit al arranque, una linea por peticion, y transiciones de estado registradas una vez por cambio y no por tick. Verificado en produccion: el arranque reporta v1.1.0 commit=83455c71e4e8."
+    },
+    {
+      "id": "NFR-010",
+      "title": "CI/CD",
+      "level": "complete",
+      "evidence": "ci.yml corre go vet, go test -race sobre todo el arbol y el build linux/arm64 en cada push a main y en cada PR. security-gate.yml corre govulncheck contra la allowlist y, desde 2026-09-06, tambien scripts/security-gate.sh, que hasta entonces no se ejecutaba en ningun sitio."
+    },
+    {
+      "id": "NFR-011",
+      "title": "Fiabilidad: fallo contenido por seccion",
+      "level": "complete",
+      "evidence": "Docker, systemd, Tailscale, NUT o el helper caidos degradan solo su seccion. Cubierto por TC-DVH-034e/120h/121f/122e, que ademas exigen que 'no disponible' y 'lista vacia' sean estados mutuamente excluyentes."
+    },
+    {
+      "id": "NFR-012",
+      "title": "Healthcheck",
+      "level": "complete",
+      "evidence": "GET /health devuelve 200 sin autenticacion mientras el proceso vive; es una de las dos unicas rutas exentas del middleware."
     }
   ],
   "non_functional_compliance": [
-    { "id": "NFR-001", "category": "Performance", "level": "complete", "evidence": "Measured ~15 MB RSS at idle on Raspberry Pi 4 (4 GB) running ARM64 build; recorded in performance table during long-running soak" },
-    { "id": "NFR-002", "category": "Reliability", "level": "complete", "evidence": "Single static binary produced by `make build-arm` (CGO_ENABLED=0); zero runtime dependencies beyond the host's libc" },
-    { "id": "NFR-003", "category": "Reliability", "level": "complete", "evidence": "`make build-arm` produces working linux/arm64 binary; verified via boot smoke test on device" },
-    { "id": "NFR-004", "category": "Performance", "level": "complete", "evidence": "5-second SSE cadence on metrics channel; measured end-to-end latency ≤ 5 s in CI smoke test" }
+    {
+      "id": "NFR-001",
+      "category": "Performance",
+      "level": "complete",
+      "evidence": "Measured ~15 MB RSS at idle on Raspberry Pi 4 (4 GB) running ARM64 build; recorded in performance table during long-running soak"
+    },
+    {
+      "id": "NFR-002",
+      "category": "Reliability",
+      "level": "complete",
+      "evidence": "Single static binary produced by `make build-arm` (CGO_ENABLED=0); zero runtime dependencies beyond the host's libc"
+    },
+    {
+      "id": "NFR-003",
+      "category": "Reliability",
+      "level": "complete",
+      "evidence": "`make build-arm` produces working linux/arm64 binary; verified via boot smoke test on device"
+    },
+    {
+      "id": "NFR-004",
+      "category": "Performance",
+      "level": "complete",
+      "evidence": "5-second SSE cadence on metrics channel; measured end-to-end latency ≤ 5 s in CI smoke test"
+    }
   ],
   "technical_debt_inherited": [],
   "deployment_artifacts": [
@@ -140,5 +220,6 @@
     "deploy/ultron-helper.service",
     "deploy/ultron-ap.sudoers",
     "spec/05_DEPLOYMENT.md"
-  ]
+  ],
+  "version_source": "team"
 }

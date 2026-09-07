@@ -1,7 +1,13 @@
 {
   "project": "Ultron-AP — Help Page (feature)",
-  "version": "1.0.0",
-  "phases_completed": [1, 2, 3, 4, 5],
+  "version": "1.1.0",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
   "overall_status": "partial",
   "deployment_target": "Raspberry Pi via systemd (parent monolith). No Dockerfile, no docker-compose.yml, no .env.example — see DEPLOYMENT.md. Project rejection history (2026-03-18) and the insights-engine Phase 5 precedent established this deployment posture deliberately.",
   "requirement_compliance": [
@@ -20,14 +26,14 @@
     {
       "id": "FR-050",
       "title": "Two-voice rendering (technical + plain) shown side-by-side",
-      "level": "partial",
-      "evidence": "fr_coverage: 1 passing, 0 failing, 2 skipped (Playwright viewport tests). HTML structure verified at the rendered-fragment layer by TestTC_HP_050h: both 'Technical' and 'Plain' labels rendered, both bodies present, plain voice precedes technical voice in DOM order (so mobile shows plain first), and the responsive grid utility `md:grid-cols-2` is present in every entry's wrapper. Layout correctness then follows mechanically from Tailwind's deterministic output. Browser viewport-driven Playwright TCs (TC-HP-050h e2e, TC-HP-050e at 375 px, TC-HP-050f with JS disabled) are skipped — same headless-browser cost reasoning as insights-engine FR-044."
+      "level": "complete",
+      "evidence": "Cubierto ahora tambien a nivel de navegador: TC-HP-050e mide las cajas reales a 375 px y exige que la voz plain quede POR ENCIMA de la technical con solape horizontal >80%, es decir que se apilen en vez de ir en columnas. TC-HP-050f desactiva JavaScript por CDP y exige que ambas voces sigan con offsetWidth>0, que es la unica forma honesta de comprobar que el layout de dos voces es CSS puro."
     },
     {
       "id": "FR-051",
       "title": "Anchor-based deep-linking with hash-scroll and highlight",
-      "level": "partial",
-      "evidence": "fr_coverage: 1 passing, 0 failing, 3 skipped (browser-only). Wrapper id contract (`id=\"entry-<slug>\"`) and the CSS :target highlight (1.5 s `help-target-flash` keyframes animation) are both present in the rendered template — verified by TestTC_HP_051h. The browser's native `:target` matching plus `scrollIntoView` produce the runtime behaviour at zero JS cost. Browser-driven TCs (scroll-into-view bbox at 1280×800, 1.5 s fade, unknown-hash graceful) are skipped — no headless-browser CI stack. The implementation path is pure HTML+CSS so correctness reduces to whether the template renders the selector and animation, which is asserted."
+      "level": "complete",
+      "evidence": "TC-HP-051e lee el background-color COMPUTADO a los 100 ms y a los 2 s tras llegar al hash: opaco primero, rgba(0,0,0,0) despues. Comprobar que la hoja de estilos menciona una animacion no habria probado que se ejecute. TC-HP-051f captura excepciones de consola por Runtime.exceptionThrown y exige cero, ademas de scrollY==0 con un hash que no existe."
     },
     {
       "id": "FR-052",
@@ -44,8 +50,8 @@
     {
       "id": "FR-054",
       "title": "In-page typed filter with ≤100 ms response",
-      "level": "partial",
-      "evidence": "fr_coverage: 3 passing, 0 failing, 4 skipped (browser-only latency). Filter is implemented as ~25 lines of inline vanilla JS; one input listener, one String.indexOf per entry per keystroke against a server-pre-lowercased data-search attribute. TestTC_HP_054e2 verifies exactly one inline <script> in the rendered body and zero framework markers (no react/Vue/Alpine/jQuery/window.$). The data-search attribute is correctly built (lowercased title + technical + plain) — verified by TestRender_dataSearchHaystackLowercased. Browser-driven keystroke latency p99 / category-collapse / JS-disabled fallback are skipped — no headless-browser CI stack; latency is mathematically bounded by entry count (≤100 per no_go_zone) × String.indexOf cost (sub-millisecond per call)."
+      "level": "complete",
+      "evidence": "TC-HP-054e escribe 'cpu' en el filtro y exige que al menos una categoria quede con offsetParent null, es decir oculta entera y no como cabecera vacia. TC-HP-054f desactiva JavaScript y exige que TODAS las entradas sigan visibles y que el input del filtro siga en el DOM, inerte: la promesa de degradacion elegante."
     },
     {
       "id": "FR-055",
@@ -56,8 +62,8 @@
     {
       "id": "FR-056",
       "title": "Sidebar navigation gains a 'Help' item linking to /help",
-      "level": "production_ready",
-      "evidence": "fr_coverage: 3 passing, 0 failing, 1 skipped. Help nav item added to web/templates/partials/sidebar.html as the last list item, reusing the existing nav-item / active-link Tailwind utility classes. TestTC_HP_056h asserts the anchor exists with href=\"/help\" and the visible 'Help' label, AND that no existing nav-item href appears after it (Help is last). TestTC_HP_056e asserts the active-link CSS class is applied when the current route is /help. TestTC_HP_056fneg asserts every existing nav item href and label is unchanged from the pre-FR-056 baseline (no item moved, renamed, or restyled). Browser-driven click navigation TC (TC-HP-056f) is skipped; the equivalent server-side assertion is covered. Zero declared technical debt for this FR."
+      "level": "complete",
+      "evidence": "TC-HP-056f hace clic real sobre el enlace de Help y verifica que aterriza en /help y que el ancla no lleva target=_blank."
     },
     {
       "id": "NFR-022",
@@ -92,40 +98,17 @@
   ],
   "technical_debt_inherited": [
     {
-      "fr_id": "FR-050",
-      "substitution": "Two-voice responsive layout (1280x800 side-by-side vs 375 px stacked) is implemented purely via Tailwind grid (`grid md:grid-cols-2`) and is verified at the rendered-HTML layer (data-voice attributes, label presence, DOM order — plain before technical) rather than with browser-driven viewport tests. The TC-HP-050h/050e/050f Playwright e2e cases are not executed because the Ultron project has no headless-browser stack — adding Playwright/chromedp for one feature would impose a heavy dev dependency. Same precedent as insights-engine FR-044.",
-      "reason": "The HTML structure that the test cases assert (data-voice='plain' first in DOM order, both labels rendered, md:grid-cols-2 utility) is verified at the template-render layer with goquery-equivalent string assertions; layout correctness then follows mechanically from Tailwind's deterministic responsive breakpoint output.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-051",
-      "substitution": "Anchor-based scroll into view, the :target highlight 1.5 s fade, and graceful unknown-hash handling (TC-HP-051h/051e/051e2/051f) are implemented in pure CSS (the keyframes + animation declared inline in the rendered template) but are not exercised in CI because the verification requires a live browser. The CSS `:target` selector and `animation` declaration are present in the template; jurisdiction over their runtime behaviour is the browser's, not the renderer's.",
-      "reason": "Same as FR-050 — the implementation is pure HTML/CSS with no JS path; correctness reduces to whether the CSS rules are present in the served body, which the existing render_test.go assertions cover by checking for `:target` and the `help-target-flash` animation name in the inline <style> block.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-053",
-      "substitution": "TC-HP-053e3 (full e2e click flow from dashboard verdict card to /help anchor) is replaced with two server-rendered fragment tests: TC-HP-053e2 verifies that the rendered Learn-more anchor uses no target=_blank and points at /help#<slug>; TC-HP-053f_serverFragment verifies that a verdict whose rule has no valid anchor produces no Learn-more link. The browser-driven click+scroll+:target highlight chain is not driven from CI.",
-      "reason": "Same headless-browser cost; the anchor's href, presence/absence, and target attribute are deterministic at render time and fully covered by the fragment-level assertions.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-054",
-      "substitution": "TC-HP-054h (≤100 ms keystroke→visual update p99) and TC-HP-054e (category-collapse on no matches) are not executed in CI because they require a live browser to run the inline filter JS. The inline JS itself is asserted to be present and free of framework markers (TC-HP-054e2 covers FR-054 AC-005). The complexity budget of the filter is provably bounded — single getElementById, single addEventListener('input'), one String.indexOf per entry per keystroke — so latency at ≤100 entries on a Pi-served browser is far inside the 100 ms budget by inspection.",
-      "reason": "Same browser-stack cost; functional correctness of the inline filter is asserted at the source level (no framework imports, single inline <script>, pre-lowercased data-search attribute on every entry).",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "NFR-022",
-      "substitution": "TC-HP-NFR-022b/022c (in-browser keystroke latency p99 and zero-XHR-after-initial-load) require a real browser; the corresponding server-side assertions are: TC-HP-NFR-022h (server-side render p99 <500 ms over 100 sequential GET /help — verified, p99 measured ~1 ms in CI) and TC-HP-NFR-022f (no write API exists). The NFR-022 client-side budgets remain a deployment-time observation, not a CI gate.",
-      "reason": "Server-side render speed is the hard guarantee; the client-side filter latency is a derivative of inline-JS line count which is bounded at 23 lines — an order-of-magnitude budget margin. Adding browser CI infrastructure for this single check is not cost-effective.",
-      "effort_to_fix": "low"
-    },
-    {
       "fr_id": "NFR-024",
       "substitution": "TC-HP-NFR-024h/024e (axe-core / Lighthouse contrast scans on /help in light and dark themes) are deferred. The page reuses parent FR-009 design tokens (text-text, text-text-muted, bg-card, border-border, text-accent) which the parent UI's contrast tests already cover. Semantic landmarks (single <h1>, five <section data-category> wrappers each with a <header><h2>, one <article id=\"entry-...\"> per entry with an <h3>) and the labelled <input type=\"search\"> with aria-controls are verified by the render_test.go fragment assertions.",
       "reason": "axe-core requires a headless browser. Same dependency-cost reasoning as the insights-engine and lan-devices manifests; the colour palette is unchanged from parent NFR-009.",
       "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-051",
+      "substitution": "Los tests de navegador viven tras la etiqueta de compilacion 'e2e' y no se ejecutan en un 'go test ./...' normal.",
+      "reason": "Necesitan un binario de Chrome real. Sin la etiqueta, cualquier maquina sin Chrome veria fallar la suite por defecto, que es un modo de fallo peor que no ejecutarlos: convierte 'no tengo Chrome' en 'el producto esta roto'. El test_runner del manifiesto SI pasa -tags e2e, asi que aitri feature verify-run los ejecuta y el gate de cobertura de AC los cuenta; lo que queda fuera es unicamente el 'go test ./...' de conveniencia local.",
+      "effort_to_fix": "low"
     }
-  ]
+  ],
+  "version_source": "team"
 }

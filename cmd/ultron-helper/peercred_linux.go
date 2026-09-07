@@ -25,7 +25,7 @@ func getPeerUID(c net.Conn) (uint32, error) {
 		return 0, fmt.Errorf("peercred: SyscallConn: %w", err)
 	}
 	var (
-		ucred  *unix.Ucred
+		ucred   *unix.Ucred
 		credErr error
 	)
 	ctlErr := raw.Control(func(fd uintptr) {

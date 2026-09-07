@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-04T19:13:11.427Z",
+  "executed_at": "2026-09-07T02:40:33.107Z",
   "test_runner": "go test ../../internal/ups/... ../../internal/server/... -v",
   "exit_code": 0,
   "results": [
@@ -675,12 +675,12 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 483
+      "duration_ms": 440
     }
   ],
   "timings": {
-    "runner_ms": 11531,
-    "gates_ms": 483,
-    "total_ms": 12023
+    "runner_ms": 10934,
+    "gates_ms": 441,
+    "total_ms": 11383
   }
 }

@@ -11,83 +11,130 @@
     "make build-arm"
   ],
   "environment_variables": [
-    { "name": "ULTRON_ADMIN_USER", "default": "admin", "required": false, "description": "Admin username for first-run setup" },
-    { "name": "ULTRON_ADMIN_PASS", "required": true, "description": "Initial admin password on first run; ignored after the user is seeded" },
-    { "name": "ULTRON_PORT", "default": "8080", "required": false, "description": "HTTP listen port" },
-    { "name": "ULTRON_DB_PATH", "default": "/var/lib/ultron-ap/db.sqlite", "required": false, "description": "Path to SQLite database file" },
-    { "name": "ULTRON_LOG_LEVEL", "default": "info", "required": false, "description": "Logging level: debug | info | warn | error" },
-    { "name": "ULTRON_SESSION_TTL", "default": "24h", "required": false, "description": "Session cookie TTL (Go duration string)" },
-    { "name": "ULTRON_METRICS_INTERVAL", "default": "5s", "required": false, "description": "Metric collection interval (≥ 1s)" },
-    { "name": "ULTRON_HELPER_SOCKET", "default": "/run/ultron-helper.sock", "required": false, "description": "Unix socket path for the privileged helper" }
+    {
+      "name": "ULTRON_ADMIN_USER",
+      "default": "admin",
+      "required": false,
+      "description": "Admin username for first-run setup"
+    },
+    {
+      "name": "ULTRON_ADMIN_PASS",
+      "required": true,
+      "description": "Initial admin password on first run; ignored after the user is seeded"
+    },
+    {
+      "name": "ULTRON_PORT",
+      "default": "8080",
+      "required": false,
+      "description": "HTTP listen port"
+    },
+    {
+      "name": "ULTRON_DB_PATH",
+      "default": "/var/lib/ultron-ap/db.sqlite",
+      "required": false,
+      "description": "Path to SQLite database file"
+    },
+    {
+      "name": "ULTRON_LOG_LEVEL",
+      "default": "info",
+      "required": false,
+      "description": "Logging level: debug | info | warn | error"
+    },
+    {
+      "name": "ULTRON_SESSION_TTL",
+      "default": "24h",
+      "required": false,
+      "description": "Session cookie TTL (Go duration string)"
+    },
+    {
+      "name": "ULTRON_METRICS_INTERVAL",
+      "default": "5s",
+      "required": false,
+      "description": "Metric collection interval (≥ 1s)"
+    },
+    {
+      "name": "ULTRON_HELPER_SOCKET",
+      "default": "/run/ultron-helper.sock",
+      "required": false,
+      "description": "Unix socket path for the privileged helper"
+    }
   ],
   "files_created": [
+    ".env.example",
+    "DEPLOYMENT.md",
     "cmd/ultron-ap/main.go",
     "cmd/ultron-helper/main.go",
-    "internal/server/server.go",
+    "deploy/ultron-ap.service",
+    "deploy/ultron-ap.sudoers",
+    "deploy/ultron-helper.service",
+    "docs/js-trace-map.md",
+    "internal/alerts/engine.go",
+    "internal/auth/bruteforce.go",
+    "internal/auth/csrf.go",
+    "internal/config/config.go",
+    "internal/database/actions.go",
+    "internal/database/alerts.go",
+    "internal/database/auth.go",
+    "internal/database/backup.go",
+    "internal/database/notifications.go",
+    "internal/database/performance.go",
+    "internal/database/secrets.go",
+    "internal/database/sqlite.go",
+    "internal/docker/client.go",
+    "internal/docker/controls.go",
+    "internal/docker/models.go",
+    "internal/docker/monitor.go",
+    "internal/metrics/collector.go",
+    "internal/metrics/models.go",
+    "internal/metrics/reader.go",
+    "internal/metrics/ringbuffer.go",
+    "internal/notify/dispatcher.go",
+    "internal/notify/email.go",
+    "internal/notify/notifier.go",
+    "internal/notify/telegram.go",
+    "internal/privileged/client.go",
+    "internal/server/backup_crypto.go",
     "internal/server/handlers.go",
-    "internal/server/handlers_auth.go",
     "internal/server/handlers_alerts.go",
+    "internal/server/handlers_auth.go",
     "internal/server/handlers_docker.go",
     "internal/server/handlers_history.go",
     "internal/server/handlers_services.go",
     "internal/server/handlers_settings.go",
     "internal/server/handlers_system.go",
-    "internal/server/middleware.go",
-    "internal/server/sse.go",
-    "internal/server/render.go",
-    "internal/server/templates.go",
     "internal/server/helpers.go",
-    "internal/server/backup_crypto.go",
-    "internal/metrics/collector.go",
-    "internal/metrics/reader.go",
-    "internal/metrics/ringbuffer.go",
-    "internal/metrics/models.go",
-    "internal/docker/client.go",
-    "internal/docker/monitor.go",
-    "internal/docker/controls.go",
-    "internal/docker/models.go",
-    "internal/systemd/monitor.go",
+    "internal/server/middleware.go",
+    "internal/server/render.go",
+    "internal/server/server.go",
+    "internal/server/sse.go",
+    "internal/server/templates.go",
     "internal/systemd/controls.go",
+    "internal/systemd/models.go",
+    "internal/systemd/monitor.go",
     "internal/systemd/parser.go",
     "internal/systemd/runner.go",
-    "internal/systemd/models.go",
     "internal/tailscale/status.go",
-    "internal/alerts/engine.go",
-    "internal/notify/notifier.go",
-    "internal/notify/dispatcher.go",
-    "internal/notify/telegram.go",
-    "internal/notify/email.go",
-    "internal/database/sqlite.go",
-    "internal/database/auth.go",
-    "internal/database/alerts.go",
-    "internal/database/notifications.go",
-    "internal/database/actions.go",
-    "internal/database/backup.go",
-    "internal/database/secrets.go",
-    "internal/database/performance.go",
-    "internal/auth/csrf.go",
-    "internal/auth/bruteforce.go",
-    "internal/config/config.go",
-    "internal/privileged/client.go",
+    "scripts/aitri-test.sh",
+    "scripts/build-arm64-check.sh",
+    "scripts/security-gate.sh",
     "web/embed.go",
-    "web/templates/dashboard.html",
-    "web/templates/docker.html",
-    "web/templates/services.html",
-    "web/templates/alerts.html",
-    "web/templates/history.html",
-    "web/templates/logs.html",
-    "web/templates/settings.html",
-    "web/templates/login.html",
     "web/static/css/app.css",
     "web/static/js/htmx.min.js",
-    "scripts/aitri-test.sh",
-    "deploy/ultron-ap.service",
-    "deploy/ultron-helper.service",
-    "deploy/ultron-ap.sudoers",
-    ".env.example",
-    "DEPLOYMENT.md"
+    "web/templates/alerts.html",
+    "web/templates/dashboard.html",
+    "web/templates/docker.html",
+    "web/templates/history.html",
+    "web/templates/login.html",
+    "web/templates/logs.html",
+    "web/templates/services.html",
+    "web/templates/settings.html"
   ],
-  "files_modified": [],
+  "files_modified": [
+    ".github/workflows/security-gate.yml",
+    "DEPLOYMENT.md",
+    "web/static/js/settings.js",
+    "web/static/js/sidebar.js"
+  ],
   "test_files": [
     "internal/alerts/engine_test.go",
     "internal/auth/bruteforce_test.go",
@@ -134,57 +181,92 @@
     {
       "package": "internal/server",
       "responsibility": "HTTP request handling, SSE broadcasting, authentication middleware, template rendering, backup encryption",
-      "key_types": ["Server", "sseBroker"]
+      "key_types": [
+        "Server",
+        "sseBroker"
+      ]
     },
     {
       "package": "internal/metrics",
       "responsibility": "Read system metrics (CPU, RAM, Disk, Network, Temperature); maintain ring buffer for chart history; emit snapshots",
-      "key_types": ["Collector", "SystemReader", "RingBuffer", "Snapshot"]
+      "key_types": [
+        "Collector",
+        "SystemReader",
+        "RingBuffer",
+        "Snapshot"
+      ]
     },
     {
       "package": "internal/docker",
       "responsibility": "Connect to Docker socket, poll container state and stats, execute start/stop/restart/logs",
-      "key_types": ["Monitor", "Client", "ContainerInfo"]
+      "key_types": [
+        "Monitor",
+        "Client",
+        "ContainerInfo"
+      ]
     },
     {
       "package": "internal/systemd",
       "responsibility": "Read Systemd unit state, execute service controls via privileged helper, parse output",
-      "key_types": ["Monitor", "ServiceInfo"]
+      "key_types": [
+        "Monitor",
+        "ServiceInfo"
+      ]
     },
     {
       "package": "internal/tailscale",
       "responsibility": "Read Tailscale VPN status and peer list from local CLI",
-      "key_types": ["Status", "Peer"]
+      "key_types": [
+        "Status",
+        "Peer"
+      ]
     },
     {
       "package": "internal/alerts",
       "responsibility": "Evaluate threshold rules against metric snapshots and service state; fire/resolve alerts",
-      "key_types": ["Engine", "Rule", "Alert"]
+      "key_types": [
+        "Engine",
+        "Rule",
+        "Alert"
+      ]
     },
     {
       "package": "internal/notify",
       "responsibility": "Dispatch alert notifications to configured Telegram and Email channels",
-      "key_types": ["Dispatcher", "TelegramNotifier", "EmailNotifier"]
+      "key_types": [
+        "Dispatcher",
+        "TelegramNotifier",
+        "EmailNotifier"
+      ]
     },
     {
       "package": "internal/database",
       "responsibility": "SQLite data access layer for all persistent state: users/sessions, alerts, notification config, action history, backups, secrets",
-      "key_types": ["DB"]
+      "key_types": [
+        "DB"
+      ]
     },
     {
       "package": "internal/auth",
       "responsibility": "CSRF token generation and validation; brute-force login attempt tracking",
-      "key_types": ["CSRFManager", "BruteForceTracker"]
+      "key_types": [
+        "CSRFManager",
+        "BruteForceTracker"
+      ]
     },
     {
       "package": "internal/config",
       "responsibility": "Load and validate server configuration from environment variables",
-      "key_types": ["Config"]
+      "key_types": [
+        "Config"
+      ]
     },
     {
       "package": "internal/privileged",
       "responsibility": "Unix socket client; sends host-level action requests to the privileged helper binary",
-      "key_types": ["Client"]
+      "key_types": [
+        "Client"
+      ]
     }
   ],
   "build": {
@@ -196,5 +278,24 @@
     },
     "output_binary": "bin/ultron-ap",
     "arm64_binary": "bin/ultron-ap-linux-arm64"
-  }
+  },
+  "quality_gates": [
+    {
+      "name": "vet",
+      "command": "go vet ./...",
+      "required": true
+    },
+    {
+      "name": "security-gate",
+      "command": "bash scripts/security-gate.sh",
+      "required": true,
+      "timeout_ms": 120000
+    },
+    {
+      "name": "build-linux-arm64",
+      "command": "sh scripts/build-arm64-check.sh",
+      "required": true,
+      "timeout_ms": 300000
+    }
+  ]
 }

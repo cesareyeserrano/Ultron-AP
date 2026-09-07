@@ -81,7 +81,7 @@ type Snapshot struct {
 	Label     string
 	Kind      Kind
 	Status    Status
-	Target    string  // resolved IP / resolver address at probe time
+	Target    string // resolved IP / resolver address at probe time
 	RTT       time.Duration
 	RTTMs     float64 // milliseconds, pre-formatted for templates
 	JitterMs  float64 // EWMA of |Δ RTT|
@@ -148,6 +148,16 @@ func New(interval time.Duration, sink Sink, targets []Target) *Probe {
 
 // Snapshots returns the latest snapshot for each registered target, in
 // registration order. The returned pointers are immutable; do not mutate them.
+// Interval returns the sampling period the probe was constructed with.
+//
+// Exported so a test can prove the value travelled from configuration rather
+// than from a literal in the code: before ULTRON_NET_INTERVAL_SECONDS existed,
+// 5s was hardcoded at the call site, and the only way to tell the difference is
+// to read back what the probe actually holds.
+//
+// @aitri-trace FR-100, AC-100-004, TC-NSR-043e
+func (p *Probe) Interval() time.Duration { return p.interval }
+
 func (p *Probe) Snapshots() []*Snapshot {
 	out := make([]*Snapshot, len(p.states))
 	for i, st := range p.states {

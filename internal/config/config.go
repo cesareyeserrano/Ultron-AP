@@ -22,6 +22,23 @@ type Config struct {
 	HelperSocket    string
 	HelperTimeout   time.Duration
 
+	// NetRetentionDays is the retention window for NetSample rows
+	// (ULTRON_NET_RETENTION_DAYS, default 30, minimum 1). Without it the table
+	// grew unbounded: 8.4M rows and 694 MB — 96% of the database — by
+	// 2026-09-06, at ~67k rows and 5.5 MB a day.
+	//
+	// Sanitised HERE rather than at the point of use, and that placement is the
+	// security control: a window of 0 means "delete the entire history" and a
+	// negative one puts the cutoff in the future, which deletes everything too.
+	// Neither value may ever leave this function. See NFR-102.
+	NetRetentionDays int
+
+	// NetInterval is how often the network probe samples
+	// (ULTRON_NET_INTERVAL_SECONDS, default 5s, minimum 1s). The default
+	// matches the previously hardcoded value exactly, so a deploy that does
+	// not touch the environment changes nothing observable (NFR-110).
+	NetInterval time.Duration
+
 	// BackupRoot is the only directory under which admin-supplied backup
 	// destination paths may live. An empty form value falls back to
 	// <BackupRoot>/backups. ULTRON_BACKUP_ROOT overrides; default is the
@@ -55,6 +72,23 @@ var validLogLevels = map[string]bool{
 	"error": true,
 }
 
+// defaultNetRetentionDays keeps 30 days of network samples: ~2.1M rows and
+// ~175 MB at the measured rate, against 719 MB unbounded.
+const defaultNetRetentionDays = 30
+
+// minNetRetentionDays is 1, not 0. Zero would delete the whole history on the
+// next prune, which is never what an operator means to configure.
+const minNetRetentionDays = 1
+
+// defaultNetInterval is the value the probe was hardcoded to before this was
+// configurable. Keeping it identical is what makes an unchanged environment a
+// no-op (NFR-110).
+const defaultNetInterval = 5 * time.Second
+
+// logf is overridable in tests to capture the warnings this file emits,
+// matching the seam internal/ups/config.go already uses.
+var logf = log.Printf
+
 func Load() (*Config, error) {
 	cfg := &Config{
 		Port:            8080,
@@ -66,6 +100,9 @@ func Load() (*Config, error) {
 		MetricsInterval: 5 * time.Second,
 		HelperSocket:    "/run/ultron-helper.sock",
 		HelperTimeout:   5 * time.Second,
+
+		NetRetentionDays: defaultNetRetentionDays,
+		NetInterval:      defaultNetInterval,
 	}
 
 	if v := os.Getenv("ULTRON_PORT"); v != "" {
@@ -127,6 +164,40 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("invalid metrics interval: must be >= 1s, got %v", d)
 		}
 		cfg.MetricsInterval = d
+	}
+
+	// ULTRON_NET_RETENTION_DAYS and ULTRON_NET_INTERVAL_SECONDS warn and fall
+	// back instead of returning an error, unlike their neighbours above.
+	//
+	// That divergence is deliberate (ADR-002): a monitoring panel that refuses
+	// to boot over a typo in a retention window leaves the operator with no
+	// visibility at exactly the moment they need to log in and fix it. The
+	// safe default plus a loud journal line is the better failure mode. The
+	// existing entries keep their behaviour — changing those would be a
+	// regression outside this feature's scope.
+	if v := strings.TrimSpace(os.Getenv("ULTRON_NET_RETENTION_DAYS")); v != "" {
+		n, err := strconv.Atoi(v)
+		switch {
+		case err != nil:
+			logf("net: invalid ULTRON_NET_RETENTION_DAYS=%q, using default %d", v, defaultNetRetentionDays)
+		case n < minNetRetentionDays:
+			logf("net: invalid ULTRON_NET_RETENTION_DAYS=%q (minimum %d), using default %d",
+				v, minNetRetentionDays, defaultNetRetentionDays)
+		default:
+			cfg.NetRetentionDays = n
+		}
+	}
+
+	if v := strings.TrimSpace(os.Getenv("ULTRON_NET_INTERVAL_SECONDS")); v != "" {
+		n, err := strconv.Atoi(v)
+		switch {
+		case err != nil:
+			logf("net: invalid ULTRON_NET_INTERVAL_SECONDS=%q, using default %v", v, defaultNetInterval)
+		case n < 1:
+			logf("net: invalid ULTRON_NET_INTERVAL_SECONDS=%q (minimum 1), using default %v", v, defaultNetInterval)
+		default:
+			cfg.NetInterval = time.Duration(n) * time.Second
+		}
 	}
 
 	if v := os.Getenv("ULTRON_HELPER_SOCKET"); v != "" {

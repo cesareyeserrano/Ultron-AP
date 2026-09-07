@@ -1,8 +1,8 @@
-// FR-057 — unit-aware numeric stepper. Vanilla JS, no deps.
+// Unit-aware numeric stepper. Vanilla JS, no deps.
 // Bounds enforced by min/max on the underlying <input type="number">.
 // Direct keyboard input still works; the +/- buttons are touch-friendly
 // (>=44px). On blur, an out-of-range value renders an inline error span
-// using the same hint string as the label (FR-060) — but the canonical
+// using the same hint string as the label — but the canonical
 // validation message comes from the server.
 (function () {
   'use strict';
@@ -58,6 +58,6 @@
 
   // Re-init on htmx swap so dynamic forms get the widget bound.
   document.body.addEventListener('htmx:afterSwap', function (e) { initAll(e.target); });
-  // History restores re-insert cached DOM without firing afterSwap (BG-038 family).
+  // History restores re-insert cached DOM without firing afterSwap.
   document.body.addEventListener('htmx:historyRestore', function () { initAll(); });
 })();

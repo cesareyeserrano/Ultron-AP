@@ -1,8 +1,8 @@
-// FR-081 — per-service log drawer. The fetch is htmx's job (hx-get with
+// Per-service log drawer. The fetch is htmx's job (hx-get with
 // hx-trigger="click once", so re-opening a drawer never re-hits journalctl);
 // this widget owns only the open/close state and aria-expanded.
 //
-// Same lifecycle as the other widgets (BG-038): loaded from <head> on every
+// Same lifecycle as the other widgets: loaded from <head> on every
 // page, re-init on htmx:afterSwap and htmx:historyRestore, idempotent guards.
 (function () {
   'use strict';

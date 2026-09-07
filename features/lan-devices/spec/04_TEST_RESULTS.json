@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-04T20:34:19.846Z",
+  "executed_at": "2026-09-07T02:40:43.906Z",
   "test_runner": "go test ../../internal/network/landevices/... ../../internal/server/ -run TC_LD -v",
   "exit_code": 0,
   "results": [
@@ -91,12 +91,12 @@
     {
       "tc_id": "TC-LD-006e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_006e_ApplySweep_OfflineDeviceRecoversOnReappearance (0.01s)"
+      "notes": "--- PASS: TestTC_LD_006e_ApplySweep_OfflineDeviceRecoversOnReappearance (0.00s)"
     },
     {
       "tc_id": "TC-LD-007h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_007h_List_OrderingOnlineFirstThenLastSeenDesc (0.00s)"
+      "notes": "--- PASS: TestTC_LD_007h_List_OrderingOnlineFirstThenLastSeenDesc (0.01s)"
     },
     {
       "tc_id": "TC-LD-007f",
@@ -136,7 +136,7 @@
     {
       "tc_id": "TC-LD-009e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_LD_009e_AdjustCadence_CapsAtMaxCadence (0.01s)"
+      "notes": "--- PASS: TestTC_LD_009e_AdjustCadence_CapsAtMaxCadence (0.00s)"
     },
     {
       "tc_id": "TC-LD-010h",
@@ -464,8 +464,8 @@
   },
   "low_confidence_tcs": [],
   "timings": {
-    "runner_ms": 612,
+    "runner_ms": 1163,
     "gates_ms": 0,
-    "total_ms": 621
+    "total_ms": 1168
   }
 }

@@ -43,7 +43,7 @@ import (
 // the Makefile build / build-arm targets override them with the real
 // release tag and `git rev-parse --short HEAD`. (BL-021 / BG-033.)
 var (
-	Version     = "v1.0.0"
+	Version     = "v1.1.0"
 	BuildCommit = "unknown"
 )
 
@@ -589,9 +589,10 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/sse/dashboard", s.requireAuth(http.HandlerFunc(s.handleSSE)))
 	mux.Handle("GET /api/docker/{id}", s.requireAuth(http.HandlerFunc(s.handleDockerDetail)))
 	mux.Handle("GET /api/docker/{id}/logs", s.requireAuth(http.HandlerFunc(s.handleDockerLogs)))
-	mux.Handle("POST /api/docker/{id}/start", s.requireAuth(http.HandlerFunc(s.handleDockerStart)))
-	mux.Handle("POST /api/docker/{id}/stop", s.requireAuth(http.HandlerFunc(s.handleDockerStop)))
-	mux.Handle("POST /api/docker/{id}/restart", s.requireAuth(http.HandlerFunc(s.handleDockerRestart)))
+	// No container start/stop/restart routes: the panel is read-only over
+	// Docker since the C2 hardening (FR-094). They are absent rather than
+	// registered-and-refused so an unregistered path 404s from the mux — a
+	// 403 would confirm to a prober that the route still exists.
 	mux.Handle("POST /api/alerts/rules", s.requireAuth(http.HandlerFunc(s.handleAlertRuleCreate)))
 	mux.Handle("POST /api/alerts/rules/{id}/toggle", s.requireAuth(http.HandlerFunc(s.handleAlertRuleToggle)))
 	mux.Handle("DELETE /api/alerts/rules/{id}", s.requireAuth(http.HandlerFunc(s.handleAlertRuleDelete)))
@@ -662,9 +663,72 @@ func (s *Server) startRetentionJob() {
 					log.Printf("retention: pruned %d ups rows", n)
 				}
 			}
+			// Network sample retention (FR-097). PruneNetSamples existed since
+			// the network monitor shipped but was never called from anywhere:
+			// this job pruned ActionLog, sessions and UPS and skipped NetSample,
+			// which is why the table reached 8.4M rows and 96% of the database.
+			s.pruneNetSamples()
 			timer.Reset(24 * time.Hour)
 		}
 	}()
+}
+
+// netCompactThresholdBytes is how much reclaimable space justifies a VACUUM.
+//
+// VACUUM blocks writers while it rewrites the file, so running it on every
+// prune would stall the probe daily to recover a few megabytes the database is
+// about to reuse anyway. In steady state each daily prune frees roughly what
+// the next 24h insert, so the free list never grows and this threshold is never
+// met — which makes the compaction effectively a one-time migration step on the
+// first boot after this feature ships.
+const netCompactThresholdBytes = 100 << 20 // 100 MiB
+
+// pruneNetSamples runs one network-retention pass and reclaims disk space when
+// enough has accumulated to be worth the write stall.
+//
+// Every failure here is logged and swallowed: this runs inside the shared daily
+// retention job, and a network prune that fails must not stop the job or the
+// process (NFR-103). The ActionLog, session and UPS prunes have already run by
+// the time this is called, so their work is never at risk from this one.
+//
+// @aitri-trace FR-097, FR-099, NFR-103, NFR-104
+func (s *Server) pruneNetSamples() {
+	if s.db == nil {
+		return
+	}
+	n, err := s.db.PruneNetSamples(s.netRetentionDays())
+	if err != nil {
+		log.Printf("retention: net sample prune failed: %v", err)
+		return
+	}
+	if n > 0 {
+		log.Printf("retention: pruned %d net samples older than %d days", n, s.netRetentionDays())
+	}
+
+	free, err := s.db.FreeSpaceBytes()
+	if err != nil {
+		log.Printf("retention: could not read reclaimable space: %v", err)
+		return
+	}
+	if free < netCompactThresholdBytes {
+		return
+	}
+	log.Printf("retention: %d MiB reclaimable, compacting database", free>>20)
+	if err := s.db.Compact(); err != nil {
+		// The rows are already gone; the space is reclaimed next cycle.
+		log.Printf("retention: compaction failed: %v", err)
+		return
+	}
+	log.Printf("retention: database compacted")
+}
+
+// netRetentionDays is the configured window, defaulting defensively in case a
+// Server was built without config (as several tests do).
+func (s *Server) netRetentionDays() int {
+	if s.cfg != nil && s.cfg.NetRetentionDays > 0 {
+		return s.cfg.NetRetentionDays
+	}
+	return 30
 }
 
 // SetGatewayProbe attaches a gateway ICMP probe whose latest snapshot is

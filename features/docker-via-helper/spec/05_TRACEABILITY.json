@@ -1,0 +1,143 @@
+{
+  "project": "Ultron — docker-via-helper",
+  "version": "1.1.0",
+  "version_source": "team",
+  "phases_completed": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "overall_status": "partial",
+  "requirement_compliance": [
+    {
+      "id": "FR-088",
+      "title": "Lectura de contenedores a traves del helper privilegiado",
+      "level": "complete",
+      "evidence": "6 TC (TC-DVH-001h/002e/003e/004e/005f/006e) pasando. Cubre los 5 contenedores de la Pi con health, stats numericas con MemPercent exacto, contenedor detenido sin stats, 200 contenedores en <2s, payload no-JSON sin panic, y conservacion de la ultima lista buena ante fallo transitorio."
+    },
+    {
+      "id": "FR-089",
+      "title": "El helper habla con Docker por API HTTP minima y solo lectura",
+      "level": "partial",
+      "evidence": "7 TC pasando. docker.start/stop/restart/exec devuelven 'unknown action' con CERO peticiones al demonio simulado; las 4 llamadas del cliente usan GET; ids con travesia, travesia codificada, byte nulo y 200 caracteres se rechazan sin emitir peticion. Parcial por la deuda declarada: TC-DVH-081f/082f verifican authorize() como funcion pura porque SO_PEERCRED es solo de Linux y ningun entorno de test puede conectar como otro UID sin ser root."
+    },
+    {
+      "id": "FR-090",
+      "title": "Detalle de contenedor sin exponer valores de variables de entorno",
+      "level": "complete",
+      "evidence": "5 TC pasando. TC-DVH-021f serializa el detalle a JSON y afirma que contiene POSTGRES_PASSWORD y API_KEY pero NO 'hunter2' ni 'sk-live-9f3a'. El descarte ocurre en EnvNames dentro del helper, asi que el valor no existe en la estructura que cruza la frontera."
+    },
+    {
+      "id": "FR-091",
+      "title": "Estado explicito cuando el helper no esta disponible",
+      "level": "partial",
+      "evidence": "7 TC pasando. TC-DVH-032f afirma que con el helper caido el cuerpo NO contiene 'No containers found' — el defecto exacto que originaba la feature, donde el aviso y el estado vacio convivian. TC-DVH-033e afirma lo inverso. Parcial por la deuda declarada: los 11 TC type=e2e corren como tests HTTP en Go con httptest, no en navegador (BL-042)."
+    },
+    {
+      "id": "FR-092",
+      "title": "Timeout corto en cada llamada de Docker al helper",
+      "level": "complete",
+      "evidence": "4 TC pasando. TC-DVH-040h comprueba las cotas contra la constante helperDockerTimeout que usa produccion, no contra una copia de su valor. TC-DVH-041f mide que un helper colgado aborta entre 2s y 4s. TC-DVH-043e afirma que Stop() no deja goroutines vivas tras un timeout."
+    },
+    {
+      "id": "FR-093",
+      "title": "La web app no abre el socket de Docker",
+      "level": "complete",
+      "evidence": "5 TC pasando. TC-DVH-050h recorre 'go list -deps ./cmd/ultron-ap' y falla ante cualquier paquete github.com/docker/ o internal/dockerapi — es el grafo de dependencias real, no un grep. TC-DVH-051e es su control positivo: afirma que el helper SI depende de dockerapi, de modo que la asercion de ausencia no puede pasar por vacuidad. go.mod paso de 59 a 37 lineas."
+    },
+    {
+      "id": "FR-094",
+      "title": "Retirada de los controles de contenedores de la web app",
+      "level": "partial",
+      "evidence": "4 TC pasando. TC-DVH-062f afirma que internal/docker/controls.go no existe en disco y que ningun fichero de internal/server define los tres handlers, ademas de los 404. Parcial por la deuda declarada: el criterio AC-008-002 del FR-008 raiz queda falso hasta BL-043."
+    },
+    {
+      "id": "FR-095",
+      "title": "Logs de contenedor por el helper con la redaccion existente",
+      "level": "complete",
+      "evidence": "5 TC pasando. TC-DVH-101f pasa la misma linea con secreto por la ruta de journalctl y por la de contenedor y exige salidas IDENTICAS byte a byte — no comprueba que haya redaccion, comprueba que no se colo una politica mas laxa. TC-DVH-074e cubre tramas partidas y cabecera truncada del desmultiplexado."
+    },
+    {
+      "id": "NFR-092",
+      "title": "Seguridad: frontera unidireccional de solo lectura",
+      "level": "partial",
+      "evidence": "4 TC dedicados mas los de FR-089. Cuatro controles mapeados: aislamiento verificado sobre el grafo de dependencias, allow-list de acciones por switch sin rama de escritura, validacion de id antes de interpolar, y SO_PEERCRED con fail-closed heredado sin codigo adicional. Parcial por la deuda de verificacion de peercred."
+    },
+    {
+      "id": "NFR-093",
+      "title": "Observabilidad: log de transicion de disponibilidad",
+      "level": "functionally_present",
+      "evidence": "Implementado en Monitor.refresh: la transicion a no disponible se registra una sola vez por cambio de estado, no por tick (un helper caido una hora escribia 360 lineas). TC-DVH-053f afirma que el log de arranque no contiene 'daemon not reachable' ni 'permission denied'. Sin TC que apunte a NFR-093 directamente."
+    },
+    {
+      "id": "NFR-094",
+      "title": "Fiabilidad: el fallo queda contenido en su seccion",
+      "level": "complete",
+      "evidence": "TC-DVH-034e, TC-DVH-120h y TC-DVH-121f: con el helper caido, /, /alerts y /network siguen en 200 sin heredar el estado de error. TC-DVH-054e afirma que NewMonitor+Start+Stop terminan en menos de 1s con el socket ausente."
+    },
+    {
+      "id": "NFR-095",
+      "title": "CI/CD: la suite completa corre en cada push a main",
+      "level": "complete",
+      "evidence": ".github/workflows/ci.yml dispara en push a main y en pull_request, y ejecuta 'go test -race -count=1 ./...', que incluye los 59 TC de esta feature. Ademas compila el objetivo de produccion linux/arm64. No hay runner e2e configurado en el proyecto, asi que no se invoca ninguno (BL-042)."
+    },
+    {
+      "id": "NFR-096",
+      "title": "Regresion: las acciones existentes del helper no cambian",
+      "level": "complete",
+      "evidence": "TC-DVH-090h/091f/092e: ping sigue devolviendo 'pong', una accion inexistente sigue devolviendo 'unknown action', y systemctl sigue rechazando un nombre de unidad con forma de opcion."
+    },
+    {
+      "id": "NFR-097",
+      "title": "Regresion: la redaccion de logfilter se sigue aplicando",
+      "level": "complete",
+      "evidence": "TC-DVH-100h/101f/102e: journalctl sigue redactado, ambas rutas producen salida identica byte a byte, y el tope de bytes es el mismo en las dos."
+    },
+    {
+      "id": "NFR-098",
+      "title": "Regresion: los controles de servicios systemd siguen operativos",
+      "level": "complete",
+      "evidence": "TC-DVH-063e/110h/111f/112e: /services conserva sus tres controles, un nombre de unidad con forma de opcion se rechaza sin que se ejecute ningun systemctl (verificado con registro de invocaciones en el runner simulado), y la accion sigue escribiendo en el audit trail."
+    },
+    {
+      "id": "NFR-099",
+      "title": "Regresion: el resto del panel renderiza con Docker en error",
+      "level": "complete",
+      "evidence": "TC-DVH-120h/121f/122e. El ultimo compara los dos escenarios del tile del dashboard y exige textos distintos y mutuamente excluyentes para 'no disponible' y 'lista vacia'."
+    },
+    {
+      "id": "NFR-100",
+      "title": "Usabilidad: el estado de error se distingue y cumple contraste",
+      "level": "complete",
+      "evidence": "TC-DVH-035h calcula la razon de contraste WCAG 2.1 entre --color-error-text y --color-error-bg parseando los tokens reales de web/css/input.css, y exige >=4.5. TC-DVH-032f y TC-DVH-033e afirman que los dos estados nunca coexisten."
+    },
+    {
+      "id": "NFR-101",
+      "title": "Healthcheck: no aplica uno nuevo",
+      "level": "functionally_present",
+      "evidence": "Declarado como no aplicable en fase 1 con su motivo: el endpoint /health existente cubre la vivacidad del proceso y el helper expone un socket Unix cuya vivacidad se comprueba con la accion ping ya existente. No se anadio ningun endpoint. Sin TC dedicado, por diseno."
+    }
+  ],
+  "technical_debt_inherited": [
+    {
+      "fr_id": "FR-089",
+      "substitution": "TC-DVH-081f y TC-DVH-082f verifican authorize(), la funcion pura de decision de autenticacion que usa handleConn, en vez de abrir una conexion real por socket desde otro UID.",
+      "reason": "SO_PEERCRED es una extension exclusiva de Linux: en darwin peerCredSupported es false y handleConn omite el bloque entero, asi que el test pasaria por vacuidad en la maquina de desarrollo. Y ni siquiera en Linux puede un proceso de test conectar como otro UID sin ser root, ni en CI ni localmente. Un round trip cruzando UIDs no es alcanzable desde ningun entorno de test de este proyecto. La alternativa era t.Skip en no-Linux, que cuenta como AC sin cobertura y bloquea verify-complete. TC-DVH-080h si ejecuta el round trip completo por socket con el UID del proceso, y el refactor a authorize() no cambio ninguna decision, solo la extrajo.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-091",
+      "substitution": "Los 11 TC declarados type=e2e se ejecutan como tests HTTP en Go con httptest contra el servidor levantado en proceso, no en un navegador.",
+      "reason": "El proyecto no tiene runner de navegador (sin package.json, sin Playwright, sin chromedp) — es la deuda registrada como BL-042. Precedente ya establecido y verde en NUT_UPS_Pi_On_Dashboard (11 e2e), insights-engine (2) y network-tile (2). Mitigacion deliberada en fase 1: los criterios de aceptacion de esta feature se redactaron desde el principio como aserciones de presencia de texto en el HTML renderizado y como calculo de contraste sobre los tokens reales de input.css, de modo que ninguno exige geometria de layout, estilos computados ni trayectorias de animacion. Por eso los 59 TC pasan de verdad, en vez de repetir los ~20 ACs sin cobertura de help-page y settings-revamp.",
+      "effort_to_fix": "high"
+    },
+    {
+      "fr_id": "FR-094",
+      "substitution": "El criterio AC-008-002 del FR-008 raiz ('Start, Stop, Restart buttons per Docker container') queda falso y el TC-008e declarado queda huerfano; no se enmienda el PRD raiz en este ciclo.",
+      "reason": "Enmendar FR-008 exige 'aitri run-phase requirements --feedback' en la raiz, que cascadea e invalida arquitectura, tests, build y deploy, hoy 5/5 y Deployable. Decidido con el owner el 2026-09-06 tras comprobar que ningun test verde se rompe: TC-008a prueba /services (systemd), no contenedores, y no existe implementacion en Go de TC-008e. Registrado como BL-043 con su criterio de cierre.",
+      "effort_to_fix": "medium"
+    }
+  ]
+}

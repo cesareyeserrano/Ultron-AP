@@ -121,6 +121,9 @@ func (s *Server) parseTemplates() {
 
 	// FuncMap for full page templates.
 	pageFuncs := template.FuncMap{
+		// shortID is needed by docker-list.html since the row gained its own
+		// detail target (the control column it replaced needed no id).
+		"shortID":                 shortID,
 		"add":                     func(a, b int) int { return a + b },
 		"sub":                     func(a, b int) int { return a - b },
 		"formatBytes":             formatBytes,

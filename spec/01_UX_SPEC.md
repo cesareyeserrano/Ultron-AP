@@ -12,8 +12,8 @@
 7. Action outcome appears as explicit success/error state with retry path.
 
 ### Flow 2 — Service control with confirmation
-1. Operator browses Docker or Services.
-2. Clicks Stop/Restart on a row.
+1. Operator browses Services. **Docker containers are read-only and expose no controls** — see the note under Component Inventory.
+2. Clicks Stop/Restart on a Systemd service row.
 3. Confirmation modal appears with explicit action label and target name.
 4. On confirm: action dispatches asynchronously; row shows in-flight indicator.
 5. On completion: success/error state inline + audit-trail entry persisted.
@@ -38,12 +38,12 @@
 | Status Ribbon | Compact top ribbon with 3 zones: System, Services, Data Freshness |
 | Alert Chip | Header badge showing active alert count and severity |
 | Metric Card | CPU / RAM / Disk / Temp — value + historical sparkline |
-| Service Row | Docker or Systemd row with status badge and action buttons |
+| Service Row | Systemd row with status badge and action buttons. The Docker variant renders the same row **without an action zone** — read-only. |
 | Log Drawer | Last 100 lines for any container or service, on-demand |
 | Settings Form | Grouped settings with `idle / saving / applied / failed` states |
 | Danger Zone | Typed confirmation + countdown cancel window for shutdown/restart |
 | Login Form | Username + password with brute-force feedback ("locked for X minutes") |
-| Confirmation Modal | Used for Stop/Restart on services and containers |
+| Confirmation Modal | Used for Stop/Restart on Systemd services only |
 | Empty State | Standardised placeholder when a list is empty |
 | Error State | Standardised inline error card with retry action |
 
@@ -57,7 +57,7 @@ This panel is reviewed against Nielsen's 10 usability heuristics:
 1. **Visibility of system status** — SSE pushes every 5 s; "last updated" timestamp on stale data; in-flight badges on actions.
 2. **Match with real world** — labels use ops vocabulary (Docker, Systemd, CPU%, MB, °C); no jargon from internal code paths.
 3. **User control and freedom** — every destructive action is reversible via confirmation modal with cancel; mute can be undone.
-4. **Consistency and standards** — semantic colours `ok/warn/critical/muted` are reused everywhere; same row pattern across Docker and Services.
+4. **Consistency and standards** — semantic colours `ok/warn/critical/muted` are reused everywhere; the same row pattern serves Docker and Services, differing only in that the Docker row carries no action zone.
 5. **Error prevention** — Stop/Restart require confirmation; CSRF tokens block silent state changes.
 6. **Recognition rather than recall** — alerts list shows current value vs configured threshold inline.
 7. **Flexibility and efficiency of use** — keyboard navigation across header, alert chip, and primary actions.
@@ -110,3 +110,30 @@ Contrast: every text token vs `--bg` is ≥ 4.5:1 (verified WCAG 2.1 AA). Status
 - Size: 16 px inline / 20 px in headers.
 - Stroke: 1.5 px.
 - Provided by an embedded SVG sprite — no external icon CDN.
+
+## Read-only Docker — why the container row has no controls
+
+Amended 2026-09-06 (BL-043), following finding **C2** of the 2026-09-05 Pi security audit.
+
+The panel used to render Start / Stop / Restart on Docker container rows. It no longer does,
+and this is a security boundary rather than a design preference: serving those controls
+required the web process to reach the Docker daemon socket, which required its user to be in
+the `docker` group — membership equivalent to root on the host, held by a process exposed on
+LAN `:8080` and tailnet `:34002`. A remote-code-execution bug in the panel was therefore a
+root compromise of the Pi.
+
+Docker is now read through the privileged helper in **read-only mode**: list, inspect and
+logs, with no write action existing anywhere in its protocol. With no capability to act, a
+control would be a button that cannot work.
+
+**The controls were removed rather than disabled.** A visible-but-inert control invites
+someone to re-wire it, and re-wiring is precisely the capability the audit removed. Absence
+is the more durable documentation of the boundary.
+
+Systemd service controls are unaffected and keep their full row, confirmation modal and audit
+trail: those go through the helper's allow-listed `systemctl` action, which validates the unit
+name and never granted the panel a socket to the host.
+
+**Unavailability and emptiness are distinct states.** The container section renders an explicit
+"data unavailable" error when the helper cannot be reached, never the empty-state message —
+those two coexisting was the defect that made the outage read as "there are no containers".

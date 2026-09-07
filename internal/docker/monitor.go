@@ -1,32 +1,28 @@
+// Module:       internal/docker (monitor)
+// Purpose:      Periodically refresh the container list the panel renders, and
+//
+//	serve detail and logs on demand. Since the C2 hardening the
+//	data comes from the privileged helper; this process has no
+//	access to the Docker socket.
+//
+// Dependencies: internal/docker/source.go (containerSource).
+//
+// @aitri-trace FR-088, FR-091, FR-092, FR-093, US-088, US-092
 package docker
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"time"
-
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	dclient "github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 )
 
 const defaultDockerInterval = 10 * time.Second
 
-// dockerCallTimeout bounds each individual Docker API call so a hung daemon
-// socket can't block the refresh loop (and therefore Stop()) indefinitely
-// (BL-028). Kept below the default refresh interval so a slow call can't
-// overlap the next tick.
-const dockerCallTimeout = 8 * time.Second
-
-// Monitor periodically refreshes Docker container data.
+// Monitor periodically refreshes Docker container data through the helper.
 type Monitor struct {
-	client     DockerClient
+	src        containerSource
 	mu         sync.RWMutex
 	containers []ContainerInfo
 	available  bool
@@ -37,8 +33,23 @@ type Monitor struct {
 	interval   time.Duration
 }
 
-// NewMonitor creates a Docker monitor. If Docker is not reachable, it logs a
-// warning and returns a monitor that reports Available() == false.
+// NewMonitor creates the production monitor, reading through the privileged
+// helper. It does NOT probe the helper here: construction must never block
+// startup, and an absent helper is a normal degraded state, not a failure
+// (AC-093-004).
+func NewMonitor() *Monitor {
+	return &Monitor{src: newHelperSource(), interval: defaultDockerInterval}
+}
+
+// NewMonitorWithSource creates a monitor over an injected source, for tests.
+//
+// This replaces the former NewMonitorWithClient rather than aliasing it: the
+// old name implied a Docker client still existed somewhere in this process,
+// and it does not.
+func NewMonitorWithSource(src containerSource) *Monitor {
+	return &Monitor{src: src, interval: defaultDockerInterval}
+}
+
 // SetInterval updates how often containers are refreshed. Safe to call at any time.
 func (m *Monitor) SetInterval(d time.Duration) {
 	if d < time.Second {
@@ -55,49 +66,6 @@ func (m *Monitor) getInterval() time.Duration {
 	return m.interval
 }
 
-// getClient returns the current Docker client under the read lock. All
-// accessors must snapshot through this rather than reading m.client directly:
-// refresh() mutates m.client under m.mu, so an unsynchronized read is a data
-// race and can observe a client that was just closed/niled (BG-047).
-func (m *Monitor) getClient() DockerClient {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.client
-}
-
-func NewMonitor() *Monitor {
-	m := &Monitor{interval: defaultDockerInterval}
-
-	cli, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Printf("docker: failed to create client: %v", err)
-		return m
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	_, err = cli.Ping(ctx)
-	if err != nil {
-		log.Printf("docker: daemon not reachable: %v", err)
-		_ = cli.Close()
-		return m
-	}
-
-	m.client = cli
-	m.available = true
-	return m
-}
-
-// NewMonitorWithClient creates a monitor with an injected client (for testing).
-func NewMonitorWithClient(client DockerClient) *Monitor {
-	return &Monitor{
-		client:    client,
-		available: client != nil,
-		interval:  defaultDockerInterval,
-	}
-}
-
 // Start begins periodic container refresh in a background goroutine.
 func (m *Monitor) Start(ctx context.Context) {
 	ctx, m.cancel = context.WithCancel(ctx)
@@ -108,7 +76,7 @@ func (m *Monitor) Start(ctx context.Context) {
 		m.run(ctx)
 	}()
 
-	log.Printf("Docker monitor started (interval=%v)", m.getInterval())
+	log.Printf("Docker monitor started (interval=%v, source=privileged helper)", m.getInterval())
 }
 
 // Stop cancels the refresh loop and waits for it to exit.
@@ -117,13 +85,12 @@ func (m *Monitor) Stop() {
 		m.cancel()
 	}
 	m.wg.Wait()
-	if cli := m.getClient(); cli != nil {
-		_ = cli.Close()
-	}
 	log.Println("Docker monitor stopped")
 }
 
-// Available reports whether Docker is reachable.
+// Available reports whether the last refresh could read container data.
+// False means "could not read", which the UI must render differently from
+// "read fine, there are none" (FR-091).
 func (m *Monitor) Available() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -141,77 +108,19 @@ func (m *Monitor) Containers() []ContainerInfo {
 
 // ContainerDetail fetches extended info for a single container on demand.
 func (m *Monitor) ContainerDetail(ctx context.Context, id string) (*ContainerDetail, error) {
-	cli := m.getClient()
-	if cli == nil {
+	if m.src == nil {
 		return nil, fmt.Errorf("docker not available")
 	}
-
-	inspect, err := cli.ContainerInspect(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("inspect container %s: %w", id, err)
-	}
-
-	detail := &ContainerDetail{ID: id}
-
-	// Ports
-	if inspect.NetworkSettings != nil {
-		for port, bindings := range inspect.NetworkSettings.Ports {
-			for _, b := range bindings {
-				detail.Ports = append(detail.Ports, PortMapping{
-					HostPort:      b.HostPort,
-					ContainerPort: string(port),
-					Protocol:      port.Proto(),
-				})
-			}
-		}
-	}
-
-	// Volumes
-	for _, mount := range inspect.Mounts {
-		detail.Volumes = append(detail.Volumes, VolumeMount{
-			Source:      mount.Source,
-			Destination: mount.Destination,
-			Mode:        mount.Mode,
-		})
-	}
-
-	// Env var names only (no values)
-	if inspect.Config != nil {
-		for _, env := range inspect.Config.Env {
-			parts := strings.SplitN(env, "=", 2)
-			detail.EnvVarNames = append(detail.EnvVarNames, parts[0])
-		}
-	}
-
-	return detail, nil
+	return m.src.Inspect(ctx, id)
 }
 
-// ContainerLogs fetches the last n lines of logs from a container.
+// FetchLogs returns the last n lines of a container's output. The redaction
+// is applied helper-side, before the text crosses back into this process.
 func (m *Monitor) FetchLogs(ctx context.Context, id string, lines int) (string, error) {
-	cli := m.getClient()
-	if cli == nil {
+	if m.src == nil {
 		return "", fmt.Errorf("docker not available")
 	}
-
-	options := container.LogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Tail:       fmt.Sprintf("%d", lines),
-	}
-
-	reader, err := cli.ContainerLogs(ctx, id, options)
-	if err != nil {
-		return "", fmt.Errorf("fetch logs: %w", err)
-	}
-	defer reader.Close()
-
-	var stdout, stderr bytes.Buffer
-	_, err = stdcopy.StdCopy(&stdout, &stderr, reader)
-	if err != nil {
-		return "", fmt.Errorf("read logs: %w", err)
-	}
-
-	return stdout.String() + stderr.String(), nil
+	return m.src.Logs(ctx, id, lines)
 }
 
 func (m *Monitor) run(ctx context.Context) {
@@ -236,164 +145,39 @@ func (m *Monitor) run(ctx context.Context) {
 	}
 }
 
+// refresh reads one snapshot from the source and swaps the cache.
+//
+// On failure it marks the monitor unavailable but KEEPS the last good list.
+// A transient helper hiccup must not blank the panel for one tick and then
+// repopulate it — that flicker reads as containers disappearing (AC-088-004,
+// AC-006e). The availability flag is what the UI keys its error state off.
+//
+// The unavailable transition is logged once per state change, not once per
+// tick, so a helper that is down for an hour does not write 360 lines
+// (NFR-093).
 func (m *Monitor) refresh(ctx context.Context) {
-	cli := m.getClient()
-	if cli == nil {
-		// Try to reconnect
-		newCli, err := dclient.NewClientWithOpts(dclient.FromEnv, dclient.WithAPIVersionNegotiation())
-		if err != nil {
-			return
-		}
-		pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
-		_, err = newCli.Ping(pingCtx)
-		cancel()
-		if err != nil {
-			_ = newCli.Close()
-			return
-		}
-		// B12: refresh runs from both the periodic loop and forceRefresh, so two
-		// goroutines can reconnect concurrently. Double-check under the lock: if
-		// another already installed a client, close ours instead of overwriting
-		// (which would leak its connection/FD).
-		m.mu.Lock()
-		if m.client != nil {
-			cli = m.client
-			m.mu.Unlock()
-			_ = newCli.Close()
-		} else {
-			m.client = newCli
-			m.available = true
-			m.mu.Unlock()
-			cli = newCli
-			log.Println("docker: connected to daemon")
-		}
-	}
-
-	listCtx, cancelList := context.WithTimeout(ctx, dockerCallTimeout)
-	containers, err := cli.ContainerList(listCtx, container.ListOptions{All: true})
-	cancelList()
-	if err != nil {
-		log.Printf("docker: list error: %v", err)
-		m.mu.Lock()
-		m.available = false
-		m.client = nil
-		m.mu.Unlock()
+	if m.src == nil {
 		return
 	}
 
-	// Build base info slice (pre-sized so goroutines can write by index safely).
-	infos := make([]ContainerInfo, len(containers))
-	for i, c := range containers {
-		infos[i] = containerToInfo(c)
-	}
-
-	// Fetch stats for running containers in parallel, bounded by a worker pool.
-	// Each goroutine writes to a distinct index, so no mutex is needed. The
-	// semaphore caps concurrent ContainerStats calls so a host with hundreds of
-	// running containers doesn't stampede the daemon each tick (M9).
-	const maxConcurrentStats = 16
-	sem := make(chan struct{}, maxConcurrentStats)
-	var wg sync.WaitGroup
-	for i, c := range containers {
-		if c.State != "running" {
-			continue
+	containers, err := m.src.List(ctx)
+	if err != nil {
+		m.mu.Lock()
+		wasAvailable := m.available
+		m.available = false
+		m.mu.Unlock()
+		if wasAvailable {
+			log.Printf("docker: helper unavailable, keeping last known list: %v", err)
 		}
-		wg.Add(1)
-		sem <- struct{}{}
-		go func(idx int, id string) {
-			defer wg.Done()
-			defer func() { <-sem }()
-			m.fetchStats(ctx, cli, id, &infos[idx])
-		}(i, c.ID)
+		return
 	}
-	wg.Wait()
 
 	m.mu.Lock()
-	m.containers = infos
+	wasAvailable := m.available
+	m.containers = containers
 	m.available = true
 	m.mu.Unlock()
-}
-
-func containerToInfo(c types.Container) ContainerInfo {
-	name := ""
-	if len(c.Names) > 0 {
-		name = strings.TrimPrefix(c.Names[0], "/")
-	} else {
-		// Container with no name — use truncated ID
-		name = c.ID
-		if len(name) > 12 {
-			name = name[:12]
-		}
+	if !wasAvailable {
+		log.Printf("docker: helper reachable, %d container(s)", len(containers))
 	}
-
-	exitCode := 0
-	// Docker reports exit code in State for stopped containers
-	// The Status string contains "Exited (1)" etc.
-	if c.State == "exited" || c.State == "dead" {
-		// Parse exit code from status text like "Exited (1) 5 minutes ago"
-		exitCode = parseExitCode(c.Status)
-	}
-
-	return ContainerInfo{
-		ID:        c.ID,
-		Name:      name,
-		Image:     c.Image,
-		State:     c.State,
-		Status:    c.Status,
-		Health:    MapHealthStatus(c.State, exitCode),
-		CreatedAt: time.Unix(c.Created, 0),
-	}
-}
-
-// parseExitCode extracts exit code from Docker status string like "Exited (1) 5 minutes ago".
-func parseExitCode(status string) int {
-	var code int
-	_, _ = fmt.Sscanf(status, "Exited (%d)", &code)
-	return code
-}
-
-func (m *Monitor) fetchStats(ctx context.Context, cli DockerClient, id string, info *ContainerInfo) {
-	shortID := id
-	if len(shortID) > 12 {
-		shortID = shortID[:12]
-	}
-
-	statsCtx, cancel := context.WithTimeout(ctx, dockerCallTimeout)
-	defer cancel()
-	statsResp, err := cli.ContainerStats(statsCtx, id, false)
-	if err != nil {
-		log.Printf("docker: stats error for %s: %v", shortID, err)
-		return
-	}
-	defer statsResp.Body.Close()
-
-	var stats container.StatsResponse
-	if err := json.NewDecoder(statsResp.Body).Decode(&stats); err != nil {
-		log.Printf("docker: stats decode error for %s: %v", shortID, err)
-		return
-	}
-
-	info.CPUPercent = calculateCPUPercent(&stats)
-	info.MemUsage = stats.MemoryStats.Usage
-	info.MemLimit = stats.MemoryStats.Limit
-	if stats.MemoryStats.Limit > 0 {
-		info.MemPercent = float64(stats.MemoryStats.Usage) / float64(stats.MemoryStats.Limit) * 100.0
-	}
-}
-
-// calculateCPUPercent computes CPU usage percentage from Docker stats.
-func calculateCPUPercent(stats *container.StatsResponse) float64 {
-	cpuDelta := float64(stats.CPUStats.CPUUsage.TotalUsage - stats.PreCPUStats.CPUUsage.TotalUsage)
-	systemDelta := float64(stats.CPUStats.SystemUsage - stats.PreCPUStats.SystemUsage)
-
-	if systemDelta <= 0 || cpuDelta <= 0 {
-		return 0.0
-	}
-
-	cpus := float64(stats.CPUStats.OnlineCPUs)
-	if cpus == 0 {
-		cpus = 1.0
-	}
-
-	return (cpuDelta / systemDelta) * cpus * 100.0
 }

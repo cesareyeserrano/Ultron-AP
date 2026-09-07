@@ -81,7 +81,7 @@
       "effort_to_fix": "low"
     }
   ],
-  "test_runner": "go test -C ../.. ./internal/server -run TestTC_SR -v",
+  "test_runner": "go test ../../internal/server -run TestTC_SR -v",
   "test_files": [
     "../../internal/server/settings_ranges_test.go",
     "../../internal/server/handlers_encryption_probe_test.go",

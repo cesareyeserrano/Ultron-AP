@@ -2,18 +2,12 @@
 <div class="space-y-6">
     <h2 class="sr-only">Docker Containers</h2>
     <div class="flex flex-wrap items-center justify-between gap-2">
-        <p class="text-sm text-text-muted">Container runtime status and controls.</p>
-        {{if not .Content.Available}}
-        <span class="text-xs bg-danger/20 text-danger px-2 py-1 rounded-full">Docker unavailable</span>
-        {{end}}
+        <p class="text-sm text-text-muted">Container runtime status.</p>
     </div>
-
-    <!-- Hidden CSRF token for HTMX requests -->
-    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
     <!-- Container List -->
     <div id="docker-list" hx-get="/docker" hx-trigger="every 10s" hx-select="#docker-list" hx-swap="outerHTML">
-        {{template "partials/docker-list.html" .Content.Containers}}
+        {{template "partials/docker-list.html" .Content}}
     </div>
 </div>
 {{end}}

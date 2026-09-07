@@ -85,8 +85,16 @@ type Engine struct {
 	prevSystemd  map[string]string    // serviceName -> activeState
 	sustained    map[int64]*sustainedWindow
 	processedNet map[string]struct{}
-	recentAlerts []database.Alert
-	recentMu     sync.RWMutex
+
+	// dnsSparseLogged suppresses the "insufficient_dns_samples" line after the
+	// first one. The condition is normal and persistent — the DNS probe only
+	// samples a couple of resolvers, so a short evaluation window legitimately
+	// holds fewer than two samples — and logging it per tick wrote a line every
+	// 5 seconds forever. Logged once when the condition starts and once when it
+	// clears, which is what NFR-009 requires of a state transition.
+	dnsSparseLogged bool
+	recentAlerts    []database.Alert
+	recentMu        sync.RWMutex
 
 	// Per-source cooldown overrides for state-transition rules (Docker /
 	// Systemd). Zero means "use default 15 min". Atomic so the runtime
@@ -503,14 +511,20 @@ func (e *Engine) evaluateDNSFailureRule(cfg database.AlertConfig) {
 		return
 	}
 	if len(samples) < 2 {
-		log.Printf("ts=%s rule_id=%d metric=dns_failure_rate target=- value=0 threshold=%.1f sustained=%d in_window=false fired=false reason=insufficient_dns_samples",
-			time.Now().Format(time.RFC3339), cfg.ID, cfg.Threshold, cfg.SustainedDuration)
+		if e.markDNSSparse(true) {
+			log.Printf("ts=%s rule_id=%d metric=dns_failure_rate target=- value=0 threshold=%.1f sustained=%d in_window=false fired=false reason=insufficient_dns_samples",
+				time.Now().Format(time.RFC3339), cfg.ID, cfg.Threshold, cfg.SustainedDuration)
+		}
 		return
 	}
 	value, resolver, ok := dnsFailureValue(cfg, samples, duration)
 	if !ok {
+		if e.markDNSSparse(true) {
+			log.Printf("alerts: metric=dns_failure_rate reason=insufficient_dns_samples")
+		}
 		return
 	}
+	e.markDNSSparse(false)
 	e.fireConfiguredRule(cfg, "dns_failure_rate", value, fmt.Sprintf("%s: resolver=%s failure_rate=%.1f threshold %.1f sustained=%ds", cfg.Name, resolver, value, cfg.Threshold, cfg.SustainedDuration))
 }
 
@@ -928,10 +942,34 @@ func dnsFailureValue(cfg database.AlertConfig, samples []database.NetSample, dur
 		}
 	}
 	if worstTarget == "" {
-		log.Printf("alerts: metric=dns_failure_rate reason=insufficient_dns_samples")
+		// Not logged here: dnsFailureValue is a free function with no Engine to
+		// hold the transition flag. The caller owns the logging so the "log once
+		// per state change" rule has a single owner instead of two racing ones.
 		return 0, "", false
 	}
 	return worst, worstTarget, compareValue(worst, cfg.Operator, cfg.Threshold)
+}
+
+// markDNSSparse records whether the DNS rule currently lacks enough samples and
+// reports whether this call is a STATE CHANGE worth logging.
+//
+// Returns true only on the transition into the sparse state, and (with
+// sparse=false) on the transition out of it — so a condition that persists for
+// hours writes one line, not one every evaluation tick. Before this, the two
+// call sites wrote "insufficient_dns_samples" every 5 seconds indefinitely.
+//
+// @aitri-trace NFR-009, BG-081
+func (e *Engine) markDNSSparse(sparse bool) bool {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.dnsSparseLogged == sparse {
+		return false
+	}
+	e.dnsSparseLogged = sparse
+	if !sparse {
+		log.Printf("alerts: metric=dns_failure_rate reason=dns_samples_recovered")
+	}
+	return sparse
 }
 
 // compareValue evaluates value <operator> threshold.

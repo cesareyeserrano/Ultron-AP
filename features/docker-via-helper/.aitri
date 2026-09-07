@@ -1,0 +1,244 @@
+{
+  "currentPhase": 5,
+  "approvedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "completedPhases": [
+    1,
+    "ux",
+    2,
+    3,
+    4,
+    5
+  ],
+  "projectName": "docker-via-helper",
+  "createdAt": "2026-09-06T19:04:16.801Z",
+  "artifactsDir": "spec",
+  "updatedAt": "2026-09-07T02:40:39.713Z",
+  "driftPhases": [],
+  "events": [
+    {
+      "at": "2026-09-06T19:52:12.982Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T20:45:50.780Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T20:45:58.694Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T20:46:00.848Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T20:46:42.664Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T20:47:49.392Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T20:49:14.234Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-09-06T20:49:14.296Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-09-06T20:49:26.617Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T20:49:26.655Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T20:49:29.760Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-06T20:49:36.081Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T20:49:36.208Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-06T20:56:41.563Z",
+      "event": "started",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-06T21:09:29.845Z",
+      "event": "completed",
+      "phase": 5
+    },
+    {
+      "at": "2026-09-06T21:09:33.339Z",
+      "event": "approved",
+      "phase": 5,
+      "version": "1.1.0",
+      "version_source": "team"
+    },
+    {
+      "at": "2026-09-06T21:59:02.580Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T21:59:02.777Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-07T02:40:39.506Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T02:40:39.684Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0
+    }
+  ],
+  "cascadedPhases": [],
+  "artifactHashes": {
+    "1": "5e7adf9a2d321b4a02846c160a1fc1cc7e1b903d0c3d1d0749807f11d072238d",
+    "2": "2e2ff7c0a270f94be23391790857d3d9b802561a3427f480da82748c0455c159",
+    "3": "82d5c130508bee7b37d6cc03bcdf66eed5e9b8439022c887061b5cc63eade5f7",
+    "4": "824a89b1624992c6966759bb19d59f113d7b6111e5f37cc8ee399b0cc45f0d8c",
+    "5": "49a3c2143315114cd91eef6d6983e293fc8798943a34108ce36b6aa762c4ef4f",
+    "ux": "d520c8d8d82db09596b688a4cecbcff20377a2746e8e81fcb00874cf96fe25ce"
+  },
+  "frSnapshots": {
+    "2": [
+      "FR-088",
+      "FR-089",
+      "FR-090",
+      "FR-091",
+      "FR-092",
+      "FR-093",
+      "FR-094",
+      "FR-095"
+    ],
+    "3": [
+      "FR-088",
+      "FR-089",
+      "FR-090",
+      "FR-091",
+      "FR-092",
+      "FR-093",
+      "FR-094",
+      "FR-095"
+    ],
+    "4": [
+      "FR-088",
+      "FR-089",
+      "FR-090",
+      "FR-091",
+      "FR-092",
+      "FR-093",
+      "FR-094",
+      "FR-095"
+    ],
+    "5": [
+      "FR-088",
+      "FR-089",
+      "FR-090",
+      "FR-091",
+      "FR-092",
+      "FR-093",
+      "FR-094",
+      "FR-095"
+    ],
+    "ux": [
+      "FR-088",
+      "FR-089",
+      "FR-090",
+      "FR-091",
+      "FR-092",
+      "FR-093",
+      "FR-094",
+      "FR-095"
+    ]
+  },
+  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
+  "verifyRanDirty": false,
+  "verifyPassed": true,
+  "verifyResultsHash": "b0c9bf715c3e86980561574421f4bdf63bbb3103bd9261e6490a7aae69e785f5",
+  "verifyRanAt": "2026-09-07T02:40:39.425Z",
+  "lastVerifyRun": {
+    "passed": 59,
+    "failed": 0,
+    "skipped": 0,
+    "manual": 0,
+    "at": "2026-09-07T02:40:39.425Z"
+  },
+  "verifySummary": {
+    "total": 59,
+    "passed": 59,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "releaseHistory": [
+    {
+      "version": "1.1.0",
+      "version_source": "team",
+      "at": "2026-09-06T21:09:33.338Z"
+    }
+  ]
+}

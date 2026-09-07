@@ -1,17 +1,17 @@
 {
-  "executed_at": "2026-05-21T21:47:13.683Z",
-  "test_runner": "go test -C ../.. ./internal/server -run TestTC_SR -v",
+  "executed_at": "2026-09-06T19:02:15.873Z",
+  "test_runner": "go test ../../internal/server -run TestTC_SR -v",
   "exit_code": 0,
   "results": [
     {
       "tc_id": "TC-SR-057h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_057h_PerformanceStepperMarkup (0.01s)"
+      "notes": "--- PASS: TestTC_SR_057h_PerformanceStepperMarkup (0.02s)"
     },
     {
       "tc_id": "TC-SR-057e",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-057e\" (e.g. test_TC_SR_057e_description) and add # @aitri-tc TC-SR-057e above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-057e\" so it appears on stdout (e.g. test_TC_SR_057e_description, # @aitri-tc TC-SR-057e); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-057e --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-057f",
@@ -21,7 +21,7 @@
     {
       "tc_id": "TC-SR-057f2",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_057f2_PerfBelowMin400Hint (0.01s)"
+      "notes": "--- PASS: TestTC_SR_057f2_PerfBelowMin400Hint (0.02s)"
     },
     {
       "tc_id": "TC-SR-057E2E",
@@ -31,17 +31,17 @@
     {
       "tc_id": "TC-SR-058h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_058h_SegmentedSeverityMarkup (0.01s)"
+      "notes": "--- PASS: TestTC_SR_058h_SegmentedSeverityMarkup (0.02s)"
     },
     {
       "tc_id": "TC-SR-058e",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-058e\" (e.g. test_TC_SR_058e_description) and add # @aitri-tc TC-SR-058e above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-058e\" so it appears on stdout (e.g. test_TC_SR_058e_description, # @aitri-tc TC-SR-058e); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-058e --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-058f",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-058f\" (e.g. test_TC_SR_058f_description) and add # @aitri-tc TC-SR-058f above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-058f\" so it appears on stdout (e.g. test_TC_SR_058f_description, # @aitri-tc TC-SR-058f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-058f --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-058E2E",
@@ -51,17 +51,17 @@
     {
       "tc_id": "TC-SR-059h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_059h_ChipPresetCooldownHighlights (0.01s)"
+      "notes": "--- PASS: TestTC_SR_059h_ChipPresetCooldownHighlights (0.02s)"
     },
     {
       "tc_id": "TC-SR-059e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_059e_ChipPresetHasCustomEscapeHatch (0.01s)"
+      "notes": "--- PASS: TestTC_SR_059e_ChipPresetHasCustomEscapeHatch (0.03s)"
     },
     {
       "tc_id": "TC-SR-059f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_059f_ChipPresetNoPresetWireField (0.01s)"
+      "notes": "--- PASS: TestTC_SR_059f_ChipPresetNoPresetWireField (0.05s)"
     },
     {
       "tc_id": "TC-SR-060h",
@@ -81,32 +81,32 @@
     {
       "tc_id": "TC-SR-061h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_061h_NotificationTogglesMarkup (0.01s)"
+      "notes": "--- PASS: TestTC_SR_061h_NotificationTogglesMarkup (0.03s)"
     },
     {
       "tc_id": "TC-SR-061e",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-061e\" (e.g. test_TC_SR_061e_description) and add # @aitri-tc TC-SR-061e above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-061e\" so it appears on stdout (e.g. test_TC_SR_061e_description, # @aitri-tc TC-SR-061e); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-061e --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-061f",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-061f\" (e.g. test_TC_SR_061f_description) and add # @aitri-tc TC-SR-061f above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-061f\" so it appears on stdout (e.g. test_TC_SR_061f_description, # @aitri-tc TC-SR-061f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-061f --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-062h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_062h_BackupSubdivisions (0.01s)"
+      "notes": "--- PASS: TestTC_SR_062h_BackupSubdivisions (0.02s)"
     },
     {
       "tc_id": "TC-SR-062e",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-062e\" (e.g. test_TC_SR_062e_description) and add # @aitri-tc TC-SR-062e above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-062e\" so it appears on stdout (e.g. test_TC_SR_062e_description, # @aitri-tc TC-SR-062e); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-062e --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-062f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_062f_SubheadingsEyebrowStyle (0.01s)"
+      "notes": "--- PASS: TestTC_SR_062f_SubheadingsEyebrowStyle (0.02s)"
     },
     {
       "tc_id": "TC-SR-063h",
@@ -141,7 +141,7 @@
     {
       "tc_id": "TC-SR-065h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_065h_FormStatePillIdleAbsent (0.01s)"
+      "notes": "--- PASS: TestTC_SR_065h_FormStatePillIdleAbsent (0.03s)"
     },
     {
       "tc_id": "TC-SR-065e",
@@ -156,7 +156,7 @@
     {
       "tc_id": "TC-SR-066h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_066h_NoNumberBadges (0.01s)"
+      "notes": "--- PASS: TestTC_SR_066h_NoNumberBadges (0.02s)"
     },
     {
       "tc_id": "TC-SR-066e",
@@ -166,7 +166,7 @@
     {
       "tc_id": "TC-SR-066f",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-066f\" (e.g. test_TC_SR_066f_description) and add # @aitri-tc TC-SR-066f above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-066f\" so it appears on stdout (e.g. test_TC_SR_066f_description, # @aitri-tc TC-SR-066f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-066f --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-067h",
@@ -176,12 +176,12 @@
     {
       "tc_id": "TC-SR-067e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_067e_HeaderLogoutOnEveryPage (0.06s)"
+      "notes": "--- PASS: TestTC_SR_067e_HeaderLogoutOnEveryPage (0.08s)"
     },
     {
       "tc_id": "TC-SR-067f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_067f_ShutdownDestructive (0.01s)"
+      "notes": "--- PASS: TestTC_SR_067f_ShutdownDestructive (0.02s)"
     },
     {
       "tc_id": "TC-SR-067E2E",
@@ -191,27 +191,27 @@
     {
       "tc_id": "TC-SR-068h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_068h_EnvVarSetReturnsOK (0.01s)"
+      "notes": "--- PASS: TestTC_SR_068h_EnvVarSetReturnsOK (0.03s)"
     },
     {
       "tc_id": "TC-SR-068e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_068e_EnvVarUnsetReturnsLocked (0.01s)"
+      "notes": "--- PASS: TestTC_SR_068e_EnvVarUnsetReturnsLocked (0.02s)"
     },
     {
       "tc_id": "TC-SR-068f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_068f_Unauthenticated401 (0.01s)"
+      "notes": "--- PASS: TestTC_SR_068f_Unauthenticated401 (0.02s)"
     },
     {
       "tc_id": "TC-SR-068sec1",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_068sec1_ResponseShapeLockedEnum (0.01s)"
+      "notes": "--- PASS: TestTC_SR_068sec1_ResponseShapeLockedEnum (0.02s)"
     },
     {
       "tc_id": "TC-SR-068sec2",
       "status": "pass",
-      "notes": "--- PASS: TestTC_SR_068sec2_PathTraversalRejected (0.01s)"
+      "notes": "--- PASS: TestTC_SR_068sec2_PathTraversalRejected (0.02s)"
     },
     {
       "tc_id": "TC-SR-068sec3",
@@ -226,7 +226,7 @@
     {
       "tc_id": "TC-SR-069h",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-069h\" (e.g. test_TC_SR_069h_description) and add # @aitri-tc TC-SR-069h above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-069h\" so it appears on stdout (e.g. test_TC_SR_069h_description, # @aitri-tc TC-SR-069h); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-069h --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-069e",
@@ -236,7 +236,7 @@
     {
       "tc_id": "TC-SR-069f",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-069f\" (e.g. test_TC_SR_069f_description) and add # @aitri-tc TC-SR-069f above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-069f\" so it appears on stdout (e.g. test_TC_SR_069f_description, # @aitri-tc TC-SR-069f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-069f --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-070h",
@@ -251,37 +251,37 @@
     {
       "tc_id": "TC-SR-070f",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-070f\" (e.g. test_TC_SR_070f_description) and add # @aitri-tc TC-SR-070f above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-070f\" so it appears on stdout (e.g. test_TC_SR_070f_description, # @aitri-tc TC-SR-070f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-070f --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-NFR029h",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR029h\" (e.g. test_TC_SR_NFR029h_description) and add # @aitri-tc TC-SR-NFR029h above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-NFR029h\" so it appears on stdout (e.g. test_TC_SR_NFR029h_description, # @aitri-tc TC-SR-NFR029h); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-NFR029h --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-NFR029e",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR029e\" (e.g. test_TC_SR_NFR029e_description) and add # @aitri-tc TC-SR-NFR029e above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-NFR029e\" so it appears on stdout (e.g. test_TC_SR_NFR029e_description, # @aitri-tc TC-SR-NFR029e); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-NFR029e --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-NFR029f",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR029f\" (e.g. test_TC_SR_NFR029f_description) and add # @aitri-tc TC-SR-NFR029f above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-NFR029f\" so it appears on stdout (e.g. test_TC_SR_NFR029f_description, # @aitri-tc TC-SR-NFR029f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-NFR029f --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-NFR031h",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR031h\" (e.g. test_TC_SR_NFR031h_description) and add # @aitri-tc TC-SR-NFR031h above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-NFR031h\" so it appears on stdout (e.g. test_TC_SR_NFR031h_description, # @aitri-tc TC-SR-NFR031h); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-NFR031h --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-NFR031e",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR031e\" (e.g. test_TC_SR_NFR031e_description) and add # @aitri-tc TC-SR-NFR031e above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-NFR031e\" so it appears on stdout (e.g. test_TC_SR_NFR031e_description, # @aitri-tc TC-SR-NFR031e); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-NFR031e --result pass|fail --evidence <path>."
     },
     {
       "tc_id": "TC-SR-NFR031f",
       "status": "skip",
-      "notes": "Not detected in test runner output — rename the test function to include \"TC-SR-NFR031f\" (e.g. test_TC_SR_NFR031f_description) and add # @aitri-tc TC-SR-NFR031f above it."
+      "notes": "Not detected in runner output. Make the result readable one of three ways: (1) name the test after \"TC-SR-NFR031f\" so it appears on stdout (e.g. test_TC_SR_NFR031f_description, # @aitri-tc TC-SR-NFR031f); (2) if the runner writes a results FILE, point aitri at it: verify-run --results <file|dir> (JUnit-XML — emitted by most runners — or TRX); (3) record it against evidence: tc verify TC-SR-NFR031f --result pass|fail --evidence <path>."
     }
   ],
   "fr_coverage": [
@@ -398,6 +398,332 @@
       "status": "covered"
     }
   ],
+  "ac_coverage": [
+    {
+      "ac_id": "AC-057-001",
+      "fr_id": "FR-057",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-057-002",
+      "fr_id": "FR-057",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 1,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-057-003",
+      "fr_id": "FR-057",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-057-004",
+      "fr_id": "FR-057",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "uncovered"
+    },
+    {
+      "ac_id": "AC-058-001",
+      "fr_id": "FR-058",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 4,
+      "tests_manual": 1,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-058-002",
+      "fr_id": "FR-058",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "uncovered"
+    },
+    {
+      "ac_id": "AC-058-003",
+      "fr_id": "FR-058",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-059-001",
+      "fr_id": "FR-059",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-059-002",
+      "fr_id": "FR-059",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-060-001",
+      "fr_id": "FR-060",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-060-002",
+      "fr_id": "FR-060",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-061-001",
+      "fr_id": "FR-061",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-061-002",
+      "fr_id": "FR-061",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-062-001",
+      "fr_id": "FR-062",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-062-002",
+      "fr_id": "FR-062",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "uncovered"
+    },
+    {
+      "ac_id": "AC-063-001",
+      "fr_id": "FR-063",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 1,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-063-002",
+      "fr_id": "FR-063",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 1,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-063-003",
+      "fr_id": "FR-063",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 1,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-064-001",
+      "fr_id": "FR-064",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-064-002",
+      "fr_id": "FR-064",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-064-003",
+      "fr_id": "FR-064",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 2,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-065-001",
+      "fr_id": "FR-065",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-065-002",
+      "fr_id": "FR-065",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 2,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-066-001",
+      "fr_id": "FR-066",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-067-001",
+      "fr_id": "FR-067",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 1,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-067-002",
+      "fr_id": "FR-067",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-067-003",
+      "fr_id": "FR-067",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-067-004",
+      "fr_id": "FR-067",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "untested"
+    },
+    {
+      "ac_id": "AC-068-001",
+      "fr_id": "FR-068",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 1,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-068-002",
+      "fr_id": "FR-068",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-068-003",
+      "fr_id": "FR-068",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-068-004",
+      "fr_id": "FR-068",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-069-001",
+      "fr_id": "FR-069",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-069-002",
+      "fr_id": "FR-069",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "uncovered"
+    },
+    {
+      "ac_id": "AC-069-003",
+      "fr_id": "FR-069",
+      "tests_passing": 0,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 0,
+      "status": "uncovered"
+    },
+    {
+      "ac_id": "AC-070-001",
+      "fr_id": "FR-070",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 1,
+      "tests_manual": 1,
+      "status": "covered"
+    }
+  ],
   "summary": {
     "total": 56,
     "passed": 30,
@@ -407,5 +733,17 @@
     "skipped_no_marker": 16,
     "manual": 10,
     "manual_verified": 0
+  },
+  "low_confidence_tcs": [
+    {
+      "tc_id": "TC-SR-068h",
+      "file": "../../internal/server/handlers_encryption_probe_test.go",
+      "assertCount": 0
+    }
+  ],
+  "timings": {
+    "runner_ms": 2353,
+    "gates_ms": 0,
+    "total_ms": 2360
   }
 }

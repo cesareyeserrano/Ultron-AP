@@ -1,0 +1,75 @@
+{
+  "files_created": [
+    "internal/database/compact.go",
+    "internal/database/net_retention_test.go",
+    "internal/config/net_retention_test.go",
+    "internal/server/net_retention_test.go",
+    "scripts/gofmt-check-net.sh",
+    "features/net-sample-retention/spec/BUILD_PLAN.md"
+  ],
+  "files_modified": [
+    "internal/config/config.go",
+    "internal/database/network.go",
+    "internal/server/server.go",
+    "internal/network/gatewayprobe/gatewayprobe.go",
+    "internal/ups/store_test.go",
+    "cmd/ultron-ap/main.go",
+    ".env.example"
+  ],
+  "setup_commands": [],
+  "environment_variables": [
+    {
+      "name": "ULTRON_NET_RETENTION_DAYS",
+      "default": "30"
+    },
+    {
+      "name": "ULTRON_NET_INTERVAL_SECONDS",
+      "default": "5"
+    }
+  ],
+  "technical_debt": [
+    {
+      "fr_id": "FR-099",
+      "substitution": "La recuperacion de espacio es un VACUUM completo con umbral de 100 MB, no auto_vacuum=INCREMENTAL como prefiere en primer lugar la nota de origen.",
+      "reason": "La primera opcion no evita el coste que pretende evitar: convertir una base existente a auto_vacuum=INCREMENTAL exige un VACUUM completo de todas formas, asi que se pagaria el mismo VACUUM unico mas un cambio permanente de esquema mas una llamada extra en cada poda. Ademas la ganancia continua no aplica a esta carga: en regimen estacionario la poda diaria libera aproximadamente lo que insertan las 24 h siguientes, asi que el freelist no crece y SQLite reutiliza esas paginas. Y auto_vacuum anade paginas de mapa de punteros con un 1-2% de sobrecarga permanente en cada escritura. Documentado como ADR-001. Coste asumido: el VACUUM bloquea escrituras unos segundos cuando dispara, lo que en la practica ocurre una sola vez en la vida de la base.",
+      "effort_to_fix": "medium"
+    },
+    {
+      "fr_id": "FR-096",
+      "substitution": "Las dos variables nuevas avisan y caen al defecto ante un valor invalido, mientras que sus vecinas en la misma funcion config.Load (ULTRON_METRICS_INTERVAL, ULTRON_HELPER_TIMEOUT) devuelven error y abortan el arranque.",
+      "reason": "Es lo que pide explicitamente la nota de origen y es la conducta correcta para este producto: un panel de monitorizacion que no arranca por una errata en una variable de retencion deja al operador sin ninguna visibilidad justo cuando necesita entrar a arreglarla. No se unifica el estilo de las entradas existentes porque convertir un arranque que hoy falla ruidoso en uno que arranca con valores inesperados seria una regresion fuera del alcance. Documentado como ADR-002 y FLAG-2. Deuda real: dos estilos conviven en la misma funcion.",
+      "effort_to_fix": "low"
+    },
+    {
+      "fr_id": "FR-100",
+      "substitution": "El intervalo por defecto se deja en 5 s, no en los 15 s que reducirian el crecimiento tres veces.",
+      "reason": "Cambiar el defecto haria que un despliegue que no toca el entorno alterase el comportamiento observable, rompiendo NFR-110. Ademas, subir a 15 s implica que un corte de menos de 15 s puede caer entre dos muestras — la misma clase de problema que BL-041 documenta para el sondeo del UPS. Es una decision de compromiso que corresponde al owner, tomada por entorno y no impuesta por el binario. El owner pondra 15 en la Pi.",
+      "effort_to_fix": "low"
+    }
+  ],
+  "test_runner": "go test ../../... -run TestTC_NSR -v",
+  "test_files": [
+    "../../internal/config/net_retention_test.go",
+    "../../internal/database/net_retention_test.go",
+    "../../internal/server/net_retention_test.go",
+    "../../internal/ups/store_test.go"
+  ],
+  "quality_gates": [
+    {
+      "name": "vet",
+      "command": "go vet ../../...",
+      "required": true
+    },
+    {
+      "name": "gofmt",
+      "command": "sh ../../scripts/gofmt-check-net.sh",
+      "required": true
+    },
+    {
+      "name": "build-linux-arm64",
+      "command": "sh ../../scripts/build-arm64-check.sh",
+      "required": true
+    }
+  ],
+  "test_runner_timeout_ms": 1800000
+}

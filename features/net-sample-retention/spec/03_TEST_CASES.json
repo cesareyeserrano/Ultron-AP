@@ -1,0 +1,848 @@
+{
+  "test_plan": {
+    "strategy": "Superficie sin interfaz: no hay ningun FR de tipo UX, visual ni audio, asi que los casos de flujo critico son de nivel integration y NO hay ningun TC declarado como e2e. Es deliberado: este proyecto no tiene runner de navegador (BL-042) y etiquetar como e2e algo que no lo es solo sirve para pasar un gate. Unit para la carga de configuracion y las decisiones puras. Integration para todo lo que toca SQLite, sobre bases temporales creadas con os.MkdirTemp y borradas en el cleanup, porque una poda y un VACUUM no son observables en memoria: el criterio central de FR-099 es que el TAMANO DEL ARCHIVO EN DISCO baje, y eso exige un fichero real.",
+    "coverage_goal": "100% de los 22 criterios de aceptacion declarados con al menos un test que pase; sin objetivo de cobertura de linea",
+    "test_types": [
+      "unit",
+      "integration"
+    ]
+  },
+  "test_cases": [
+    {
+      "id": "TC-NSR-001h",
+      "requirement_id": "FR-096",
+      "user_story_id": "US-096",
+      "ac_id": "AC-096-001",
+      "title": "Sin la variable la ventana de retencion de red es 30",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "el entorno sin ULTRON_NET_RETENTION_DAYS definida",
+      "when": "se llama a config.Load()",
+      "then": "cfg.NetRetentionDays == 30",
+      "steps": [
+        "se llama a config.Load()"
+      ],
+      "expected_result": "NetRetentionDays es exactamente 30",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-002e",
+      "requirement_id": "FR-096",
+      "user_story_id": "US-096",
+      "ac_id": "AC-096-002",
+      "title": "Un valor valido se respeta tal cual",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_NET_RETENTION_DAYS=7",
+      "when": "se llama a config.Load()",
+      "then": "cfg.NetRetentionDays == 7",
+      "steps": [
+        "se llama a config.Load()"
+      ],
+      "expected_result": "NetRetentionDays es exactamente 7, no el defecto",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-003f",
+      "requirement_id": "FR-096",
+      "user_story_id": "US-096",
+      "ac_id": "AC-096-003",
+      "title": "Un valor no numerico avisa y cae al defecto sin abortar",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_NET_RETENTION_DAYS=abc y el log capturado",
+      "when": "se llama a config.Load()",
+      "then": "Load no devuelve error; cfg.NetRetentionDays == 30; el log contiene el nombre de la variable y el valor abc",
+      "steps": [
+        "se llama a config.Load()"
+      ],
+      "expected_result": "Sin error de Load, NetRetentionDays 30, y una linea de aviso que nombra ULTRON_NET_RETENTION_DAYS y abc",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-004f",
+      "requirement_id": "FR-096",
+      "user_story_id": "US-096",
+      "ac_id": "AC-096-004",
+      "title": "Una ventana de 0 o negativa no puede borrar el historico entero",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_NET_RETENTION_DAYS con los valores 0 y -5, por separado",
+      "when": "se llama a config.Load() para cada uno",
+      "then": "en ambos casos Load no devuelve error y cfg.NetRetentionDays == 30",
+      "steps": [
+        "se llama a config.Load() para cada uno"
+      ],
+      "expected_result": "Ambos valores producen NetRetentionDays 30 — una ventana de 0 borraria todas las filas y una negativa pondria el corte en el futuro",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-010h",
+      "requirement_id": "FR-097",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-001",
+      "title": "La poda borra lo anterior a la ventana y conserva lo de dentro",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base temporal con muestras de NetSample fechadas hace 45, 40, 20 y 1 dias",
+      "when": "se llama a PruneNetSamples(30)",
+      "then": "devuelve 2 filas borradas; una consulta posterior devuelve exactamente las de 20 y 1 dias",
+      "steps": [
+        "se llama a PruneNetSamples(30)"
+      ],
+      "expected_result": "2 filas borradas y quedan exactamente las 2 muestras de 20 y 1 dias, identificables por su ts",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-011e",
+      "requirement_id": "FR-097",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-002",
+      "title": "El limite es la ventana exacta, no un dia redondeado",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una muestra fechada hace 29 dias y 23 horas y otra hace 30 dias y 1 hora",
+      "when": "se llama a PruneNetSamples(30)",
+      "then": "devuelve 1 fila borrada; la de 29 dias y 23 horas sobrevive",
+      "steps": [
+        "se llama a PruneNetSamples(30)"
+      ],
+      "expected_result": "Solo se borra la de 30 dias y 1 hora; la de 29d23h permanece, porque el corte es la ventana exacta",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-012e",
+      "requirement_id": "FR-097",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-003",
+      "title": "La poda registra cuantas filas borro y con que ventana",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "un trabajo de retencion con una base que tiene 3 muestras fuera de ventana y el log capturado",
+      "when": "se ejecuta un ciclo del trabajo de retencion",
+      "then": "el log contiene una linea que incluye el numero 3 y el numero de dias de la ventana",
+      "steps": [
+        "se ejecuta un ciclo del trabajo de retencion"
+      ],
+      "expected_result": "Una linea de log que menciona 3 filas y la ventana en dias",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-013e",
+      "requirement_id": "FR-097",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-004",
+      "title": "Una poda sobre una tabla ya limpia borra 0 y no falla",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "una base cuyas muestras estan todas dentro de la ventana",
+      "when": "se llama a PruneNetSamples(30)",
+      "then": "devuelve 0 filas borradas y error nil; el recuento de filas no cambia",
+      "steps": [
+        "se llama a PruneNetSamples(30)"
+      ],
+      "expected_result": "0 filas borradas, sin error, y el mismo numero de filas antes y despues",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-014f",
+      "requirement_id": "FR-097",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-005",
+      "title": "Un fallo de la poda de red no impide las demas podas del ciclo",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un trabajo de retencion cuya poda de red devuelve error y cuyas podas de ActionLog y sesiones funcionan",
+      "when": "se ejecuta un ciclo del trabajo de retencion",
+      "then": "el error de red se registra; las podas de ActionLog y de sesiones se ejecutaron igualmente; el ciclo no entra en panic",
+      "steps": [
+        "se ejecuta un ciclo del trabajo de retencion"
+      ],
+      "expected_result": "El fallo de red queda en el log y las otras dos podas se ejecutaron, verificado por sus efectos en la base",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-020h",
+      "requirement_id": "FR-098",
+      "user_story_id": "US-098",
+      "ac_id": "AC-098-002",
+      "title": "El total borrado por lotes coincide con las filas fuera de ventana",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base con 120000 muestras fuera de ventana y 500 dentro",
+      "when": "se llama a PruneNetSamples(30)",
+      "then": "devuelve exactamente 120000; quedan exactamente 500 filas en la tabla",
+      "steps": [
+        "se llama a PruneNetSamples(30)"
+      ],
+      "expected_result": "Devuelve 120000 y la tabla queda con 500 filas — el conteo por lotes no pierde ni duplica",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-021e",
+      "requirement_id": "FR-098",
+      "user_story_id": "US-098",
+      "ac_id": "AC-098-001",
+      "title": "Ninguna sentencia individual abarca mas filas que el lote",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base con 120000 muestras fuera de ventana y un tamano de lote de 50000",
+      "when": "se ejecuta la poda contando las filas afectadas por cada sentencia",
+      "then": "se emiten 3 sentencias de borrado con 50000, 50000 y 20000 filas; ninguna supera 50000",
+      "steps": [
+        "se ejecuta la poda contando las filas afectadas por cada sentencia"
+      ],
+      "expected_result": "Tres lotes de 50000, 50000 y 20000 — ninguna sentencia individual toca toda la tabla",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-022f",
+      "requirement_id": "FR-098",
+      "user_story_id": "US-098",
+      "ac_id": "AC-098-003",
+      "title": "El bucle de lotes termina y no itera indefinidamente",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base sin ninguna fila fuera de ventana",
+      "when": "se llama a PruneNetSamples(30) con un limite de tiempo de 5 segundos",
+      "then": "la llamada retorna en la primera iteracion, devuelve 0 y no agota el limite de tiempo",
+      "steps": [
+        "se llama a PruneNetSamples(30) con un limite de tiempo de 5 segundos"
+      ],
+      "expected_result": "Retorna 0 en menos de 5s — un bucle que no avanzara colgaria el trabajo de retencion para siempre",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-023e",
+      "requirement_id": "FR-098",
+      "user_story_id": "US-098",
+      "ac_id": "AC-098-004",
+      "title": "Una insercion concurrente con la poda completa sin error",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base con 120000 muestras fuera de ventana y una goroutine que inserta muestras nuevas",
+      "when": "se ejecuta la poda mientras la goroutine inserta 50 muestras",
+      "then": "las 50 inserciones completan sin error y las 50 estan presentes al terminar",
+      "steps": [
+        "se ejecuta la poda mientras la goroutine inserta 50 muestras"
+      ],
+      "expected_result": "Las 50 inserciones concurrentes completan sin error y son legibles despues — la poda por lotes no bloquea al probe",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-030h",
+      "requirement_id": "FR-099",
+      "user_story_id": "US-099",
+      "ac_id": "AC-099-001",
+      "title": "Compactar reduce el tamano del archivo en disco",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base temporal en disco con 80000 muestras insertadas y luego podadas",
+      "when": "se mide el tamano del archivo, se llama a Compact() y se vuelve a medir",
+      "then": "el tamano posterior es estrictamente menor que el anterior",
+      "steps": [
+        "se mide el tamano del archivo, se llama a Compact() y se vuelve a medir"
+      ],
+      "expected_result": "El archivo pesa menos despues de Compact() — el DELETE por si solo no encoge el fichero",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-031e",
+      "requirement_id": "FR-099",
+      "user_story_id": "US-099",
+      "ac_id": "AC-099-002",
+      "title": "El espacio libre reportado baja tras compactar",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base podada con muchas paginas libres",
+      "when": "se llama a FreeSpaceBytes(), luego a Compact(), luego otra vez a FreeSpaceBytes()",
+      "then": "el segundo valor es menor que el primero",
+      "steps": [
+        "se llama a FreeSpaceBytes(), luego a Compact(), luego otra vez a FreeSpaceBytes()"
+      ],
+      "expected_result": "FreeSpaceBytes devuelve un valor menor despues de compactar",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-032e",
+      "requirement_id": "FR-099",
+      "user_story_id": "US-099",
+      "ac_id": "AC-099-003",
+      "title": "La base sigue integra despues de compactar",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base recien compactada",
+      "when": "se ejecuta PRAGMA integrity_check",
+      "then": "devuelve la cadena ok",
+      "steps": [
+        "se ejecuta PRAGMA integrity_check"
+      ],
+      "expected_result": "integrity_check devuelve exactamente 'ok'",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-033e",
+      "requirement_id": "FR-099",
+      "user_story_id": "US-099",
+      "ac_id": "AC-099-004",
+      "title": "Los datos dentro de ventana sobreviven a la compactacion",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base con 500 muestras dentro de ventana, con targets y valores de rtt conocidos, ya podada",
+      "when": "se llama a Compact() y se releen las muestras",
+      "then": "siguen siendo 500 y sus target, kind, status y rtt_ms coinciden uno a uno con los originales",
+      "steps": [
+        "se llama a Compact() y se releen las muestras"
+      ],
+      "expected_result": "Las 500 muestras siguen presentes con sus valores identicos campo a campo",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-034f",
+      "requirement_id": "FR-099",
+      "user_story_id": "US-099",
+      "ac_id": "AC-099-005",
+      "title": "No se compacta cuando no hay espacio significativo que recuperar",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base cuyo freelist multiplicado por el page_size esta por debajo del umbral de 100 MB",
+      "when": "se ejecuta la decision de compactar del trabajo de retencion",
+      "then": "no se invoca Compact(); el tamano del archivo no cambia",
+      "steps": [
+        "se ejecuta la decision de compactar del trabajo de retencion"
+      ],
+      "expected_result": "Compact no se invoca y el archivo mantiene su tamano — un VACUUM diario bloquearia escrituras sin ganar nada",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-040h",
+      "requirement_id": "FR-100",
+      "user_story_id": "US-100",
+      "ac_id": "AC-100-001",
+      "title": "Sin la variable el intervalo de red sigue siendo 5 segundos",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "el entorno sin ULTRON_NET_INTERVAL_SECONDS definida",
+      "when": "se llama a config.Load()",
+      "then": "cfg.NetInterval == 5 * time.Second",
+      "steps": [
+        "se llama a config.Load()"
+      ],
+      "expected_result": "NetInterval es exactamente 5s — un despliegue que no toque el entorno no cambia nada observable",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-041e",
+      "requirement_id": "FR-100",
+      "user_story_id": "US-100",
+      "ac_id": "AC-100-002",
+      "title": "Un valor valido se respeta",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_NET_INTERVAL_SECONDS=15",
+      "when": "se llama a config.Load()",
+      "then": "cfg.NetInterval == 15 * time.Second",
+      "steps": [
+        "se llama a config.Load()"
+      ],
+      "expected_result": "NetInterval es exactamente 15s",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-042f",
+      "requirement_id": "FR-100",
+      "user_story_id": "US-100",
+      "ac_id": "AC-100-003",
+      "title": "Un intervalo invalido avisa y cae a 5 segundos",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_NET_INTERVAL_SECONDS con los valores 0, -1 y xyz, por separado, y el log capturado",
+      "when": "se llama a config.Load() para cada uno",
+      "then": "en los tres casos Load no devuelve error, cfg.NetInterval == 5s, y se registra un aviso que nombra la variable",
+      "steps": [
+        "se llama a config.Load() para cada uno"
+      ],
+      "expected_result": "Los tres producen NetInterval 5s sin error, cada uno con su aviso en el log",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-043e",
+      "requirement_id": "FR-100",
+      "user_story_id": "US-100",
+      "ac_id": "AC-100-004",
+      "title": "El probe recibe el intervalo configurado, no un literal",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una configuracion con NetInterval de 15s",
+      "when": "se construye el probe de red con esa configuracion",
+      "then": "el intervalo efectivo del probe es de 15s y no de 5s",
+      "steps": [
+        "se construye el probe de red con esa configuracion"
+      ],
+      "expected_result": "El probe queda con 15s — prueba que el valor viaja desde la configuracion y no esta fijo en el codigo",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-050h",
+      "requirement_id": "NFR-102",
+      "user_story_id": "US-096",
+      "ac_id": "AC-096-001",
+      "title": "El SQL de poda usa parametros enlazados, no interpolacion",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "el codigo fuente de internal/database/network.go",
+      "when": "se inspecciona la construccion de las sentencias de poda de NetSample",
+      "then": "ninguna sentencia se construye con fmt.Sprintf ni con concatenacion de cadenas; el corte temporal viaja como ?",
+      "steps": [
+        "se inspecciona la construccion de las sentencias de poda de NetSample"
+      ],
+      "expected_result": "Cero uso de Sprintf o concatenacion en el SQL de poda; el corte va como parametro enlazado",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-051f",
+      "requirement_id": "NFR-102",
+      "user_story_id": "US-096",
+      "ac_id": "AC-096-004",
+      "title": "Una ventana de 0 no llega nunca a la capa de base de datos",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_NET_RETENTION_DAYS=0 y una base con muestras de hace 1 dia",
+      "when": "se carga la configuracion y se poda con el valor resultante",
+      "then": "la ventana usada es 30 y la muestra de hace 1 dia sobrevive",
+      "steps": [
+        "se carga la configuracion y se poda con el valor resultante"
+      ],
+      "expected_result": "La muestra de ayer sobrevive — el saneo ocurre en Load, antes de que el valor toque la base",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-052f",
+      "requirement_id": "NFR-102",
+      "user_story_id": "US-096",
+      "ac_id": "AC-096-003",
+      "title": "Una ventana negativa no pone el corte en el futuro",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_NET_RETENTION_DAYS=-30 y una base con muestras de hace 1 hora",
+      "when": "se carga la configuracion y se poda con el valor resultante",
+      "then": "la ventana usada es 30 y la muestra de hace 1 hora sobrevive",
+      "steps": [
+        "se carga la configuracion y se poda con el valor resultante"
+      ],
+      "expected_result": "La muestra de hace una hora sobrevive — una ventana negativa habria puesto el corte 30 dias en el futuro y borrado todo",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-053e",
+      "requirement_id": "NFR-102",
+      "user_story_id": "US-098",
+      "ac_id": "AC-098-001",
+      "title": "El tamano de lote es una constante y no depende del entorno",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "el entorno con variables arbitrarias definidas",
+      "when": "se inspecciona el tamano de lote usado por la poda",
+      "then": "el valor es la constante del codigo y ninguna variable de entorno lo altera",
+      "steps": [
+        "se inspecciona el tamano de lote usado por la poda"
+      ],
+      "expected_result": "El lote es la constante declarada; el entorno solo puede influir en el parametro, nunca en la forma de la sentencia",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-060h",
+      "requirement_id": "NFR-106",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-001",
+      "title": "La retencion de UPS conserva su propia variable y ventana",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_UPS_RETENTION_DAYS=45 y ULTRON_NET_RETENTION_DAYS=7",
+      "when": "se cargan ambas configuraciones",
+      "then": "la ventana de UPS es 45 y la de red es 7, independientes",
+      "steps": [
+        "se cargan ambas configuraciones"
+      ],
+      "expected_result": "45 para UPS y 7 para red — las dos variables no se pisan",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-061f",
+      "requirement_id": "NFR-106",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-001",
+      "title": "La variable de red no altera la ventana de UPS",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_NET_RETENTION_DAYS=1 y ULTRON_UPS_RETENTION_DAYS sin definir",
+      "when": "se carga la configuracion de UPS",
+      "then": "la ventana de UPS sigue siendo su propio valor por defecto, no 1",
+      "steps": [
+        "se carga la configuracion de UPS"
+      ],
+      "expected_result": "La ventana de UPS es su defecto y no hereda el 1 de red",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-062e",
+      "requirement_id": "NFR-106",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-004",
+      "title": "La poda de UPS sigue borrando sus propias filas",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un almacen de UPS con muestras de hace 45 y de hace 1 dia",
+      "when": "se llama a la poda de UPS con ventana 30",
+      "then": "borra la de 45 dias y conserva la de 1; las filas de NetSample no se ven afectadas",
+      "steps": [
+        "se llama a la poda de UPS con ventana 30"
+      ],
+      "expected_result": "La poda de UPS borra solo su fila vieja y no toca NetSample",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-070h",
+      "requirement_id": "NFR-107",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-001",
+      "title": "Las columnas de NetSample son las mismas",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base recien migrada",
+      "when": "se consulta PRAGMA table_info(NetSample)",
+      "then": "las columnas son exactamente id, ts, target, kind, rtt_ms y status",
+      "steps": [
+        "se consulta PRAGMA table_info(NetSample)"
+      ],
+      "expected_result": "Las seis columnas exactas, ni una mas ni una menos, con esos nombres",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-071e",
+      "requirement_id": "NFR-107",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-001",
+      "title": "Los dos indices conservan sus nombres",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base recien migrada",
+      "when": "se consultan los indices de NetSample",
+      "then": "existen idx_net_sample_target_ts e idx_net_sample_ts con esos nombres exactos",
+      "steps": [
+        "se consultan los indices de NetSample"
+      ],
+      "expected_result": "Ambos nombres de indice presentes — la interfaz y RecentNetSamples dependen de ellos",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-072f",
+      "requirement_id": "NFR-107",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-004",
+      "title": "RecentNetSamples sigue devolviendo filas tras podar y compactar",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base con 100 muestras dentro de ventana, ya podada y compactada",
+      "when": "se llama a RecentNetSamples(50)",
+      "then": "devuelve 50 filas sin error y todas tienen target y status no vacios",
+      "steps": [
+        "se llama a RecentNetSamples(50)"
+      ],
+      "expected_result": "50 filas legibles con sus campos poblados — la consulta que alimenta la interfaz no se rompe",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-080h",
+      "requirement_id": "NFR-108",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-001",
+      "title": "Una consulta de 7 dias devuelve lo mismo antes y despues de podar",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base con muestras repartidas en 45 dias",
+      "when": "se consultan las de los ultimos 7 dias antes y despues de PruneNetSamples(30)",
+      "then": "los dos conjuntos son identicos en numero y en identificadores",
+      "steps": [
+        "se consultan las de los ultimos 7 dias antes y despues de PruneNetSamples(30)"
+      ],
+      "expected_result": "El mismo conjunto exacto de filas antes y despues — la ventana de 30 cubre de sobra los 7 que consulta el panel",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-081e",
+      "requirement_id": "NFR-108",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-002",
+      "title": "Los eventos de red no se ven afectados por la poda de muestras",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base con NetEvent de hace 45 dias y NetSample de hace 45 dias",
+      "when": "se llama a PruneNetSamples(30)",
+      "then": "la muestra desaparece y el evento de red permanece",
+      "steps": [
+        "se llama a PruneNetSamples(30)"
+      ],
+      "expected_result": "NetSample podada y NetEvent intacta — la poda no se extiende a otras tablas",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-082f",
+      "requirement_id": "NFR-108",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-004",
+      "title": "Una ventana corta no vacia la consulta semanal por sorpresa",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "una base con muestras de los ultimos 3 dias y ventana de retencion de 30",
+      "when": "se poda y se consultan los ultimos 7 dias",
+      "then": "las muestras de los 3 dias siguen ahi",
+      "steps": [
+        "se poda y se consultan los ultimos 7 dias"
+      ],
+      "expected_result": "Las muestras recientes sobreviven — ninguna de ellas cae fuera de una ventana de 30",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-090h",
+      "requirement_id": "NFR-109",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-005",
+      "title": "El ciclo sigue podando ActionLog y sesiones",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base con ActionLog viejo, sesiones expiradas y NetSample vieja",
+      "when": "se ejecuta un ciclo del trabajo de retencion",
+      "then": "las tres podas ocurrieron: el ActionLog viejo, las sesiones expiradas y las muestras viejas ya no estan",
+      "steps": [
+        "se ejecuta un ciclo del trabajo de retencion"
+      ],
+      "expected_result": "Las tres clases de fila desaparecen en el mismo ciclo",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-091e",
+      "requirement_id": "NFR-109",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-003",
+      "title": "El ciclo mantiene su cadencia de 24 horas",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "el trabajo de retencion arrancado",
+      "when": "se inspecciona el temporizador tras completar un ciclo",
+      "then": "el temporizador se re-arma a 24 horas",
+      "steps": [
+        "se inspecciona el temporizador tras completar un ciclo"
+      ],
+      "expected_result": "El temporizador queda re-armado a 24h, la misma cadencia de antes",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-092f",
+      "requirement_id": "NFR-109",
+      "user_story_id": "US-097",
+      "ac_id": "AC-097-005",
+      "title": "Un fallo de ActionLog no impide la poda de red",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un trabajo de retencion cuya poda de ActionLog devuelve error",
+      "when": "se ejecuta un ciclo",
+      "then": "el error se registra y la poda de red se ejecuta igualmente",
+      "steps": [
+        "se ejecuta un ciclo"
+      ],
+      "expected_result": "La poda de red corre pese al fallo de ActionLog — la contencion de fallos va en ambos sentidos",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-100h",
+      "requirement_id": "NFR-110",
+      "user_story_id": "US-100",
+      "ac_id": "AC-100-001",
+      "title": "Sin configurar, el probe se construye con 5 segundos",
+      "type": "unit",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un entorno sin ULTRON_NET_INTERVAL_SECONDS",
+      "when": "se carga la configuracion y se construye el probe",
+      "then": "el intervalo del probe es de 5 segundos",
+      "steps": [
+        "se carga la configuracion y se construye el probe"
+      ],
+      "expected_result": "5 segundos exactos — identico al comportamiento previo a esta feature",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-101e",
+      "requirement_id": "NFR-110",
+      "user_story_id": "US-100",
+      "ac_id": "AC-100-004",
+      "title": "El respaldo del constructor sigue siendo 5 segundos",
+      "type": "unit",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "un intervalo de 0 pasado directamente al constructor del probe",
+      "when": "se construye el probe",
+      "then": "el intervalo efectivo es de 5 segundos",
+      "steps": [
+        "se construye el probe"
+      ],
+      "expected_result": "El constructor sigue aplicando su propio respaldo de 5s como segunda red",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-102f",
+      "requirement_id": "NFR-110",
+      "user_story_id": "US-100",
+      "ac_id": "AC-100-003",
+      "title": "Un entorno corrupto no cambia el muestreo observable",
+      "type": "unit",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "ULTRON_NET_INTERVAL_SECONDS con un valor no numerico",
+      "when": "se carga la configuracion y se construye el probe",
+      "then": "el intervalo del probe es de 5 segundos y se registro un aviso",
+      "steps": [
+        "se carga la configuracion y se construye el probe"
+      ],
+      "expected_result": "5 segundos pese al valor corrupto — un despliegue con una errata no altera el muestreo",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-110h",
+      "requirement_id": "NFR-111",
+      "user_story_id": "US-098",
+      "ac_id": "AC-098-004",
+      "title": "Las inserciones progresan durante una poda grande",
+      "type": "integration",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una base con 120000 filas fuera de ventana y un insertor concurrente",
+      "when": "se ejecuta la poda mientras se insertan muestras durante toda su duracion",
+      "then": "todas las inserciones completan sin error",
+      "steps": [
+        "se ejecuta la poda mientras se insertan muestras durante toda su duracion"
+      ],
+      "expected_result": "Cero errores de insercion durante la poda completa",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-111e",
+      "requirement_id": "NFR-111",
+      "user_story_id": "US-098",
+      "ac_id": "AC-098-004",
+      "title": "Las muestras insertadas durante la poda sobreviven",
+      "type": "integration",
+      "scenario": "edge_case",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una poda en curso sobre 120000 filas viejas y 30 muestras insertadas mientras corre",
+      "when": "termina la poda y se cuentan las muestras recientes",
+      "then": "las 30 muestras insertadas durante la poda estan presentes",
+      "steps": [
+        "termina la poda y se cuentan las muestras recientes"
+      ],
+      "expected_result": "Las 30 muestras nuevas siguen ahi — la poda no arrastra filas recien escritas",
+      "test_data": {}
+    },
+    {
+      "id": "TC-NSR-112f",
+      "requirement_id": "NFR-111",
+      "user_story_id": "US-098",
+      "ac_id": "AC-098-004",
+      "title": "Una insercion no falla por bloqueo durante la poda",
+      "type": "integration",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "una poda por lotes en curso",
+      "when": "se intenta insertar una muestra en mitad del borrado",
+      "then": "la insercion no devuelve error de base bloqueada",
+      "steps": [
+        "se intenta insertar una muestra en mitad del borrado"
+      ],
+      "expected_result": "Sin error de 'database is locked' — los lotes liberan la base entre sentencias",
+      "test_data": {}
+    }
+  ]
+}

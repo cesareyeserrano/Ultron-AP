@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/cesareyeserrano/ultron-ap/internal/docker"
@@ -13,42 +12,7 @@ type dockerPageData struct {
 }
 
 func (s *Server) handleDockerPage(w http.ResponseWriter, r *http.Request) {
-	data := dockerPageData{
-		Containers: s.docker.Containers(),
-		Available:  s.docker.Available(),
-	}
-	s.render(w, r, "docker.html", "Docker", "docker", data)
-}
-
-func (s *Server) handleDockerStart(w http.ResponseWriter, r *http.Request) {
-	s.dockerAction(w, r, "Started", s.docker.StartContainer)
-}
-
-func (s *Server) handleDockerStop(w http.ResponseWriter, r *http.Request) {
-	s.dockerAction(w, r, "Stopped", s.docker.StopContainer)
-}
-
-func (s *Server) handleDockerRestart(w http.ResponseWriter, r *http.Request) {
-	s.dockerAction(w, r, "Restarted", s.docker.RestartContainer)
-}
-
-// dockerAction is the shared body for the start/stop/restart endpoints (D3),
-// which differed only in the container method invoked and the success verb.
-func (s *Server) dockerAction(w http.ResponseWriter, r *http.Request, verb string, action func(context.Context, string) docker.ContainerAction) {
-	if !s.validateCSRF(w, r) {
-		return
-	}
-	id := r.PathValue("id")
-	res := action(r.Context(), id)
-	s.auditLog(r, "docker", res.Action, res.ContainerName, res.Message, res.Success)
-
-	if !res.Success {
-		setToast(w, "Failed: "+res.Message, "error")
-		http.Error(w, res.Message, http.StatusInternalServerError)
-		return
-	}
-	setToast(w, verb+" container: "+res.ContainerName, "success")
-	s.renderDockerList(w, r)
+	s.render(w, r, "docker.html", "Docker", "docker", s.dockerData())
 }
 
 func (s *Server) handleDockerLogs(w http.ResponseWriter, r *http.Request) {
@@ -68,9 +32,13 @@ func (s *Server) handleDockerLogs(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(logs))
 }
 
-func (s *Server) renderDockerList(w http.ResponseWriter, r *http.Request) {
-	containers := s.docker.Containers()
-	html := s.renderPartial("partials/docker-list.html", containers)
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(html))
+// dockerData snapshots both the container list AND whether it could be read.
+// The two must travel together: the template decides "cannot read" before it
+// decides "read fine, none found", and rendering the empty state on a read
+// failure is exactly the defect this feature fixes (FR-091).
+func (s *Server) dockerData() dockerPageData {
+	return dockerPageData{
+		Containers: s.docker.Containers(),
+		Available:  s.docker.Available(),
+	}
 }

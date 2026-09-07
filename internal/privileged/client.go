@@ -161,3 +161,63 @@ func (c *Client) Shutdown(ctx context.Context, mode string) error {
 	_, err := c.call(ctx, "shutdown", shutdownPayload{Mode: mode})
 	return err
 }
+
+type dockerIDPayload struct {
+	ID string `json:"id"`
+}
+
+type dockerLogsPayload struct {
+	ID    string `json:"id"`
+	Lines int    `json:"lines"`
+}
+
+// DockerList asks the helper for every container, with per-container stats
+// already merged in for the running ones.
+//
+// The stats fan-out happens helper-side on purpose: the panel needs the list
+// and the stats together on every tick, so a separate stats action would cost
+// 1+N round trips per refresh instead of one (ADR-002).
+//
+// Returns the raw JSON payload for the caller to decode into its own model —
+// this package deliberately does not import internal/docker, which would make
+// the dependency cycle privileged -> docker -> privileged.
+//
+// @aitri-trace FR-088, AC-088-001
+func (c *Client) DockerList(ctx context.Context) ([]byte, error) {
+	resp, err := c.call(ctx, "docker.list", map[string]any{})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}
+
+// DockerInspect asks the helper for one container's detail. Environment
+// variable values are dropped inside the helper and never appear in the
+// payload this returns.
+//
+// @aitri-trace FR-090, AC-090-001
+func (c *Client) DockerInspect(ctx context.Context, id string) ([]byte, error) {
+	resp, err := c.call(ctx, "docker.inspect", dockerIDPayload{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}
+
+// DockerLogs asks the helper for a container's last n lines, already redacted
+// and capped by the same logfilter policy journalctl output goes through.
+//
+// @aitri-trace FR-095, AC-095-001
+func (c *Client) DockerLogs(ctx context.Context, id string, lines int) (string, error) {
+	resp, err := c.call(ctx, "docker.logs", dockerLogsPayload{ID: id, Lines: lines})
+	if err != nil {
+		return "", err
+	}
+	var out string
+	if len(resp.Payload) > 0 {
+		if err := json.Unmarshal(resp.Payload, &out); err != nil {
+			return "", fmt.Errorf("decode docker logs payload: %w", err)
+		}
+	}
+	return out, nil
+}

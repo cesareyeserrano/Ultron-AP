@@ -1,0 +1,519 @@
+{
+  "executed_at": "2026-09-07T03:52:35.160Z",
+  "test_runner": "go test ../../... -run TestTC_NSR -v",
+  "exit_code": 0,
+  "results": [
+    {
+      "tc_id": "TC-NSR-001h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_001h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-002e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_002e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-003f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_003f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-004f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_004f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-010h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_010h (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-011e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_011e (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-012e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_012e (0.02s)"
+    },
+    {
+      "tc_id": "TC-NSR-013e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_013e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-014f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_014f (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-020h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_020h (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-021e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_021e (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-022f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_022f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-023e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_023e (0.09s)"
+    },
+    {
+      "tc_id": "TC-NSR-030h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_030h (0.17s)"
+    },
+    {
+      "tc_id": "TC-NSR-031e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_031e (0.17s)"
+    },
+    {
+      "tc_id": "TC-NSR-032e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_032e (0.17s)"
+    },
+    {
+      "tc_id": "TC-NSR-033e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_033e (0.17s)"
+    },
+    {
+      "tc_id": "TC-NSR-034f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_034f (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-040h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_040h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-041e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_041e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-042f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_042f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-043e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_043e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-050h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_050h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-051f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_051f (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-052f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_052f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-053e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_053e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-060h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_060h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-061f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_061f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-062e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_062e (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-070h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_070h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-071e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_071e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-072f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_072f (0.05s)"
+    },
+    {
+      "tc_id": "TC-NSR-080h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_080h (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-081e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_081e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-082f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_082f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-090h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_090h (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-091e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_091e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-092f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_092f (0.01s)"
+    },
+    {
+      "tc_id": "TC-NSR-100h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_100h (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-101e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_101e (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-102f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_102f (0.00s)"
+    },
+    {
+      "tc_id": "TC-NSR-110h",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_110h (0.03s)"
+    },
+    {
+      "tc_id": "TC-NSR-111e",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_111e (0.06s)"
+    },
+    {
+      "tc_id": "TC-NSR-112f",
+      "status": "pass",
+      "notes": "--- PASS: TestTC_NSR_112f (0.02s)"
+    }
+  ],
+  "fr_coverage": [
+    {
+      "fr_id": "FR-096",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-097",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-098",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-099",
+      "tests_passing": 5,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "fr_id": "FR-100",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "ac_coverage": [
+    {
+      "ac_id": "AC-096-001",
+      "fr_id": "FR-096",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-096-002",
+      "fr_id": "FR-096",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-096-003",
+      "fr_id": "FR-096",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-096-004",
+      "fr_id": "FR-096",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-097-001",
+      "fr_id": "FR-097",
+      "tests_passing": 6,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-097-002",
+      "fr_id": "FR-097",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-097-003",
+      "fr_id": "FR-097",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-097-004",
+      "fr_id": "FR-097",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-097-005",
+      "fr_id": "FR-097",
+      "tests_passing": 3,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-098-001",
+      "fr_id": "FR-098",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-098-002",
+      "fr_id": "FR-098",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-098-003",
+      "fr_id": "FR-098",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-098-004",
+      "fr_id": "FR-098",
+      "tests_passing": 4,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-099-001",
+      "fr_id": "FR-099",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-099-002",
+      "fr_id": "FR-099",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-099-003",
+      "fr_id": "FR-099",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-099-004",
+      "fr_id": "FR-099",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-099-005",
+      "fr_id": "FR-099",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-100-001",
+      "fr_id": "FR-100",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-100-002",
+      "fr_id": "FR-100",
+      "tests_passing": 1,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-100-003",
+      "fr_id": "FR-100",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    },
+    {
+      "ac_id": "AC-100-004",
+      "fr_id": "FR-100",
+      "tests_passing": 2,
+      "tests_failing": 0,
+      "tests_skipped": 0,
+      "tests_manual": 0,
+      "status": "covered"
+    }
+  ],
+  "summary": {
+    "total": 44,
+    "passed": 44,
+    "failed": 0,
+    "skipped": 0,
+    "skipped_e2e": 0,
+    "skipped_no_marker": 0,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "low_confidence_tcs": [
+    {
+      "tc_id": "TC-NSR-112f",
+      "file": "../../internal/database/net_retention_test.go",
+      "assertCount": 1
+    }
+  ],
+  "quality_gates": [
+    {
+      "name": "vet",
+      "command": "go vet ../../...",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0,
+      "duration_ms": 635
+    },
+    {
+      "name": "gofmt",
+      "command": "sh ../../scripts/gofmt-check-net.sh",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0,
+      "duration_ms": 41,
+      "output": "gofmt: clean (internal/config internal/database internal/server internal/network/gatewayprobe internal/ups cmd/ultron-ap)"
+    },
+    {
+      "name": "build-linux-arm64",
+      "command": "sh ../../scripts/build-arm64-check.sh",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0,
+      "duration_ms": 2268,
+      "output": "build: linux/arm64 OK for ultron-ap and ultron-helper"
+    }
+  ],
+  "timings": {
+    "runner_ms": 4425,
+    "gates_ms": 2944,
+    "total_ms": 7376
+  }
+}

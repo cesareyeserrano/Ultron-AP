@@ -494,8 +494,8 @@ func (f fakeDockerSource) Containers() []docker.ContainerInfo { return f.contain
 
 type fakeSystemdSource struct{ services []systemd.ServiceInfo }
 
-func (f fakeSystemdSource) Available() bool                  { return true }
-func (f fakeSystemdSource) Services() []systemd.ServiceInfo  { return f.services }
+func (f fakeSystemdSource) Available() bool                 { return true }
+func (f fakeSystemdSource) Services() []systemd.ServiceInfo { return f.services }
 
 // @aitri-tc TC-004a
 func TestEvaluateDockerChanges_FiresAlertOnExit(t *testing.T) {

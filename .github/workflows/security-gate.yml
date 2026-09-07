@@ -54,3 +54,23 @@ jobs:
           name: govulncheck-scan
           path: govulncheck.json
           retention-days: 14
+
+  posture:
+    name: Audit posture re-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # scripts/security-gate.sh re-checks the findings of the 2026-07-14 audit:
+      # no secret-like file tracked, no committed Telegram token, the helper's
+      # unit-name allow-list still present, no new Sprintf-built SQL, no
+      # .DS_Store inside a go:embed tree, and no Aitri trace ids in the client
+      # JS that is served verbatim to browsers.
+      #
+      # It existed since that audit but ran nowhere — not in CI, not as an Aitri
+      # quality gate — so nothing ever failed and two of its findings sat open
+      # until 2026-09-06 (BG-079, BG-080). A check that runs nowhere is a
+      # comment. Wiring it here is the actual fix.
+      - name: Run security gate
+        run: ./scripts/security-gate.sh

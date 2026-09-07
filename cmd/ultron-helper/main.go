@@ -127,23 +127,10 @@ func handleConn(conn net.Conn) {
 	_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
 
 	if peerCredSupported {
-		// BG-043: fail closed. If peercred enforcement is compiled in but no
-		// allowlist could be resolved, refuse the connection rather than
-		// serving every UID that can reach the socket.
-		if failClosedNoAllowlist(peerCredSupported, allowedUIDs) {
-			log.Printf("rejecting helper connection: no caller UID allowlist configured (fail-closed)")
-			writeResp(conn, privileged.Response{OK: false, Message: "forbidden"})
-			return
-		}
-		uid, err := getPeerUID(conn)
-		if err != nil {
-			log.Printf("peercred lookup failed, rejecting connection: %v", err)
-			writeResp(conn, privileged.Response{OK: false, Message: "auth failed"})
-			return
-		}
-		if _, ok := allowedUIDs[uid]; !ok {
-			log.Printf("rejected helper connection from unauthorised uid=%d", uid)
-			writeResp(conn, privileged.Response{OK: false, Message: "forbidden"})
+		uid, uidErr := getPeerUID(conn)
+		if msg, logLine, ok := authorize(peerCredSupported, allowedUIDs, uid, uidErr); !ok {
+			log.Print(logLine)
+			writeResp(conn, privileged.Response{OK: false, Message: msg})
 			return
 		}
 	}
@@ -162,6 +149,42 @@ func handleConn(conn net.Conn) {
 
 	resp := dispatch(req)
 	writeResp(conn, resp)
+}
+
+// authorize is the helper's caller-authentication decision, extracted from
+// handleConn so it can be exercised directly. Every path that refuses a
+// connection lives here, and it runs BEFORE the request line is even read —
+// which is why an unauthorised caller can never reach dispatch, Docker
+// actions included.
+//
+// It is a pure function on purpose. SO_PEERCRED is a Linux-only extension, and
+// even on Linux a test cannot connect as a different UID without being root,
+// so a live cross-UID socket connection is not reachable from any test
+// environment this project runs in. Testing the decision itself is what is
+// actually verifiable, and it is the same decision production takes.
+//
+// Params:
+//   - supported: whether SO_PEERCRED enforcement is compiled in.
+//   - allow:     the caller-UID allowlist.
+//   - uid:       the peer UID reported by the kernel.
+//   - uidErr:    a lookup failure, if any.
+//
+// Returns the client-facing message, the line to log, and whether to proceed.
+//
+// @aitri-trace NFR-092, BG-021, BG-043, TC-DVH-081f, TC-DVH-082f
+func authorize(supported bool, allow map[uint32]struct{}, uid uint32, uidErr error) (msg, logLine string, ok bool) {
+	// BG-043: fail closed. Enforcement compiled in but no allowlist resolved
+	// means refuse, not serve everyone.
+	if failClosedNoAllowlist(supported, allow) {
+		return "forbidden", "rejecting helper connection: no caller UID allowlist configured (fail-closed)", false
+	}
+	if uidErr != nil {
+		return "auth failed", fmt.Sprintf("peercred lookup failed, rejecting connection: %v", uidErr), false
+	}
+	if _, allowed := allow[uid]; !allowed {
+		return "forbidden", fmt.Sprintf("rejected helper connection from unauthorised uid=%d", uid), false
+	}
+	return "", "", true
 }
 
 // resolveAllowedUIDs builds the helper's caller-UID allowlist from (in
@@ -238,6 +261,46 @@ func dispatch(req privileged.Request) privileged.Response {
 			return privileged.Response{OK: false, Message: "invalid logs payload"}
 		}
 		out, err := handleLogs(p.Source, p.Lines)
+		if err != nil {
+			return privileged.Response{OK: false, Message: err.Error()}
+		}
+		b, _ := json.Marshal(out)
+		return privileged.Response{OK: true, Payload: b}
+	case "docker.list":
+		infos, err := handleDockerList(context.Background())
+		if err != nil {
+			return privileged.Response{OK: false, Message: err.Error()}
+		}
+		b, err := json.Marshal(infos)
+		if err != nil {
+			return privileged.Response{OK: false, Message: "encode container list"}
+		}
+		return privileged.Response{OK: true, Payload: b}
+	case "docker.inspect":
+		var p struct {
+			ID string `json:"id"`
+		}
+		if err := json.Unmarshal(req.Payload, &p); err != nil {
+			return privileged.Response{OK: false, Message: "invalid docker.inspect payload"}
+		}
+		detail, err := handleDockerInspect(context.Background(), p.ID)
+		if err != nil {
+			return privileged.Response{OK: false, Message: err.Error()}
+		}
+		b, err := json.Marshal(detail)
+		if err != nil {
+			return privileged.Response{OK: false, Message: "encode container detail"}
+		}
+		return privileged.Response{OK: true, Payload: b}
+	case "docker.logs":
+		var p struct {
+			ID    string `json:"id"`
+			Lines int    `json:"lines"`
+		}
+		if err := json.Unmarshal(req.Payload, &p); err != nil {
+			return privileged.Response{OK: false, Message: "invalid docker.logs payload"}
+		}
+		out, err := handleDockerLogs(context.Background(), p.ID, p.Lines)
 		if err != nil {
 			return privileged.Response{OK: false, Message: err.Error()}
 		}

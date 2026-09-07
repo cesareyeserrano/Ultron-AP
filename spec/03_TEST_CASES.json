@@ -334,7 +334,7 @@
       "id": "TC-008h",
       "requirement_id": "FR-008",
       "user_story_id": "US-008",
-      "ac_id": "AC-008-001",
+      "ac_id": "AC-008-005",
       "type": "e2e",
       "scenario": "happy_path",
       "title": "Service start succeeds with auth + CSRF and persists action history",
@@ -344,21 +344,6 @@
       "when": "POST /services/:name/start",
       "then": "200 OK and an action_history row is written with status=success",
       "expected_result": "HTTP 200; SELECT count(*) FROM action_history WHERE action='start' == 1"
-    },
-    {
-      "id": "TC-008e",
-      "requirement_id": "FR-008",
-      "user_story_id": "US-008",
-      "ac_id": "AC-008-005",
-      "type": "integration",
-      "scenario": "edge_case",
-      "title": "Docker stop logs the action with timestamp",
-      "file": "internal/server/handlers_docker_test.go",
-      "test_function": "TestDockerStop_LogsAction",
-      "given": "authenticated session with valid CSRF; mock docker client",
-      "when": "POST /docker/:id/stop",
-      "then": "an action_history row exists with action=stop and a timestamp within the last second",
-      "expected_result": "row.action == \"stop\"; row.at within now ± 2s"
     },
     {
       "id": "TC-008f",

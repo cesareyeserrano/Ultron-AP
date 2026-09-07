@@ -1,4 +1,4 @@
-// FR-061 — toggle switch wrapping a hidden checkbox. Vanilla JS.
+// Toggle switch wrapping a hidden checkbox. Vanilla JS.
 // Click on the label, the track, or pressing Space when focused toggles state.
 // The underlying <input type="checkbox" name="enabled"> remains the form
 // submit value (preserves backwards-compat: enabled=on / missing).
@@ -54,6 +54,6 @@
     initAll();
   }
   document.body.addEventListener('htmx:afterSwap', function (e) { initAll(e.target); });
-  // History restores re-insert cached DOM without firing afterSwap (BG-038 family).
+  // History restores re-insert cached DOM without firing afterSwap.
   document.body.addEventListener('htmx:historyRestore', function () { initAll(); });
 })();

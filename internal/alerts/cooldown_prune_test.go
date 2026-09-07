@@ -16,10 +16,10 @@ func TestPruneCooldowns_EvictsStaleEntriesAndKeepsFresh(t *testing.T) {
 	eng := NewEngine(nil, nil, nil, nil, time.Minute)
 
 	now := time.Now()
-	eng.cooldowns["docker:fresh"] = now.Add(-1 * time.Hour)            // inside retention
-	eng.cooldowns["systemd:fresh"] = now.Add(-30 * time.Minute)        // inside retention
+	eng.cooldowns["docker:fresh"] = now.Add(-1 * time.Hour)                   // inside retention
+	eng.cooldowns["systemd:fresh"] = now.Add(-30 * time.Minute)               // inside retention
 	eng.cooldowns["docker:stale"] = now.Add(-cooldownRetention - time.Minute) // outside
-	eng.cooldowns["systemd:ancient"] = now.Add(-365 * 24 * time.Hour)  // far outside
+	eng.cooldowns["systemd:ancient"] = now.Add(-365 * 24 * time.Hour)         // far outside
 
 	eng.pruneCooldowns()
 

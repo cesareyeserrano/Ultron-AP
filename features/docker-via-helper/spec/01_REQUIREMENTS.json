@@ -1,0 +1,578 @@
+{
+  "project_name": "Ultron — docker-via-helper",
+  "project_summary": "Retira el acceso directo de la web app al socket de Docker y encamina toda la lectura de contenedores por el helper privilegiado, en solo lectura. Origen: hallazgo C2 de la auditoria de seguridad de la Pi del 2026-09-05. Al pertenecer al grupo docker, el proceso web (expuesto en LAN :8080 y tailnet :34002) tenia de facto root en la maquina; el grupo se retiro en la Pi el 2026-09-06 13:22 COT y la seccion de contenedores del panel quedo vacia y sin explicacion. North Star KPI: con el usuario ultron fuera del grupo docker, la pestana de contenedores lista los cinco contenedores de la Pi con estado y stats, y journalctl -u ultron-ap no muestra ningun permission denied. JTBD: el operador contrata este panel para saber de un vistazo, desde el movil y sin SSH, si sus contenedores estan arriba y cuanto consumen. Guardrail: la superficie privilegiada no crece — el helper gana lectura de Docker y ninguna escritura, y el resto del panel (CPU, temperatura, red, UPS, alertas, Tailscale) sigue renderizando aunque la seccion de contenedores este en error.",
+  "functional_requirements": [
+    {
+      "id": "FR-088",
+      "title": "Lectura de contenedores a traves del helper privilegiado",
+      "description": "Cuando la web app necesita la lista de contenedores o sus stats, el sistema debe solicitarlas al helper por /run/ultron-helper.sock en vez de abrir /var/run/docker.sock, y renderizar nombre, imagen, estado, texto de estado, uptime, health, porcentaje de CPU, memoria usada, limite de memoria y porcentaje de memoria.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "Con el usuario ultron fuera del grupo docker, la lista devuelve los 5 contenedores de la Pi con state y health poblados",
+        "Cada contenedor en estado running trae cpu_percent, mem_usage, mem_limit y mem_percent numericos y mem_percent entre 0 y 100",
+        "Un contenedor detenido se lista con health distinto de running y sin exigir stats",
+        "Si el helper responde un payload que no es JSON valido, la lista queda vacia y se marca no disponible en vez de propagar un panic"
+      ]
+    },
+    {
+      "id": "FR-089",
+      "title": "El helper habla con Docker por API HTTP minima y solo lectura",
+      "description": "Cuando el helper recibe una accion de Docker, el sistema debe atenderla hablando con /var/run/docker.sock por la API HTTP de Docker (GET /containers/json?all=1, GET /containers/{id}/stats?stream=false, GET /containers/{id}/json, GET /containers/{id}/logs) sin invocar el binario docker, y debe rechazar toda accion que no sea de lectura.",
+      "priority": "MUST",
+      "type": "security",
+      "acceptance_criteria": [
+        "Una peticion con accion docker.start, docker.stop, docker.restart o docker.exec recibe ok=false con mensaje de accion desconocida y no ejecuta nada",
+        "El codigo del helper no contiene ninguna llamada a exec con el programa docker",
+        "El helper solo emite peticiones HTTP con metodo GET contra el socket de Docker",
+        "Un id de contenedor con caracteres fuera de [a-zA-Z0-9_.-] se rechaza antes de construir la URL, para que no pueda inyectar segmentos de ruta"
+      ]
+    },
+    {
+      "id": "FR-090",
+      "title": "Detalle de contenedor sin exponer valores de variables de entorno",
+      "description": "Cuando el usuario abre el detalle de un contenedor, el sistema debe pedir el inspect al helper y devolver puertos, volumenes y los nombres de las variables de entorno, omitiendo siempre sus valores.",
+      "priority": "MUST",
+      "type": "security",
+      "acceptance_criteria": [
+        "El detalle devuelve los nombres de las variables de entorno del contenedor",
+        "Dada una variable POSTGRES_PASSWORD=hunter2, la respuesta contiene POSTGRES_PASSWORD y no contiene hunter2",
+        "El detalle devuelve los puertos publicados con puerto de host, puerto de contenedor y protocolo",
+        "Un id de contenedor inexistente devuelve error y no una respuesta vacia que el panel muestre como contenedor sin puertos"
+      ]
+    },
+    {
+      "id": "FR-091",
+      "title": "Estado explicito cuando el helper no esta disponible",
+      "description": "Cuando la llamada al helper falla, expira o el helper no esta corriendo, el sistema debe mostrar en la seccion de contenedores un estado de helper no disponible, en lugar de una lista vacia indistinguible de no tener contenedores.",
+      "priority": "MUST",
+      "type": "UX",
+      "acceptance_criteria": [
+        "Con el helper detenido, la pagina de Docker responde 200 y su cuerpo contiene el texto de helper no disponible",
+        "Con el helper detenido, la pagina de Docker no muestra el mensaje de cero contenedores",
+        "Con el helper devolviendo la lista correctamente, la pagina no contiene el texto de helper no disponible",
+        "El resto del panel sigue respondiendo 200 mientras la seccion de contenedores esta en estado de error"
+      ]
+    },
+    {
+      "id": "FR-092",
+      "title": "Timeout corto en cada llamada de Docker al helper",
+      "description": "Cuando la web app llama al helper para datos de Docker, el sistema debe acotar cada llamada con un timeout de entre 2 y 3 segundos, de modo que un helper colgado no bloquee el refresco ni el resto del panel.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "El timeout configurado para las llamadas de Docker al helper es mayor o igual a 2s y menor o igual a 3s",
+        "Ante un helper que nunca responde, la llamada retorna error en menos de 4s en vez de bloquear indefinidamente",
+        "Tras un timeout el monitor queda marcado como no disponible y el ciclo de refresco siguiente vuelve a intentarlo",
+        "Un timeout no deja goroutines ni conexiones sin cerrar tras detener el monitor"
+      ]
+    },
+    {
+      "id": "FR-093",
+      "title": "La web app no abre el socket de Docker",
+      "description": "Cuando el binario de la web app arranca o refresca, el sistema no debe intentar en ningun momento abrir /var/run/docker.sock ni construir un cliente del SDK de Docker, y por tanto no debe emitir el log daemon not reachable.",
+      "priority": "MUST",
+      "type": "security",
+      "acceptance_criteria": [
+        "El arbol de la web app no importa el paquete cliente del SDK de Docker fuera del helper",
+        "El arbol de la web app no contiene la cadena /var/run/docker.sock fuera del helper",
+        "Un arranque completo del servidor no emite el log daemon not reachable",
+        "El arranque no falla ni se retrasa cuando el socket del helper no existe"
+      ]
+    },
+    {
+      "id": "FR-094",
+      "title": "Retirada de los controles de contenedores de la web app",
+      "description": "Cuando se renderiza la pagina de Docker, el sistema no debe ofrecer controles de start, stop ni restart de contenedores, y las rutas que los servian dejan de existir.",
+      "priority": "MUST",
+      "type": "security",
+      "acceptance_criteria": [
+        "La pagina de Docker no contiene ningun hx-post hacia una ruta de accion de contenedor",
+        "Una peticion POST a la antigua ruta de arranque de contenedor responde 404",
+        "Los controles de servicios systemd de la pagina de servicios siguen presentes y funcionando",
+        "El arbol de codigo no conserva los handlers de accion de contenedor ni el fichero de controles de Docker"
+      ]
+    },
+    {
+      "id": "FR-095",
+      "title": "Logs de contenedor por el helper con la redaccion existente",
+      "description": "Cuando el usuario pide los logs de un contenedor, el sistema debe obtenerlos por el helper y aplicarles la misma politica de redaccion que ya se aplica a la salida de journalctl antes de cruzar la frontera hacia la web app.",
+      "priority": "MUST",
+      "type": "security",
+      "acceptance_criteria": [
+        "Los logs de un contenedor se devuelven a traves del helper y no leyendo el socket de Docker desde la web app",
+        "La salida pasa por la politica de redaccion existente antes de salir del helper",
+        "La salida esta acotada al mismo tope de bytes que ya aplica a los logs de journalctl",
+        "Un id de contenedor invalido devuelve error y no la salida de otro contenedor"
+      ]
+    }
+  ],
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator",
+      "tech_level": "intermediate",
+      "goal": "Ver de un vistazo, desde el movil en LAN o por tailnet, si homeassistant, hermes, openclaw, ledger y mosquitto estan arriba y cuanto consumen, sin abrir una sesion SSH",
+      "pain_point": "Tras retirar el usuario ultron del grupo docker, la seccion de contenedores esta vacia y no distingue entre no hay contenedores y no puedo leerlos"
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-088",
+      "requirement_id": "FR-088",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "seguir viendo la lista de contenedores con su consumo aunque mi usuario web ya no tenga acceso a Docker",
+      "so_that": "no pierdo la vista de contenedores por endurecer la seguridad de la Pi",
+      "acceptance_criteria": [
+        {
+          "id": "AC-088-001",
+          "given": "el helper responde y hay 5 contenedores en la Pi",
+          "when": "la web app refresca la lista",
+          "then": "se listan los 5 con nombre, imagen, state y health poblados"
+        },
+        {
+          "id": "AC-088-002",
+          "given": "un contenedor en estado running",
+          "when": "se leen sus stats por el helper",
+          "then": "cpu_percent, mem_usage, mem_limit y mem_percent son numericos y mem_percent esta entre 0 y 100"
+        },
+        {
+          "id": "AC-088-003",
+          "given": "un contenedor en estado exited",
+          "when": "se construye su fila",
+          "then": "su health no es running y no se exige que traiga stats"
+        },
+        {
+          "id": "AC-088-004",
+          "given": "un helper que devuelve un payload que no es JSON valido",
+          "when": "la web app intenta decodificar la lista",
+          "then": "el monitor queda marcado no disponible, la lista queda vacia y el proceso no entra en panic"
+        }
+      ]
+    },
+    {
+      "id": "US-089",
+      "requirement_id": "FR-089",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "que el componente que si tiene privilegios solo pueda leer de Docker",
+      "so_that": "un fallo en la web app expuesta en LAN y tailnet no se convierta en control del host",
+      "acceptance_criteria": [
+        {
+          "id": "AC-089-001",
+          "given": "el helper en marcha",
+          "when": "se le envia una peticion con accion docker.start",
+          "then": "responde ok=false con mensaje de accion desconocida y no arranca ningun contenedor"
+        },
+        {
+          "id": "AC-089-002",
+          "given": "el codigo fuente del helper",
+          "when": "se inspecciona su transporte de Docker",
+          "then": "no existe ninguna invocacion del binario docker y todas las peticiones al socket usan metodo GET"
+        },
+        {
+          "id": "AC-089-003",
+          "given": "un id de contenedor con el valor ../../info",
+          "when": "el helper valida el id antes de construir la URL",
+          "then": "lo rechaza con error y no emite ninguna peticion al socket"
+        },
+        {
+          "id": "AC-089-004",
+          "given": "el helper en marcha",
+          "when": "se le envia una accion de lectura valida como docker.list",
+          "then": "responde ok=true con la lista de contenedores"
+        }
+      ]
+    },
+    {
+      "id": "US-090",
+      "requirement_id": "FR-090",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "ver los puertos, volumenes y que variables de entorno define un contenedor",
+      "so_that": "puedo diagnosticar un contenedor sin exponer sus secretos en el navegador",
+      "acceptance_criteria": [
+        {
+          "id": "AC-090-001",
+          "given": "un contenedor con la variable POSTGRES_PASSWORD=hunter2",
+          "when": "se pide su detalle",
+          "then": "la respuesta contiene el nombre POSTGRES_PASSWORD y no contiene la cadena hunter2"
+        },
+        {
+          "id": "AC-090-002",
+          "given": "un contenedor con el puerto 8123 publicado en el host",
+          "when": "se pide su detalle",
+          "then": "la respuesta trae puerto de host, puerto de contenedor y protocolo de ese mapeo"
+        },
+        {
+          "id": "AC-090-003",
+          "given": "un contenedor con un volumen montado",
+          "when": "se pide su detalle",
+          "then": "la respuesta trae origen, destino y modo del montaje"
+        },
+        {
+          "id": "AC-090-004",
+          "given": "un id de contenedor que no existe",
+          "when": "se pide su detalle",
+          "then": "se devuelve error y no un detalle vacio que el panel muestre como contenedor sin puertos"
+        }
+      ]
+    },
+    {
+      "id": "US-091",
+      "requirement_id": "FR-091",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "que el panel me diga cuando no puede leer Docker",
+      "so_that": "no confundo un fallo del helper con no tener contenedores corriendo",
+      "acceptance_criteria": [
+        {
+          "id": "AC-091-001",
+          "given": "el helper detenido",
+          "when": "se abre la pagina de Docker",
+          "then": "responde 200 y su cuerpo contiene el aviso de helper no disponible"
+        },
+        {
+          "id": "AC-091-002",
+          "given": "el helper detenido",
+          "when": "se abre la pagina de Docker",
+          "then": "el cuerpo no muestra el mensaje de cero contenedores"
+        },
+        {
+          "id": "AC-091-003",
+          "given": "el helper respondiendo con 5 contenedores",
+          "when": "se abre la pagina de Docker",
+          "then": "el cuerpo no contiene el aviso de helper no disponible"
+        },
+        {
+          "id": "AC-091-004",
+          "given": "el helper detenido",
+          "when": "se abre la pagina principal del panel",
+          "then": "responde 200 y sigue renderizando CPU, temperatura, red y UPS"
+        }
+      ]
+    },
+    {
+      "id": "US-092",
+      "requirement_id": "FR-092",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "que un helper colgado no congele el panel",
+      "so_that": "sigo viendo el resto de metricas mientras Docker no responde",
+      "acceptance_criteria": [
+        {
+          "id": "AC-092-001",
+          "given": "la configuracion del cliente de Docker del helper",
+          "when": "se inspecciona su timeout",
+          "then": "es mayor o igual a 2s y menor o igual a 3s"
+        },
+        {
+          "id": "AC-092-002",
+          "given": "un helper simulado que nunca responde",
+          "when": "la web app pide la lista",
+          "then": "la llamada retorna error en menos de 4s"
+        },
+        {
+          "id": "AC-092-003",
+          "given": "una llamada que expiro por timeout",
+          "when": "llega el siguiente ciclo de refresco",
+          "then": "el monitor lo reintenta y puede volver a disponible sin reiniciar el proceso"
+        },
+        {
+          "id": "AC-092-004",
+          "given": "un monitor que sufrio un timeout",
+          "when": "se detiene el monitor",
+          "then": "termina sin goroutines ni conexiones pendientes"
+        }
+      ]
+    },
+    {
+      "id": "US-093",
+      "requirement_id": "FR-093",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "que el proceso web no vuelva a intentar hablar con Docker",
+      "so_that": "el endurecimiento no se pierde en un cambio futuro y el log deja de mentir",
+      "acceptance_criteria": [
+        {
+          "id": "AC-093-001",
+          "given": "el arbol de codigo de la web app",
+          "when": "se busca la cadena /var/run/docker.sock fuera del helper",
+          "then": "no hay ninguna coincidencia"
+        },
+        {
+          "id": "AC-093-002",
+          "given": "el arbol de codigo de la web app",
+          "when": "se buscan importaciones del paquete cliente del SDK de Docker fuera del helper",
+          "then": "no hay ninguna coincidencia"
+        },
+        {
+          "id": "AC-093-003",
+          "given": "un arranque completo del servidor",
+          "when": "se inspecciona su salida de log",
+          "then": "no aparece daemon not reachable"
+        },
+        {
+          "id": "AC-093-004",
+          "given": "un entorno sin el socket del helper",
+          "when": "arranca la web app",
+          "then": "arranca igualmente y no falla ni se bloquea esperando"
+        }
+      ]
+    },
+    {
+      "id": "US-094",
+      "requirement_id": "FR-094",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "que el panel no ofrezca acciones sobre contenedores que ya no puede ejecutar",
+      "so_that": "la frontera de seguridad queda visible en la interfaz y nadie la re-cablea por descuido",
+      "acceptance_criteria": [
+        {
+          "id": "AC-094-001",
+          "given": "la pagina de Docker renderizada",
+          "when": "se inspecciona su HTML",
+          "then": "no contiene ningun hx-post hacia una ruta de accion de contenedor"
+        },
+        {
+          "id": "AC-094-002",
+          "given": "el servidor en marcha",
+          "when": "se hace POST a la antigua ruta de arranque de contenedor",
+          "then": "responde 404"
+        },
+        {
+          "id": "AC-094-003",
+          "given": "la pagina de servicios renderizada",
+          "when": "se inspecciona su HTML",
+          "then": "sigue ofreciendo los controles start, stop y restart de servicios systemd"
+        },
+        {
+          "id": "AC-094-004",
+          "given": "el arbol de codigo",
+          "when": "se buscan los handlers de accion de contenedor y el fichero de controles de Docker",
+          "then": "no existen"
+        }
+      ]
+    },
+    {
+      "id": "US-095",
+      "requirement_id": "FR-095",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "leer los ultimos logs de un contenedor desde el panel",
+      "so_that": "puedo diagnosticar un contenedor caido sin SSH y sin filtrar secretos al navegador",
+      "acceptance_criteria": [
+        {
+          "id": "AC-095-001",
+          "given": "un contenedor con logs",
+          "when": "se piden desde el panel",
+          "then": "llegan a traves del helper y la web app no toca el socket de Docker"
+        },
+        {
+          "id": "AC-095-002",
+          "given": "una linea de log que la politica de redaccion enmascara",
+          "when": "los logs cruzan la frontera del helper",
+          "then": "la linea sale enmascarada igual que en los logs de journalctl"
+        },
+        {
+          "id": "AC-095-003",
+          "given": "un contenedor con una salida enorme",
+          "when": "se piden sus logs",
+          "then": "la respuesta esta acotada al mismo tope de bytes que aplica a journalctl"
+        },
+        {
+          "id": "AC-095-004",
+          "given": "un id de contenedor invalido",
+          "when": "se piden sus logs",
+          "then": "se devuelve error y no la salida de otro contenedor"
+        }
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-092",
+      "category": "Security",
+      "requirement": "La frontera de privilegio es unidireccional y de solo lectura: el helper es el unico componente con acceso a /var/run/docker.sock, expone unicamente operaciones de lectura, y valida el id de contenedor contra ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ antes de interpolarlo en cualquier URL. La autenticacion por SO_PEERCRED con allowlist de UID y el comportamiento fail-closed sin allowlist (BG-043) se aplican a las acciones nuevas igual que a las existentes.",
+      "acceptance_criteria": "Una accion de escritura sobre contenedores responde ok=false accion desconocida; un id fuera del patron se rechaza sin emitir peticion; una conexion desde un UID fuera de la allowlist recibe forbidden; sin allowlist resoluble toda conexion se rechaza"
+    },
+    {
+      "id": "NFR-093",
+      "category": "Observability",
+      "requirement": "El helper registra cada accion de Docker atendida y su resultado, y la web app registra la transicion entre disponible y no disponible del monitor una sola vez por cambio de estado, no en cada ciclo de refresco.",
+      "acceptance_criteria": "Un fallo sostenido del helper produce una linea de log al pasar a no disponible y no una por tick; el log de arranque no contiene daemon not reachable"
+    },
+    {
+      "id": "NFR-094",
+      "category": "Reliability",
+      "requirement": "La indisponibilidad de Docker o del helper esta contenida en la seccion de contenedores y nunca degrada el resto del panel ni el arranque del proceso.",
+      "acceptance_criteria": "Con el helper detenido, la pagina principal responde 200 con CPU, temperatura, red y UPS renderizados, y el arranque del binario no se retrasa mas de 1s respecto al arranque con helper disponible"
+    },
+    {
+      "id": "NFR-095",
+      "category": "CI/CD",
+      "requirement": "El pipeline ejecuta la suite completa declarada por el proyecto en cada push a la rama principal, incluidos los tests nuevos de esta feature.",
+      "acceptance_criteria": "El workflow de CI declara el disparador de push sobre la rama principal y ejecuta go test sobre todo el arbol"
+    },
+    {
+      "id": "NFR-096",
+      "category": "Regression",
+      "requirement": "Las acciones existentes del helper (ping, systemctl, logs, shutdown) siguen respondiendo con el mismo contrato y el mismo formato de Response tras anadir las acciones de Docker.",
+      "acceptance_criteria": "ping sigue devolviendo ok=true con pong; una accion systemctl valida sigue ejecutandose; una accion inexistente sigue devolviendo accion desconocida"
+    },
+    {
+      "id": "NFR-097",
+      "category": "Regression",
+      "requirement": "La redaccion de logs de internal/logfilter se sigue aplicando a toda salida que cruza del helper a la web app, incluida la de las acciones nuevas.",
+      "acceptance_criteria": "Los logs de journalctl siguen saliendo enmascarados con la politica existente y los de contenedor salen enmascarados con la misma politica"
+    },
+    {
+      "id": "NFR-098",
+      "category": "Regression",
+      "requirement": "Los controles de servicios systemd de la interfaz siguen presentes y operativos: lo que se retira es exclusivamente el control de contenedores Docker.",
+      "acceptance_criteria": "La pagina de servicios sigue renderizando start, stop y restart por servicio y una accion sobre un servicio sigue ejecutandose y registrandose en el audit trail"
+    },
+    {
+      "id": "NFR-099",
+      "category": "Regression",
+      "requirement": "El resto del panel (CPU, temperatura, red, UPS, alertas, Tailscale) sigue renderizando aunque la seccion de contenedores este en estado de error.",
+      "acceptance_criteria": "Con el helper detenido, las rutas del panel distintas de la de Docker siguen respondiendo 200 con su contenido habitual"
+    },
+    {
+      "id": "NFR-100",
+      "category": "Usability",
+      "requirement": "El estado de helper no disponible se distingue visualmente del estado de cero contenedores y usa los tokens de color ya definidos en el panel.",
+      "acceptance_criteria": "Los dos estados renderizan textos distintos y el aviso de indisponibilidad cumple contraste minimo 4.5:1 sobre el fondo del panel"
+    },
+    {
+      "id": "NFR-101",
+      "category": "Healthcheck",
+      "requirement": "No aplica un healthcheck nuevo: el endpoint de salud existente del proceso ya cubre la vivacidad, y el helper no expone HTTP sino un socket Unix cuya vivacidad se comprueba con la accion ping ya existente.",
+      "acceptance_criteria": "La accion ping del helper sigue respondiendo pong y no se anade ningun endpoint de salud nuevo"
+    }
+  ],
+  "no_go_zone": [
+    "Control de contenedores desde la web app (start, stop, restart, exec) en cualquier forma — es exactamente la frontera de seguridad que esta feature establece; si algun dia se quiere, sera una operacion aparte con allowlist de nombres y confirmacion explicita",
+    "Devolver el usuario ultron al grupo docker bajo cualquier circunstancia — fue la causa raiz del hallazgo C2",
+    "Invocar el binario docker desde el helper — el transporte es la API HTTP sobre el socket",
+    "La retencion de NetSample y el intervalo del monitor de red — van en la feature net-sample-retention",
+    "El script de deploy con contrasena y la actualizacion de DEPLOYMENT.md — es tooling y documentacion sin comportamiento de producto, va fuera del pipeline",
+    "Anadir un wrapper root-only con verificacion de firma para deploy sin interaccion — el owner lo dejo explicitamente para mas adelante",
+    "Enmendar el FR-008 raiz para retirarle su mitad Docker — registrado como BL-043 y decidido para un ciclo aparte, no aqui",
+    "Streaming de logs o de stats en vivo — se mantiene el modelo de sondeo periodico y peticion bajo demanda que ya existe",
+    "Exponer valores de variables de entorno de contenedores — solo nombres, nunca valores"
+  ],
+  "constraints": [
+    "El helper ya corre como root con User=root y expone /run/ultron-helper.sock con permisos srw-rw---- root:ultron; no se cambia su modelo de despliegue",
+    "El protocolo del helper es una linea JSON de peticion y una de respuesta sobre socket Unix, con el contrato Request/Response ya existente en internal/privileged",
+    "El binario objetivo es linux/arm64 compilado de forma cruzada desde el Mac; en la Pi no hay checkout de codigo fuente",
+    "Go 1.25.13, sin anadir dependencias nuevas: la API HTTP de Docker se consume con net/http sobre un DialContext al socket Unix"
+  ],
+  "technology_preferences": [
+    "net/http con Transport.DialContext apuntando al socket Unix, en vez del SDK de Docker, para poder eliminar la dependencia del cliente del SDK de la web app",
+    "Reutilizar internal/logfilter para la redaccion de los logs de contenedor",
+    "Reutilizar el patron de acciones y payloads ya establecido en internal/privileged/client.go"
+  ],
+  "idea_provenance": {
+    "problem": "confirmed",
+    "users": "confirmed",
+    "baseline": "confirmed",
+    "success_metric": "confirmed",
+    "no_go_zone": "confirmed"
+  },
+  "idea_provenance_sources": {
+    "problem": "Nota de la Pi ~/nota-ultron-ap-docker-y-deploy-mac-2026-09-06.md, escrita por el owner tras la auditoria del 2026-09-05, pegada por el owner como instruccion de esta sesion; incluye el hallazgo C2 y las lineas de log observadas",
+    "users": "Persona Raspberry Pi Operator ya establecida en spec/01_REQUIREMENTS.json del proyecto padre; el owner es el unico operador del panel",
+    "baseline": "La nota documenta el estado tras el cambio en la Pi del 2026-09-06 13:22 COT, con las lineas de journalctl y la lista de los 5 contenedores esperados; verificado ademas contra internal/docker/monitor.go en este repo",
+    "success_metric": "Seccion 'Verificacion en la Pi tras desplegar' de la nota: id ultron sin docker, los 5 contenedores visibles, journalctl sin permission denied",
+    "no_go_zone": "Punto 2 de la nota prohibe start/stop/restart/exec en el helper; el owner confirmo en chat el 2026-09-06 retirar del todo los botones de control en vez de dejarlos deshabilitados, y aplazar la enmienda del FR-008 raiz a un ciclo aparte"
+  },
+  "idea_gaps": [],
+  "coverage_map": [
+    {
+      "need": "Lista de contenedores (nombre, imagen, estado, uptime, health) leida por el helper",
+      "disposition": "FR-088"
+    },
+    {
+      "need": "Stats por contenedor (CPU y memoria) leidas por el helper",
+      "disposition": "FR-088"
+    },
+    {
+      "need": "El helper habla con Docker por API HTTP minima y no invoca el binario docker",
+      "disposition": "FR-089"
+    },
+    {
+      "need": "El helper no ofrece start, stop, restart ni exec de contenedores",
+      "disposition": "FR-089"
+    },
+    {
+      "need": "Detalle de contenedor (puertos, volumenes, nombres de variables de entorno)",
+      "disposition": "FR-090"
+    },
+    {
+      "need": "Nunca exponer los valores de las variables de entorno",
+      "disposition": "FR-090"
+    },
+    {
+      "need": "El panel muestra 'helper no disponible' en vez de vaciar la seccion",
+      "disposition": "FR-091"
+    },
+    {
+      "need": "Timeouts cortos de 2 a 3 segundos en las llamadas al helper",
+      "disposition": "FR-092"
+    },
+    {
+      "need": "Quitar de la web app todo intento de abrir docker.sock y el log daemon not reachable",
+      "disposition": "FR-093"
+    },
+    {
+      "need": "Retirar handlers, rutas, botones y controls.go de los controles de contenedor",
+      "disposition": "FR-094"
+    },
+    {
+      "need": "Logs de contenedor por el helper con la redaccion existente",
+      "disposition": "FR-095"
+    },
+    {
+      "need": "La superficie privilegiada del helper no crece mas alla de lectura",
+      "disposition": "NFR-092"
+    },
+    {
+      "need": "SO_PEERCRED y fail-closed siguen aplicando a las acciones nuevas",
+      "disposition": "NFR-092"
+    },
+    {
+      "need": "Las acciones existentes del helper no cambian de contrato",
+      "disposition": "NFR-096"
+    },
+    {
+      "need": "La redaccion de logfilter sigue aplicandose en la frontera",
+      "disposition": "NFR-097"
+    },
+    {
+      "need": "Los controles de servicios systemd siguen funcionando",
+      "disposition": "NFR-098"
+    },
+    {
+      "need": "El resto del panel sigue renderizando con la seccion de Docker en error",
+      "disposition": "NFR-099"
+    },
+    {
+      "need": "El arranque no falla ni se retrasa sin helper",
+      "disposition": "NFR-094"
+    },
+    {
+      "need": "Verificacion en la Pi: id ultron sin docker, 5 contenedores, journalctl limpio",
+      "disposition": "FR-093"
+    },
+    {
+      "need": "Retencion de NetSample y intervalo del monitor de red",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Script de deploy con contrasena y ssh -t",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Wrapper root-only con verificacion de firma para deploy no interactivo",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Enmienda del FR-008 raiz para retirarle la mitad Docker",
+      "disposition": "out_of_scope"
+    }
+  ],
+  "original_brief": "## Feature\nLa vista de contenedores Docker deja de abrir `/var/run/docker.sock` desde la web app y pasa a pedirle los datos, en solo lectura, al helper privilegiado que ya corre como root.\n\n## Problem / Why\nOrigen: auditoría de seguridad de la Pi del 2026-09-05, Bloque 2, hallazgo C2. Decisión del owner (César) el 2026-09-06: no revertir la Pi, corregir en el código.\n\nLa web app (`ultron-ap`, systemd `User=ultron`) abre `/var/run/docker.sock` directamente con el SDK de Docker (`internal/docker/monitor.go`, `NewMonitor()` → `dclient.NewClientWithOpts(dclient.FromEnv, ...)`). Para que eso funcionara, el usuario `ultron` estaba en el grupo `docker`.\n\nPertenecer al grupo `docker` equivale a ser root en la máquina: con acceso al socket se puede arrancar un contenedor que monte el sistema de archivos del host. La web app está expuesta en LAN (`:8080`) y en tailnet (`:34002`), así que cualquier ejecución remota de código en ella daba root en la Pi. El grupo se retiró en la Pi el 2026-09-06 a las 13:22 COT, y con eso el hallazgo quedó mitigado en producción pero el producto quedó degradado.\n\nEfecto observado en el arranque siguiente:\n\n```\nultron-ap: docker: daemon not reachable: permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock\nultron-ap: Docker monitor started (interval=1m0s)\n```\n\nLa sección de contenedores del panel queda vacía y sin explicación: el usuario no puede distinguir \"no hay contenedores\" de \"no puedo leerlos\". Todo lo demás (CPU, temperatura, red, UPS, alertas) sigue funcionando.\n\n## Target Users\nEl owner de la Pi (César), único operador del panel, que usa la pestaña de contenedores para ver de un vistazo si `homeassistant`, `hermes`, `openclaw`, `ledger` y `mosquitto` están arriba y cuánta CPU y memoria consumen, desde el móvil en LAN o desde fuera por tailnet. Su dolor hoy: la sección está vacía y no sabe por qué. No se desbloquean nuevos tipos de usuario.\n\n## New Behavior\nEl sistema debe leer la lista de contenedores (nombre, imagen, estado, texto de estado, uptime y health) a través del helper privilegiado, no del socket de Docker.\nEl sistema debe leer las stats por contenedor (porcentaje de CPU, memoria usada, límite de memoria y porcentaje de memoria) a través del helper.\nEl sistema debe leer el detalle de un contenedor (puertos, volúmenes y nombres de variables de entorno, nunca sus valores) a través del helper.\nEl sistema debe leer los logs de un contenedor a través del helper, aplicando la misma redacción que ya se aplica a los logs de journalctl.\nEl helper debe hablar con Docker por su socket usando la API HTTP mínima (`GET /containers/json?all=1`, `GET /containers/{id}/stats?stream=false`, `GET /containers/{id}/json`, `GET /containers/{id}/logs`) y nunca invocando el binario `docker`.\nEl helper debe rechazar cualquier operación de escritura sobre contenedores: no expone start, stop, restart ni exec, y una petición con una acción de ese tipo se responde como acción desconocida.\nLa web app no debe contener ninguna ruta de código que abra `/var/run/docker.sock`, y desaparece el log `daemon not reachable`.\nCuando el helper no responde o falla, el panel debe mostrar un estado explícito de \"helper no disponible\" en la sección de contenedores, en vez de mostrarla vacía.\nCada llamada de la web app al helper para datos de Docker debe estar acotada por un timeout corto de entre 2 y 3 segundos.\nLos controles start, stop y restart de contenedores se retiran de la web app: handlers, rutas, botones de la interfaz y `internal/docker/controls.go`.\n\n## Success Criteria\nDado que el usuario `ultron` NO pertenece al grupo `docker`, cuando se abre la pestaña de contenedores, entonces se listan los cinco contenedores de la Pi con su estado y sus stats.\nDado un arranque normal del servicio, cuando se inspecciona `journalctl -u ultron-ap`, entonces no aparece ningún `permission denied` ni ningún `daemon not reachable`.\nDado el helper detenido, cuando se abre la pestaña de contenedores, entonces la sección muestra \"helper no disponible\" y no una lista vacía.\nDado un helper que tarda más de 3 segundos, cuando la web app pide la lista, entonces la llamada se aborta por timeout y la sección cae al estado de \"helper no disponible\" sin bloquear el resto del panel.\nDada una petición al helper con acción de escritura sobre un contenedor, cuando el helper la procesa, entonces responde error de acción desconocida y no ejecuta nada.\nDado el árbol de código tras el cambio, cuando se busca `docker.sock` o el SDK de Docker en la web app, entonces no hay ninguna coincidencia fuera del helper.\nDado el detalle de un contenedor con variables de entorno, cuando se renderiza, entonces se muestran solo los nombres de las variables y ningún valor.\n\n## Touch Points\nMODIFICA:\n- `internal/docker/monitor.go` — deja de crear un cliente del SDK de Docker; su fuente de datos pasa a ser el helper.\n- `internal/docker/client.go` — la interfaz `DockerClient` pierde los métodos de escritura y de socket directo.\n- `internal/privileged/client.go` — se le añaden los métodos cliente de las acciones nuevas de Docker.\n- `cmd/ultron-helper/main.go` — `dispatch()` gana los casos de Docker, en solo lectura.\n- `internal/server/handlers.go` — el handler de detalle de contenedor.\n- `internal/server/server.go` — cableado del monitor.\n- `cmd/ultron-ap/main.go` — construcción del monitor (`docker.NewMonitor()`).\n- Las plantillas de la sección de contenedores, para el estado \"helper no disponible\" y para quitar los botones de control.\n\nELIMINA:\n- `internal/docker/controls.go` y `internal/server/handlers_docker.go` (start/stop/restart), con sus rutas y sus tests.\n\nAÑADE:\n- El transporte HTTP mínimo contra el socket de Docker, dentro del helper.\n\n## Must Not Break (Regression Boundary)\nLas acciones existentes del helper (`ping`, `systemctl`, `logs`, `shutdown`) siguen respondiendo igual y con el mismo formato de `Response`.\nLa autenticación del helper por SO_PEERCRED sigue aplicándose a las acciones nuevas: un UID fuera de la allowlist sigue recibiendo `forbidden`, y el fail-closed sin allowlist (BG-043) se mantiene.\nLa redacción de logs (`internal/logfilter`) se sigue aplicando a todo lo que cruza la frontera del helper hacia la web app.\nEl resto del panel (CPU, temperatura, red, UPS, alertas, Tailscale) sigue renderizando aunque la sección de contenedores esté en estado de error.\nEl arranque de `ultron-ap` no falla ni se retrasa cuando el helper no está disponible.\nLos controles de servicios de systemd de la interfaz (start/stop/restart de servicios, que NO son contenedores) siguen funcionando: lo que se retira es solo el control de contenedores Docker.\n\n## Out of Scope\nControl de contenedores desde la web app (start, stop, restart, exec) en cualquier forma. Si algún día se quiere, será una operación aparte con allowlist de nombres y confirmación explícita, y es una decisión que no se toma aquí.\nLa retención de `NetSample`, que va en la feature `net-sample-retention`.\nEl script de deploy con contraseña, que es cambio de tooling y documentación sin comportamiento de producto y va fuera del pipeline.\nDevolver el usuario `ultron` al grupo `docker` bajo cualquier circunstancia.\n"
+}

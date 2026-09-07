@@ -134,10 +134,9 @@
       "feature": "FT-008",
       "type": "feature",
       "priority": "MUST",
-      "title": "Service controls",
-      "description": "Start, Stop, Restart for Docker containers and Systemd services from the dashboard, with confirmation modal, async execution, and audit trail.",
+      "title": "Systemd service controls",
+      "description": "Start, Stop and Restart for Systemd services from the dashboard, with confirmation modal, async execution, and audit trail. Docker containers are deliberately NOT controllable: since the 2026-09-05 audit (finding C2) the panel reads Docker through the privileged helper in read-only mode and holds no capability to act on it. See BL-043 and feature docker-via-helper.",
       "acceptance_criteria": [
-        "Start, Stop, Restart buttons per Docker container",
         "Start, Stop, Restart buttons per Systemd service",
         "Confirmation before executing Stop/Restart (confirmation modal)",
         "Visual feedback of action result (success/error with message)",
@@ -269,6 +268,54 @@
       "id": "NFR-004",
       "category": "Performance",
       "requirement": "Critical dashboard metrics visible within 5 seconds of change"
+    },
+    {
+      "id": "NFR-005",
+      "category": "Security",
+      "requirement": "Privilege separation is the product's central security control and must hold: ultron-ap runs unprivileged as user 'ultron' and holds no root capability and no sudo rights; every host action goes through ultron-helper over a Unix socket, which authenticates the caller with SO_PEERCRED against a UID allow-list, fails closed when no allow-list resolves, and executes only allow-listed actions with validated arguments. The panel must never gain a parallel privilege path — no sudoers entry, no direct daemon socket.",
+      "acceptance_criteria": "A unit name or container id outside its allow-list pattern is rejected before any command or request is issued; a connection from a UID outside the allow-list receives 'forbidden'; with no allow-list resolvable every connection is refused; and no package reachable from cmd/ultron-ap depends on a privileged transport"
+    },
+    {
+      "id": "NFR-006",
+      "category": "Security",
+      "requirement": "Every route except /login and /health requires an authenticated session; passwords are bcrypt-hashed; session cookies are HttpOnly and SameSite, and Secure behind TLS; failed logins are counted per IP and lock the IP out after a threshold; every state-changing POST carries a per-session CSRF token checked by middleware.",
+      "acceptance_criteria": "An unauthenticated request to an /api route returns 401 and to a page route redirects to /login; an expired session is not trusted; a POST with a missing or wrong CSRF token is rejected before the handler runs and nothing is persisted"
+    },
+    {
+      "id": "NFR-007",
+      "category": "Security",
+      "requirement": "Secrets never reach a surface that can leak them: command output crossing from the helper to the panel is redacted by a filter and capped; notification credentials are encrypted at rest; database backups are encrypted with AES-GCM; container environment values are dropped inside the helper and only names cross the boundary; and no Aitri trace id or internal identifier ships in assets served verbatim to browsers.",
+      "acceptance_criteria": "A token-shaped string in journalctl or container output does not appear literally in the response; a backup file on disk is not readable as plaintext SQLite; a container env VALUE never appears in the detail payload; and web/static contains no FR/BG/AC/TC token"
+    },
+    {
+      "id": "NFR-008",
+      "category": "Security",
+      "requirement": "Admin-supplied paths are constrained to an allow-listed root and re-validated at use time, after symlink resolution, so a path saved as safe cannot be redirected later.",
+      "acceptance_criteria": "A backup destination outside the configured root is rejected; a symlink planted after config-save cannot redirect the write; a download name must be a bare basename of the panel's own artefact"
+    },
+    {
+      "id": "NFR-009",
+      "category": "Observability",
+      "requirement": "The process logs its version and commit at startup and every HTTP request with method, path and status, to stdout/stderr for journald. State transitions are logged once per change, not once per poll, so a sustained failure does not flood the journal.",
+      "acceptance_criteria": "The startup line carries version and commit; a request emits one line with METHOD /path STATUS; a monitor that stays unavailable for many cycles logs the transition once"
+    },
+    {
+      "id": "NFR-010",
+      "category": "CI/CD",
+      "requirement": "Every push to the main branch and every pull request runs the full declared test suite with the race detector, go vet, a linter, the linux/arm64 production cross-build, a vulnerability scan gated by a reviewed allow-list, and the audit-posture re-check script.",
+      "acceptance_criteria": "The workflows declare push-to-main and pull_request triggers and run 'go test -race ./...', 'go vet ./...', the GOOS=linux GOARCH=arm64 build, govulncheck against .github/vuln-allowlist.txt, and scripts/security-gate.sh"
+    },
+    {
+      "id": "NFR-011",
+      "category": "Reliability",
+      "requirement": "An unavailable dependency degrades its own section and never the process: Docker, systemd, Tailscale, NUT or the privileged helper being unreachable leaves the rest of the panel serving, and is rendered as an explicit unavailable state distinguishable from an empty result.",
+      "acceptance_criteria": "With any one of those unreachable, the dashboard and the unrelated pages still return 200, and the affected section shows its unavailable state rather than a zero-results message"
+    },
+    {
+      "id": "NFR-012",
+      "category": "Healthcheck",
+      "requirement": "GET /health returns 200 while the process is alive, without requiring authentication.",
+      "acceptance_criteria": "An unauthenticated GET /health returns 200; it is one of only two routes exempt from the auth middleware"
     }
   ],
   "user_stories": [
@@ -585,15 +632,9 @@
       "id": "US-008",
       "requirement_id": "FR-008",
       "as_a": "Raspberry Pi operator",
-      "i_want": "Start/Stop/Restart actions on containers and services from the panel",
+      "i_want": "Start/Stop/Restart actions on Systemd services from the panel",
       "so_that": "I can recover from issues without SSH",
       "acceptance_criteria": [
-        {
-          "id": "AC-008-001",
-          "given": "a Docker container row is rendered",
-          "when": "the row's controls are shown",
-          "then": "Start, Stop and Restart buttons are present"
-        },
         {
           "id": "AC-008-002",
           "given": "a Systemd service row is rendered",

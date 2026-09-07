@@ -19,45 +19,9 @@
   "projectName": "network-tile",
   "createdAt": "2026-07-14T16:36:57.812Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-04T20:34:46.883Z",
+  "updatedAt": "2026-09-07T02:40:49.874Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-09-04T19:36:49.998Z",
-      "event": "approved",
-      "phase": 4
-    },
-    {
-      "at": "2026-09-04T19:36:53.144Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 16,
-      "failed": 0,
-      "skipped": 1,
-      "manual": 0
-    },
-    {
-      "at": "2026-09-04T19:36:53.349Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 16,
-      "failed": 0
-    },
-    {
-      "at": "2026-09-04T19:37:27.571Z",
-      "event": "completed",
-      "phase": 1
-    },
-    {
-      "at": "2026-09-04T19:37:27.823Z",
-      "event": "approved",
-      "phase": 1
-    },
-    {
-      "at": "2026-09-04T19:37:28.032Z",
-      "event": "completed",
-      "phase": "ux"
-    },
     {
       "at": "2026-09-04T19:37:28.292Z",
       "event": "approved",
@@ -141,6 +105,54 @@
       "phase": "verify",
       "passed": 17,
       "failed": 0
+    },
+    {
+      "at": "2026-09-06T19:02:21.090Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T19:02:38.210Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-06T21:58:41.183Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-06T21:58:41.363Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-07T02:40:49.678Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T02:40:49.848Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 17,
+      "failed": 0
     }
   ],
   "cascadedPhases": [],
@@ -175,16 +187,16 @@
     ]
   },
   "verifyPassed": true,
-  "verifyRanRef": "151f1d7d6d4261b2722a3940427effab3817f382",
+  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
   "verifyRanDirty": false,
-  "verifyResultsHash": "7135ce686684ed7edee832c318171d837cef1046799af435e2a8d9a6bf35894b",
-  "verifyRanAt": "2026-09-04T20:34:46.188Z",
+  "verifyResultsHash": "de3a46976767012d9f8f086b0e7ac12594e2da8602a2ca49ca65b7bc875a592e",
+  "verifyRanAt": "2026-09-07T02:40:49.599Z",
   "lastVerifyRun": {
     "passed": 17,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-04T20:34:46.188Z"
+    "at": "2026-09-07T02:40:49.599Z"
   },
   "verifySummary": {
     "total": 17,

@@ -1,0 +1,464 @@
+{
+  "project_name": "Ultron — net-sample-retention",
+  "project_summary": "Pone retencion de 30 dias configurable a NetSample, que hoy crece sin techo y ocupa el 96% de ultron.db (694 MB de 719 MB, 8.431.177 filas desde el 2026-05-04 a razon de ~67.000 filas y 5,5 MB diarios). La funcion PruneNetSamples ya existe pero nunca se llama: startRetentionJob poda ActionLog, sesiones y UPS, y omite red. North Star KPI: tras la primera poda y su recuperacion de espacio, ultron.db ronda los 175 MB en vez de 719 MB y el panel de cortes de la semana sigue mostrando datos. JTBD: el operador contrata este panel para vigilar su red sin que el propio panel se coma el disco del dispositivo. Guardrail: el comportamiento observable no cambia en un despliegue que no toque el entorno — mismo intervalo de 5 s, mismo esquema, misma retencion de UPS — y la insercion de muestras nunca se bloquea por la poda.",
+  "functional_requirements": [
+    {
+      "id": "FR-096",
+      "title": "Ventana de retencion de red configurable por entorno",
+      "description": "Cuando el proceso arranca, el sistema debe leer ULTRON_NET_RETENTION_DAYS del entorno y usarla como ventana de retencion de NetSample, aplicando 30 dias por defecto y avisando en el log sin abortar cuando el valor es invalido o menor que 1.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "Con la variable sin definir la ventana efectiva es 30",
+        "Con la variable a 7 la ventana efectiva es 7",
+        "Con un valor no numerico se registra un aviso y la ventana efectiva es 30",
+        "Con un valor 0 o negativo se registra un aviso y la ventana efectiva es 30",
+        "Un valor invalido nunca aborta el arranque del proceso"
+      ]
+    },
+    {
+      "id": "FR-097",
+      "title": "Poda periodica de NetSample",
+      "description": "Cuando arranca el trabajo de retencion y despues cada 24 horas, el sistema debe borrar las filas de NetSample anteriores a la ventana de retencion y registrar cuantas borro y con que ventana.",
+      "priority": "MUST",
+      "type": "persistence",
+      "acceptance_criteria": [
+        "Con muestras de 45 dias y ventana 30, tras la poda no queda ninguna anterior a 30 dias",
+        "Las muestras dentro de la ventana sobreviven a la poda, incluida la mas antigua que aun cae dentro",
+        "La poda escribe una linea de log con el numero de filas borradas y la ventana aplicada",
+        "Una poda sobre una tabla ya limpia borra 0 filas y no falla",
+        "Un fallo de la poda de red se registra y no impide que se ejecuten las demas podas del mismo trabajo"
+      ]
+    },
+    {
+      "id": "FR-098",
+      "title": "Borrado por lotes acotados",
+      "description": "Cuando la poda encuentra mas filas fuera de ventana que el tamano de lote, el sistema debe borrarlas en sentencias sucesivas acotadas en vez de un unico DELETE sobre toda la tabla, para no bloquear el WAL en la primera pasada.",
+      "priority": "MUST",
+      "type": "persistence",
+      "acceptance_criteria": [
+        "Ninguna sentencia individual de borrado abarca mas filas que el tamano de lote configurado",
+        "El total borrado tras los lotes sucesivos coincide con el numero de filas fuera de ventana",
+        "El bucle de lotes termina y no itera indefinidamente cuando ya no quedan filas que borrar",
+        "Las inserciones de nuevas muestras siguen completando mientras la poda esta en curso"
+      ]
+    },
+    {
+      "id": "FR-099",
+      "title": "Recuperacion del espacio en disco tras podar",
+      "description": "Cuando la poda ha liberado paginas, el sistema debe devolver ese espacio al sistema de ficheros en vez de dejarlo solo como paginas libres dentro del archivo.",
+      "priority": "MUST",
+      "type": "persistence",
+      "acceptance_criteria": [
+        "Tras podar una base con muchas filas fuera de ventana, el tamano del archivo en disco disminuye",
+        "El recuento de paginas libres tras la recuperacion es menor que antes de ella",
+        "La base sigue superando PRAGMA integrity_check despues de la operacion",
+        "Los datos dentro de la ventana siguen siendo legibles y completos despues de la operacion",
+        "La recuperacion no se ejecuta cuando no hay espacio significativo que recuperar"
+      ]
+    },
+    {
+      "id": "FR-100",
+      "title": "Intervalo del monitor de red configurable por entorno",
+      "description": "Cuando el proceso arranca, el sistema debe leer ULTRON_NET_INTERVAL_SECONDS del entorno y usarla como intervalo del monitor de red, aplicando 5 segundos por defecto para no alterar el comportamiento actual y avisando sin abortar cuando el valor es invalido.",
+      "priority": "MUST",
+      "type": "logic",
+      "acceptance_criteria": [
+        "Con la variable sin definir el intervalo efectivo es de 5 segundos",
+        "Con la variable a 15 el intervalo efectivo es de 15 segundos",
+        "Con un valor no numerico o menor que 1 se registra un aviso y el intervalo efectivo es de 5 segundos",
+        "El intervalo configurado es el que recibe el constructor del probe, no un valor fijo del codigo"
+      ]
+    }
+  ],
+  "user_personas": [
+    {
+      "role": "Raspberry Pi Operator",
+      "tech_level": "intermediate",
+      "goal": "Vigilar la red de casa y ver los cortes de la semana desde el panel, sin administrar la base de datos a mano",
+      "pain_point": "ultron.db pesa 719 MB y crece 5,5 MB al dia sin techo en un dispositivo domestico, y el backup nocturno cifrado a Drive arrastra ese peso cada noche"
+    }
+  ],
+  "user_stories": [
+    {
+      "id": "US-096",
+      "requirement_id": "FR-096",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "poder cambiar cuanto historico de red se guarda sin recompilar el binario",
+      "so_that": "puedo ajustar el consumo de disco de la Pi editando el fichero de entorno, igual que ya hago con el de UPS",
+      "acceptance_criteria": [
+        {
+          "id": "AC-096-001",
+          "given": "ULTRON_NET_RETENTION_DAYS sin definir en el entorno",
+          "when": "se carga la configuracion",
+          "then": "la ventana de retencion de red es 30"
+        },
+        {
+          "id": "AC-096-002",
+          "given": "ULTRON_NET_RETENTION_DAYS=7",
+          "when": "se carga la configuracion",
+          "then": "la ventana de retencion de red es 7"
+        },
+        {
+          "id": "AC-096-003",
+          "given": "ULTRON_NET_RETENTION_DAYS=abc",
+          "when": "se carga la configuracion",
+          "then": "se registra un aviso que nombra la variable y el valor recibido, y la ventana es 30"
+        },
+        {
+          "id": "AC-096-004",
+          "given": "ULTRON_NET_RETENTION_DAYS=0",
+          "when": "se carga la configuracion",
+          "then": "se registra un aviso y la ventana es 30, porque una ventana de 0 borraria el historico entero"
+        }
+      ]
+    },
+    {
+      "id": "US-097",
+      "requirement_id": "FR-097",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "que el historico de red se pode solo, sin que yo tenga que acordarme",
+      "so_that": "la base de datos de la Pi deja de crecer sin techo y los backups nocturnos dejan de arrastrar cientos de megas",
+      "acceptance_criteria": [
+        {
+          "id": "AC-097-001",
+          "given": "una tabla NetSample con muestras de hace 45, 40, 20 y 1 dias y ventana de 30",
+          "when": "se ejecuta la poda",
+          "then": "las de 45 y 40 dias desaparecen y las de 20 y 1 permanecen"
+        },
+        {
+          "id": "AC-097-002",
+          "given": "una muestra de hace exactamente 29 dias y 23 horas con ventana de 30",
+          "when": "se ejecuta la poda",
+          "then": "esa muestra sobrevive, porque el limite es la ventana y no un dia redondeado"
+        },
+        {
+          "id": "AC-097-003",
+          "given": "una poda que borro 6300000 filas con ventana de 30",
+          "when": "termina la poda",
+          "then": "el log incluye el numero de filas borradas y el numero de dias de la ventana"
+        },
+        {
+          "id": "AC-097-004",
+          "given": "una tabla NetSample sin ninguna fila fuera de ventana",
+          "when": "se ejecuta la poda",
+          "then": "borra 0 filas y no devuelve error"
+        },
+        {
+          "id": "AC-097-005",
+          "given": "una poda de red que falla",
+          "when": "continua el trabajo diario de retencion",
+          "then": "el fallo se registra y las podas de ActionLog, sesiones y UPS se ejecutan igualmente"
+        }
+      ]
+    },
+    {
+      "id": "US-098",
+      "requirement_id": "FR-098",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "que la primera poda no congele el panel",
+      "so_that": "el dispositivo sigue respondiendo mientras se borran los seis millones de filas acumuladas",
+      "acceptance_criteria": [
+        {
+          "id": "AC-098-001",
+          "given": "250000 filas fuera de ventana y un lote de 50000",
+          "when": "se ejecuta la poda",
+          "then": "se emiten 5 sentencias de borrado y ninguna afecta a mas de 50000 filas"
+        },
+        {
+          "id": "AC-098-002",
+          "given": "250000 filas fuera de ventana",
+          "when": "termina la poda",
+          "then": "el total de filas borradas devuelto es exactamente 250000"
+        },
+        {
+          "id": "AC-098-003",
+          "given": "una tabla sin filas fuera de ventana",
+          "when": "se ejecuta la poda",
+          "then": "el bucle de lotes termina en la primera iteracion sin borrar nada"
+        },
+        {
+          "id": "AC-098-004",
+          "given": "una poda en curso sobre una base grande",
+          "when": "se inserta una muestra nueva desde el probe",
+          "then": "la insercion completa sin error"
+        }
+      ]
+    },
+    {
+      "id": "US-099",
+      "requirement_id": "FR-099",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "recuperar de verdad los gigas, no solo marcar paginas como libres",
+      "so_that": "el archivo de 719 MB vuelve a un tamano razonable en el NVMe de la Pi",
+      "acceptance_criteria": [
+        {
+          "id": "AC-099-001",
+          "given": "una base cuyo archivo pesa mucho mas que sus datos tras podar",
+          "when": "se ejecuta la recuperacion de espacio",
+          "then": "el tamano del archivo en disco es menor que antes"
+        },
+        {
+          "id": "AC-099-002",
+          "given": "una base con muchas paginas libres tras podar",
+          "when": "se ejecuta la recuperacion de espacio",
+          "then": "el freelist_count posterior es menor que el anterior"
+        },
+        {
+          "id": "AC-099-003",
+          "given": "una base sobre la que se acaba de recuperar espacio",
+          "when": "se ejecuta PRAGMA integrity_check",
+          "then": "devuelve ok"
+        },
+        {
+          "id": "AC-099-004",
+          "given": "una base con muestras dentro de ventana",
+          "when": "se ejecuta la recuperacion de espacio",
+          "then": "todas esas muestras siguen siendo legibles y con los mismos valores"
+        },
+        {
+          "id": "AC-099-005",
+          "given": "una base sin espacio significativo que recuperar",
+          "when": "se evalua si recuperar",
+          "then": "la operacion se omite, porque bloquea escrituras y no compensa"
+        }
+      ]
+    },
+    {
+      "id": "US-100",
+      "requirement_id": "FR-100",
+      "as_a": "Raspberry Pi Operator",
+      "i_want": "poder bajar la frecuencia de muestreo en la Pi sin tocar el codigo",
+      "so_that": "reduzco tres veces el crecimiento del historico sin perder deteccion de cortes",
+      "acceptance_criteria": [
+        {
+          "id": "AC-100-001",
+          "given": "ULTRON_NET_INTERVAL_SECONDS sin definir",
+          "when": "se carga la configuracion",
+          "then": "el intervalo del monitor de red es de 5 segundos, identico al comportamiento actual"
+        },
+        {
+          "id": "AC-100-002",
+          "given": "ULTRON_NET_INTERVAL_SECONDS=15",
+          "when": "se carga la configuracion",
+          "then": "el intervalo del monitor de red es de 15 segundos"
+        },
+        {
+          "id": "AC-100-003",
+          "given": "ULTRON_NET_INTERVAL_SECONDS=0 o un valor no numerico",
+          "when": "se carga la configuracion",
+          "then": "se registra un aviso y el intervalo es de 5 segundos"
+        },
+        {
+          "id": "AC-100-004",
+          "given": "una configuracion con intervalo de 15 segundos",
+          "when": "se construye el monitor de red",
+          "then": "recibe 15 segundos y no un valor fijo escrito en el codigo"
+        }
+      ]
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR-102",
+      "category": "Security",
+      "requirement": "La ventana de retencion y el intervalo llegan desde el entorno pero nunca se interpolan en SQL: el corte temporal viaja como parametro enlazado y el tamano de lote es una constante del codigo. Un valor fuera de rango se sanea al defecto ANTES de tocar la base, de modo que no puede ampliar el borrado ni desactivarlo.",
+      "acceptance_criteria": "El SQL de poda no contiene concatenacion ni formateo de cadenas; un valor de 0, negativo o no numerico produce una ventana de 30 y no un borrado total ni una condicion siempre verdadera"
+    },
+    {
+      "id": "NFR-103",
+      "category": "Reliability",
+      "requirement": "Un fallo de la poda de red queda contenido: se registra y no interrumpe las demas podas del trabajo diario ni detiene el proceso.",
+      "acceptance_criteria": "Con la poda de red devolviendo error, las podas de ActionLog, sesiones y UPS del mismo ciclo se ejecutan igualmente y el proceso sigue vivo"
+    },
+    {
+      "id": "NFR-104",
+      "category": "Observability",
+      "requirement": "Cada poda de red registra una linea con las filas borradas y la ventana aplicada; una poda que no borro nada no escribe linea, para no ensuciar el journal a diario.",
+      "acceptance_criteria": "Una poda que borra n>0 filas escribe una linea que contiene n y los dias; una poda que borra 0 no escribe ninguna"
+    },
+    {
+      "id": "NFR-105",
+      "category": "CI/CD",
+      "requirement": "El pipeline ejecuta la suite completa declarada en cada push a la rama principal, incluidos los tests nuevos de esta feature.",
+      "acceptance_criteria": "El workflow de CI declara el disparador de push sobre la rama principal y ejecuta go test sobre todo el arbol"
+    },
+    {
+      "id": "NFR-106",
+      "category": "Regression",
+      "requirement": "La retencion de UPS sigue funcionando con su propia variable y su propia ventana, sin verse afectada por las de red.",
+      "acceptance_criteria": "Con ULTRON_NET_RETENTION_DAYS definido, la ventana de UPS sigue siendo la de ULTRON_UPS_RETENTION_DAYS y su poda sigue borrando sus filas"
+    },
+    {
+      "id": "NFR-107",
+      "category": "Regression",
+      "requirement": "El esquema de NetSample y los nombres idx_net_sample_target_ts e idx_net_sample_ts quedan intactos, porque RecentNetSamples y la interfaz dependen de ellos.",
+      "acceptance_criteria": "Tras la migracion, las columnas de NetSample y los dos nombres de indice son identicos a los previos y RecentNetSamples sigue devolviendo filas"
+    },
+    {
+      "id": "NFR-108",
+      "category": "Regression",
+      "requirement": "El panel de cortes de red de la semana sigue mostrando datos tras la poda: la ventana por defecto de 30 dias cubre de sobra los 7 dias que consulta.",
+      "acceptance_criteria": "Tras una poda con ventana 30, una consulta de los ultimos 7 dias sigue devolviendo el mismo conjunto de filas que antes de podar"
+    },
+    {
+      "id": "NFR-109",
+      "category": "Regression",
+      "requirement": "Las podas de ActionLog, Alert y sesiones expiradas siguen ocurriendo en el mismo trabajo diario y con la misma cadencia.",
+      "acceptance_criteria": "Un ciclo del trabajo de retencion sigue invocando la poda de datos antiguos y la limpieza de sesiones, ademas de la de red"
+    },
+    {
+      "id": "NFR-110",
+      "category": "Regression",
+      "requirement": "El monitor de red sigue muestreando cada 5 segundos cuando no se configura otra cosa, de modo que un despliegue sin cambiar el entorno no altera el comportamiento observable.",
+      "acceptance_criteria": "Sin ULTRON_NET_INTERVAL_SECONDS en el entorno, el intervalo con el que se construye el probe es de 5 segundos"
+    },
+    {
+      "id": "NFR-111",
+      "category": "Regression",
+      "requirement": "La insercion de muestras del probe no se bloquea mientras corre la poda.",
+      "acceptance_criteria": "Una insercion concurrente con una poda en curso completa sin error y sin exceder el busy_timeout configurado"
+    },
+    {
+      "id": "NFR-112",
+      "category": "Performance",
+      "requirement": "Con la ventana por defecto el historico se estabiliza en torno a 2,1 millones de filas y unos 175 MB, frente a los 719 MB actuales, y el crecimiento deja de ser ilimitado.",
+      "acceptance_criteria": "Tras la primera poda y su recuperacion de espacio sobre una base equivalente a la de produccion, el archivo pesa menos de la mitad que antes"
+    },
+    {
+      "id": "NFR-113",
+      "category": "Healthcheck",
+      "requirement": "No aplica un healthcheck nuevo: el endpoint de salud existente ya cubre la vivacidad del proceso y esta feature no anade ningun servicio ni endpoint.",
+      "acceptance_criteria": "No se anade ningun endpoint de salud y el existente sigue devolviendo 200 mientras el proceso vive"
+    }
+  ],
+  "no_go_zone": [
+    "Cambiar el esquema de NetSample, sus columnas o los nombres de sus indices — los usan RecentNetSamples y la interfaz, y un renombrado romperia el panel",
+    "Recrear o borrar la base de datos: solo se poda y se recupera espacio",
+    "Tocar la retencion de UPS, que ya funciona correctamente con su propia variable",
+    "Tocar ULTRON_NET_TARGETS",
+    "Una interfaz en el panel para configurar la retencion — se configura por entorno, igual que la de UPS",
+    "Agregacion o downsampling del historico de red: reduciria el tamano sin perder cobertura temporal, pero es otra feature con sus propias decisiones de producto",
+    "Cambiar el comportamiento por defecto del muestreo: el defecto de 5 s existe para que un despliegue sin tocar el entorno no altere nada observable",
+    "Un cron en la Pi como sustituto: decision del owner de arreglarlo en el binario, para que el comportamiento viaje con el codigo",
+    "La vista Docker via helper, que va en la feature docker-via-helper"
+  ],
+  "constraints": [
+    "SQLite con journal_mode=wal y auto_vacuum=0 en la base de produccion, page_size 4096",
+    "La primera poda en produccion borrara unos 6,3 millones de filas de una base de 719 MB en una Raspberry Pi",
+    "El binario objetivo es linux/arm64 compilado de forma cruzada; en la Pi no hay checkout de codigo fuente",
+    "Go 1.25.13, sin dependencias nuevas",
+    "El fichero de entorno /etc/ultron-ap/ultron-ap.env es root:root 600 y lo edita el owner a mano"
+  ],
+  "technology_preferences": [
+    "Reutilizar el patron de carga de configuracion de internal/ups/config.go, que ya resuelve avisar y caer al defecto sin abortar",
+    "Reutilizar startRetentionJob como planificador en vez de crear una goroutine paralela",
+    "Borrado por lotes con DELETE acotado por subconsulta sobre la clave primaria, y parametros enlazados siempre"
+  ],
+  "idea_provenance": {
+    "problem": "confirmed",
+    "users": "confirmed",
+    "baseline": "confirmed",
+    "success_metric": "confirmed",
+    "no_go_zone": "confirmed"
+  },
+  "idea_provenance_sources": {
+    "problem": "Nota de la Pi ~/nota-ultron-ap-retencion-mac-2026-09-06.md, escrita por el owner sobre una copia de solo lectura de la base de produccion, pegada por el owner como instruccion de esta sesion; reconfirmado leyendo startRetentionJob en internal/server/server.go y PruneNetSamples en internal/database/network.go",
+    "users": "Persona Raspberry Pi Operator ya establecida en spec/01_REQUIREMENTS.json del proyecto padre; el owner es el unico operador",
+    "baseline": "Cifras medidas por el owner en la Pi el 2026-09-06: 719 MB, 8.431.177 filas, mediana de 5000 ms entre muestras, ups_samples con 30,6 dias de historico",
+    "success_metric": "Tabla de tamanos esperados y seccion de verificacion de la nota: ~175 MB con ventana de 30 dias y el panel de cortes de la semana intacto",
+    "no_go_zone": "Seccion 'Que NO hacer' de la nota, explicita sobre no tocar el esquema, no tocar la retencion de UPS ni ULTRON_NET_TARGETS y no recrear la base; el owner confirmo en chat el 2026-09-06 implementar tambien el punto opcional del intervalo con defecto 5"
+  },
+  "idea_gaps": [],
+  "coverage_map": [
+    {
+      "need": "Variable ULTRON_NET_RETENTION_DAYS con defecto 30 y minimo 1",
+      "disposition": "FR-096"
+    },
+    {
+      "need": "Documentar la variable en README y .env.example",
+      "disposition": "FR-096"
+    },
+    {
+      "need": "Llamar a PruneNetSamples al arrancar y cada 24 h",
+      "disposition": "FR-097"
+    },
+    {
+      "need": "Loguear cuantas muestras se podaron y con que ventana",
+      "disposition": "FR-097"
+    },
+    {
+      "need": "Borrar en lotes para no bloquear el WAL en la primera pasada",
+      "disposition": "FR-098"
+    },
+    {
+      "need": "Recuperar espacio en disco, porque DELETE no encoge el archivo",
+      "disposition": "FR-099"
+    },
+    {
+      "need": "Migracion unica en la Pi: primera poda de ~6,3 M filas mas recuperacion de espacio",
+      "disposition": "FR-099"
+    },
+    {
+      "need": "Variable ULTRON_NET_INTERVAL_SECONDS con defecto 5",
+      "disposition": "FR-100"
+    },
+    {
+      "need": "Un valor invalido de configuracion no puede ampliar ni desactivar el borrado",
+      "disposition": "NFR-102"
+    },
+    {
+      "need": "Un fallo de la poda de red no tumba las demas podas",
+      "disposition": "NFR-103"
+    },
+    {
+      "need": "No tocar el esquema ni los nombres de indice de NetSample",
+      "disposition": "NFR-107"
+    },
+    {
+      "need": "No tocar la retencion de UPS",
+      "disposition": "NFR-106"
+    },
+    {
+      "need": "El panel de cortes de la semana sigue mostrando datos",
+      "disposition": "NFR-108"
+    },
+    {
+      "need": "Las podas de ActionLog, Alert y sesiones siguen ocurriendo",
+      "disposition": "NFR-109"
+    },
+    {
+      "need": "Sin configurar, el muestreo sigue siendo de 5 s",
+      "disposition": "NFR-110"
+    },
+    {
+      "need": "La insercion de muestras no se bloquea durante la poda",
+      "disposition": "NFR-111"
+    },
+    {
+      "need": "El historico se estabiliza en torno a 175 MB",
+      "disposition": "NFR-112"
+    },
+    {
+      "need": "No tocar ULTRON_NET_TARGETS",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Interfaz de configuracion en el panel",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Agregacion o downsampling del historico",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Cron en la Pi como sustituto del arreglo en el binario",
+      "disposition": "out_of_scope"
+    },
+    {
+      "need": "Vista Docker via helper",
+      "disposition": "out_of_scope"
+    }
+  ],
+  "original_brief": "## Feature\nPoner retención de 30 días a la tabla `NetSample`, que hoy crece sin límite y ocupa el 96% de `ultron.db`, y hacer configurable el intervalo del monitor de red.\n\n## Problem / Why\nDiagnóstico verificado en la Pi el 2026-09-06 sobre una copia de solo lectura de `/var/lib/ultron-ap/ultron.db`, y reconfirmado contra el código de este repo.\n\nEl archivo de base de datos pesa **719 MB** (+4 MB de WAL), con `journal_mode=wal`, `auto_vacuum=0`, `freelist_count=0` y `page_size` 4096. La tabla `NetSample` tiene **8.431.177 filas** desde el 2026-05-04, la primera muestra del monitor. Con sus índices `idx_net_sample_target_ts` e `idx_net_sample_ts` ocupa unos **694 MB, el 96% del archivo**.\n\nEl ritmo es de 5 objetivos (`1.1.1.1` icmp, `8.8.8.8` icmp, `gateway` icmp, `dns` dns, y a veces `192.168.1.1`/`1.1.1.1` dns) cada **5 s** — mediana de 5000 ms entre muestras consecutivas por objetivo. Son ~67.000 filas al día, unos 5,5 MB diarios.\n\nLa comparación con UPS deja claro que esto es un olvido, no una decisión: `ups_samples` tiene 265k filas y ~25 MB, muestrea cada 10 s, y su fila más vieja tiene 30,6 días. **La retención de UPS sí funciona**, vía `ULTRON_UPS_RETENTION_DAYS`, `(*Store).PruneSamples` y su llamada en `internal/ups/poller.go`.\n\nPara red, la función `(*DB).PruneNetSamples` **ya existe** en `internal/database/network.go` con su `DELETE FROM NetSample WHERE ts < ?`, pero **nunca se llama desde ningún sitio fuera de su propio test**. Confirmado en el código: `startRetentionJob` en `internal/server/server.go` poda `ActionLog`/`Alert` con `PruneOldData(30)`, poda sesiones expiradas y poda UPS — y no toca `NetSample`. El log `retention: pruned %d records older than 30 days` que aparece en el journal es el de esas otras tablas, que están pequeñas; no cubre red. Tampoco existe ninguna variable de entorno de retención de red: las únicas `ULTRON_*` relacionadas son `ULTRON_NET_TARGETS` y `ULTRON_METRICS_INTERVAL`.\n\nEl intervalo de 5 s está fijo en código, en `cmd/ultron-ap/main.go` (`gatewayprobe.New(5*time.Second, ...)`), con el mismo valor como respaldo dentro de `gatewayprobe.New` cuando recibe un intervalo no positivo.\n\n## Target Users\nEl operador de la Pi (César), único usuario del panel, que necesita que el dispositivo siga funcionando sin quedarse sin disco y que el histórico de red siga sirviendo para ver los cortes de la semana. Su dolor: una base de datos de 719 MB que crece 5,5 MB al día sin techo, en un dispositivo doméstico, y cuyos backups nocturnos cifrados a Drive arrastran ese peso cada noche.\n\n## New Behavior\nEl sistema debe leer `ULTRON_NET_RETENTION_DAYS` del entorno, con valor por defecto 30 y mínimo 1, y usarlo como ventana de retención de `NetSample`.\nEl sistema debe rechazar un valor inválido o fuera de rango de esa variable, avisar en el log y seguir con el valor por defecto, sin abortar el arranque.\nEl sistema debe podar `NetSample` al arrancar y después cada 24 h, borrando las filas anteriores a la ventana de retención.\nEl sistema debe borrar en lotes acotados en vez de un único `DELETE` de millones de filas, para no bloquear el WAL en la primera pasada.\nEl sistema debe registrar en el log cuántas muestras podó y con qué ventana.\nEl sistema debe recuperar el espacio en disco tras podar, no limitarse a marcar las páginas como libres.\nEl sistema debe leer `ULTRON_NET_INTERVAL_SECONDS` del entorno, con valor por defecto 5 para no cambiar el comportamiento actual, y usarlo como intervalo del monitor de red.\n\n## Success Criteria\nDada una base con muestras de 45 días y una ventana de 30, cuando corre la poda, entonces desaparecen las anteriores a 30 días y se conservan todas las posteriores.\nDada la variable sin definir, cuando arranca el proceso, entonces la ventana es de 30 días.\nDada la variable con un valor no numérico o menor que 1, cuando arranca el proceso, entonces se avisa en el log y la ventana es de 30 días.\nDada una base con millones de filas fuera de ventana, cuando corre la primera poda, entonces se borran en lotes sucesivos y ninguna sentencia individual abarca toda la tabla.\nDada una poda que liberó espacio, cuando termina, entonces el tamaño del archivo en disco baja, no solo el recuento de filas.\nDado `ULTRON_NET_INTERVAL_SECONDS` sin definir, cuando arranca el monitor de red, entonces su intervalo es de 5 s, idéntico al de hoy.\nDado el despliegue en la Pi con la ventana por defecto, cuando ha corrido la primera poda y su recuperación de espacio, entonces `ultron.db` ronda los 175 MB en vez de 719 MB, y el panel de cortes de red de la semana sigue mostrando datos.\n\n## Touch Points\nMODIFICA:\n- `internal/server/server.go` — `startRetentionJob`, que es el planificador diario que ya poda ActionLog, sesiones y UPS; gana la poda de red.\n- `internal/database/network.go` — `PruneNetSamples` pasa a borrar por lotes.\n- `internal/database/sqlite.go` — configuración de `auto_vacuum` y recuperación de espacio.\n- `cmd/ultron-ap/main.go` — el intervalo del `gatewayprobe` deja de estar fijo.\n- `internal/config` — carga de las dos variables nuevas.\n- `README.md` y `.env.example` — documentación de las dos variables.\n\nNO TOCA:\n- El esquema de `NetSample` ni los nombres de sus índices: los usa `RecentNetSamples` y la interfaz.\n- La retención de UPS, que funciona.\n- `ULTRON_NET_TARGETS`.\n\n## Must Not Break (Regression Boundary)\nLa retención de UPS sigue funcionando exactamente igual, con su propia variable y su propia ventana.\nEl esquema de `NetSample` y los nombres `idx_net_sample_target_ts` e `idx_net_sample_ts` quedan intactos, porque `RecentNetSamples` y la interfaz dependen de ellos.\nEl panel de cortes de red de la semana sigue mostrando datos tras la poda: la ventana de 30 días cubre de sobra los 7 días que consulta.\nLa poda de `ActionLog`, `Alert` y sesiones expiradas sigue ocurriendo en el mismo trabajo diario y con la misma cadencia.\nEl monitor de red sigue muestreando cada 5 s cuando no se configura otra cosa, así que un despliegue sin cambiar el entorno no altera el comportamiento observable.\nLa inserción de muestras no se bloquea mientras corre la poda: el probe debe seguir escribiendo.\n\n## Out of Scope\nCambiar el esquema de `NetSample`, sus índices o recrear la base.\nTocar la retención de UPS o `ULTRON_NET_TARGETS`.\nUna interfaz para configurar la retención desde el panel: se configura por entorno, como la de UPS.\nAgregación o downsampling del histórico de red, que sería otra feature con sus propias decisiones.\nLa vista Docker vía helper, que va en la feature `docker-via-helper`.\n"
+}

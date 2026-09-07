@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-04T20:34:18.214Z",
+  "executed_at": "2026-09-07T02:40:42.368Z",
   "test_runner": "go test ../../internal/insights/... ../../internal/server/ -run TC_IE -v",
   "exit_code": 0,
   "results": [
@@ -51,7 +51,7 @@
     {
       "tc_id": "TC-IE-004h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_004h_VerdictAppearsOnTransitionTrue (0.02s)"
+      "notes": "--- PASS: TestTC_IE_004h_VerdictAppearsOnTransitionTrue (0.01s)"
     },
     {
       "tc_id": "TC-IE-004f",
@@ -66,7 +66,7 @@
     {
       "tc_id": "TC-IE-005h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_005h_VerdictsFragmentRendersActiveSet (0.02s)"
+      "notes": "--- PASS: TestTC_IE_005h_VerdictsFragmentRendersActiveSet (0.03s)"
     },
     {
       "tc_id": "TC-IE-005f",
@@ -96,17 +96,17 @@
     {
       "tc_id": "TC-IE-007h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_007h_FreshDBSeedsTenEnabledRules (0.00s)"
+      "notes": "--- PASS: TestTC_IE_007h_FreshDBSeedsTenEnabledRules (0.01s)"
     },
     {
       "tc_id": "TC-IE-007f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_007f_DisableSurvivesReOpen (0.00s)"
+      "notes": "--- PASS: TestTC_IE_007f_DisableSurvivesReOpen (0.01s)"
     },
     {
       "tc_id": "TC-IE-007e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_007e_SchemaIdempotentOrphanStateTolerated (0.00s)"
+      "notes": "--- PASS: TestTC_IE_007e_SchemaIdempotentOrphanStateTolerated (0.01s)"
     },
     {
       "tc_id": "TC-IE-008h",
@@ -141,7 +141,7 @@
     {
       "tc_id": "TC-IE-010e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_010e_NFR021_NoNotifyOrAlertImports (0.12s)"
+      "notes": "--- PASS: TestTC_IE_010e_NFR021_NoNotifyOrAlertImports (0.05s)"
     },
     {
       "tc_id": "TC-IE-011e",
@@ -560,8 +560,8 @@
     }
   ],
   "timings": {
-    "runner_ms": 1738,
-    "gates_ms": 0,
-    "total_ms": 1751
+    "runner_ms": 1401,
+    "gates_ms": 1,
+    "total_ms": 1408
   }
 }
