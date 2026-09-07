@@ -23,7 +23,16 @@ grep -rnE 'Exec\(|Query\(' internal/database/*.go 2>/dev/null | grep -i sprintf 
 # RQ-SEC-004: no .DS_Store embedded in the binary
 [ -f web/static/.DS_Store ] && note ".DS_Store present in embedded web/static (RQ-SEC-004)"
 
-# RQ-SEC-005: shipped client JS must not leak Aitri trace IDs
+# RQ-SEC-005: nothing served verbatim to a browser may leak Aitri trace IDs.
+# Covers client JS AND html comments in templates — the original check watched
+# only web/static/js, so 20 ids sat in <!-- --> comments for months without
+# failing anything. Go template comments ({{/* ... */}}) are stripped before
+# render and never reach a browser, so they are deliberately not flagged.
 git grep -lnE '(FR|BG|AC|TC)-[0-9]+' -- 'web/static/js/**' >/dev/null 2>&1 && note "Aitri trace IDs in client JS (RQ-SEC-005)"
+grep -rnE '<!--[^>]*(FR|BG|AC|TC)-[0-9]+' web/templates/ >/dev/null 2>&1 && note "Aitri trace IDs in served HTML comments (RQ-SEC-005)"
+
+# RQ-SEC-003: /static must not render directory listings to unauthenticated
+# callers. Enforced in code by noDirFS; this checks the wiring is still there.
+grep -q 'noDirFS{' internal/server/server.go || note "/static no longer wrapped by noDirFS — directory listings may be exposed"
 
 exit $fail

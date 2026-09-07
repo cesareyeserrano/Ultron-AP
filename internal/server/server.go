@@ -227,6 +227,38 @@ func (s *Server) ApplyBackupConfig(cfg database.BackupConfig) {
 	s.requestBackupReschedule()
 }
 
+// noDirFS wraps a filesystem so http.FileServer cannot render a directory
+// listing.
+//
+// /static/ is unauthenticated by necessity — the browser fetches CSS and JS
+// before there is a session — and http.FileServer answers a bare directory with
+// a generated index. That handed anyone an inventory of the panel's assets
+// without logging in. Returning fs.ErrNotExist for a directory makes those
+// paths 404 while every real file still serves.
+//
+// Wrapping the FS rather than the handler is deliberate: a handler-level path
+// check has to guess which requests mean a directory, while the filesystem
+// already knows.
+type noDirFS struct{ inner http.FileSystem }
+
+// Open returns the named file, or fs.ErrNotExist when it is a directory.
+func (f noDirFS) Open(name string) (http.File, error) {
+	file, err := f.inner.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	info, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return nil, err
+	}
+	if info.IsDir() {
+		file.Close()
+		return nil, fs.ErrNotExist
+	}
+	return file, nil
+}
+
 // computeAssetVersion returns a short content hash of every bundled static
 // asset under root, used as the ?v= cache-busting token on the CSS/JS/icon
 // links. Deriving it from file content means editing any asset (`make css`, a
@@ -572,7 +604,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 
 	// Static files
 	staticFS, _ := fs.Sub(web.Static, "static")
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(noDirFS{http.FS(staticFS)})))
 
 	// Protected routes (require auth)
 	mux.Handle("POST /logout", s.requireAuth(http.HandlerFunc(s.handleLogout)))

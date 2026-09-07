@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.2.0-rc.10",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-07T04:26:37.239Z",
+  "updatedAt": "2026-09-07T19:37:05.002Z",
   "artifactHashes": {
     "1": "89e12e1d31f4f511a508dacdd462436855a2d456af3e88e036c7265e8595710f",
     "2": "1be60a577aa87f928d354f4c4230f274cd12f8a75d02585c7cf07827a121dc5d",
@@ -33,16 +33,6 @@
     "ux": "e5ba081e9b25f7b126c125692cd061048d5a077cc319d41a4ecf24e68bb04fc7"
   },
   "events": [
-    {
-      "at": "2026-09-06T21:56:24.645Z",
-      "event": "approved",
-      "phase": 2
-    },
-    {
-      "at": "2026-09-06T21:56:37.499Z",
-      "event": "started",
-      "phase": 3
-    },
     {
       "at": "2026-09-06T21:57:10.202Z",
       "event": "completed",
@@ -165,6 +155,22 @@
       "phase": "verify",
       "passed": 85,
       "failed": 0
+    },
+    {
+      "at": "2026-09-07T19:37:04.896Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 85,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T19:37:04.987Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 85,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
@@ -263,16 +269,16 @@
     ]
   },
   "securityAuditLastAt": "2026-07-15T01:02:54.083Z",
-  "verifyRanRef": "9e71fa44a1939c4431fe3217e95d11a3aaad9c3c",
+  "verifyRanRef": "b2b9430c18281a8d1af8bcbf0bf0decc754c7cc1",
   "verifyRanDirty": false,
-  "verifyResultsHash": "a425c9568a53ac4147c30a51787fef6e3137417961aae5e938bd387b70b6b0a1",
-  "verifyRanAt": "2026-09-07T04:26:36.968Z",
+  "verifyResultsHash": "b26554b123cc0e8739324952c67a1d45aa32508136199371864d5966690f08d1",
+  "verifyRanAt": "2026-09-07T19:37:04.863Z",
   "lastVerifyRun": {
     "passed": 85,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-07T04:26:36.968Z"
+    "at": "2026-09-07T19:37:04.863Z"
   },
   "releaseHistory": [
     {

@@ -8,7 +8,7 @@
                 <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." data-settings-form="backup" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                     <!-- The two switches were the only Backup inputs outside a sub-group,
-                         which AC-062-002 forbids: every input belongs to exactly one.
+                         which the settings spec forbids: every input belongs to exactly one.
                          They get their own General group rather than being folded into
                          Limits, because they gate the whole section rather than bound it. -->
                     <div data-subsection="general" class="space-y-2">
@@ -25,7 +25,7 @@
                         </div>
                     </div>
 
-                    <!-- FR-062: Backup section sub-divided into General / Limits / Schedule / Destination -->
+                    <!-- Backup section sub-divided into General / Limits / Schedule / Destination -->
                     <div data-subsection="limits" class="space-y-2">
                         <p data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider mt-6">Limits</p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -76,7 +76,7 @@
                                     <option value="biweekly" {{if eq .Content.Backup.ScheduleMode "biweekly"}}selected{{end}}>Biweekly</option>
                                 </select>
                             </div>
-                            <!-- FR-064: single time picker replaces hour/minute pair -->
+                            <!-- single time picker replaces hour/minute pair -->
                             <div>
                                 <label class="text-[11px] text-text-muted">Schedule time (24h)</label>
                                 <input type="time" name="time" value="{{printf "%02d:%02d" .Content.Backup.ScheduleHour .Content.Backup.ScheduleMinute}}" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
@@ -98,7 +98,7 @@
                                 <label class="text-[11px] text-text-muted">Local path (optional)</label>
                                 <input type="text" name="local_path" value="{{.Content.Backup.LocalPath}}" placeholder="/var/lib/ultron-ap/backups" class="w-full mt-1 px-2 py-2 text-sm bg-base border border-border rounded-lg text-text focus:outline-none focus:border-accent">
                             </div>
-                            <!-- FR-068: encryption-key composite picker (scheme select + value + ✓/✗ badge) -->
+                            <!-- encryption-key composite picker (scheme select + value + ✓/✗ badge) -->
                             <div class="md:col-span-2" data-widget="encryption-key">
                                 <label class="text-[11px] text-text-muted">Encryption key reference</label>
                                 <div class="mt-1 flex flex-col sm:flex-row gap-2">

@@ -11,7 +11,7 @@
     {{if eq .ActivePage "dashboard"}}
     <script src="/static/js/sse.js?v={{.AssetVersion}}"></script>
     {{end}}
-    <!-- BG-038: widget scripts must load on every page so they survive hx-boost
+    <!-- Widget scripts must load on every page so they survive hx-boost
          body-swaps to /settings (hx-boost doesn't update <head>). Each widget
          IIFE is idempotent (__*Bound guards) and binds htmx:afterSwap. -->
     <script src="/static/js/widgets/stepper.js?v={{.AssetVersion}}" defer></script>
