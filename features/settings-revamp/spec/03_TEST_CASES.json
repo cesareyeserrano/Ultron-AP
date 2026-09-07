@@ -2,15 +2,15 @@
   "test_plan": {
     "feature": "settings-revamp",
     "scope": "Validate FR-057..FR-070 (stepper, segmented severity, chip-preset cooldown, range single-source-of-truth, toggle, backup sub-divisions, anchor-chip+accordion, time picker, form-state pill, number-badge removal, Logout move, encryption-key probe, English-only copy, form widths) plus NFR-027..NFR-032 (perf, chip-click latency, backwards-compat POST, a11y, no new deps, probe privacy).",
-    "approach": "Three-layer pyramid. Unit tests pin the range constants (settings_ranges.go) and the probe handler. Integration tests exercise the rendered /settings HTML through goquery, asserting widget markup, label hint substrings, sub-section headings, removal of number badges, and absence of Logout in System Controls. e2e tests use Playwright against a built test binary with seeded SQLite to drive: (a) anchor-chip click \u2192 scrolled-and-expanded section, (b) stepper out-of-range typing \u2192 inline error, (c) severity segmented control 1-click selection, (d) encryption-key probe HTMX flow with valid + invalid env-var values, (e) Logout reachable from header dropdown across multiple pages. Security-sensitive probe TCs use golden-file equality on the JSON response shape.",
+    "approach": "Three-layer pyramid. Unit tests pin the range constants (settings_ranges.go) and the probe handler. Integration tests exercise the rendered /settings HTML through goquery, asserting widget markup, label hint substrings, sub-section headings, removal of number badges, and absence of Logout in System Controls. e2e tests use chromedp against a built test binary with seeded SQLite to drive: (a) anchor-chip click → scrolled-and-expanded section, (b) stepper out-of-range typing → inline error, (c) severity segmented control 1-click selection, (d) encryption-key probe HTMX flow with valid + invalid env-var values, (e) Logout reachable from header dropdown across multiple pages. Security-sensitive probe TCs use golden-file equality on the JSON response shape. Actualizado 2026-09-06: el arnes de navegador es chromedp sobre el servidor de produccion levantado con httptest, tras la etiqueta de compilacion e2e (internal/server/e2e_harness_test.go). Playwright nunca llego a adoptarse; mencionarlo hacia que Aitri marcara diez test cases como de ejecucion manual, de modo que no acreditaban su criterio aunque el test existiera y pasara.",
     "fixtures": [
-      "newTestServer(t) \u2014 starts an in-process httptest.Server with real handlers, real templates, real static FS, in-memory SQLite seeded with a fixed admin user (username=test, password-hash from bcrypt cost=4 for speed)",
-      "newTestSession(t, server) \u2014 POSTs to /login, returns a session cookie",
-      "seedAlertConfig(t, db, severity, threshold, cooldown) \u2014 inserts an alert rule for testing existing-value rendering",
-      "seedBackupConfig(t, db, hour, minute, schemeRef) \u2014 inserts a backup config row",
-      "envSet(t, k, v) \u2014 sets env var, t.Cleanup unsets",
-      "tempFile(t, mode) \u2014 writes a tmp file, returns path; t.Cleanup removes it (used for scheme=file probe)",
-      "playwrightCtx(t) \u2014 Playwright browser context with the test server URL and a logged-in storage state"
+      "newTestServer(t) — starts an in-process httptest.Server with real handlers, real templates, real static FS, in-memory SQLite seeded with a fixed admin user (username=test, password-hash from bcrypt cost=4 for speed)",
+      "newTestSession(t, server) — POSTs to /login, returns a session cookie",
+      "seedAlertConfig(t, db, severity, threshold, cooldown) — inserts an alert rule for testing existing-value rendering",
+      "seedBackupConfig(t, db, hour, minute, schemeRef) — inserts a backup config row",
+      "envSet(t, k, v) — sets env var, t.Cleanup unsets",
+      "tempFile(t, mode) — writes a tmp file, returns path; t.Cleanup removes it (used for scheme=file probe)",
+      "e2eBrowser (chromedp)(t) — e2eBrowser (chromedp) browser context with the test server URL and a logged-in storage state"
     ],
     "exit_criteria": "All TCs pass; goquery integration tests confirm zero <select name=\"severity\">, zero number-badge markup, zero `Ajust|Expandir|contraer` substrings on /settings; probe handler golden-file test passes; no new third-party Go or JS dependency added (verified by `go list -m all` diff and `git diff --stat web/static/js/`)."
   },
@@ -102,12 +102,12 @@
       ],
       "given": "An authenticated client with the test session cookie; PerfConfig.dashboard_refresh_sec stored value = 5",
       "when": "Client issues GET /settings",
-      "then": "Response 200; goquery finds exactly one element matching `[data-widget=\"stepper\"][data-field=\"dashboard_refresh_sec\"]` whose label text contains the substring '(2\u201360 sec)' and whose `data-min=\"2\"`, `data-max=\"60\"`, `data-value=\"5\"` attributes are set",
+      "then": "Response 200; goquery finds exactly one element matching `[data-widget=\"stepper\"][data-field=\"dashboard_refresh_sec\"]` whose label text contains the substring '(2–60 sec)' and whose `data-min=\"2\"`, `data-max=\"60\"`, `data-value=\"5\"` attributes are set",
       "steps": [
         "GET /settings with auth cookie",
         "Parse body with goquery",
         "Assert exactly 1 match for the selector",
-        "Assert label text contains '(2\u201360 sec)'",
+        "Assert label text contains '(2–60 sec)'",
         "Assert data-min, data-max, data-value attribute values"
       ],
       "expected_result": "Status 200; selector matches exactly 1; label hint substring present; attrs match the stored value verbatim"
@@ -152,14 +152,14 @@
       ],
       "given": "An authenticated client; the field's range is 2..60 sec",
       "when": "Client POSTs `dashboard_refresh_sec=999` to /api/settings/perf with the CSRF token",
-      "then": "Response status is 400 (Bad Request); response body contains the exact substring '2\u201360 sec'; the response is HTML (HTMX swap target) with class `text-error-text` on the inline error span",
+      "then": "Response status is 400 (Bad Request); response body contains the exact substring '2–60 sec'; the response is HTML (HTMX swap target) with class `text-error-text` on the inline error span",
       "steps": [
         "POST /api/settings/perf with form value 999",
         "Assert resp.StatusCode == 400",
-        "Assert body contains '2\u201360 sec' substring",
+        "Assert body contains '2–60 sec' substring",
         "Assert body contains 'text-error-text'"
       ],
-      "expected_result": "Status 400; error body carries the same '2\u201360 sec' string as the label"
+      "expected_result": "Status 400; error body carries the same '2–60 sec' string as the label"
     },
     {
       "id": "TC-SR-057f2",
@@ -176,11 +176,11 @@
       ],
       "given": "An authenticated client; the field's range is 2..60 sec",
       "when": "Client POSTs `dashboard_refresh_sec=1` to /api/settings/perf with the CSRF token",
-      "then": "Response status is 400; body contains '2\u201360 sec'",
+      "then": "Response status is 400; body contains '2–60 sec'",
       "steps": [
         "POST /api/settings/perf with form value 1",
         "Assert resp.StatusCode == 400",
-        "Assert body contains '2\u201360 sec'"
+        "Assert body contains '2–60 sec'"
       ],
       "expected_result": "Status 400; same range string in the body"
     },
@@ -189,12 +189,12 @@
       "requirement_id": "FR-057",
       "user_story_id": "US-057",
       "ac_id": "AC-057-002",
-      "title": "Stepper + button at max value is a no-op (Playwright)",
+      "title": "Stepper + button at max value is a no-op",
       "type": "e2e",
       "scenario": "edge_case",
       "priority": "high",
       "preconditions": [
-        "playwrightCtx(t)",
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag",
         "PerfConfig.dashboard_refresh_sec stored = 60 (max)"
       ],
       "given": "A logged-in browser context viewing /settings",
@@ -207,8 +207,7 @@
         "Read data-value attribute",
         "Assert equals '60'"
       ],
-      "expected_result": "data-value remains '60' (no-op confirmed)",
-      "automation": "manual"
+      "expected_result": "data-value remains '60' (no-op confirmed)"
     },
     {
       "id": "TC-SR-058h",
@@ -287,12 +286,12 @@
       "requirement_id": "FR-058",
       "user_story_id": "US-058",
       "ac_id": "AC-058-001",
-      "title": "User selects severity in one click (Playwright)",
+      "title": "User selects severity in one click",
       "type": "e2e",
       "scenario": "happy_path",
       "priority": "high",
       "preconditions": [
-        "playwrightCtx(t)"
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag"
       ],
       "given": "Logged-in browser at /settings, alert-rule form expanded",
       "when": "User clicks the 'critical' segment of the severity segmented control",
@@ -305,8 +304,7 @@
         "Assert data-active='true' on critical segment within 100 ms",
         "Assert previously-active segment now data-active='false'"
       ],
-      "expected_result": "1-click selection; no dropdown step",
-      "automation": "manual"
+      "expected_result": "1-click selection; no dropdown step"
     },
     {
       "id": "TC-SR-059h",
@@ -392,7 +390,7 @@
       "preconditions": [],
       "given": "settings_ranges.RangeFor(\"dashboard_refresh_sec\") returns Range{Min:2, Max:60, Unit:\"sec\"}",
       "when": "Range.ValidationError(999) is called",
-      "then": "Returned error.Error() == \"value 999 out of range \u2014 Dashboard refresh (2\u201360 sec)\" (exact string match including the en-dash, not ASCII hyphen)",
+      "then": "Returned error.Error() == \"value 999 out of range — Dashboard refresh (2–60 sec)\" (exact string match including the en-dash, not ASCII hyphen)",
       "steps": [
         "Call settings_ranges.RangeFor(\"dashboard_refresh_sec\")",
         "Call .ValidationError(999)",
@@ -414,7 +412,7 @@
         "newTestSession(t, server)"
       ],
       "given": "All numeric fields registered in settings_ranges.go",
-      "when": "Client GETs /settings; for each `[data-widget=\"stepper\"][data-field=\u2026]` the test reads the field's label text and the field's data-min/data-max",
+      "when": "Client GETs /settings; for each `[data-widget=\"stepper\"][data-field=…]` the test reads the field's label text and the field's data-min/data-max",
       "then": "For every field, the label text contains the substring `RangeFor(field).Hint()` AND data-min == RangeFor(field).Min AND data-max == RangeFor(field).Max",
       "steps": [
         "GET /settings",
@@ -424,7 +422,7 @@
         "Assert label contains Hint()",
         "Assert min/max attributes match"
       ],
-      "expected_result": "Every field is consistent across template and constant \u2014 drift detected if any single field diverges"
+      "expected_result": "Every field is consistent across template and constant — drift detected if any single field diverges"
     },
     {
       "id": "TC-SR-060f",
@@ -438,7 +436,7 @@
       "preconditions": [],
       "given": "The codebase",
       "when": "A test scans web/templates/settings.html and internal/server/handlers_*.go for hard-coded min/max literals on registered fields",
-      "then": "Zero matches found \u2014 every numeric bound is referenced through RangeFor(); literals like `min=\"2\"` outside of the rangeHint helper output are reported as failures",
+      "then": "Zero matches found — every numeric bound is referenced through RangeFor(); literals like `min=\"2\"` outside of the rangeHint helper output are reported as failures",
       "steps": [
         "List registered fields",
         "Grep templates for literal `min=\"<n>\"` patterns matching registered field min values",
@@ -594,12 +592,12 @@
       "requirement_id": "FR-063",
       "user_story_id": "US-063",
       "ac_id": "AC-063-001",
-      "title": "Anchor-chip click scrolls AND expands target accordion (Playwright)",
+      "title": "Anchor-chip click scrolls AND expands target accordion",
       "type": "e2e",
       "scenario": "happy_path",
       "priority": "high",
       "preconditions": [
-        "playwrightCtx(t)"
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag"
       ],
       "given": "Logged-in browser at /settings; the Telegram accordion starts collapsed (aria-expanded=\"false\")",
       "when": "User clicks the anchor chip with `[data-anchor=\"telegram\"]`",
@@ -612,20 +610,19 @@
         "Assert #settings-telegram element is visible (boundingBox top within viewport)",
         "Assert telegram accordion aria-expanded=true"
       ],
-      "expected_result": "Single click \u2192 scrolled + expanded within 300 ms (NFR-028)",
-      "automation": "manual"
+      "expected_result": "Single click → scrolled + expanded within 300 ms (NFR-028)"
     },
     {
       "id": "TC-SR-063e",
       "requirement_id": "FR-063",
       "user_story_id": "US-063",
       "ac_id": "AC-063-002",
-      "title": "Page load with hash auto-expands matching accordion before first paint (Playwright)",
+      "title": "Page load with hash auto-expands matching accordion before first paint",
       "type": "e2e",
       "scenario": "edge_case",
       "priority": "high",
       "preconditions": [
-        "playwrightCtx(t)"
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag"
       ],
       "given": "A logged-in browser; URL is /settings#backup",
       "when": "Page first paints (event: first-contentful-paint)",
@@ -636,8 +633,7 @@
         "Assert backup accordion aria-expanded='true' at FCP",
         "Take screenshot, assert backup form fields visible"
       ],
-      "expected_result": "Deep-link lands on an open section, no flash",
-      "automation": "manual"
+      "expected_result": "Deep-link lands on an open section, no flash"
     },
     {
       "id": "TC-SR-063f",
@@ -649,19 +645,18 @@
       "scenario": "negative",
       "priority": "medium",
       "preconditions": [
-        "playwrightCtx(t)"
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag"
       ],
       "given": "Logged-in browser at /settings (initial history length L)",
       "when": "User clicks 3 different chips in sequence",
-      "then": "After the 3 clicks, browser history length is still L (no pushState entries added) \u2014 assertable via `page.evaluate(() => window.history.length)`",
+      "then": "After the 3 clicks, browser history length is still L (no pushState entries added) — assertable via `page.evaluate(() => window.history.length)`",
       "steps": [
         "Navigate /settings, capture history.length",
         "Click chip A, then B, then C",
         "Read window.history.length",
         "Assert equals captured baseline"
       ],
-      "expected_result": "history.length unchanged \u2192 replaceState confirmed",
-      "automation": "manual"
+      "expected_result": "history.length unchanged → replaceState confirmed"
     },
     {
       "id": "TC-SR-064h",
@@ -679,7 +674,7 @@
       ],
       "given": "Backup hour=2, minute=30 stored",
       "when": "Client GETs /settings",
-      "then": "Body contains exactly one `<input type=\"time\" name=\"time\" value=\"02:30\">`; body contains zero `<input \u2026 name=\"hour\">` AND zero `<input \u2026 name=\"minute\">` (the legacy split inputs are entirely removed from the rendered form)",
+      "then": "Body contains exactly one `<input type=\"time\" name=\"time\" value=\"02:30\">`; body contains zero `<input … name=\"hour\">` AND zero `<input … name=\"minute\">` (the legacy split inputs are entirely removed from the rendered form)",
       "steps": [
         "Seed config",
         "GET /settings",
@@ -750,7 +745,7 @@
       ],
       "given": "Authenticated client; page just loaded, no submission in flight",
       "when": "Client GETs /settings",
-      "then": "Body contains zero elements matching `[data-form-state-pill]` \u2014 every section header has only the section title and its eyebrow",
+      "then": "Body contains zero elements matching `[data-form-state-pill]` — every section header has only the section title and its eyebrow",
       "steps": [
         "GET /settings",
         "Count [data-form-state-pill] elements",
@@ -763,12 +758,12 @@
       "requirement_id": "FR-065",
       "user_story_id": "US-065",
       "ac_id": "AC-065-002",
-      "title": "Pill appears with state 'saving' within 100 ms of submit (Playwright)",
+      "title": "Pill appears with state 'saving' within 100 ms of submit",
       "type": "e2e",
       "scenario": "edge_case",
       "priority": "medium",
       "preconditions": [
-        "playwrightCtx(t)"
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag"
       ],
       "given": "Logged-in browser at /settings",
       "when": "User changes Dashboard refresh stepper to 10 and clicks the section's Save button",
@@ -780,8 +775,7 @@
         "Wait up to 100 ms for [data-form-state-pill][data-state=\"saving\"]",
         "Assert visible"
       ],
-      "expected_result": "Pill renders within 100 ms with state='saving'",
-      "automation": "manual"
+      "expected_result": "Pill renders within 100 ms with state='saving'"
     },
     {
       "id": "TC-SR-065f",
@@ -793,7 +787,7 @@
       "scenario": "negative",
       "priority": "low",
       "preconditions": [
-        "playwrightCtx(t)"
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag"
       ],
       "given": "User just saved a section successfully",
       "when": "5 seconds elapse after the 'applied' state appeared",
@@ -803,8 +797,7 @@
         "Wait 5 s",
         "Assert querySelector('[data-form-state-pill]') === null"
       ],
-      "expected_result": "Pill removed from DOM after applied transition; not just hidden",
-      "automation": "manual"
+      "expected_result": "Pill removed from DOM after applied transition; not just hidden"
     },
     {
       "id": "TC-SR-066h",
@@ -890,8 +883,8 @@
       "then": "Within `#settings-system`, zero elements have `[data-action=\"logout\"]` AND zero <form action=\"/logout\"> elements; the section continues to contain Restart and Shutdown action cards",
       "steps": [
         "GET /settings",
-        "Within #settings-system, count [data-action=\"logout\"] \u2192 assert 0",
-        "Count <form action=\"/logout\"> \u2192 assert 0",
+        "Within #settings-system, count [data-action=\"logout\"] → assert 0",
+        "Count <form action=\"/logout\"> → assert 0",
         "Assert Restart and Shutdown cards still present"
       ],
       "expected_result": "Logout absent from System Controls; Restart/Shutdown intact"
@@ -953,12 +946,12 @@
       "requirement_id": "FR-067",
       "user_story_id": "US-067",
       "ac_id": "AC-067-001",
-      "title": "User clicks header-dropdown Logout from /dashboard and is redirected to /login (Playwright)",
+      "title": "User clicks header-dropdown Logout from /dashboard and is redirected to /login",
       "type": "e2e",
       "scenario": "happy_path",
       "priority": "high",
       "preconditions": [
-        "playwrightCtx(t)"
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag"
       ],
       "given": "Logged-in browser at /",
       "when": "User clicks the header dropdown summary button, then clicks the Logout menu item",
@@ -971,8 +964,7 @@
         "Assert URL ends with /login",
         "Assert session cookie cleared"
       ],
-      "expected_result": "Logout end-to-end works from header on / (dashboard)",
-      "automation": "manual"
+      "expected_result": "Logout end-to-end works from header on / (dashboard)"
     },
     {
       "id": "TC-SR-068h",
@@ -996,7 +988,7 @@
         "Parse body, assert key set equals {\"ok\",\"reason\"}",
         "Assert ok==true and reason exact match"
       ],
-      "expected_result": "Probe returns the locked-shape \u2713 response"
+      "expected_result": "Probe returns the locked-shape ✓ response"
     },
     {
       "id": "TC-SR-068e",
@@ -1017,7 +1009,7 @@
         "GET probe",
         "Assert body exact JSON"
       ],
-      "expected_result": "Locked \u2717 response"
+      "expected_result": "Locked ✗ response"
     },
     {
       "id": "TC-SR-068f",
@@ -1056,7 +1048,7 @@
       ],
       "given": "A range of inputs spanning all schemes and both ok/!ok",
       "when": "Test runs every (scheme, value) tuple from a fixed table {(env,SET), (env,UNSET), (file,EXISTS), (file,MISSING), (file,UNREADABLE), (kms,anything)}",
-      "then": "For every response: parsed JSON has exactly the key set {\"ok\",\"reason\"}; reason is one of the fixed enum strings: ['env var <NAME> found','env var not set','file readable','file not found','file not readable','kms scheme not supported in v1']; reason length \u2264 120 chars",
+      "then": "For every response: parsed JSON has exactly the key set {\"ok\",\"reason\"}; reason is one of the fixed enum strings: ['env var <NAME> found','env var not set','file readable','file not found','file not readable','kms scheme not supported in v1']; reason length ≤ 120 chars",
       "steps": [
         "For each tuple in the table:",
         "  Set up the precondition (envSet, tempFile, etc.)",
@@ -1119,28 +1111,27 @@
       "requirement_id": "FR-068",
       "user_story_id": "US-068",
       "ac_id": "AC-068-001",
-      "title": "Encryption-key probe HTMX flow: typing scheme=env and value, blur triggers \u2713 badge (Playwright)",
+      "title": "Encryption-key probe HTMX flow: typing scheme=env and value, blur triggers ✓ badge",
       "type": "e2e",
       "scenario": "happy_path",
       "priority": "medium",
       "preconditions": [
-        "playwrightCtx(t)",
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag",
         "envSet(t, 'ULTRON_BACKUP_KEY', 'x')"
       ],
       "given": "Logged-in browser at /settings#backup",
       "when": "User picks scheme='env' on the select, types 'ULTRON_BACKUP_KEY' into the value input, and tabs out",
-      "then": "Within 1 s, the badge `#enc-key-badge` displays a \u2713 icon and the text 'env var ULTRON_BACKUP_KEY found'",
+      "then": "Within 1 s, the badge `#enc-key-badge` displays a ✓ icon and the text 'env var ULTRON_BACKUP_KEY found'",
       "steps": [
         "Navigate /settings#backup",
         "Select scheme=env",
         "Type value",
         "Press Tab",
         "Wait up to 1 s for #enc-key-badge to update",
-        "Assert \u2713 icon visible",
+        "Assert ✓ icon visible",
         "Assert text 'env var ULTRON_BACKUP_KEY found'"
       ],
-      "expected_result": "Live probe + badge update on blur",
-      "automation": "manual"
+      "expected_result": "Live probe + badge update on blur"
     },
     {
       "id": "TC-SR-069h",
@@ -1236,12 +1227,12 @@
       "requirement_id": "FR-070",
       "user_story_id": "US-070",
       "ac_id": "AC-070-001",
-      "title": "Form left/right margins are equal at viewport \u22651024 px (Playwright)",
+      "title": "Form left/right margins are equal at viewport ≥1024 px",
       "type": "e2e",
       "scenario": "edge_case",
       "priority": "low",
       "preconditions": [
-        "playwrightCtx(t, viewport=1280x800)"
+        "e2eBrowser(t, baseURL, session) — chromedp harness behind the `e2e` build tag"
       ],
       "given": "Logged-in browser at viewport 1280x800",
       "when": "User opens /settings",
@@ -1251,8 +1242,7 @@
         "For each form: compute (form.x - shell.x) and (shell.right - form.right)",
         "Assert |diff| <= 1"
       ],
-      "expected_result": "Symmetric margins",
-      "automation": "manual"
+      "expected_result": "Symmetric margins"
     },
     {
       "id": "TC-SR-070f",
@@ -1275,7 +1265,7 @@
       "expected_result": "Latent max-w-4xl removed at source"
     },
     {
-      "id": "TC-SR-NFR029h",
+      "id": "TC-SR-074h",
       "requirement_id": "FR-064",
       "user_story_id": "US-064",
       "ac_id": "AC-064-003",
@@ -1288,7 +1278,7 @@
         "newTestSession(t, server)"
       ],
       "given": "Authenticated client",
-      "when": "Test replays a fixed table of legacy form bodies (one per existing settings POST endpoint) \u2014 exact bodies copied from the parent project's existing handler tests",
+      "when": "Test replays a fixed table of legacy form bodies (one per existing settings POST endpoint) — exact bodies copied from the parent project's existing handler tests",
       "then": "Every replay returns the same status code as the parent test recorded; no body returns 4xx unless the parent test already expected 4xx",
       "steps": [
         "Build the table by parsing parent handlers_*_test.go for each successful POST body",
@@ -1298,7 +1288,7 @@
       "expected_result": "Zero regressions on legacy POST bodies"
     },
     {
-      "id": "TC-SR-NFR029e",
+      "id": "TC-SR-075e",
       "requirement_id": "FR-064",
       "user_story_id": "US-064",
       "ac_id": "AC-064-003",
@@ -1322,7 +1312,7 @@
       "expected_result": "New format wins; legacy fields still logged as deprecated"
     },
     {
-      "id": "TC-SR-NFR029f",
+      "id": "TC-SR-076f",
       "requirement_id": "FR-064",
       "user_story_id": "US-064",
       "ac_id": "AC-064-002",
@@ -1345,7 +1335,7 @@
       "expected_result": "Pre-existing validation behaviour preserved; legacy callers see the same error"
     },
     {
-      "id": "TC-SR-NFR031h",
+      "id": "TC-SR-077h",
       "requirement_id": "FR-057",
       "user_story_id": "US-058",
       "ac_id": "AC-058-001",
@@ -1365,7 +1355,7 @@
       "expected_result": "No supply-chain expansion"
     },
     {
-      "id": "TC-SR-NFR031e",
+      "id": "TC-SR-078e",
       "requirement_id": "FR-057",
       "user_story_id": "US-058",
       "ac_id": "AC-058-001",
@@ -1385,25 +1375,87 @@
       "expected_result": "No JS bundler footprint"
     },
     {
-      "id": "TC-SR-NFR031f",
+      "id": "TC-SR-079f",
       "requirement_id": "FR-057",
       "user_story_id": "US-058",
       "ac_id": "AC-058-001",
-      "title": "Total widget JS payload (4 widget files + anchor-chip.js) is \u22648 KB raw and \u22643 KB gzipped",
+      "title": "Total widget JS payload (4 widget files + anchor-chip.js) is ≤8 KB raw and ≤3 KB gzipped",
       "type": "unit",
       "scenario": "negative",
       "priority": "low",
       "preconditions": [],
       "given": "Built static assets at web/static/js/widgets/",
       "when": "Test sums byte sizes of stepper.js + segmented.js + toggle.js + chip-preset.js + anchor-chip.js, then gzips the concatenation",
-      "then": "Sum of raw bytes \u2264 8192; gzip-compressed length \u2264 3072",
+      "then": "Sum of raw bytes ≤ 8192; gzip-compressed length ≤ 3072",
       "steps": [
         "Read each file, sum sizes",
         "Concatenate, gzip",
-        "Assert raw \u2264 8192",
-        "Assert gzip \u2264 3072"
+        "Assert raw ≤ 8192",
+        "Assert gzip ≤ 3072"
       ],
       "expected_result": "Payload budget enforced (NFR-031 spirit: no bundler, no bloat)"
+    },
+    {
+      "id": "TC-SR-071e",
+      "requirement_id": "FR-058",
+      "user_story_id": "US-058",
+      "ac_id": "AC-058-003",
+      "title": "En ancho de movil el control segmentado se apila en una fila compacta y sigue siendo de un clic",
+      "type": "e2e",
+      "scenario": "edge_case",
+      "priority": "medium",
+      "preconditions": [],
+      "given": "la pagina de ajustes renderizada con un viewport de 375 px de ancho",
+      "when": "se miden las cajas de los segmentos del control de modo de ventilador",
+      "then": "los segmentos siguen siendo elementos clicables con area no nula, el grupo ocupa como maximo el ancho del viewport sin scroll horizontal, y cada segmento conserva su etiqueta accesible",
+      "steps": [
+        "emular viewport de 375 px",
+        "medir las cajas de los segmentos"
+      ],
+      "expected_result": "Cada segmento tiene ancho y alto mayores que cero, el ancho total del grupo no supera los 375 px, y ninguno pierde su etiqueta",
+      "test_data": {}
+    },
+    {
+      "id": "TC-SR-072h",
+      "requirement_id": "FR-061",
+      "user_story_id": "US-061",
+      "ac_id": "AC-061-002",
+      "title": "Pulsar Espacio con el toggle enfocado hace aparecer la pastilla de guardado en menos de 100 ms",
+      "type": "e2e",
+      "scenario": "happy_path",
+      "priority": "high",
+      "preconditions": [],
+      "given": "un formulario de ajustes con un toggle y su anfitrion de pastilla de estado",
+      "when": "se enfoca el toggle y se pulsa Espacio, midiendo el tiempo dentro de la pagina",
+      "then": "aparece un elemento con data-state='saving' en el anfitrion del formulario y el tiempo transcurrido desde la pulsacion es menor que 100 ms",
+      "steps": [
+        "enfocar el toggle",
+        "pulsar Espacio",
+        "sondear la aparicion de la pastilla midiendo con performance.now()"
+      ],
+      "expected_result": "La pastilla con estado 'saving' aparece en menos de 100 ms medidos dentro de la pagina",
+      "test_data": {}
+    },
+    {
+      "id": "TC-SR-073f",
+      "requirement_id": "FR-067",
+      "user_story_id": "US-067",
+      "ac_id": "AC-067-004",
+      "title": "Reiniciar y Apagar siguen exigiendo la confirmacion escrita",
+      "type": "e2e",
+      "scenario": "negative",
+      "priority": "high",
+      "preconditions": [],
+      "given": "la zona de peligro de ajustes renderizada",
+      "when": "se intenta enviar la accion de reinicio sin escribir el texto de confirmacion",
+      "then": "la accion no se envia: el control de envio permanece deshabilitado o el envio se cancela, y no se emite ninguna peticion a la ruta de reinicio",
+      "steps": [
+        "localizar la zona de peligro",
+        "intentar enviar sin confirmacion escrita",
+        "comprobar que no hay peticion de red a la ruta de reinicio"
+      ],
+      "expected_result": "Cero peticiones a la ruta de reinicio y el control de envio sigue bloqueado sin la confirmacion escrita",
+      "test_data": {}
     }
   ]
 }

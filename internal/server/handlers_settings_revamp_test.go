@@ -1,5 +1,9 @@
 // @aitri-tc TC-SR-057f, TC-SR-057f2, TC-SR-064h, TC-SR-064e, TC-SR-064f,
-// TC-SR-NFR029h, TC-SR-NFR029e, TC-SR-NFR029f
+// TC-SR-074h, TC-SR-075e, TC-SR-076f
+//
+// Renamed 2026-09-06: the old TC-SR-NFR029* ids glued a namespace to a number
+// with no separate numeric block, a shape verify-run cannot link to runner
+// output — such a TC silently reports as skipped. Aitri now rejects them.
 package server
 
 import (
@@ -133,7 +137,7 @@ func TestTC_SR_064f_BackupOutOfRangeTime400(t *testing.T) {
 	assert.Contains(t, rec.Body.String(), "time must be HH:MM in 00:00..23:59")
 }
 
-// TC-SR-NFR029f — legacy `hour=24` returns 400 (out-of-range still rejected).
+// TC-SR-076f — legacy `hour=24` returns 400 (out-of-range still rejected).
 func TestTC_SR_064f_BackupLegacyHourOutOfRange400(t *testing.T) {
 	srv, session := setupSSETestServer(t)
 	form := url.Values{

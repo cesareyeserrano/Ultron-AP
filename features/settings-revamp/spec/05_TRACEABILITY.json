@@ -1,21 +1,28 @@
 {
   "project": "Ultron-AP / settings-revamp",
-  "version": "1.0.0",
-  "phases_completed": ["1-requirements", "ux", "2-architecture", "3-tests", "4-build", "5-deployment"],
+  "version": "1.1.0",
+  "phases_completed": [
+    "1-requirements",
+    "ux",
+    "2-architecture",
+    "3-tests",
+    "4-build",
+    "5-deployment"
+  ],
   "overall_status": "partial",
   "deployment_target": "Raspberry Pi via systemd (parent monolith). No new deployment artefacts — the revamp is a pure UI/widget refactor. No Dockerfile, no docker-compose.yml, no new env vars. Inherits the parent project's DEPLOYMENT.md and the systemd unit files under deploy/. Project Phase 5 rejection history (2026-03-18) and the help-page / insights-engine / lan-devices feature precedents establish this deployment posture deliberately. The 6 new vanilla-JS widget files ship inside the existing embed.FS (web/static/js/widgets/) — no separate publish step.",
   "requirement_compliance": [
     {
       "id": "FR-057",
       "title": "Unit-aware numeric stepper with inline range hint",
-      "level": "production_ready",
-      "evidence": "Server contract: TestTC_SR_057f / TestTC_SR_057f2 / TestTC_SR_057h_PerfBoundaryAccepted assert that out-of-range submissions return 400 with the exact hint string ('2–60 sec' en-dash preserved) and that boundary values (min, max) are accepted. TestTC_SR_057h_PerformanceStepperMarkup confirms every Performance numeric field renders a stepper with inline range hint sourced from RangeFor(). Browser-driven max-boundary +button no-op (TC-SR-057E2E) is manually verified — declared in tech_debt_inherited."
+      "level": "complete",
+      "evidence": "TC-SR-057e verifica que un valor fuera de paso se renderiza literal; TC-SR-057E2E lleva el stepper a su maximo declarado y comprueba que pulsar + no cambia el valor."
     },
     {
       "id": "FR-058",
       "title": "Severity segmented control with semantic colours",
-      "level": "production_ready",
-      "evidence": "TestTC_SR_058h_SegmentedSeverityMarkup verifies the 3 role=radio segments with data-value=critical/warning/info, hidden input for form submit, AND the absence of the legacy <select name=severity>. 1-click selection (TC-SR-058E2E) is manually verified — segmented.js source reviewable in web/static/js/widgets/segmented.js."
+      "level": "complete",
+      "evidence": "TC-SR-058e exige como maximo un segmento marcado por radiogroup; TC-SR-071e mide las cajas reales a 375 px y exige que cada segmento conserve area de pulsacion y etiqueta, y que el grupo no provoque scroll horizontal."
     },
     {
       "id": "FR-059",
@@ -38,14 +45,14 @@
     {
       "id": "FR-062",
       "title": "Backup section sub-divided into Limits / Schedule / Destination",
-      "level": "production_ready",
-      "evidence": "TestTC_SR_062h_BackupSubdivisions asserts the three sub-sections appear in order with the canonical eyebrow text. TestTC_SR_062f_SubheadingsEyebrowStyle verifies the eyebrow class set is applied uniformly."
+      "level": "complete",
+      "evidence": "TC-SR-062e recorre los inputs del formulario de Backup y exige que ninguno preceda al primer sub-grupo. Encontro dos toggles huerfanos (BG-083), corregidos anadiendo un sub-grupo General."
     },
     {
       "id": "FR-063",
       "title": "Anchor-chip strip expands target accordion on click and on hash load",
-      "level": "production_ready",
-      "evidence": "anchor-chip.js source implements scrollIntoView + accordion-expand + history.replaceState. TestTC_SR_066e_SectionsInOrder confirms the data-section attributes are present in the expected order (the gate the JS targets). Browser-driven scroll/expand timing (TC-SR-063h/e/f) is manually verified — declared in tech_debt_inherited."
+      "level": "complete",
+      "evidence": "TC-SR-063h/e/f cubren el clic de chip, la llegada por hash y el uso de replaceState. El del hash encontro BG-084: anchor-chip.js corria expandFromHash antes de que settings.js construyera el acordeon, asi que abrir /settings#seccion no expandia nada. Corregido moviendo la logica de hash al final de initAccordion."
     },
     {
       "id": "FR-064",
@@ -56,8 +63,8 @@
     {
       "id": "FR-065",
       "title": "Form-state pill is hidden when idle",
-      "level": "production_ready",
-      "evidence": "TestTC_SR_065h_FormStatePillIdleAbsent confirms no rendered [data-form-state-pill] element at idle. The inline JS in settings.html builds and removes the pill DOM only on saving/applied/failed transitions. Browser-driven 100ms-render timing (TC-SR-065e/f) is manually verified — declared in tech_debt_inherited."
+      "level": "complete",
+      "evidence": "TC-SR-065e mide dentro de la pagina, con performance.now(), que la pastilla de guardado aparece en menos de 100 ms; medirlo desde Go habria medido el viaje de CDP."
     },
     {
       "id": "FR-066",
@@ -68,8 +75,8 @@
     {
       "id": "FR-067",
       "title": "Logout moves to header dropdown; Shutdown gets distinct destructive treatment",
-      "level": "production_ready",
-      "evidence": "TestTC_SR_067h_NoLogoutInSystemControls confirms /settings#settings-controls contains no Logout form. TestTC_SR_067e_HeaderLogoutOnEveryPage iterates 8 authenticated pages (/, /docker, /services, /alerts, /network, /history, /logs, /settings) and asserts each has a header dropdown with a CSRF-protected Logout form. TestTC_SR_067f_ShutdownDestructive confirms the red-tinted border + DESTRUCTIVE eyebrow on shutdown card and the absence of those on the restart card. End-to-end Logout-from-header click flow (TC-SR-067E2E) manually verified — declared in tech_debt_inherited."
+      "level": "complete",
+      "evidence": "TC-SR-073f abre la guarda de confirmacion escrita y exige que el boton de envio siga deshabilitado sin la palabra."
     },
     {
       "id": "FR-068",
@@ -80,8 +87,8 @@
     {
       "id": "FR-069",
       "title": "English-only copy on settings + sidebar tooltip",
-      "level": "production_ready",
-      "evidence": "TestTC_SR_069e_NoSpanishStrings confirms no 'Ajusta', 'enfoque seguro', or 'Expandir/contraer' substrings in the rendered /settings or sidebar."
+      "level": "complete",
+      "evidence": "TC-SR-069f comprueba el tooltip del colapso de la barra lateral en ingles; TC-SR-069h recorre todas las plantillas buscando cadenas en espanol."
     },
     {
       "id": "FR-070",
@@ -93,51 +100,10 @@
   "technical_debt_inherited": [
     {
       "fr_id": "FR-063",
-      "substitution": "Playwright e2e tests for the anchor-chip → expand-accordion flow (TC-SR-063h/e/f) NOT executed in CI — verified at rendered-HTML and JS-source layers; same precedent as help-page tech debt.",
-      "reason": "No browser CI infrastructure in this project; widgets are small, vanilla, and reviewable.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-057",
-      "substitution": "Stepper +/− max-boundary no-op (TC-SR-057E2E) is browser-only; widget JS clamp() guard is reviewable. Server-side bounds enforcement is fully tested.",
-      "reason": "Same headless-browser cost.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-058",
-      "substitution": "1-click selection on segmented severity control (TC-SR-058E2E) is browser-only; markup invariants are tested.",
-      "reason": "Same headless-browser cost.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-065",
-      "substitution": "Pill render-within-100ms timing and DOM-removal-after-applied (TC-SR-065e/f) are browser-only; the inline JS is reviewable.",
-      "reason": "Browser timing assertions require a real browser.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-067",
-      "substitution": "End-to-end Logout-from-header click flow (TC-SR-067E2E) is browser-only; reachability and CSRF are fully tested across 8 pages.",
-      "reason": "Native <details> behaviour + standard form submit.",
-      "effort_to_fix": "low"
-    },
-    {
-      "fr_id": "FR-068",
-      "substitution": "HTMX-driven probe-on-blur browser flow (TC-SR-068E2E) is browser-only; the probe handler itself is fully tested at the unit level.",
-      "reason": "Server contract is the security-load-bearing piece.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-061",
-      "substitution": "Toggle visual transitions and keyboard space-toggle behaviour are browser-only; markup is fully tested.",
-      "reason": "Backwards-compat is the load-bearing concern.",
-      "effort_to_fix": "low"
-    },
-    {
-      "fr_id": "FR-070",
-      "substitution": "1280x800 viewport margin-symmetry e2e check (TC-SR-070e) is browser-only; the class-list invariant (no max-w-4xl on forms) is tested.",
-      "reason": "Same headless-browser cost.",
+      "substitution": "Los tests de navegador viven tras la etiqueta de compilacion 'e2e' y no corren en un 'go test ./...' normal.",
+      "reason": "Necesitan un binario de Chrome real. Sin la etiqueta, una maquina sin Chrome veria fallar la suite por defecto, que convierte 'no tengo navegador' en 'el producto esta roto'. El test_runner del manifiesto si pasa -tags e2e, asi que verify-run los ejecuta y el gate de cobertura de AC los cuenta.",
       "effort_to_fix": "low"
     }
-  ]
+  ],
+  "version_source": "team"
 }

@@ -116,10 +116,21 @@ func TestTC_SR_062h_BackupSubdivisions(t *testing.T) {
 // TC-SR-062f — sub-headings use the canonical eyebrow class set.
 func TestTC_SR_062f_SubheadingsEyebrowStyle(t *testing.T) {
 	body := getSettingsBody(t)
-	// Each data-subsection-heading must carry the eyebrow class set
+
+	// Every data-subsection-heading must carry the eyebrow class set
 	// (text-sm font-semibold text-text-muted uppercase tracking-wider).
-	count := strings.Count(body, `data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider`)
-	assert.Equal(t, 3, count, "expected 3 sub-section headings with the canonical eyebrow class set")
+	//
+	// Asserted as "all of them" rather than against a fixed count. The count
+	// used to be hardcoded at 3 and broke the moment Backup legitimately gained
+	// a fourth sub-group ("General", added so its two toggles are not orphaned
+	// per AC-062-002 — BG-083). A magic number here guards nothing about the
+	// style and fails on every correct change to the section.
+	total := strings.Count(body, `data-subsection-heading`)
+	styled := strings.Count(body, `data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider`)
+
+	require.GreaterOrEqual(t, total, 3, "the Backup section must declare its sub-groups")
+	assert.Equalf(t, total, styled,
+		"every sub-section heading must carry the canonical eyebrow class set (%d of %d do)", styled, total)
 }
 
 // TC-SR-065h — at idle, no [data-form-state-pill] HTML element is rendered

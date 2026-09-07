@@ -17,21 +17,9 @@
   "projectName": "lan-devices",
   "createdAt": "2026-05-05T17:27:43.037Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-07T02:40:44.186Z",
+  "updatedAt": "2026-09-07T04:29:39.726Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-05T21:33:50.367Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 31,
-      "failed": 0
-    },
-    {
-      "at": "2026-05-05T21:33:58.375Z",
-      "event": "started",
-      "phase": 5
-    },
     {
       "at": "2026-05-05T21:34:04.821Z",
       "event": "completed",
@@ -157,6 +145,22 @@
       "phase": "verify",
       "passed": 31,
       "failed": 0
+    },
+    {
+      "at": "2026-09-07T04:29:39.512Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T04:29:39.695Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 31,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -173,7 +177,7 @@
     "status": "resolved",
     "lastRun": "2026-05-05T21:33:16.819Z"
   },
-  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
+  "verifyRanRef": "0b91507280d0579fe37d8b39b25e4b5e41cbaf6e",
   "verifyRanDirty": false,
   "cascadedPhases": [],
   "frSnapshots": {
@@ -200,14 +204,14 @@
       "FR-038"
     ]
   },
-  "verifyResultsHash": "f8eca340f6ad0b2e965dc0c24d9ade730db4ce7ab85b723451552aaa1909fa30",
-  "verifyRanAt": "2026-09-07T02:40:43.909Z",
+  "verifyResultsHash": "00aa11496ee4ca9c2d575254a6dcd530de8242b1ecf8ed724c9d0af5c558d70c",
+  "verifyRanAt": "2026-09-07T04:29:39.434Z",
   "lastVerifyRun": {
     "passed": 31,
     "failed": 0,
     "skipped": 11,
     "manual": 0,
-    "at": "2026-09-07T02:40:43.909Z"
+    "at": "2026-09-07T04:29:39.434Z"
   },
   "verifySummary": {
     "total": 42,

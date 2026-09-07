@@ -58,8 +58,10 @@ jobs:
       # without one must not fail the default suite. They cover the acceptance
       # criteria no HTTP-level test can observe — box positions, computed styles
       # mid-animation, behaviour with JavaScript switched off, console errors.
+      # -count=1 is not optional: without it Go replays a cached result and the
+      # browser tests silently do not run while the job reports success.
       - name: Browser tests
-        run: go test -tags e2e ./internal/server/ -run TestTC_HP -v
+        run: go test -count=1 -tags e2e ./internal/server/ -run 'TestTC_HP|TestTC_SR|TestE2E' -v
 
   lint:
     name: Lint
