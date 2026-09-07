@@ -76,11 +76,21 @@ func (db *DB) RecentNetSamplesByKind(kind string, limit int) ([]NetSample, error
 	return scanNetSamples(rows)
 }
 
-// netPruneBatch bounds how many rows a single DELETE may remove.
+// defaultNetPruneBatch bounds how many rows a single DELETE may remove.
 //
-// It is a constant, never configurable: the environment may influence the
-// PARAMETER of the statement (the cutoff) but never its shape (NFR-102).
-const netPruneBatch = 50000
+// Never configurable from the environment: a value from outside may influence
+// the PARAMETER of the statement (the cutoff) but never its shape (NFR-102).
+const defaultNetPruneBatch = 50000
+
+// netPruneBatch is a variable only so tests can shrink it in-process. Proving
+// that batching works needs more rows than one batch holds, and at 50000 that
+// meant seeding 100k+ rows per test — which took the package past the 10-minute
+// `go test` timeout under the race detector. Shrinking the batch tests the same
+// loop with a few hundred rows.
+//
+// This is not a configuration seam: nothing reads it from the environment, a
+// file or a flag, which is what NFR-102 requires and TestTC_NSR_053e asserts.
+var netPruneBatch = defaultNetPruneBatch
 
 // PruneNetSamples deletes NetSample rows older than days, in bounded batches.
 // Returns the total rows removed.

@@ -31,16 +31,38 @@ func newFileDB(t *testing.T) (*DB, string) {
 	return db, path
 }
 
+// withPruneBatch shrinks the delete batch for one test and restores it after.
+//
+// The production value is 50000; proving the batching loop works at that size
+// would mean seeding 100k+ rows per test, which pushed this package past the
+// 10-minute `go test` timeout under -race. The loop under test is identical at
+// any batch size.
+func withPruneBatch(t *testing.T, n int) {
+	t.Helper()
+	prev := netPruneBatch
+	netPruneBatch = n
+	t.Cleanup(func() { netPruneBatch = prev })
+}
+
 // seedSamples inserts n samples, all aged the given number of days.
+//
+// One transaction for the whole batch. Inserting row by row in autocommit means
+// a WAL frame and an fsync per row, which is what actually made these tests
+// take minutes rather than the pruning they were meant to measure.
 func seedSamples(t *testing.T, db *DB, n int, ageDays float64) {
 	t.Helper()
-	ts := time.Now().Add(-time.Duration(ageDays * float64(24*time.Hour)))
-	rtt := 12.5
+	ts := time.Now().Add(-time.Duration(ageDays * float64(24*time.Hour))).UnixMilli()
+
+	tx, err := db.Begin()
+	require.NoError(t, err)
+	stmt, err := tx.Prepare(`INSERT INTO NetSample (ts, target, kind, rtt_ms, status) VALUES (?, ?, ?, ?, ?)`)
+	require.NoError(t, err)
 	for i := 0; i < n; i++ {
-		require.NoError(t, db.InsertNetSample(NetSample{
-			TS: ts, Target: fmt.Sprintf("t%d", i%5), Kind: "icmp", RTTMs: &rtt, Status: "ok",
-		}))
+		_, err := stmt.Exec(ts, fmt.Sprintf("t%d", i%5), "icmp", 12.5, "ok")
+		require.NoError(t, err)
 	}
+	require.NoError(t, stmt.Close())
+	require.NoError(t, tx.Commit())
 }
 
 func countSamples(t *testing.T, db *DB) int {
@@ -97,8 +119,9 @@ func TestTC_NSR_013e(t *testing.T) {
 // @aitri-tc TC-NSR-020h — the batched total matches the rows out of window
 // (AC-098-002).
 func TestTC_NSR_020h(t *testing.T) {
+	withPruneBatch(t, 200)
 	db, _ := newFileDB(t)
-	const out = netPruneBatch*2 + 1000 // forces three batches
+	const out = 500 // 200 + 200 + 100 — forces three batches
 	seedSamples(t, db, out, 45)
 	seedSamples(t, db, 500, 1)
 
@@ -114,8 +137,9 @@ func TestTC_NSR_020h(t *testing.T) {
 // Asserted by construction and by observation: the deletes are counted in
 // steps, and the arithmetic below only holds if each statement was bounded.
 func TestTC_NSR_021e(t *testing.T) {
+	withPruneBatch(t, 200)
 	db, _ := newFileDB(t)
-	const out = netPruneBatch*2 + 1000
+	const out = 500
 	seedSamples(t, db, out, 45)
 
 	// Drive the same loop the production path runs, one batch at a time, and
@@ -136,7 +160,7 @@ func TestTC_NSR_021e(t *testing.T) {
 	}
 
 	require.Len(t, sizes, 3, "%d rows at a batch of %d must take three statements", out, netPruneBatch)
-	assert.Equal(t, []int64{netPruneBatch, netPruneBatch, 1000}, sizes)
+	assert.Equal(t, []int64{200, 200, 100}, sizes)
 	for i, n := range sizes {
 		assert.LessOrEqualf(t, n, int64(netPruneBatch), "statement %d exceeded the batch bound", i)
 	}
@@ -167,8 +191,9 @@ func TestTC_NSR_022f(t *testing.T) {
 
 // @aitri-tc TC-NSR-023e — inserts continue while the prune runs (AC-098-004).
 func TestTC_NSR_023e(t *testing.T) {
+	withPruneBatch(t, 200)
 	db, _ := newFileDB(t)
-	seedSamples(t, db, netPruneBatch*2, 45)
+	seedSamples(t, db, 2000, 45)
 
 	var wg sync.WaitGroup
 	errs := make(chan error, 50)
@@ -202,10 +227,13 @@ func TestTC_NSR_023e(t *testing.T) {
 // @aitri-tc TC-NSR-030h — compaction shrinks the file on disk (AC-099-001).
 func TestTC_NSR_030h(t *testing.T) {
 	db, path := newFileDB(t)
-	seedSamples(t, db, 80000, 45)
+	seedSamples(t, db, 20000, 45)
 	_, err := db.PruneNetSamples(30)
 	require.NoError(t, err)
 
+	// Compare like with like: both measurements on a checkpointed file, so the
+	// only difference is the space VACUUM reclaimed.
+	checkpoint(t, db)
 	before := fileSize(t, path)
 	require.NoError(t, db.Compact())
 	after := fileSize(t, path)
@@ -218,10 +246,11 @@ func TestTC_NSR_030h(t *testing.T) {
 // (AC-099-002).
 func TestTC_NSR_031e(t *testing.T) {
 	db, _ := newFileDB(t)
-	seedSamples(t, db, 80000, 45)
+	seedSamples(t, db, 20000, 45)
 	_, err := db.PruneNetSamples(30)
 	require.NoError(t, err)
 
+	checkpoint(t, db)
 	before, err := db.FreeSpaceBytes()
 	require.NoError(t, err)
 	require.Greater(t, before, int64(0), "the prune must have left free pages to reclaim")
@@ -298,8 +327,10 @@ func TestTC_NSR_050h(t *testing.T) {
 func TestTC_NSR_053e(t *testing.T) {
 	t.Setenv("ULTRON_NET_RETENTION_DAYS", "1")
 	t.Setenv("ULTRON_NET_PRUNE_BATCH", "999999") // no such setting exists, deliberately
-	assert.Equal(t, 50000, netPruneBatch,
+	assert.Equal(t, 50000, defaultNetPruneBatch,
 		"the environment may shape the parameter, never the statement")
+	assert.Equal(t, defaultNetPruneBatch, netPruneBatch,
+		"outside a test that shrinks it deliberately, the batch is the default")
 }
 
 // @aitri-tc TC-NSR-070h — the NetSample columns are unchanged (NFR-107).
@@ -410,8 +441,9 @@ func TestTC_NSR_082f(t *testing.T) {
 
 // @aitri-tc TC-NSR-110h — inserts progress throughout a large prune (NFR-111).
 func TestTC_NSR_110h(t *testing.T) {
+	withPruneBatch(t, 200)
 	db, _ := newFileDB(t)
-	seedSamples(t, db, netPruneBatch*2, 45)
+	seedSamples(t, db, 2000, 45)
 
 	stop := make(chan struct{})
 	var mu sync.Mutex
@@ -451,8 +483,9 @@ func TestTC_NSR_110h(t *testing.T) {
 // @aitri-tc TC-NSR-111e — samples written during the prune survive it
 // (NFR-111).
 func TestTC_NSR_111e(t *testing.T) {
+	withPruneBatch(t, 200)
 	db, _ := newFileDB(t)
-	seedSamples(t, db, netPruneBatch*2, 45)
+	seedSamples(t, db, 2000, 45)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -479,8 +512,9 @@ func TestTC_NSR_111e(t *testing.T) {
 // @aitri-tc TC-NSR-112f — an insert is not rejected with a lock error while
 // the prune runs (NFR-111).
 func TestTC_NSR_112f(t *testing.T) {
+	withPruneBatch(t, 200)
 	db, _ := newFileDB(t)
-	seedSamples(t, db, netPruneBatch*2, 45)
+	seedSamples(t, db, 2000, 45)
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -496,6 +530,21 @@ func TestTC_NSR_112f(t *testing.T) {
 
 	insertErr := <-errCh
 	require.NoError(t, insertErr, "batched deletes must release the database between statements")
+}
+
+// checkpoint folds the WAL into the main database file so its on-disk size
+// reflects the data actually stored.
+//
+// Without this, a "did the file shrink?" assertion measures nothing: in WAL
+// mode the rows live in the -wal file until SQLite decides to checkpoint, so
+// the main file can still read 4 KB while holding 20k rows. The test used to
+// seed 80k rows purely because that happened to cross SQLite's automatic
+// checkpoint threshold — an accident of timing standing in for a guarantee,
+// and exactly the shape of a test that is fine locally and flaky in CI.
+func checkpoint(t *testing.T, db *DB) {
+	t.Helper()
+	_, err := db.Exec("PRAGMA wal_checkpoint(TRUNCATE)")
+	require.NoError(t, err)
 }
 
 func fileSize(t *testing.T, path string) int64 {
