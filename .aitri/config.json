@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.2.0-rc.10",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-07T02:41:33.549Z",
+  "updatedAt": "2026-09-07T03:52:51.851Z",
   "artifactHashes": {
     "1": "89e12e1d31f4f511a508dacdd462436855a2d456af3e88e036c7265e8595710f",
     "2": "1be60a577aa87f928d354f4c4230f274cd12f8a75d02585c7cf07827a121dc5d",
@@ -33,16 +33,6 @@
     "ux": "e5ba081e9b25f7b126c125692cd061048d5a077cc319d41a4ecf24e68bb04fc7"
   },
   "events": [
-    {
-      "at": "2026-09-06T21:55:50.177Z",
-      "event": "completed",
-      "phase": "ux"
-    },
-    {
-      "at": "2026-09-06T21:55:50.282Z",
-      "event": "approved",
-      "phase": "ux"
-    },
     {
       "at": "2026-09-06T21:55:56.180Z",
       "event": "started",
@@ -153,6 +143,22 @@
       "method": "git",
       "baseRefFrom": "961fba8c83a1dcc1f652cc19b01bc87474de8313",
       "baseRefTo": "e2ec8de7d1127f17225b8d5073c804044fb6feff"
+    },
+    {
+      "at": "2026-09-07T03:52:51.657Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 85,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T03:52:51.822Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 85,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
@@ -251,16 +257,16 @@
     ]
   },
   "securityAuditLastAt": "2026-07-15T01:02:54.083Z",
-  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
+  "verifyRanRef": "c887295333c4c633094f5cc3971a43911da77800",
   "verifyRanDirty": false,
-  "verifyResultsHash": "0f492e98e07315a5b4284197345e4d078339c46c684c939bc7707a4e828f07ce",
-  "verifyRanAt": "2026-09-07T02:40:20.779Z",
+  "verifyResultsHash": "38c8da22b1a3503a823405d159eed754a634283eeac4d6969a79649874f2f5ab",
+  "verifyRanAt": "2026-09-07T03:52:51.596Z",
   "lastVerifyRun": {
     "passed": 85,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-07T02:40:20.779Z"
+    "at": "2026-09-07T03:52:51.596Z"
   },
   "releaseHistory": [
     {

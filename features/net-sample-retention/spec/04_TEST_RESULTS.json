@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-07T02:40:47.805Z",
+  "executed_at": "2026-09-07T03:52:35.160Z",
   "test_runner": "go test ../../... -run TestTC_NSR -v",
   "exit_code": 0,
   "results": [
@@ -31,7 +31,7 @@
     {
       "tc_id": "TC-NSR-011e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_011e (0.00s)"
+      "notes": "--- PASS: TestTC_NSR_011e (0.01s)"
     },
     {
       "tc_id": "TC-NSR-012e",
@@ -51,12 +51,12 @@
     {
       "tc_id": "TC-NSR-020h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_020h (2.82s)"
+      "notes": "--- PASS: TestTC_NSR_020h (0.01s)"
     },
     {
       "tc_id": "TC-NSR-021e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_021e (2.82s)"
+      "notes": "--- PASS: TestTC_NSR_021e (0.01s)"
     },
     {
       "tc_id": "TC-NSR-022f",
@@ -66,27 +66,27 @@
     {
       "tc_id": "TC-NSR-023e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_023e (2.73s)"
+      "notes": "--- PASS: TestTC_NSR_023e (0.09s)"
     },
     {
       "tc_id": "TC-NSR-030h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_030h (2.12s)"
+      "notes": "--- PASS: TestTC_NSR_030h (0.17s)"
     },
     {
       "tc_id": "TC-NSR-031e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_031e (2.13s)"
+      "notes": "--- PASS: TestTC_NSR_031e (0.17s)"
     },
     {
       "tc_id": "TC-NSR-032e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_032e (0.53s)"
+      "notes": "--- PASS: TestTC_NSR_032e (0.17s)"
     },
     {
       "tc_id": "TC-NSR-033e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_033e (0.54s)"
+      "notes": "--- PASS: TestTC_NSR_033e (0.17s)"
     },
     {
       "tc_id": "TC-NSR-034f",
@@ -121,7 +121,7 @@
     {
       "tc_id": "TC-NSR-051f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_051f (0.00s)"
+      "notes": "--- PASS: TestTC_NSR_051f (0.01s)"
     },
     {
       "tc_id": "TC-NSR-052f",
@@ -146,7 +146,7 @@
     {
       "tc_id": "TC-NSR-062e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_062e (0.00s)"
+      "notes": "--- PASS: TestTC_NSR_062e (0.01s)"
     },
     {
       "tc_id": "TC-NSR-070h",
@@ -161,12 +161,12 @@
     {
       "tc_id": "TC-NSR-072f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_072f (0.14s)"
+      "notes": "--- PASS: TestTC_NSR_072f (0.05s)"
     },
     {
       "tc_id": "TC-NSR-080h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_080h (0.00s)"
+      "notes": "--- PASS: TestTC_NSR_080h (0.01s)"
     },
     {
       "tc_id": "TC-NSR-081e",
@@ -211,17 +211,17 @@
     {
       "tc_id": "TC-NSR-110h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_110h (2.65s)"
+      "notes": "--- PASS: TestTC_NSR_110h (0.03s)"
     },
     {
       "tc_id": "TC-NSR-111e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_111e (2.69s)"
+      "notes": "--- PASS: TestTC_NSR_111e (0.06s)"
     },
     {
       "tc_id": "TC-NSR-112f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_NSR_112f (2.73s)"
+      "notes": "--- PASS: TestTC_NSR_112f (0.02s)"
     }
   ],
   "fr_coverage": [
@@ -490,7 +490,7 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 551
+      "duration_ms": 635
     },
     {
       "name": "gofmt",
@@ -498,7 +498,7 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 35,
+      "duration_ms": 41,
       "output": "gofmt: clean (internal/config internal/database internal/server internal/network/gatewayprobe internal/ups cmd/ultron-ap)"
     },
     {
@@ -507,13 +507,13 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 1167,
+      "duration_ms": 2268,
       "output": "build: linux/arm64 OK for ultron-ap and ultron-helper"
     }
   ],
   "timings": {
-    "runner_ms": 1780,
-    "gates_ms": 1753,
-    "total_ms": 3539
+    "runner_ms": 4425,
+    "gates_ms": 2944,
+    "total_ms": 7376
   }
 }
