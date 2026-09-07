@@ -3,28 +3,34 @@
   "phase": "build",
   "stack": "Go 1.25 (server) · vanilla JS (no bundler) · Tailwind CSS 4 · HTMX · SQLite (unchanged)",
   "files_created": [
-    "../../internal/server/settings_ranges.go",
-    "../../internal/server/settings_ranges_test.go",
     "../../internal/server/handlers_encryption_probe.go",
     "../../internal/server/handlers_encryption_probe_test.go",
-    "../../internal/server/handlers_settings_revamp_test.go",
     "../../internal/server/handlers_settings_markup_test.go",
-    "../../web/static/js/widgets/stepper.js",
-    "../../web/static/js/widgets/segmented.js",
-    "../../web/static/js/widgets/toggle.js",
-    "../../web/static/js/widgets/chip-preset.js",
+    "../../internal/server/handlers_settings_revamp_test.go",
+    "../../internal/server/settings_ranges.go",
+    "../../internal/server/settings_ranges_test.go",
     "../../web/static/js/widgets/anchor-chip.js",
-    "../../web/static/js/widgets/encryption-key.js"
+    "../../web/static/js/widgets/chip-preset.js",
+    "../../web/static/js/widgets/encryption-key.js",
+    "../../web/static/js/widgets/segmented.js",
+    "../../web/static/js/widgets/stepper.js",
+    "../../web/static/js/widgets/toggle.js",
+    "internal/server/e2e_settings_test.go",
+    "internal/server/settings_coverage_test.go"
   ],
   "files_modified": [
+    "../../internal/server/handlers_performance.go",
     "../../internal/server/server.go",
     "../../internal/server/templates.go",
-    "../../internal/server/handlers_performance.go",
-    "../../web/templates/settings.html",
+    "../../web/static/css/app.css",
     "../../web/templates/base.html",
     "../../web/templates/partials/header.html",
     "../../web/templates/partials/sidebar.html",
-    "../../web/static/css/app.css"
+    "../../web/templates/settings.html",
+    "internal/server/handlers_settings_revamp_test.go",
+    "web/static/css/app.css",
+    "web/static/js/settings.js",
+    "web/templates/partials/settings-backup.html"
   ],
   "setup_commands": [
     "make css",
@@ -34,58 +40,27 @@
   "technical_debt": [
     {
       "fr_id": "FR-063",
-      "substitution": "Playwright e2e tests for the anchor-chip → expand-accordion flow (TC-SR-063h, TC-SR-063e, TC-SR-063f) are NOT executed in CI. The Ultron-AP project has no headless-browser stack — adding Playwright/chromedp for one feature would impose a heavy dev-dependency. Behaviour is verified at the rendered-HTML and JS-source layers: tests assert the data-anchor attributes are present, the data-section attributes are present in expected order, and the anchor-chip.js file declares the replaceState + scrollIntoView + accordion-expand logic. Same precedent as help-page tech debt for FR-050/051/053.",
-      "reason": "No browser CI infrastructure in this project; the JS file is small and reviewable; rendered HTML and JS source are deterministic.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-057",
-      "substitution": "Stepper +/− button max-boundary no-op (TC-SR-057E2E) is NOT executed in CI — it requires a live browser to click and observe the resulting data-value attribute. The widget JS is small; the no-op semantics are reviewable from web/static/js/widgets/stepper.js (clamp() guard before assignment). Server-side bounds enforcement (TC-SR-057f, TC-SR-057f2) is fully tested with 400 + exact hint string.",
-      "reason": "Same headless-browser cost as FR-063. Server contract is the load-bearing test; the widget enhancement is progressive.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-058",
-      "substitution": "1-click selection on the segmented severity control (TC-SR-058E2E) is NOT executed in CI. The widget JS is small; the data-active attribute toggle and one-click semantics are reviewable from web/static/js/widgets/segmented.js. The rendered markup (3 role=radio segments, no <select name=severity>) is verified by TestSettings_SegmentedSeverity_NoSelectVariant.",
-      "reason": "Same headless-browser cost as FR-063.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-065",
-      "substitution": "Pill renders within 100 ms of submit (TC-SR-065e) and pill DOM-removed after applied transition (TC-SR-065f) are NOT executed in CI — both require timing assertions in a live browser. The inline JS in settings.html shows: setFormState() builds the pill DOM only when state !== 'idle' and removes it via host.innerHTML='' after a 2.5s timeout for state='applied'. The server-side test TestSettings_FormStatePill_NotPresentAtIdle confirms the at-idle invariant.",
-      "reason": "Browser timing assertions can only be done in a real browser; the JS is reviewable from settings.html.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-067",
-      "substitution": "End-to-end Logout-from-header click flow (TC-SR-067E2E) is NOT executed in CI — requires a real browser. The reachability invariant (header dropdown contains Logout on every authenticated page, with CSRF token) is fully verified by TestSettings_HeaderDropdown_LogoutPresentEverywhere across 8 pages. The /logout endpoint behaviour is unchanged from parent FR-007 and is covered by existing TestLogout_* tests.",
-      "reason": "The dropdown is a native <details> element — its open/close behaviour is browser-native; the logout POST is a standard form submit. No new behaviour to test that isn't already covered.",
-      "effort_to_fix": "low"
-    },
-    {
-      "fr_id": "FR-068",
-      "substitution": "HTMX-driven probe-on-blur browser flow (TC-SR-068E2E) is NOT executed in CI. The probe handler itself is fully tested at the unit level (TestProbe_* — 7 tests covering env-found, env-missing, file-readable, file-missing, traversal, null-byte, unsafe-name, unauth). The encryption-key.js widget calls fetch() with a 250 ms debounce + 3 s timeout — reviewable.",
-      "reason": "Server contract (the security-load-bearing piece) is fully tested; the widget glue is small and progressive.",
-      "effort_to_fix": "medium"
-    },
-    {
-      "fr_id": "FR-061",
-      "substitution": "Toggle visual on/off transitions and Space-to-toggle keyboard behaviour (latent in TC-SR-061h subset) are NOT browser-executed. Markup is fully tested by TestSettings_NotificationToggles_NoLegacyCheckbox. The toggle.js file synchronises the hidden checkbox so submit semantics are unchanged (verified by existing notification handler tests).",
-      "reason": "Backwards-compat is the load-bearing concern; the visual transition is progressive enhancement.",
-      "effort_to_fix": "low"
-    },
-    {
-      "fr_id": "FR-070",
-      "substitution": "1280x800 viewport margin-symmetry e2e check (TC-SR-070e) is NOT browser-executed. The class-list invariant (no max-w-4xl on forms) is fully tested by TestSettings_NoMaxW4xlOnForms.",
-      "reason": "Same headless-browser cost.",
+      "substitution": "Los tests de navegador viven tras la etiqueta de compilacion 'e2e' y no corren en un 'go test ./...' normal.",
+      "reason": "Necesitan un binario de Chrome real. Sin la etiqueta, una maquina sin Chrome veria fallar la suite por defecto, que convierte 'no tengo navegador' en 'el producto esta roto'. El test_runner del manifiesto si pasa -tags e2e, asi que verify-run los ejecuta y el gate de cobertura de AC los cuenta.",
       "effort_to_fix": "low"
     }
   ],
-  "test_runner": "go test ../../internal/server -run TestTC_SR -v",
+  "test_runner": "go test -count=1 -tags e2e ../../internal/server -run TestTC_SR -v",
   "test_files": [
     "../../internal/server/settings_ranges_test.go",
     "../../internal/server/handlers_encryption_probe_test.go",
     "../../internal/server/handlers_settings_revamp_test.go",
-    "../../internal/server/handlers_settings_markup_test.go"
+    "../../internal/server/handlers_settings_markup_test.go",
+    "../../internal/server/settings_coverage_test.go",
+    "../../internal/server/e2e_settings_test.go",
+    "../../internal/server/e2e_harness_test.go"
+  ],
+  "test_runner_timeout_ms": 1800000,
+  "quality_gates": [
+    {
+      "name": "vet",
+      "command": "go vet ../../...",
+      "required": true
+    }
   ]
 }

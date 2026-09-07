@@ -270,3 +270,12 @@ func collectPageErrors(ctx context.Context) func() []string {
 		return append([]string(nil), errs...)
 	}
 }
+
+// awaitPromise makes chromedp.Evaluate wait for a returned Promise instead of
+// handing back the Promise object. Needed by any assertion that has to observe
+// something over time inside the page — a pill that must appear within 100 ms
+// cannot be measured from Go, because the round trip would dominate the
+// measurement.
+func awaitPromise(p *cdpruntime.EvaluateParams) *cdpruntime.EvaluateParams {
+	return p.WithAwaitPromise(true)
+}

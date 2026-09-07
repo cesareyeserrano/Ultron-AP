@@ -17,23 +17,9 @@
   "projectName": "help-page",
   "createdAt": "2026-05-05T23:20:30.189Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-07T02:40:40.886Z",
+  "updatedAt": "2026-09-07T04:25:11.644Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-06T00:09:00.452Z",
-      "event": "approved",
-      "phase": 4
-    },
-    {
-      "at": "2026-05-06T00:09:05.035Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 35,
-      "failed": 0,
-      "skipped": 20,
-      "manual": 0
-    },
     {
       "at": "2026-05-06T00:09:52.369Z",
       "event": "verify-run",
@@ -154,6 +140,22 @@
       "phase": "verify",
       "passed": 44,
       "failed": 0
+    },
+    {
+      "at": "2026-09-07T04:25:11.435Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T04:25:11.615Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -195,16 +197,16 @@
       "FR-056"
     ]
   },
-  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
-  "verifyRanDirty": false,
-  "verifyResultsHash": "cdbf65e033b2cbefbf63bed46438d010b7820bd9bc7b023517ce78400cbcb3d5",
-  "verifyRanAt": "2026-09-07T02:40:40.612Z",
+  "verifyRanRef": "3e6a6d9dab5322f70c6d3f46661c70543eaf8f8c",
+  "verifyRanDirty": true,
+  "verifyResultsHash": "a84ae91365894a5a54796bae49740cb47f9ec4cf55a757a2884342642111b849",
+  "verifyRanAt": "2026-09-07T04:25:11.353Z",
   "lastVerifyRun": {
     "passed": 44,
     "failed": 0,
     "skipped": 11,
     "manual": 0,
-    "at": "2026-09-07T02:40:40.612Z"
+    "at": "2026-09-07T04:25:11.353Z"
   },
   "verifySummary": {
     "total": 55,

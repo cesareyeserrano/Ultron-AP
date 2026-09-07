@@ -7,18 +7,25 @@
                 </div>
                 <form hx-post="/api/backup/config" hx-target="#backup-config-status" hx-swap="innerHTML" data-status-target="#backup-config-status" data-saving-label="Saving backup configuration..." data-settings-form="backup" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <label class="flex items-center gap-2 text-xs text-text">
-                            <input type="checkbox" name="enabled" {{if .Content.Backup.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
-                            Backup enabled
-                        </label>
-                        <label class="flex items-center gap-2 text-xs text-text">
-                            <input type="checkbox" name="encrypt_enabled" {{if .Content.Backup.EncryptEnabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
-                            Encrypt artifact
-                        </label>
+                    <!-- The two switches were the only Backup inputs outside a sub-group,
+                         which AC-062-002 forbids: every input belongs to exactly one.
+                         They get their own General group rather than being folded into
+                         Limits, because they gate the whole section rather than bound it. -->
+                    <div data-subsection="general" class="space-y-2">
+                        <p data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider">General</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label class="flex items-center gap-2 text-xs text-text">
+                                <input type="checkbox" name="enabled" {{if .Content.Backup.Enabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
+                                Backup enabled
+                            </label>
+                            <label class="flex items-center gap-2 text-xs text-text">
+                                <input type="checkbox" name="encrypt_enabled" {{if .Content.Backup.EncryptEnabled}}checked{{end}} class="rounded border-border bg-base text-accent focus:ring-accent">
+                                Encrypt artifact
+                            </label>
+                        </div>
                     </div>
 
-                    <!-- FR-062: Backup section sub-divided into Limits / Schedule / Destination -->
+                    <!-- FR-062: Backup section sub-divided into General / Limits / Schedule / Destination -->
                     <div data-subsection="limits" class="space-y-2">
                         <p data-subsection-heading class="text-sm font-semibold text-text-muted uppercase tracking-wider mt-6">Limits</p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">

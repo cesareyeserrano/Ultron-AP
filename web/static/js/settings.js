@@ -237,6 +237,31 @@
         setAccordionOpen(section, !currentlyOpen);
       });
     });
+
+    // Apply the URL hash AFTER the accordions exist.
+    //
+    // anchor-chip.js also expands from the hash, but it runs first: base.html
+    // loads it before this file, both deferred, so its DOMContentLoaded handler
+    // fires while the accordion has not been built yet. Its expandAccordion
+    // then finds no [data-accordion-body] and returns silently, and arriving on
+    // /settings#backup left the section collapsed.
+    //
+    // This file builds the accordions, so it owns their initial state. Keeping
+    // the hash logic here rather than adding a second copy over there means one
+    // owner for the rule instead of two racing ones.
+    expandFromHash(sections);
+  }
+
+  // expandFromHash opens the section named by the current URL hash, if any, and
+  // collapses the rest so the arrival state is unambiguous.
+  function expandFromHash(sections) {
+    var id = (window.location.hash || '').replace(/^#/, '');
+    if (!id) return;
+    var target = document.getElementById(id);
+    if (!target || !target.hasAttribute('data-settings-section')) return;
+    sections.forEach(function (section) {
+      setAccordionOpen(section, section === target);
+    });
   }
 
   function initDangerGuard(shell) {

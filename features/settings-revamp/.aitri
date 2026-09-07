@@ -5,173 +5,197 @@
     "ux",
     2,
     3,
-    4
+    4,
+    5
   ],
   "completedPhases": [
     1,
     "ux",
     2,
     3,
-    4
+    4,
+    5
   ],
   "projectName": "settings-revamp",
   "createdAt": "2026-05-06T21:34:58.844Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-06T19:02:16.027Z",
+  "updatedAt": "2026-09-07T04:24:47.542Z",
   "driftPhases": [],
   "events": [
     {
-      "at": "2026-05-06T21:36:30.570Z",
+      "at": "2026-09-07T04:21:39.339Z",
       "event": "approved",
       "phase": 3
     },
     {
-      "at": "2026-05-06T21:36:30.620Z",
+      "at": "2026-09-07T04:21:39.448Z",
       "event": "started",
       "phase": 4
     },
     {
-      "at": "2026-05-06T21:36:30.654Z",
+      "at": "2026-09-07T04:21:39.524Z",
       "event": "completed",
       "phase": 4
     },
     {
-      "at": "2026-05-06T21:36:30.711Z",
+      "at": "2026-09-07T04:21:39.682Z",
       "event": "approved",
       "phase": 4
     },
     {
-      "at": "2026-05-06T21:36:38.718Z",
+      "at": "2026-09-07T04:21:40.878Z",
       "event": "verify-run",
       "phase": "verify",
-      "passed": 27,
+      "passed": 38,
       "failed": 0,
-      "skipped": 29,
+      "skipped": 11,
+      "manual": 10
+    },
+    {
+      "at": "2026-09-07T04:22:16.350Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 38,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 10
+    },
+    {
+      "at": "2026-09-07T04:22:31.695Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-07T04:22:31.849Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-07T04:22:54.945Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 38,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 10
+    },
+    {
+      "at": "2026-09-07T04:24:06.766Z",
+      "event": "completed",
+      "phase": 3
+    },
+    {
+      "at": "2026-09-07T04:24:06.868Z",
+      "event": "approved",
+      "phase": 3
+    },
+    {
+      "at": "2026-09-07T04:24:06.977Z",
+      "event": "started",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-07T04:24:07.056Z",
+      "event": "completed",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-07T04:24:07.220Z",
+      "event": "approved",
+      "phase": 4
+    },
+    {
+      "at": "2026-09-07T04:24:29.222Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 43,
+      "failed": 0,
+      "skipped": 16,
       "manual": 0
     },
     {
-      "at": "2026-05-06T21:38:36.817Z",
-      "event": "rejected",
-      "phase": 3,
-      "feedback": "Mark 10 e2e TCs (TC-SR-057E2E, TC-SR-058E2E, TC-SR-063h, TC-SR-063e, TC-SR-063f, TC-SR-065e, TC-SR-065f, TC-SR-067E2E, TC-SR-068E2E, TC-SR-070e) with automation: manual since the project has no headless-browser stack — verified at server-rendered HTML/JS-source layer per declared tech debt in 04_IMPLEMENTATION_MANIFEST.json."
-    },
-    {
-      "at": "2026-05-06T21:38:36.851Z",
-      "event": "completed",
-      "phase": 3
-    },
-    {
-      "at": "2026-05-06T21:38:36.896Z",
-      "event": "approved",
-      "phase": 3
-    },
-    {
-      "at": "2026-05-06T21:38:41.195Z",
-      "event": "completed",
-      "phase": 4
-    },
-    {
-      "at": "2026-05-06T21:38:41.254Z",
-      "event": "approved",
-      "phase": 4
-    },
-    {
-      "at": "2026-05-06T21:38:41.539Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 27,
-      "failed": 0,
-      "skipped": 19,
-      "manual": 10
-    },
-    {
-      "at": "2026-05-06T21:40:13.261Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 30,
-      "failed": 0,
-      "skipped": 16,
-      "manual": 10
-    },
-    {
-      "at": "2026-05-06T21:40:13.323Z",
+      "at": "2026-09-07T04:24:29.422Z",
       "event": "verify-complete",
       "phase": "verify",
-      "passed": 30,
+      "passed": 43,
       "failed": 0
     },
     {
-      "at": "2026-05-06T21:40:16.667Z",
+      "at": "2026-09-07T04:24:47.184Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 43,
+      "failed": 0
+    },
+    {
+      "at": "2026-09-07T04:24:47.290Z",
       "event": "started",
       "phase": 5
     },
     {
-      "at": "2026-05-06T21:41:40.059Z",
+      "at": "2026-09-07T04:24:47.402Z",
       "event": "completed",
       "phase": 5
     },
     {
-      "at": "2026-05-06T21:41:40.106Z",
+      "at": "2026-09-07T04:24:47.513Z",
       "event": "approved",
-      "phase": 5
-    },
-    {
-      "at": "2026-05-21T21:47:13.684Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 30,
-      "failed": 0,
-      "skipped": 16,
-      "manual": 10
-    },
-    {
-      "at": "2026-05-21T21:47:18.819Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 30,
-      "failed": 0
-    },
-    {
-      "at": "2026-09-06T19:01:48.529Z",
-      "event": "approved",
-      "phase": 4,
-      "afterDrift": true
-    },
-    {
-      "at": "2026-09-06T19:02:15.984Z",
-      "event": "verify-run",
-      "phase": "verify",
-      "passed": 30,
-      "failed": 0,
-      "skipped": 16,
-      "manual": 10
+      "phase": 5,
+      "version": "1.1.0",
+      "version_source": "team"
     }
   ],
   "artifactHashes": {
     "1": "5dad6701e64d2585b25d02496840bb5c09cbca359d0ff74b14691ec669f8fb0f",
     "2": "b3efeb2b9dd50447a3b753e972a58521af19b3f08e91c8497606c41cc6e953d9",
-    "3": "cbb70a3e82d15493bc484eb49f8d88c851a0cb0998e175ec6cfaaa85d57ce1cf",
-    "4": "68a856eed0116c151a4f11e325b909f462f4034b4877eeff6b35e95f9d6df7b9",
+    "3": "5e45198e83dec4eaee6f40bcd298c94f029864b05af8fabf62413ddcb821b784",
+    "4": "47874881834d4f817ec22da662b461dfdd17b6feaaf9c372cf9bce976baf0bce",
+    "5": "33e868300d890cd531daeeaee900df686c79632d2df4e8f96a4f83248fbdcd64",
     "ux": "6194a3b6dbb004ce7ae197b977a10b37bacf64f54b3cbd4208c849bcf8728a08"
   },
-  "rejections": {
-    "3": {
-      "at": "2026-05-06T21:38:36.816Z",
-      "feedback": "Mark 10 e2e TCs (TC-SR-057E2E, TC-SR-058E2E, TC-SR-063h, TC-SR-063e, TC-SR-063f, TC-SR-065e, TC-SR-065f, TC-SR-067E2E, TC-SR-068E2E, TC-SR-070e) with automation: manual since the project has no headless-browser stack — verified at server-rendered HTML/JS-source layer per declared tech debt in 04_IMPLEMENTATION_MANIFEST.json."
-    }
-  },
-  "verifyPassed": false,
+  "rejections": {},
+  "verifyPassed": true,
   "normalizeState": {
     "baseRef": "0ea4827c360385af066abcb8cbfebb9236f276eb",
     "method": "git",
     "status": "resolved",
     "lastRun": "2026-05-06T21:38:41.254Z"
   },
-  "cascadedPhases": [
-    "5"
-  ],
+  "cascadedPhases": [],
   "frSnapshots": {
+    "3": [
+      "FR-057",
+      "FR-058",
+      "FR-059",
+      "FR-060",
+      "FR-061",
+      "FR-062",
+      "FR-063",
+      "FR-064",
+      "FR-065",
+      "FR-066",
+      "FR-067",
+      "FR-068",
+      "FR-069",
+      "FR-070"
+    ],
     "4": [
+      "FR-057",
+      "FR-058",
+      "FR-059",
+      "FR-060",
+      "FR-061",
+      "FR-062",
+      "FR-063",
+      "FR-064",
+      "FR-065",
+      "FR-066",
+      "FR-067",
+      "FR-068",
+      "FR-069",
+      "FR-070"
+    ],
+    "5": [
       "FR-057",
       "FR-058",
       "FR-059",
@@ -188,15 +212,32 @@
       "FR-070"
     ]
   },
-  "verifyResultsHash": "0f8cda8b1c0be3d772601fa1257789c1b5c1604f119a4fb97a22ea565f19e30b",
-  "verifyRanAt": "2026-09-06T19:02:15.876Z",
-  "verifyRanRef": "ce87962c260a6c77058fd7a464f1f708272be740",
-  "verifyRanDirty": false,
+  "verifyRanRef": "3e6a6d9dab5322f70c6d3f46661c70543eaf8f8c",
+  "verifyRanDirty": true,
+  "verifyResultsHash": "9b2056d17c2e53a2f05031f6fcd2ef03588935a9225e8a9de39d778612f562cc",
+  "verifyRanAt": "2026-09-07T04:24:29.138Z",
   "lastVerifyRun": {
-    "passed": 30,
+    "passed": 43,
     "failed": 0,
     "skipped": 16,
-    "manual": 10,
-    "at": "2026-09-06T19:02:15.876Z"
-  }
+    "manual": 0,
+    "at": "2026-09-07T04:24:29.138Z"
+  },
+  "verifySummary": {
+    "total": 59,
+    "passed": 43,
+    "failed": 0,
+    "skipped": 16,
+    "skipped_e2e": 5,
+    "skipped_no_marker": 11,
+    "manual": 0,
+    "manual_verified": 0
+  },
+  "releaseHistory": [
+    {
+      "version": "1.1.0",
+      "version_source": "team",
+      "at": "2026-09-07T04:24:47.512Z"
+    }
+  ]
 }
