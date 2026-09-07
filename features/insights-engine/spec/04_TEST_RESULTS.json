@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-06T21:58:39.265Z",
+  "executed_at": "2026-09-07T02:40:42.368Z",
   "test_runner": "go test ../../internal/insights/... ../../internal/server/ -run TC_IE -v",
   "exit_code": 0,
   "results": [
@@ -66,7 +66,7 @@
     {
       "tc_id": "TC-IE-005h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_005h_VerdictsFragmentRendersActiveSet (0.02s)"
+      "notes": "--- PASS: TestTC_IE_005h_VerdictsFragmentRendersActiveSet (0.03s)"
     },
     {
       "tc_id": "TC-IE-005f",
@@ -141,7 +141,7 @@
     {
       "tc_id": "TC-IE-010e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_IE_010e_NFR021_NoNotifyOrAlertImports (0.06s)"
+      "notes": "--- PASS: TestTC_IE_010e_NFR021_NoNotifyOrAlertImports (0.05s)"
     },
     {
       "tc_id": "TC-IE-011e",
@@ -560,8 +560,8 @@
     }
   ],
   "timings": {
-    "runner_ms": 1763,
-    "gates_ms": 0,
-    "total_ms": 1770
+    "runner_ms": 1401,
+    "gates_ms": 1,
+    "total_ms": 1408
   }
 }

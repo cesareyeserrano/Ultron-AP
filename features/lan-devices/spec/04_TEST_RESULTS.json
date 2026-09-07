@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-06T21:58:37.125Z",
+  "executed_at": "2026-09-07T02:40:43.906Z",
   "test_runner": "go test ../../internal/network/landevices/... ../../internal/server/ -run TC_LD -v",
   "exit_code": 0,
   "results": [
@@ -464,8 +464,8 @@
   },
   "low_confidence_tcs": [],
   "timings": {
-    "runner_ms": 2632,
-    "gates_ms": 1,
-    "total_ms": 2638
+    "runner_ms": 1163,
+    "gates_ms": 0,
+    "total_ms": 1168
   }
 }

@@ -22,7 +22,7 @@
   "createdAt": "2026-03-13T21:47:37.755Z",
   "aitriVersion": "2.2.0-rc.10",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-06T21:59:42.936Z",
+  "updatedAt": "2026-09-07T02:40:21.053Z",
   "artifactHashes": {
     "1": "89e12e1d31f4f511a508dacdd462436855a2d456af3e88e036c7265e8595710f",
     "2": "1be60a577aa87f928d354f4c4230f274cd12f8a75d02585c7cf07827a121dc5d",
@@ -33,23 +33,6 @@
     "ux": "e5ba081e9b25f7b126c125692cd061048d5a077cc319d41a4ecf24e68bb04fc7"
   },
   "events": [
-    {
-      "at": "2026-09-06T19:00:35.073Z",
-      "event": "verify-complete",
-      "phase": "verify",
-      "passed": 86,
-      "failed": 0
-    },
-    {
-      "at": "2026-09-06T21:55:20.029Z",
-      "event": "completed",
-      "phase": 1
-    },
-    {
-      "at": "2026-09-06T21:55:20.143Z",
-      "event": "approved",
-      "phase": 1
-    },
     {
       "at": "2026-09-06T21:55:28.802Z",
       "event": "started",
@@ -142,6 +125,30 @@
       "phase": 5,
       "version": "1.1.0",
       "version_source": "team"
+    },
+    {
+      "at": "2026-09-07T02:39:51.627Z",
+      "event": "reconcile-pending",
+      "phase": null,
+      "files": 2,
+      "method": "git",
+      "verifyPassedCleared": true
+    },
+    {
+      "at": "2026-09-07T02:40:20.841Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 85,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T02:40:21.025Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 85,
+      "failed": 0
     }
   ],
   "verifyPassed": true,
@@ -240,17 +247,24 @@
     ]
   },
   "securityAuditLastAt": "2026-07-15T01:02:54.083Z",
-  "verifyRanRef": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
+  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
   "verifyRanDirty": false,
-  "verifyResultsHash": "ea72323dbd950cb7c6bf5a7c0ddcb752ad84de4cbfd12c0fdb3690c3d1ad7aaa",
-  "verifyRanAt": "2026-09-06T21:58:19.267Z",
+  "verifyResultsHash": "0f492e98e07315a5b4284197345e4d078339c46c684c939bc7707a4e828f07ce",
+  "verifyRanAt": "2026-09-07T02:40:20.779Z",
   "lastVerifyRun": {
     "passed": 85,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-06T21:58:19.267Z"
+    "at": "2026-09-07T02:40:20.779Z"
   },
+  "releaseHistory": [
+    {
+      "version": "1.1.0",
+      "version_source": "team",
+      "at": "2026-09-06T21:59:42.907Z"
+    }
+  ],
   "verifySummary": {
     "total": 85,
     "passed": 85,
@@ -260,12 +274,5 @@
     "skipped_no_marker": 0,
     "manual": 0,
     "manual_verified": 0
-  },
-  "releaseHistory": [
-    {
-      "version": "1.1.0",
-      "version_source": "team",
-      "at": "2026-09-06T21:59:42.907Z"
-    }
-  ]
+  }
 }

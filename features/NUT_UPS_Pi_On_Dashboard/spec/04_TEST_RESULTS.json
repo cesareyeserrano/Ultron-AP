@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-06T21:58:52.901Z",
+  "executed_at": "2026-09-07T02:40:33.107Z",
   "test_runner": "go test ../../internal/ups/... ../../internal/server/... -v",
   "exit_code": 0,
   "results": [
@@ -71,27 +71,27 @@
     {
       "tc_id": "TC-UPS-014e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_014e_EmptySeriesNoError (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_014e_EmptySeriesNoError (0.00s)"
     },
     {
       "tc_id": "TC-UPS-015f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_015f_PruneRetentionBoundary (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_015f_PruneRetentionBoundary (0.00s)"
     },
     {
       "tc_id": "TC-UPS-016h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_016h_OpenOutage (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_016h_OpenOutage (0.00s)"
     },
     {
       "tc_id": "TC-UPS-017e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_017e_CloseOutage (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_017e_CloseOutage (0.00s)"
     },
     {
       "tc_id": "TC-UPS-018f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_018f_NoDoubleCountOnRestart (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_018f_NoDoubleCountOnRestart (0.00s)"
     },
     {
       "tc_id": "TC-UPS-019h",
@@ -126,12 +126,12 @@
     {
       "tc_id": "TC-UPS-025e",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_025e_OutageInsightRealCount (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_025e_OutageInsightRealCount (0.00s)"
     },
     {
       "tc_id": "TC-UPS-026f",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_026f_NoDegradationFromSingleSample (0.01s)"
+      "notes": "--- PASS: TestTC_UPS_026f_NoDegradationFromSingleSample (0.00s)"
     },
     {
       "tc_id": "TC-UPS-027h",
@@ -151,7 +151,7 @@
     {
       "tc_id": "TC-UPS-030h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_UPS_030h_CutoffDisplay (0.02s)"
+      "notes": "--- PASS: TestTC_UPS_030h_CutoffDisplay (0.01s)"
     },
     {
       "tc_id": "TC-UPS-031h",
@@ -675,12 +675,12 @@
       "required": true,
       "status": "pass",
       "exit_code": 0,
-      "duration_ms": 488
+      "duration_ms": 440
     }
   ],
   "timings": {
-    "runner_ms": 10929,
-    "gates_ms": 488,
-    "total_ms": 11425
+    "runner_ms": 10934,
+    "gates_ms": 441,
+    "total_ms": 11383
   }
 }

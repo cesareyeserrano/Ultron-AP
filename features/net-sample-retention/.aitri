@@ -17,7 +17,7 @@
   "projectName": "net-sample-retention",
   "createdAt": "2026-09-06T21:12:35.339Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-06T21:59:06.747Z",
+  "updatedAt": "2026-09-07T02:40:48.090Z",
   "driftPhases": [],
   "events": [
     {
@@ -124,6 +124,22 @@
       "phase": "verify",
       "passed": 44,
       "failed": 0
+    },
+    {
+      "at": "2026-09-07T02:40:47.888Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T02:40:48.061Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0
     }
   ],
   "cascadedPhases": [],
@@ -164,16 +180,16 @@
       "FR-100"
     ]
   },
-  "verifyResultsHash": "394e05210d13a16f8852b0b04978a4efe8bd98d658ac789e5069678d399e82b6",
-  "verifyRanAt": "2026-09-06T21:59:06.454Z",
-  "verifyRanRef": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
+  "verifyResultsHash": "419b2be9203e18b8e068de3aecaa5254c4866ace2c2685f2de737011968b9047",
+  "verifyRanAt": "2026-09-07T02:40:47.807Z",
+  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
   "verifyRanDirty": false,
   "lastVerifyRun": {
     "passed": 44,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-06T21:59:06.454Z"
+    "at": "2026-09-07T02:40:47.807Z"
   },
   "verifyPassed": true,
   "verifySummary": {

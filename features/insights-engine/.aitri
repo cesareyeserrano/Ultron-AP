@@ -17,19 +17,9 @@
   "projectName": "insights-engine",
   "createdAt": "2026-05-05T22:07:04.650Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-06T21:58:39.563Z",
+  "updatedAt": "2026-09-07T02:40:42.659Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-09-03T03:23:15.465Z",
-      "event": "completed",
-      "phase": 4
-    },
-    {
-      "at": "2026-09-03T03:23:19.664Z",
-      "event": "approved",
-      "phase": 4
-    },
     {
       "at": "2026-09-04T19:12:03.983Z",
       "event": "verify-run",
@@ -153,6 +143,22 @@
       "phase": "verify",
       "passed": 37,
       "failed": 0
+    },
+    {
+      "at": "2026-09-07T02:40:42.450Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T02:40:42.631Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 37,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -169,7 +175,7 @@
     "status": "resolved",
     "lastRun": "2026-05-05T23:03:14.902Z"
   },
-  "verifyRanRef": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
+  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
   "verifyRanDirty": false,
   "cascadedPhases": [],
   "frSnapshots": {
@@ -219,14 +225,14 @@
       "at": "2026-09-04T20:34:29.189Z"
     }
   ],
-  "verifyResultsHash": "f3736fc0ff72364b8cae30ac628843d63b67ece6173aacccc4edccf897a20513",
-  "verifyRanAt": "2026-09-06T21:58:39.267Z",
+  "verifyResultsHash": "1b4650079a0387e48e3b30a4e8794a77c68168a0acc14fc2fc39521a582f772e",
+  "verifyRanAt": "2026-09-07T02:40:42.371Z",
   "lastVerifyRun": {
     "passed": 37,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-06T21:58:39.267Z"
+    "at": "2026-09-07T02:40:42.371Z"
   },
   "verifySummary": {
     "total": 37,

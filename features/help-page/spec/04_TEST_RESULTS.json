@@ -1,5 +1,5 @@
 {
-  "executed_at": "2026-09-07T02:36:21.236Z",
+  "executed_at": "2026-09-07T02:40:40.610Z",
   "test_runner": "go test -tags e2e ../../internal/help/... ../../internal/server/ -run TC_HP -v",
   "exit_code": 0,
   "results": [
@@ -266,7 +266,7 @@
     {
       "tc_id": "TC-HP-NFR-026h",
       "status": "pass",
-      "notes": "--- PASS: TestTC_HP_NFR_026h (0.06s)"
+      "notes": "--- PASS: TestTC_HP_NFR_026h (0.05s)"
     },
     {
       "tc_id": "TC-HP-NFR-026f",
@@ -771,8 +771,8 @@
     }
   ],
   "timings": {
-    "runner_ms": 16325,
+    "runner_ms": 812,
     "gates_ms": 0,
-    "total_ms": 16332
+    "total_ms": 818
   }
 }

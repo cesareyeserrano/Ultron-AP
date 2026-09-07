@@ -19,19 +19,9 @@
   "projectName": "docker-via-helper",
   "createdAt": "2026-09-06T19:04:16.801Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-06T21:59:02.809Z",
+  "updatedAt": "2026-09-07T02:40:39.713Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-09-06T19:39:08.130Z",
-      "event": "completed",
-      "phase": 3
-    },
-    {
-      "at": "2026-09-06T19:39:10.189Z",
-      "event": "approved",
-      "phase": 3
-    },
     {
       "at": "2026-09-06T19:52:12.982Z",
       "event": "started",
@@ -143,6 +133,22 @@
       "phase": "verify",
       "passed": 59,
       "failed": 0
+    },
+    {
+      "at": "2026-09-07T02:40:39.506Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0,
+      "skipped": 0,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T02:40:39.684Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 59,
+      "failed": 0
     }
   ],
   "cascadedPhases": [],
@@ -206,17 +212,17 @@
       "FR-095"
     ]
   },
-  "verifyRanRef": "a3be2b9f16a207bcb9461463a1d130bc8e1c4c0c",
+  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
   "verifyRanDirty": false,
   "verifyPassed": true,
-  "verifyResultsHash": "ddc67f0d6878cb373434043fcfc0caf788ec8da1c88fd44aaa9f74d0ff806edb",
-  "verifyRanAt": "2026-09-06T21:59:02.492Z",
+  "verifyResultsHash": "b0c9bf715c3e86980561574421f4bdf63bbb3103bd9261e6490a7aae69e785f5",
+  "verifyRanAt": "2026-09-07T02:40:39.425Z",
   "lastVerifyRun": {
     "passed": 59,
     "failed": 0,
     "skipped": 0,
     "manual": 0,
-    "at": "2026-09-06T21:59:02.492Z"
+    "at": "2026-09-07T02:40:39.425Z"
   },
   "verifySummary": {
     "total": 59,

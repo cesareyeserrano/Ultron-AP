@@ -17,19 +17,9 @@
   "projectName": "help-page",
   "createdAt": "2026-05-05T23:20:30.189Z",
   "artifactsDir": "spec",
-  "updatedAt": "2026-09-07T02:36:39.042Z",
+  "updatedAt": "2026-09-07T02:40:40.886Z",
   "driftPhases": [],
   "events": [
-    {
-      "at": "2026-05-05T23:52:35.854Z",
-      "event": "started",
-      "phase": 4
-    },
-    {
-      "at": "2026-05-06T00:07:53.954Z",
-      "event": "completed",
-      "phase": 4
-    },
     {
       "at": "2026-05-06T00:09:00.452Z",
       "event": "approved",
@@ -148,6 +138,22 @@
       "phase": 5,
       "version": "1.1.0",
       "version_source": "team"
+    },
+    {
+      "at": "2026-09-07T02:40:40.691Z",
+      "event": "verify-run",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 11,
+      "manual": 0
+    },
+    {
+      "at": "2026-09-07T02:40:40.859Z",
+      "event": "verify-complete",
+      "phase": "verify",
+      "passed": 44,
+      "failed": 0
     }
   ],
   "artifactHashes": {
@@ -189,16 +195,16 @@
       "FR-056"
     ]
   },
-  "verifyRanRef": "961fba8c83a1dcc1f652cc19b01bc87474de8313",
-  "verifyRanDirty": true,
-  "verifyResultsHash": "8e3d941924b5b05c7665aa55f07fc2cb4081079a94a2464210a0dc051bd2eb3f",
-  "verifyRanAt": "2026-09-07T02:36:21.239Z",
+  "verifyRanRef": "0f9207f559a1c02383481daebbe1d6743a55c0ab",
+  "verifyRanDirty": false,
+  "verifyResultsHash": "cdbf65e033b2cbefbf63bed46438d010b7820bd9bc7b023517ce78400cbcb3d5",
+  "verifyRanAt": "2026-09-07T02:40:40.612Z",
   "lastVerifyRun": {
     "passed": 44,
     "failed": 0,
     "skipped": 11,
     "manual": 0,
-    "at": "2026-09-07T02:36:21.239Z"
+    "at": "2026-09-07T02:40:40.612Z"
   },
   "verifySummary": {
     "total": 55,
